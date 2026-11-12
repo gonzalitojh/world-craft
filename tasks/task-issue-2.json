@@ -1,0 +1,58 @@
+{
+  "title": "Auditar y adaptar los agentes de IA al proyecto",
+  "description": "Auditoría de los agentes heredados de .opencode/agents/, adaptación al flujo SDD de World Craft, conversión del publisher a local-first, creación del agente ui-ux-designer y documentación del equipo resultante en docs/agentes.md.",
+  "status": "published",
+  "issue": {
+    "number": 2,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/2",
+    "title": "Auditar y adaptar los agentes de IA al proyecto"
+  },
+  "acceptance_criteria": [
+    "Tabla de auditoría con la decisión y los cambios de cada agente.",
+    "Ningún agente referencia rutas, URLs, issues o workflows del proyecto anterior.",
+    "El publisher no hace push ni PR sin confirmación; el flujo local está documentado.",
+    "sdd-master funciona con las etiquetas y estados definidos en el plan.",
+    "El agente de UI/UX está creado o su ausencia está justificada.",
+    "El usuario valida la propuesta (label needs-decision)."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Agentes revisados y sin referencias al proyecto anterior.",
+    "Publisher local-first documentado y con guardrails.",
+    "sdd-master alineado con labels, hitos, task files y estados.",
+    "ui-ux-designer creado y documentado.",
+    "content-curator evaluado y justificado.",
+    "docs/agentes.md actualizado.",
+    "Task file actualizado.",
+    "Seguridad revisada: sin secretos ni credenciales.",
+    "Sin servicios de pago ni dependencias injustificadas."
+  ],
+  "plan": "1) Auditar los 7 agentes existentes. 2) Reescribir sdd-master para el flujo de World Craft. 3) Convertir publisher a local-first. 4) Adaptar task-architect, tdd-ddd-architect, qa-reviewer, security-champion y documentation-sync. 5) Crear ui-ux-designer. 6) Evaluar content-curator como skill futuro. 7) Documentar el equipo en docs/agentes.md. 8) Revisar que no queden referencias al proyecto anterior.",
+  "validation": {
+    "result": "user-validated",
+    "date": "2026-11-12",
+    "notes": "El usuario validó la propuesta y pidió dejarla en revisión local, sin push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Tres revisiones. La primera detectó 1 bloqueante (validación del usuario) y 8 recomendaciones; la segunda devolvió PASS; la tercera confirmó el estado final sin bloqueantes."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Escaneo final PASS, sin HIGH. Se corrigieron dos HIGH del escaneo intermedio (git grep -O y git diff --output) con allowlists exactas y formas con -- antes de pathspecs. Se añadieron defensas para .env* anidados, grep/glob, variantes git -C/-c, gh api y git add .; shell general en ask. El .gitignore y la limpieza del historial quedan como seguimiento de M0-04."
+  },
+  "documentation": {
+    "adr": null,
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": "docs/agentes.md actualizado"
+  },
+  "pr": {
+    "number": 46,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/46",
+    "title": "chore: adaptar agentes de IA al flujo de World Craft",
+    "branch": "chore/issue-2-agentes-world-craft",
+    "commit": "c6a9103"
+  }
+}
