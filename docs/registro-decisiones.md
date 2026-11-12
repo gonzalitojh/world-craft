@@ -38,8 +38,8 @@ Con estas cinco issues, el plan pasa de **38 a 43 issues**. Las issues #2–#39 
 
 ### Publicación
 
-El usuario revisó y aprobó el plan. El trabajo se publica mediante una **PR contra `dev`**; nunca se hace push directo a `main`. La rama `main` queda reservada para las versiones estables que promueva el usuario.
+El usuario revisó y aprobó el plan. El trabajo se publica mediante la **PR [#45](https://github.com/gonzalitojh/world-craft/pull/45) contra `dev`**; nunca se hace push directo a `main`. La rama `main` queda reservada para las versiones estables que promueva el usuario.
 
 ## 2026-11-12 — Aprobación del plan y publicación en `dev`
 
-El usuario revisó el plan y lo aprobó. Se publica el trabajo mediante una PR contra la rama de integración `dev`. A partir de este momento, `dev` es la rama de integración y `main` queda reservada para versiones estables.
+El usuario revisó el plan y lo aprobó. Se publica el trabajo mediante la PR [#45](https://github.com/gonzalitojh/world-craft/pull/45), con base en la rama de integración `dev`. A partir de este momento, `dev` es la rama de integración y `main` queda reservada para versiones estables.
