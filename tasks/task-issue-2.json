@@ -1,7 +1,7 @@
 {
   "title": "Auditar y adaptar los agentes de IA al proyecto",
   "description": "Auditoría de los agentes heredados de .opencode/agents/, adaptación al flujo SDD de World Craft, conversión del publisher a local-first, creación del agente ui-ux-designer y documentación del equipo resultante en docs/agentes.md.",
-  "status": "review",
+  "status": "published",
   "issue": {
     "number": 2,
     "url": "https://github.com/gonzalitojh/world-craft/issues/2",
@@ -47,5 +47,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": "docs/agentes.md actualizado"
+  },
+  "pr": {
+    "number": 46,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/46",
+    "title": "chore: adaptar agentes de IA al flujo de World Craft",
+    "branch": "chore/issue-2-agentes-world-craft",
+    "commit": "c6a9103"
   }
 }
