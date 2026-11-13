@@ -93,7 +93,13 @@ Cuando la tarea toque HTML, CSS o UI:
 - [ ] El manual de usuario está actualizado si el cambio es visible.
 - [ ] Hay ADR si hay una decisión arquitectónica o de producto relevante.
 - [ ] El changelog se actualiza si existe y el cambio lo merece.
-- [ ] `docs/agentes.md` está actualizado si cambian agentes o el flujo.
+- [ ] `AGENTS.md` está actualizado si cambian las reglas obligatorias,
+      Definition of Ready/Done o el resumen del flujo.
+- [ ] `docs/proceso-sdd.md` está actualizado si cambian el flujo, las puertas,
+      los estados, las etiquetas, los hitos, el esquema de task files o la
+      publicación.
+- [ ] `docs/agentes.md` está actualizado solo si cambian el equipo, sus
+      responsabilidades o la invocación.
 - [ ] El task file refleja el estado real y los resultados de QA.
 - [ ] Si el cambio es interno, el task file indica `"manual": "no aplica"`.
 

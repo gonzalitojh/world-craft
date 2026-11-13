@@ -1,0 +1,49 @@
+{
+  "title": "Ejemplo: actualizar una guía interna",
+  "description": "Task file de ejemplo del esquema canónico de docs/proceso-sdd.md. Es ficticio: no corresponde a ninguna issue real y todos sus valores son de demostración (issue 0, PR 0, commit abc1234). No debe usarse como tarea.",
+  "status": "published",
+  "issue": {
+    "number": 0,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/0",
+    "title": "Ejemplo: issue ficticia"
+  },
+  "acceptance_criteria": [
+    "Ejemplo: la guía interna afectada queda actualizada.",
+    "Ejemplo: los enlaces y las rutas citadas existen.",
+    "Ejemplo: el cambio no introduce referencias a rutas ni automatizaciones inexistentes."
+  ],
+  "definition_of_done": [
+    "Ejemplo: criterios de aceptación cumplidos.",
+    "Ejemplo: JSON válido y enlaces resueltos.",
+    "Ejemplo: sin secretos ni datos personales.",
+    "Ejemplo: task file actualizado."
+  ],
+  "plan": "Ejemplo: revisar la guía, actualizar las secciones afectadas, verificar enlaces y registrar el resultado en este task file.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-12",
+    "notes": "Ejemplo ficticio: el usuario aprobó el alcance."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Ejemplo ficticio: QA superado sin bloqueantes."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Ejemplo ficticio: sin hallazgos HIGH."
+  },
+  "documentation": {
+    "adr": null,
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": null
+  },
+  "pr": {
+    "number": 0,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/0",
+    "title": "docs: ejemplo ficticio",
+    "branch": "docs/issue-0-ejemplo",
+    "commit": "abc1234"
+  }
+}
