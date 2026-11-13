@@ -1,7 +1,7 @@
 {
   "title": "Revisar AGENTS.md y el flujo SDD",
   "description": "Código de plan: M0-02. Fase M0. Depende de M0-01 (issue #2, cerrada y fusionada en dev mediante PR #46).\n\nContexto: AGENTS.md contiene reglas valiosas (PRs contra dev, responsividad, manual actualizado, temas) y debe adaptarse a World Craft con las decisiones cerradas: dos temas (claro/oscuro), R2 para archivos, allowlist de acceso a la app más roles owner/editor/viewer por mundo, i18n centralizada y publisher local-first.\n\nAlcance aprobado por el usuario el 2026-11-12: ampliar AGENTS.md con las reglas de la sección 4.2 del plan; definir Definition of Ready y Definition of Done; documentar el flujo SDD, el esquema de tasks/task-issue-N.json y el momento de publicación explícita; crear una guía de etiquetas, estados e hitos; incluir reglas de coste cero, portabilidad de datos, secretos, migraciones y accesibilidad.\n\nDecisiones de alcance:\n- AGENTS.md conserva y amplía sus cuatro reglas actuales.\n- docs/proceso-sdd.md concentra flujo, estados, esquema de task files, etiquetas, hitos y publicación local-first.\n- tasks/task-example.json es un ejemplo válido y enlazado desde la guía.\n- docs/agentes.md se ajusta para evitar duplicidades y contradicciones.",
-  "status": "review",
+  "status": "published",
   "issue": {
     "number": 3,
     "url": "https://github.com/gonzalitojh/world-craft/issues/3",
@@ -51,5 +51,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 47,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/47",
+    "title": "docs: revisar AGENTS.md y el flujo SDD",
+    "branch": "docs/issue-3-agents-sdd",
+    "commit": "a90a0c0"
   }
 }
