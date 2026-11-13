@@ -1,0 +1,55 @@
+{
+  "title": "Revisar AGENTS.md y el flujo SDD",
+  "description": "Código de plan: M0-02. Fase M0. Depende de M0-01 (issue #2, cerrada y fusionada en dev mediante PR #46).\n\nContexto: AGENTS.md contiene reglas valiosas (PRs contra dev, responsividad, manual actualizado, temas) y debe adaptarse a World Craft con las decisiones cerradas: dos temas (claro/oscuro), R2 para archivos, allowlist de acceso a la app más roles owner/editor/viewer por mundo, i18n centralizada y publisher local-first.\n\nAlcance aprobado por el usuario el 2026-11-12: ampliar AGENTS.md con las reglas de la sección 4.2 del plan; definir Definition of Ready y Definition of Done; documentar el flujo SDD, el esquema de tasks/task-issue-N.json y el momento de publicación explícita; crear una guía de etiquetas, estados e hitos; incluir reglas de coste cero, portabilidad de datos, secretos, migraciones y accesibilidad.\n\nDecisiones de alcance:\n- AGENTS.md conserva y amplía sus cuatro reglas actuales.\n- docs/proceso-sdd.md concentra flujo, estados, esquema de task files, etiquetas, hitos y publicación local-first.\n- tasks/task-example.json es un ejemplo válido y enlazado desde la guía.\n- docs/agentes.md se ajusta para evitar duplicidades y contradicciones.",
+  "status": "review",
+  "issue": {
+    "number": 3,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/3",
+    "title": "Revisar AGENTS.md y el flujo SDD"
+  },
+  "acceptance_criteria": [
+    "AGENTS.md no menciona la aplicación anterior ni rutas que no existan.",
+    "Se mantienen y adaptan las reglas de PR a dev, responsive, manual y dos temas.",
+    "Hay Definition of Ready/Done comprobable.",
+    "El flujo SDD termina en revisión local por defecto.",
+    "Existe un task file de ejemplo válido.",
+    "El usuario aprueba los cambios en la revisión local; si falta una decisión, se marca needs-decision y se detiene el trabajo."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "AGENTS.md sin referencias al proyecto anterior ni rutas inexistentes.",
+    "Definition of Ready y Definition of Done comprobables y enlazadas desde AGENTS.md.",
+    "Flujo SDD documentado con estados, etiquetas, hitos y publicación local-first.",
+    "Task file de ejemplo válido y enlazado desde la guía.",
+    "Sin contradicciones entre AGENTS.md, docs/proceso-sdd.md y docs/agentes.md.",
+    "Enlaces internos y JSON verificados.",
+    "Manual actualizado si el cambio es visible (no aplica: cambio interno de proceso).",
+    "ADR si hay decisión arquitectónica (no aplica: no hay decisión nueva).",
+    "Seguridad revisada.",
+    "Task file actualizado."
+  ],
+  "plan": "1) AGENTS.md como fuente normativa breve: conservar reglas 1-4 y añadir el contenido de las reglas 5-17 del plan §4.2 (la 14 integrada en la 2.4), Definition of Ready/Done y resumen del flujo SDD con enlaces. 2) docs/proceso-sdd.md como guía canónica: flujo, puertas, estados, esquema de task files, etiquetas, hitos y publicación local-first. 3) tasks/task-example.json válido y enlazado. 4) docs/agentes.md reducido al equipo y responsabilidades, sin duplicar proceso, labels, estados ni esquema. 5) Cabeceras de autoridad en sdd-master.md y publisher.md para evitar deriva. 6) Verificación con PowerShell: JSON, enlaces, rutas inexistentes, referencias antiguas, fences y git diff --check. 7) QA, seguridad, documentación y commit local sin push ni PR.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-12",
+    "notes": "El usuario aprobó el alcance propuesto y pidió resolver la issue #3 con sdd-master."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Tres rondas de QA. La primera detectó 1 bloqueante (esquema con pr en created) y 8 recomendaciones; la segunda detectó 1 bloqueante de coherencia en agentes operativos y 4 recomendaciones; la tercera devolvió PASS sin bloqueantes ni hallazgos altos/medios. Se aplicaron también las 3 recomendaciones bajas finales. AC6 (aprobación en revisión local) queda pendiente por diseño hasta el publisher."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "LOW (preexistente): no existe .gitignore; se difiere a M0-04 (issue #5) antes de que haya .env. No hay .env trackeado ni en disco.",
+      "LOW (preexistente): el push a main está restringido por texto y por permisos ask, sin regla deny específica por rama. No se debilitó en este cambio."
+    ],
+    "notes": "Escaneo de los 9 archivos: sin HIGH ni MEDIUM. Sin secretos, credenciales, datos personales, dependencias, servicios nuevos ni URLs privadas. Guardrails local-first y permisos de agentes intactos. Los dos hallazgos LOW son preexistentes y no bloquean."
+  },
+  "documentation": {
+    "adr": null,
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": "docs/agentes.md"
+  }
+}

@@ -1,7 +1,8 @@
 ---
 description: >-
   Mantiene la documentación de World Craft al día: ADRs en docs/adr/, manual de
-  usuario, changelog, arquitectura y docs/agentes.md. Úsalo cuando se tome una
+  usuario, changelog, arquitectura, AGENTS.md, docs/proceso-sdd.md y
+  docs/agentes.md. Úsalo cuando se tome una
   decisión arquitectónica, cuando cambie algo visible para el usuario o cuando
   la documentación existente haya quedado desactualizada. Verifica que cada
   issue visible actualice el manual y que los ADRs referencien su issue.
@@ -14,17 +15,19 @@ identificadores de código y de base de datos van en inglés.
 
 ## Documentos del proyecto
 
-| Documento | Uso |
-|---|---|
-| `docs/plan-desarrollo.md` | Plan aprobado. No se reescribe por cada tarea; se actualiza si cambia el alcance. |
-| `docs/registro-decisiones.md` | Registro append-only de decisiones de producto y arquitectura. |
-| `docs/adr/` | ADRs: contexto, decisión, consecuencias y referencias. |
-| `docs/manual-de-usuario.md` | Manual funcional para cualquier usuario. |
-| `docs/arquitectura.md` | Mapa de módulos, dependencias y flujos. |
-| `docs/agentes.md` | Equipo de agentes, flujo SDD, labels, estados y publicación. |
-| `CHANGELOG.md` | Cambios relevantes por versión, cuando exista. |
-| `README.md` | Arranque local, variables de entorno, scripts y despliegue. |
-| `CONTRIBUTING.md` | Flujo, ramas, commits y calidad. |
+| Documento | Estado | Uso |
+|---|---|---|
+| `docs/plan-desarrollo.md` | Vigente | Plan aprobado. No se reescribe por cada tarea; se actualiza si cambia el alcance. |
+| `docs/registro-decisiones.md` | Vigente | Registro append-only de decisiones de producto y arquitectura. |
+| `AGENTS.md` | Vigente | Reglas obligatorias, Definition of Ready/Done y resumen del flujo. |
+| `docs/proceso-sdd.md` | Vigente | Flujo SDD, puertas, labels, estados, task files y publicación. |
+| `docs/agentes.md` | Vigente | Equipo de agentes, responsabilidades e invocación. |
+| `docs/adr/` | Previsto | ADRs: contexto, decisión, consecuencias y referencias. Los crea M0-03 (issue #4). |
+| `docs/manual-de-usuario.md` | Previsto | Manual funcional para cualquier usuario. Su creación formal corresponde a M5-01 (issue #28). |
+| `docs/arquitectura.md` | Previsto | Mapa de módulos, dependencias y flujos. Documentación base M0-09 (issue #10). |
+| `README.md` | Previsto | Arranque local, variables de entorno, scripts y despliegue. Documentación base M0-09 (issue #10). |
+| `CONTRIBUTING.md` | Previsto | Flujo, ramas, commits y calidad. Documentación base M0-09 (issue #10). |
+| `CHANGELOG.md` | Previsto | Cambios relevantes por versión. Se crea con la primera versión o cuando el usuario lo pida; no tiene issue asignada. |
 
 Si un documento aún no existe porque su issue de fundación no se ha hecho, no
 lo inventes: indica qué issue lo creará.
@@ -104,8 +107,12 @@ No crees un ADR para un cambio trivial de texto, estilo o bugfix sin decisión.
   relevante para el usuario o para el despliegue.
 - **Arquitectura:** actualiza `docs/arquitectura.md` si cambian módulos,
   dependencias, flujos o responsabilidades.
-- **Agentes:** actualiza `docs/agentes.md` si cambian agentes, labels, estados,
-  task files o el flujo de publicación.
+- **Reglas y proceso:** actualiza `AGENTS.md` si cambian las reglas
+  obligatorias, la Definition of Ready/Done o el resumen del flujo; actualiza
+  `docs/proceso-sdd.md` si cambian el flujo, los labels, los estados, los
+  hitos, los task files o la publicación.
+- **Agentes:** actualiza `docs/agentes.md` solo si cambian el equipo, sus
+  responsabilidades o la invocación.
 
 ## Proceso
 
@@ -113,7 +120,7 @@ No crees un ADR para un cambio trivial de texto, estilo o bugfix sin decisión.
 2. Identifica qué documentación se ve afectada.
 3. Crea o actualiza el ADR si hay decisión.
 4. Actualiza el manual si hay cambio visible.
-5. Actualiza changelog, arquitectura o agentes si aplica.
+5. Actualiza changelog, arquitectura, reglas, proceso o agentes si aplica.
 6. Verifica que los enlaces y rutas existen.
 7. Comprueba que el task file refleja el resultado (`documentation.adr`,
    `documentation.manual`, `documentation.changelog`, `documentation.agents`).

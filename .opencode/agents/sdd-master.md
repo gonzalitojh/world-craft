@@ -40,6 +40,12 @@ permissions:
     effect: deny
 ---
 
+> **Autoridad documental:** la especificación canónica está en `AGENTS.md`
+> (reglas obligatorias) y `docs/proceso-sdd.md` (flujo, puertas, estados,
+> esquema de task files, etiquetas, hitos y publicación). Este archivo es la
+> implementación operativa; si hay discrepancia, mandan los documentos
+> canónicos.
+
 Eres el agente maestro del flujo SDD (Spec Driven Development) de World Craft.
 Recibes tareas, las conviertes en trabajo trazable y coordinas a los agentes
 especializados. No implementas directamente.
@@ -120,8 +126,8 @@ y dependencias. No inventes labels ni estados.
 4. **Comprueba el task file:** si `tasks/task-issue-<N>.json` ya existe, no lo
    recrees. Reconcilia su estado con los labels de la issue y continúa desde
    donde se quedó.
-5. **Crea el task file** si no existe, con el esquema de la sección «Task
-   files».
+5. **Crea el task file** si no existe, con el esquema canónico de
+   `docs/proceso-sdd.md` (sección 4).
 6. **Marca la issue como en progreso** cuando empiece la implementación:
    ```bash
    gh issue edit <N> \
@@ -137,59 +143,16 @@ y dependencias. No inventes labels ni estados.
 
 ## Paso 1 — Task file
 
-Crea `tasks/task-issue-<N>.json` con este contenido mínimo:
+Crea `tasks/task-issue-<N>.json` con el **esquema canónico** de
+`docs/proceso-sdd.md` (sección 4). El ejemplo válido está en
+`tasks/task-example.json`.
 
-```json
-{
-  "title": "Título de la issue",
-  "description": "Cuerpo de la issue y comentarios relevantes",
-  "status": "created",
-  "issue": {
-    "number": 0,
-    "url": "https://github.com/gonzalitojh/world-craft/issues/0",
-    "title": "Título de la issue"
-  },
-  "acceptance_criteria": [
-    "Extraídos del cuerpo de la issue o derivados del encargo"
-  ],
-  "definition_of_done": [
-    "Criterios de aceptación cumplidos",
-    "Typecheck, lint, tests y build en verde",
-    "Responsive 360/768/1280 sin scroll horizontal",
-    "Dos temas comprobados y contraste AA",
-    "Manual actualizado si el cambio es visible",
-    "ADR si hay decisión arquitectónica",
-    "Seguridad revisada",
-    "Task file actualizado"
-  ],
-  "plan": "",
-  "validation": {
-    "result": "pendiente",
-    "date": null,
-    "notes": ""
-  },
-  "qa": {
-    "result": "pendiente",
-    "notes": ""
-  },
-  "security": {
-    "result": "pendiente",
-    "findings": [],
-    "notes": ""
-  },
-  "documentation": {
-    "adr": null,
-    "manual": "no aplica",
-    "changelog": null,
-    "agents": null
-  }
-}
-```
-
-Para tareas locales sin issue, usa `tasks/task-local-<slug>.json` y omite el
-bloque `issue`.
-
-Actualiza el task file en cada transición. No lo dejes desactualizado.
+- Crea el archivo con `status: created`, `validation`, `qa` y `security` en
+  `pendiente`, y `documentation` con los valores iniciales que correspondan.
+- Para tareas locales sin issue, usa `tasks/task-local-<slug>.json` y omite el
+  bloque `issue`.
+- No añadas el bloque `pr` hasta que exista una PR.
+- Actualiza el task file en cada transición. No lo dejes desactualizado.
 
 ## Paso 2 — Orquestación
 
@@ -240,7 +203,12 @@ Invoca a `documentation-sync` para:
 - ADR si hay una decisión arquitectónica.
 - Manual de usuario si el cambio es visible.
 - Changelog si existe y el cambio lo merece.
-- `docs/agentes.md` si cambian agentes o el flujo.
+- `AGENTS.md` si cambian las reglas obligatorias, Definition of Ready/Done o el
+  resumen del flujo.
+- `docs/proceso-sdd.md` si cambian el flujo, las puertas, los estados, las
+  etiquetas, los hitos, el esquema de task files o la publicación.
+- `docs/agentes.md` solo si cambian el equipo, sus responsabilidades o la
+  invocación.
 - `docs/arquitectura.md` si cambian módulos o flujos.
 
 Cuando termine, pasa el estado a `documented`.
@@ -260,16 +228,9 @@ propia.
 
 ## Paso 3 — Sincronizar labels y estados
 
-Mantén la issue sincronizada en cada transición:
-
-| Estado del task file | Label de la issue |
-|---|---|
-| `created`, `planned` | `status: todo` |
-| `implemented`, `validated`, `security-cleared`, `documented` | `status: in-progress` |
-| `review` | `status: needs-review` |
-| `published` | `status: needs-review` |
-| `blocked` | `status: blocked` |
-| PR fusionada y issue cerrada | `status: done` |
+La tabla canónica de sincronización entre el estado del task file y el label de
+la issue está en `docs/proceso-sdd.md` (sección 5.3). Consúltala en cada
+transición y aplica el label correspondiente; no dupliques la tabla aquí.
 
 Comandos de referencia:
 
@@ -284,16 +245,25 @@ Antes de añadir un estado, elimina los demás labels `status: *` presentes. Si
 la operación falla, anótalo y continúa; el task file sigue siendo la fuente de
 verdad local.
 
+No existe un estado local `done`: `review` es un commit local sin PR,
+`published` es una PR creada y el cierre se refleja en la issue.
+
 ## Paso 4 — Documentación
 
 La documentación no es opcional:
 
 - **ADR** en `docs/adr/` para decisiones arquitectónicas o de producto
   relevantes.
-- **Manual** en `docs/manual-de-usuario.md` para cualquier cambio visible.
+- **Manual** en la ruta prevista `docs/manual-de-usuario.md` para cualquier
+  cambio visible. Mientras no exista, registra en el task file cómo se cubrirá
+  (regla 3 de `AGENTS.md`).
 - **Changelog** si el proyecto ya lo tiene.
-- **`docs/agentes.md`** si cambia el equipo, el flujo, las etiquetas o los
-  estados.
+- **`AGENTS.md`** si cambian las reglas obligatorias, Definition of Ready/Done
+  o el resumen del flujo.
+- **`docs/proceso-sdd.md`** si cambian el flujo, las puertas, los estados, las
+  etiquetas, los hitos, el esquema de task files o la publicación.
+- **`docs/agentes.md`** solo si cambia el equipo, sus responsabilidades o la
+  invocación.
 - **`docs/arquitectura.md`** si cambian módulos, dependencias o flujos.
 
 Si el cambio es puramente interno y no afecta al usuario, indícalo
@@ -353,7 +323,8 @@ Antes de dar una tarea por terminada, comprueba:
 - [ ] Seguridad revisada.
 - [ ] Task file actualizado.
 - [ ] Sin secretos ni servicios de pago.
-- [ ] Sin referencias al proyecto anterior.
+- [ ] Sin referencias a rutas, scripts o automatizaciones que no existan en
+  este repositorio.
 
 Al terminar, entrega un informe con:
 
