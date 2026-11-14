@@ -31,7 +31,7 @@ La propuesta técnica es:
 
 El coste objetivo es **0 €/mes** usando únicamente planes gratuitos. La única excepción opcional sería un dominio propio (unos 10-15 €/año), que no es necesario para el MVP: se puede usar el subdominio `*.vercel.app`.
 
-El desarrollo se organiza en **seis fases** (M0 a M5) y **43 issues** enlazadas con etiquetas y hitos. Antes de implementar nada se revisan y adaptan los agentes de IA y las reglas del proyecto (issues M0-01 y M0-02), porque los actuales están heredados de otra aplicación y contienen referencias, scripts y flujos que no existen aquí.
+El desarrollo se organiza en **seis fases** (M0 a M5) y **44 issues** enlazadas con etiquetas y hitos. Antes de implementar nada se revisan y adaptan los agentes de IA y las reglas del proyecto (issues M0-01 y M0-02), porque los actuales están heredados de otra aplicación y contienen referencias, scripts y flujos que no existen aquí.
 
 **Decisiones cerradas el 12/11/2026.** El detalle y las consecuencias están en [`docs/registro-decisiones.md`](registro-decisiones.md). En resumen:
 
@@ -767,21 +767,22 @@ Las estimaciones son relativas y suponen trabajo a tiempo parcial con ayuda de a
 
 | Fase | Objetivo | Issues | Esfuerzo orientativo | Resultado demostrable |
 |---|---|---|---:|---|
-| **M0 · Proceso y fundaciones** | Adaptar agentes/reglas, decidir arquitectura y dejar el esqueleto técnico | 12 | 14-18 sesiones | App desplegada en preview con login básico y diseño |
+| **M0 · Proceso y fundaciones** | Adaptar agentes/reglas, decidir arquitectura y dejar el esqueleto técnico | 13 | 15-19 sesiones | App desplegada en preview con login básico y diseño |
 | **M1 · Núcleo de datos y acceso** | Mundos, fichas, relaciones, búsqueda, miembros y permisos | 7 | 24-32 sesiones | Se puede crear un mundo completo, compartirlo y navegarlo |
 | **M2 · Mapas y grafo** | Visualizar el mundo y su geografía | 4 | 20-28 sesiones | Grafo interactivo + editor de mapas vectorial |
 | **M3 · Escritura** | Escribir, versionar y exportar novelas | 4 | 24-32 sesiones | Manuscrito completo exportable a DOCX/PDF/EPUB |
 | **M4 · Juego creativo** | Inspiración con dados, tablas y contenido ampliable | 4 | 12-16 sesiones | Generador de semillas de historia y packs editables |
 | **M5 · Calidad y lanzamiento** | Manual, responsive, a11y, PWA, seguridad, backups y producción | 7 | 14-18 sesiones | Versión privada lista para uso real |
 
-**Total:** 43 issues, ~108-144 sesiones. El **MVP utilizable** (M0-M3) se puede alcanzar en unas 14-20 semanas a tiempo parcial; el producto pulido completo, en 7-10 meses. Las fases M2 y M3 pueden solaparse parcialmente si se trabaja en paralelo, pero M1 es prerrequisito de ambas.
+**Total:** 44 issues, ~109-145 sesiones. El **MVP utilizable** (M0-M3) se puede alcanzar en unas 14-20 semanas a tiempo parcial; el producto pulido completo, en 7-10 meses. Las fases M2 y M3 pueden solaparse parcialmente si se trabaja en paralelo, pero M1 es prerrequisito de ambas.
 
 ### 5.2 Dependencias principales
 
 ```text
 M0-01/02 (agentes y reglas)
-  └─ M0-03 (ADRs) ─ M0-08 (Supabase + datos) ─ M0-11 (keep-alive + continuidad)
+  ├─ M0-03 (ADRs) ─ M0-08 (Supabase + datos) ─ M0-11 (keep-alive + continuidad)
   │                  └─ M0-10 (R2 + storage)
+  ├─ M0-13 (variantes y permisos)
   └─ M0-04 (repo) ─ M0-05 (entorno/CI) ─ M0-06 (scaffold) ─ M0-07 (diseño) ─ M0-12 (i18n)
         └─ M1-01 (auth + allowlist) ─ M1-02 (mundos propios) ─ M1-07 (miembros/roles)
               └─ M1-03 (entidades) ─ M1-04 (relaciones)
@@ -813,6 +814,7 @@ La tabla siguiente es el contrato de planificación. Cada fila se convierte en u
 | M0-10 | Configurar Cloudflare R2 y el adaptador de almacenamiento | chore | infra | p0 | M | M0-03, M0-06 |
 | M0-11 | Keep-alive y continuidad de Supabase | chore | infra | p0 | S | M0-04, M0-08 |
 | M0-12 | Fundaciones de internacionalización | chore | ui | p1 | M | M0-06, M0-07 |
+| M0-13 | Política de variantes de modelo y autonomía de permisos de los agentes | chore | agents/security | p1 | L | M0-02 |
 
 #### M1 · Núcleo de datos y acceso
 
@@ -995,7 +997,7 @@ status: todo → status: in-progress → status: needs-review → status: done
 
 ## Anexo D. Correspondencia con las issues de GitHub
 
-Creadas el 11/11/2026 y actualizadas el 12/11/2026. La issue #1 es la planificación original; las **43 issues** siguientes implementan el plan (38 originales + 5 nuevas por las decisiones cerradas).
+Creadas el 11/11/2026 y actualizadas el 14/11/2026. La issue #1 es la planificación original; las **44 issues** siguientes implementan el plan (38 originales + 6 nuevas: 5 por las decisiones cerradas y 1 de proceso).
 
 | Código | Issue | Título | Hito |
 |---|---|---|---|
@@ -1011,6 +1013,7 @@ Creadas el 11/11/2026 y actualizadas el 12/11/2026. La issue #1 es la planificac
 | M0-10 | [#40](https://github.com/gonzalitojh/world-craft/issues/40) | Configurar Cloudflare R2 y el adaptador de almacenamiento | M0 |
 | M0-11 | [#41](https://github.com/gonzalitojh/world-craft/issues/41) | Keep-alive y continuidad de Supabase | M0 |
 | M0-12 | [#42](https://github.com/gonzalitojh/world-craft/issues/42) | Fundaciones de internacionalización | M0 |
+| M0-13 | [#48](https://github.com/gonzalitojh/world-craft/issues/48) | Política de variantes de modelo y autonomía de permisos de los agentes | M0 |
 | M1-01 | [#11](https://github.com/gonzalitojh/world-craft/issues/11) | Autenticación, allowlist y acceso a la app | M1 |
 | M1-02 | [#12](https://github.com/gonzalitojh/world-craft/issues/12) | CRUD de mundos propios y dashboard | M1 |
 | M1-03 | [#13](https://github.com/gonzalitojh/world-craft/issues/13) | Entidades, fichas, plantillas y mundo de ejemplo | M1 |

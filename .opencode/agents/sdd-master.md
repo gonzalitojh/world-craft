@@ -13,31 +13,6 @@ description: >-
   coordino planificación, implementación, QA, seguridad, documentación y
   publisher local."</example>
 mode: primary
-permissions:
-  - action: shell
-    resource: "git push*"
-    effect: ask
-  - action: shell
-    resource: "gh pr create*"
-    effect: ask
-  - action: shell
-    resource: "gh api*"
-    effect: ask
-  - action: shell
-    resource: "git -C *"
-    effect: ask
-  - action: shell
-    resource: "git -c *"
-    effect: ask
-  - action: shell
-    resource: "git add ."
-    effect: deny
-  - action: shell
-    resource: "git add ./"
-    effect: deny
-  - action: shell
-    resource: "git add -- ."
-    effect: deny
 ---
 
 > **Autoridad documental:** la especificación canónica está en `AGENTS.md`
@@ -117,18 +92,26 @@ y dependencias. No inventes labels ni estados.
      cuanto exista el task file (paso 5), registra la decisión en él y retira
      el label con `gh issue edit <N> --remove-label needs-decision`.
    - Si tiene `status: blocked`, pregunta si se reanuda antes de continuar.
-3. **Comprueba el tipo:** debe tener exactamente un label `type: ...`. Si falta
+3. **Comprueba la variante:** debe tener exactamente un label
+   `variant: default`, `variant: low`, `variant: high` o `variant: max`. Si
+   falta, recomienda una según `docs/variantes-modelo.md`, añádelo y registra
+   la justificación. Si hay más de uno, deja el que corresponda. Antes de
+   implementar, recuerda al usuario la variante recomendada para que la
+   seleccione en OpenCode; si elige otra, respétala y anótalo en
+   `validation.notes`.
+
+4. **Comprueba el tipo:** debe tener exactamente un label `type: ...`. Si falta
    o está claro que está mal clasificado, corrígelo:
    ```bash
    gh issue edit <N> --add-label "type: feature"
    ```
    Si hay duda, pregunta en lugar de adivinar.
-4. **Comprueba el task file:** si `tasks/task-issue-<N>.json` ya existe, no lo
+5. **Comprueba el task file:** si `tasks/task-issue-<N>.json` ya existe, no lo
    recrees. Reconcilia su estado con los labels de la issue y continúa desde
    donde se quedó.
-5. **Crea el task file** si no existe, con el esquema canónico de
+6. **Crea el task file** si no existe, con el esquema canónico de
    `docs/proceso-sdd.md` (sección 4).
-6. **Marca la issue como en progreso** cuando empiece la implementación:
+7. **Marca la issue como en progreso** cuando empiece la implementación:
    ```bash
    gh issue edit <N> \
      --remove-label "status: todo" \
@@ -149,6 +132,8 @@ Crea `tasks/task-issue-<N>.json` con el **esquema canónico** de
 
 - Crea el archivo con `status: created`, `validation`, `qa` y `security` en
   `pendiente`, y `documentation` con los valores iniciales que correspondan.
+- Copia el label `variant: *` en `model_variant` (`default`, `low`, `high` o
+  `max`). Si el usuario elige otra variante, anótalo en `validation.notes`.
 - Para tareas locales sin issue, usa `tasks/task-local-<slug>.json` y omite el
   bloque `issue`.
 - No añadas el bloque `pr` hasta que exista una PR.

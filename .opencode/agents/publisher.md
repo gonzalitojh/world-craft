@@ -6,31 +6,6 @@ description: >-
   Las PRs van siempre contra dev y no llevan keywords de cierre. Lee task files,
   git diff y ADRs para componer el resumen.
 mode: subagent
-permissions:
-  - action: shell
-    resource: "git push*"
-    effect: ask
-  - action: shell
-    resource: "gh pr create*"
-    effect: ask
-  - action: shell
-    resource: "gh api*"
-    effect: ask
-  - action: shell
-    resource: "git -C *"
-    effect: ask
-  - action: shell
-    resource: "git -c *"
-    effect: ask
-  - action: shell
-    resource: "git add ."
-    effect: deny
-  - action: shell
-    resource: "git add ./"
-    effect: deny
-  - action: shell
-    resource: "git add -- ."
-    effect: deny
 ---
 
 > **Autoridad documental:** la especificación canónica está en `AGENTS.md`

@@ -146,7 +146,8 @@ quedará incompleta.
 ### 8. Issue-first
 
 - Toda funcionalidad nueva nace de una issue con contexto, alcance, criterios de
-  aceptación, dependencias y labels.
+  aceptación, dependencias, labels y una variante de modelo recomendada
+  (`variant: *`).
 - Una issue, un task file: `tasks/task-issue-<N>.json`. Las tareas internas
   pequeñas pueden usar un task file local sin issue.
 - Si falta una decisión, la issue se marca `needs-decision` y el trabajo se
@@ -246,6 +247,8 @@ queda registrada en la issue o en el task file:
 - [ ] Las dependencias están identificadas y resueltas o planificadas.
 - [ ] Tiene exactamente un `type:`, un `status:`, un `priority:` y un `size:`,
       al menos un `area:` y un hito.
+- [ ] Tiene exactamente un label `variant: default`, `variant: low`,
+      `variant: high` o `variant: max`, con la recomendación justificada.
 - [ ] No tiene `needs-decision`, o la decisión ya está tomada y registrada.
 - [ ] La decisión técnica está tomada o existe un ADR cuando corresponde.
 - [ ] Existe `tasks/task-issue-<N>.json` con el esquema canónico y estado
@@ -274,6 +277,7 @@ task file y en el informe final:
 - [ ] Seguridad revisada: secretos, RLS, permisos, subidas y dependencias.
 - [ ] Datos exportables e importables si se añade o cambia un modelo de datos.
 - [ ] Sin servicios de pago ni dependencias injustificadas.
+- [ ] La variante recomendada y la usada están registradas en el task file.
 - [ ] Task file actualizado con estados, QA, seguridad y documentación.
 - [ ] Cambio en `review` para la revisión local del usuario, o PR fusionada en
       `dev` si ya se publicó.
@@ -306,7 +310,7 @@ El flujo completo, las puertas y su evidencia están en
 [`docs/proceso-sdd.md`](docs/proceso-sdd.md). En resumen:
 
 ```text
-Issue (label ai + status: todo)
+Issue (label ai + status: todo + variant: *)
   → adopción y task file en tasks/task-issue-<N>.json
   → plan aprobado
   → implementación
@@ -333,9 +337,13 @@ fase correspondiente. Si falta una decisión, se marca `needs-decision` o
 
 - [`docs/proceso-sdd.md`](docs/proceso-sdd.md): flujo canónico, task files,
   etiquetas, estados, hitos y publicación local-first.
+- [`docs/variantes-modelo.md`](docs/variantes-modelo.md): política de variantes
+  de modelo por issue y automatización futura.
 - [`docs/agentes.md`](docs/agentes.md): equipo de agentes y responsabilidades.
 - [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md): plan aprobado y alcance.
 - [`docs/registro-decisiones.md`](docs/registro-decisiones.md): decisiones de
   producto y arquitectura.
 - [`tasks/task-example.json`](tasks/task-example.json): ejemplo válido del
   esquema de task files.
+- `opencode.jsonc` y `.opencode/agents/*.md`: permisos, guardrails y autonomía
+  de los agentes.

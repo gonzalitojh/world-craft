@@ -2,6 +2,7 @@
   "title": "Ejemplo: actualizar una guía interna",
   "description": "Task file de ejemplo del esquema canónico de docs/proceso-sdd.md. Es ficticio: no corresponde a ninguna issue real y todos sus valores son de demostración (issue 0, PR 0, commit abc1234). No debe usarse como tarea.",
   "status": "published",
+  "model_variant": "high",
   "issue": {
     "number": 0,
     "url": "https://github.com/gonzalitojh/world-craft/issues/0",
