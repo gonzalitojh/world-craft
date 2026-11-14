@@ -5,7 +5,7 @@
 > **Ámbito:** decisiones de arquitectura, tecnología y producto con
 > consecuencias técnicas.
 > **Origen:** [`docs/plan-desarrollo.md`](../plan-desarrollo.md) §3.2 (D1–D17) y
-> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-010).
+> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-014).
 
 Este directorio conserva el **porqué** de las decisiones que sostienen World
 Craft. El plan define el alcance; el registro de decisiones conserva el
@@ -18,8 +18,9 @@ revertir una decisión sin contexto.
   cambia, no se reescribe el ADR aceptado: se crea otro que lo superseda.
 - **Estados permitidos:** `propuesto`, `aceptado` y `supersedido por ADR NNNN`.
   Los 13 ADRs fundacionales están `aceptados` porque el usuario cerró las
-  decisiones el 12/11/2026. El ADR 0014 también está `aceptado`: recoge la
-  decisión del 14/11/2026 sobre visibilidad, licencia y protección de ramas.
+  decisiones el 12/11/2026. Los ADRs 0014, 0015 y 0016 también están
+  `aceptados`: recogen las decisiones del 14/11/2026 sobre visibilidad y
+  protección de ramas, coste de contexto y entorno/CI.
 - **Numeración:** cuatro dígitos y slug en inglés kebab-case
   (`NNNN-slug-en-kebab-case.md`). `0000` es la
   [`plantilla`](0000-template.md) y no cuenta como ADR.
@@ -46,6 +47,7 @@ revertir una decisión sin contexto.
 | [0013](0013-free-tier-continuity.md) | Continuidad de free tiers | R2, keep-alive, backups y revisión de cuotas para sostener 0 €/mes | aceptado | 2026-11-12 | #4 |
 | [0014](0014-public-repo-mit-and-branch-protection.md) | Repositorio público, MIT y protección de ramas | Repo público con MIT y rulesets en `dev`/`main`, con bypass del owner solo en `main` | aceptado | 2026-11-14 | #5 |
 | [0015](0015-coste-contexto-cache-variante-fija.md) | Coste de contexto: caché, prompts bajo demanda y variante fija | `warming`, skill `repo-map`, orquestación proporcional y variante fija por subagente | aceptado | 2026-11-14 | — (tarea local) |
+| [0016](0016-entorno-tooling-ci.md) | Entorno de desarrollo, tooling y CI base | Node 22, pnpm/Corepack, TS estricto, ESLint/Prettier, Vitest/Playwright y CI con cuatro required checks | aceptado | 2026-11-14 | #6 |
 
 ## Trazabilidad con el plan y el registro
 
@@ -59,6 +61,7 @@ revertir una decisión sin contexto.
 | Dominio | 0005 | §3.2 D7, §7 | D-006 |
 | Visibilidad, licencia y protección de ramas | 0014 | §3.7, §4.4 | D-009, D-010 |
 | Coste de contexto y variante por subagente | 0015 | §4.3, §4.9 | — |
+| Entorno, tooling y CI base | 0016 | §3.7, §4.7, §5.2 | D-013, D-014 |
 
 ### Decisiones sin ADR propio
 

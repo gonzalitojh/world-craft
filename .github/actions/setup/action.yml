@@ -1,0 +1,21 @@
+name: Preparar entorno
+
+description: >-
+  Instala pnpm y Node a partir de .nvmrc y descarga las dependencias con el
+  lockfile congelado. No hace checkout: cada job lo hace antes.
+
+runs:
+  using: composite
+  steps:
+    - name: Activar pnpm
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.4.0
+
+    - name: Configurar Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    - name: Instalar dependencias
+      shell: bash
+      run: pnpm install --frozen-lockfile

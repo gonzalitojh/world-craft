@@ -76,6 +76,33 @@ Antes de dar una tarea por terminada se comprueba la Definition of Done de
   decisión relevante.
 - Task file actualizado con estados, QA, seguridad y documentación.
 
+## Comandos de calidad
+
+Requisitos: Node 22 LTS y pnpm vía Corepack (`corepack enable`). La primera vez,
+instala las dependencias con `pnpm install`; Playwright necesita su navegador:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+Antes de revisar una tarea, ejecuta en local los mismos checks que la CI:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm format:check
+pnpm test:e2e
+```
+
+- `lint`, `typecheck`, `test` y `build` son **required checks**: una PR no se
+  fusiona si fallan.
+- `e2e`, `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear.
+- En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
+  (`pnpm.cmd lint`, `pnpm.cmd typecheck`, etc.).
+- Para corregir el formato: `pnpm format`.
+
 ## Seguridad y coste
 
 - Prohibido incluir secretos, tokens, contraseñas, correos reales o URLs
