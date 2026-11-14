@@ -49,7 +49,10 @@ elecciones (ESLint y `jsx`).
    (`tsc --noEmit`), `test`, `test:e2e`, `format` y `format:check`.
 4. **Tailwind CSS 4.3.5 CSS-first.** Sin `tailwind.config`: `@import
    'tailwindcss'` y `@theme inline` en `src/app/globals.css`, con
-   `@tailwindcss/postcss` y PostCSS 8.5.32. Una única paleta cruda `--craft-*`
+   `@tailwindcss/postcss` y PostCSS 8.5.32, fijado con un `override` de
+   `pnpm-workspace.yaml`: Vite pide `^8.5.32` y el resolutor podía elegir una
+   versión recién publicada que la política de antigüedad mínima de 24 h de
+   pnpm rechaza en CI. Una única paleta cruda `--craft-*`
    y tokens semánticos mínimos (`surface`, `foreground`, `surface-raised`,
    `muted-foreground`, `border`, `accent`, `accent-ink`, `danger`,
    `danger-ink`, `focus`). Los componentes usan solo las utilidades semánticas
