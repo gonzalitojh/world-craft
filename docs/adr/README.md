@@ -5,7 +5,7 @@
 > **Ámbito:** decisiones de arquitectura, tecnología y producto con
 > consecuencias técnicas.
 > **Origen:** [`docs/plan-desarrollo.md`](../plan-desarrollo.md) §3.2 (D1–D17) y
-> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-014).
+> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-015).
 
 Este directorio conserva el **porqué** de las decisiones que sostienen World
 Craft. El plan define el alcance; el registro de decisiones conserva el
@@ -18,9 +18,11 @@ revertir una decisión sin contexto.
   cambia, no se reescribe el ADR aceptado: se crea otro que lo superseda.
 - **Estados permitidos:** `propuesto`, `aceptado` y `supersedido por ADR NNNN`.
   Los 13 ADRs fundacionales están `aceptados` porque el usuario cerró las
-  decisiones el 12/11/2026. Los ADRs 0014, 0015 y 0016 también están
+  decisiones el 12/11/2026. Los ADRs 0014, 0015 y 0017 también están
   `aceptados`: recogen las decisiones del 14/11/2026 sobre visibilidad y
-  protección de ramas, coste de contexto y entorno/CI.
+  protección de ramas, coste de contexto y scaffold de Next.js con su contrato
+  de entorno. El ADR 0016 está `supersedido por ADR 0017`, que conserva sus
+  subdecisiones de Node, pnpm, CI y seguridad de dependencias.
 - **Numeración:** cuatro dígitos y slug en inglés kebab-case
   (`NNNN-slug-en-kebab-case.md`). `0000` es la
   [`plantilla`](0000-template.md) y no cuenta como ADR.
@@ -47,7 +49,8 @@ revertir una decisión sin contexto.
 | [0013](0013-free-tier-continuity.md) | Continuidad de free tiers | R2, keep-alive, backups y revisión de cuotas para sostener 0 €/mes | aceptado | 2026-11-12 | #4 |
 | [0014](0014-public-repo-mit-and-branch-protection.md) | Repositorio público, MIT y protección de ramas | Repo público con MIT y rulesets en `dev`/`main`, con bypass del owner solo en `main` | aceptado | 2026-11-14 | #5 |
 | [0015](0015-coste-contexto-cache-variante-fija.md) | Coste de contexto: caché, prompts bajo demanda y variante fija | `warming`, skill `repo-map`, orquestación proporcional y variante fija por subagente | aceptado | 2026-11-14 | — (tarea local) |
-| [0016](0016-entorno-tooling-ci.md) | Entorno de desarrollo, tooling y CI base | Node 22, pnpm/Corepack, TS estricto, ESLint/Prettier, Vitest/Playwright y CI con cuatro required checks | aceptado | 2026-11-14 | #6 |
+| [0016](0016-entorno-tooling-ci.md) | Entorno de desarrollo, tooling y CI base | Node 22, pnpm/Corepack, TS estricto, ESLint/Prettier, Vitest/Playwright y CI con cuatro required checks | supersedido por ADR 0017 | 2026-11-14 | #6 |
+| [0017](0017-nextjs-scaffold-and-env-contract.md) | Scaffold de Next.js y contrato de entorno | Next.js 16, React 19, Tailwind 4 CSS-first, entorno público/servidor y páginas base con deuda de CSP | aceptado | 2026-11-14 | #7 |
 
 ## Trazabilidad con el plan y el registro
 
@@ -62,6 +65,7 @@ revertir una decisión sin contexto.
 | Visibilidad, licencia y protección de ramas | 0014 | §3.7, §4.4 | D-009, D-010 |
 | Coste de contexto y variante por subagente | 0015 | §4.3, §4.9 | — |
 | Entorno, tooling y CI base | 0016 | §3.7, §4.7, §5.2 | D-013, D-014 |
+| Scaffold de Next.js y contrato de entorno | 0017 | §3.2 D17, §3.7, §4.7 | D-015 |
 
 ### Decisiones sin ADR propio
 
@@ -84,7 +88,7 @@ revertir una decisión sin contexto.
 
 | Fecha | ADR nuevo | Sustituye a | Motivo |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-11-14 | [0017](0017-nextjs-scaffold-and-env-contract.md) | [0016](0016-entorno-tooling-ci.md) | La integración de Next.js cambia scripts, `tsconfig`, esquema de entorno y ESLint; se mantienen Node 22, pnpm, CI, gitleaks/audit y protección de ramas. |
 
 ## Cómo crear o cambiar un ADR
 
