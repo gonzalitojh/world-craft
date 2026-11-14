@@ -3,9 +3,10 @@
 > **Estado:** vigente desde el 12/11/2026 (issue
 > [#3](https://github.com/gonzalitojh/world-craft/issues/3), M0-02);
 > actualizado el 14/11/2026 (issues
-> [#48](https://github.com/gonzalitojh/world-craft/issues/48) y
-> [#5](https://github.com/gonzalitojh/world-craft/issues/5), M0-13 y M0-04) y
-> con la orquestación proporcional por coste (ADR 0015, tarea local
+> [#48](https://github.com/gonzalitojh/world-craft/issues/48),
+> [#5](https://github.com/gonzalitojh/world-craft/issues/5) y
+> [#6](https://github.com/gonzalitojh/world-craft/issues/6), M0-13, M0-04 y
+> M0-05) y con la orquestación proporcional por coste (ADR 0015, tarea local
 > `optimizacion-coste-cache`).
 > **Ámbito:** flujo de trabajo, puertas, task files, etiquetas, estados, hitos,
 > publicación local-first, protección de ramas y mantenimiento documental.
@@ -538,8 +539,13 @@ código, no a los datos de los usuarios.
 - **Bypass.** `protect-dev` no tiene bypass. En `protect-main` solo el
   propietario puede saltarse las reglas para promover `dev` a `main` cuando la
   versión es estable.
-- **Required status checks.** No se exigen todavía; llegan con la issue #6
-  (M0-05, CI). Añadirlos antes bloquearía todas las PRs.
+- **Required status checks.** `protect-dev` y `protect-main` exigen los checks
+  `lint`, `typecheck`, `test` y `build`, que son los jobs de
+  `.github/workflows/ci.yml` (ADR 0016). No exigen que la rama esté al día
+  (`strict_required_status_checks_policy = $false`), para no re-ejecutar la CI
+  tras cada merge en `dev`. Los rulesets con checks **se aplican al publicar la
+  issue #6**; hasta entonces las reglas activas solo exigen PR y prohíben
+  borrado y force push.
 - **Seguridad del repositorio.** Escaneo de secretos, push protection y reporte
   privado de vulnerabilidades activos; el borrado automático de la rama al
   fusionar está activado y los permisos de GitHub Actions son de solo lectura por
@@ -550,8 +556,9 @@ código, no a los datos de los usuarios.
   repositorio.
 - **Scripts de mantenimiento.** `scripts/sync-labels.ps1` sincroniza de forma
   idempotente las 44 etiquetas canónicas y lista las extra sin borrarlas;
-  `scripts/set-branch-protection.ps1` crea o actualiza los rulesets por nombre y
-  admite `-DryRun`. Ambos son herramientas locales: no publican ni abren PRs.
+  `scripts/set-branch-protection.ps1` crea o actualiza los rulesets por nombre,
+  admite `-DryRun` y recibe `-RequiredChecks` (por defecto `lint`, `typecheck`,
+  `test` y `build`). Ambos son herramientas locales: no publican ni abren PRs.
 
 ## 8. Documentación y mantenimiento
 
@@ -570,8 +577,10 @@ código, no a los datos de los usuarios.
 | `.github/ISSUE_TEMPLATE/feature.yml`, `bug.yml`, `chore.yml`, `decision.yml` | Vigente | Formularios de issue por tipo, con contexto, alcance, dependencias, variante, criterios y notas; la de decisión añade problema, opciones, recomendación, consecuencias e issues afectadas. |
 | `.github/ISSUE_TEMPLATE/config.yml` | Vigente | Deshabilita las issues en blanco y enlaza el proceso SDD y `AGENTS.md`. |
 | `.github/pull_request_template.md` | Vigente | Plantilla de PR: resumen, issue, cambios, pruebas, documentación, UI, seguridad y base `dev`. |
+| `.github/workflows/ci.yml` y `.github/actions/setup` | Vigente | CI de PR y push a `dev`/`main`: jobs `lint` (con `format:check`), `typecheck`, `test` y `build` como required checks, más `e2e`, `gitleaks` y `audit` no bloqueantes; acción compuesta de setup (ADR 0016). |
+| `.github/dependabot.yml` | Vigente | Actualizaciones semanales de npm y GitHub Actions contra `dev`, agrupadas por minor y patch (ADR 0016). |
 | `scripts/sync-labels.ps1` | Vigente | Sincronización idempotente de las 44 etiquetas canónicas; no borra etiquetas extra. |
-| `scripts/set-branch-protection.ps1` | Vigente | Crea o actualiza los rulesets `protect-dev` y `protect-main`; admite `-DryRun`. |
+| `scripts/set-branch-protection.ps1` | Vigente | Crea o actualiza los rulesets `protect-dev` y `protect-main` con sus required checks; admite `-RequiredChecks` y `-DryRun`. |
 | `LICENSE` | Vigente | Licencia MIT con titular `gonzalitojh`. |
 | `SECURITY.md` | Vigente | Alcance y reporte privado de vulnerabilidades. |
 | `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente y su variante fija. |
@@ -580,8 +589,8 @@ código, no a los datos de los usuarios.
 | `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier; índice en `docs/adr/README.md`. Los creó M0-03 (issue #4). |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional. Su creación formal corresponde a M5-01 (issue #28), pero cualquier funcionalidad visible anterior debe actualizarlo y dejar constancia en el task file. |
 | `docs/arquitectura.md` | Previsto | Mapa de módulos y flujos; documentación base M0-09 (issue #10). |
-| `README.md` | Vigente (mínimo; se amplía en M0-09, issue #10) | Qué es World Craft, stack, estructura, ramas y enlaces; el arranque local llega con M0-05 (issue #6) y M0-09 (issue #10). |
-| `CONTRIBUTING.md` | Vigente (mínimo; se amplía en M0-09, issue #10) | Issue-first, ramas, commits, PRs, calidad y seguridad. |
+| `README.md` | Vigente (arranque local desde M0-05; se amplía en M0-09, issue #10) | Qué es World Craft, requisitos, arranque local, scripts, calidad y enlaces. |
+| `CONTRIBUTING.md` | Vigente (comandos de calidad desde M0-05; se amplía en M0-09, issue #10) | Issue-first, ramas, commits, PRs, comandos de calidad, seguridad y coste. |
 | `CHANGELOG.md` | Previsto | Cambios por versión; se crea con la primera versión o cuando el usuario lo pida. No tiene issue asignada. |
 
 Los documentos previstos se citan como código, no como enlaces, hasta que
@@ -620,6 +629,11 @@ existan.
 - **`README.md` y `CONTRIBUTING.md`:** cuando cambian el arranque local, las
   variables de entorno, los scripts, el despliegue, las ramas, los commits o la
   calidad.
+- **`.github/workflows/ci.yml` y `.github/dependabot.yml`:** cuando cambian los
+  jobs, los required checks, las versiones de las actions o la política de
+  actualizaciones. En la misma tarea se revisan
+  `scripts/set-branch-protection.ps1`, este documento, `README.md` y
+  `CONTRIBUTING.md` si el cambio afecta a lo que ve quien contribuye.
 - **`docs/plan-desarrollo.md`:** solo si cambia el alcance aprobado.
 - **`docs/registro-decisiones.md`:** append-only; cada decisión nueva se añade
   sin reescribir las anteriores.
@@ -723,3 +737,4 @@ en el diff.
 | 2026-11-14 | #4 (M0-03) | Marca `docs/adr/` como vigente y enlaza el índice y la plantilla de ADRs. |
 | 2026-11-14 | #5 (M0-04) | Añade la protección de ramas con rulesets, el repositorio público con licencia MIT y los scripts de etiquetas y protección; actualiza el mapa documental con README y CONTRIBUTING mínimos, LICENSE, SECURITY, plantillas y scripts. |
 | 2026-11-14 | — (ADR 0015) | Añade la orquestación proporcional al coste (sección 3.2), la skill `repo-map`, el mapa `.opencode/repo-map.md` y las variantes fijas por subagente. |
+| 2026-11-14 | #6 (M0-05) | Define los required checks `lint`, `typecheck`, `test` y `build` en los rulesets (pendientes de aplicar al publicar), documenta `-RequiredChecks` en el script de protección y actualiza el mapa documental de README y CONTRIBUTING con el arranque local y los comandos de calidad. |

@@ -1,0 +1,66 @@
+{
+  "title": "Configurar entorno de desarrollo y CI base",
+  "description": "Código de plan: M0-05. Fase M0. Depende de M0-04 (issue #5, fusionada). Deja la máquina de desarrollo y el repositorio con un entorno reproducible: Node 22 LTS, pnpm vía Corepack, TypeScript estricto, ESLint, Prettier, Vitest, Testing Library, Playwright, scripts de calidad, CI en GitHub Actions, gitleaks, auditoría de dependencias, Dependabot y validación de variables de entorno con Zod. No incluye el scaffold de Next.js, que corresponde a M0-06 (issue #7).",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 6,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/6",
+    "title": "Configurar entorno de desarrollo y CI base"
+  },
+  "acceptance_criteria": [
+    "Un clon nuevo se arranca siguiendo el README en menos de 30 minutos.",
+    "pnpm lint, typecheck, test y build funcionan en local.",
+    "La CI se ejecuta en cada PR y falla si algo no pasa.",
+    "gitleaks no detecta secretos.",
+    "Funciona en Windows (máquina actual) y en Linux (CI)."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Node 22 LTS y pnpm vía Corepack instalados y documentados, con versión fijada en package.json y .nvmrc.",
+    "TypeScript estricto, ESLint 10 (10.14.0) flat config y Prettier configurados sin conflictos entre reglas.",
+    "Vitest, Testing Library y Playwright configurados con un test de humo; sin tests de producto.",
+    "Scripts dev, build, lint, typecheck, test, test:e2e y format funcionando en local.",
+    "CI de GitHub Actions con jobs de lint, typecheck, test, build, gitleaks y auditoría de dependencias; E2E smoke no bloqueante.",
+    "Dependabot configurado para npm y GitHub Actions.",
+    ".env.example con valores ficticios y esquema Zod en src/lib/env.ts con test.",
+    "scripts/set-branch-protection.ps1 admite required checks lint, typecheck, test y build; aplicación remota pendiente de la publicación, documentada en el task file.",
+    "README y CONTRIBUTING actualizados con el arranque local y los comandos.",
+    "ADR 0016 sobre entorno, tooling y CI base, indexado en docs/adr/README.md.",
+    "Manual de usuario no aplica: cambio interno sin interfaz visible.",
+    "Responsive, dos temas y accesibilidad no aplican: no hay UI.",
+    "QA, seguridad y documentación superados; task file actualizado.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "1) Preflight: sincronizar origin/dev, crear chore/issue-6-dev-env-ci y comprobar que no hay secretos ni cambios ajenos. 2) Instalar Node 22 LTS con winget y pnpm con Corepack; fijar packageManager y engines. 3) Crear package.json privado, tsconfig estricto y tsconfig.build.json, ESLint 10 flat con typescript-eslint y eslint-config-prettier, Prettier, Vitest con jsdom y Testing Library DOM, Playwright con smoke sin servidor, scripts dev (tsc --watch), build (tsc a dist), lint, typecheck, test, test:e2e y format. 4) Crear .env.example y src/lib/env.ts con Zod y test de humo, sin secretos. 5) CI en .github/workflows/ci.yml con jobs lint, typecheck, test, build, e2e, gitleaks y audit; caché de pnpm, concurrency, permisos mínimos y Node desde .nvmrc. 6) Dependabot para npm y github-actions. 7) Extender scripts/set-branch-protection.ps1 con required checks lint, typecheck, test y build; aplicar los rulesets al publicar, no antes, para no bloquear PRs. 8) ADR 0016, índice de ADRs, README y CONTRIBUTING. 9) Verificar local los scripts, QA, seguridad y commit local en review.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-14",
+    "notes": "El usuario aprueba el plan y tres decisiones: instalar Node 22 LTS con winget OpenJS.NodeJS.LTS y pnpm con Corepack; limitar el esqueleto a tooling TypeScript mínimo (src/lib/env.ts, test de humo, build con tsc, dev con tsc --watch y smoke de Playwright sin servidor) sin adelantar Next.js, que llega con M0-06; y extender scripts/set-branch-protection.ps1 con los required checks ahora, aplicando los rulesets al publicar cuando la CI ya exista. No se invoca task-architect: el alcance de la issue y las decisiones aprobadas definen el plan. Variante recomendada y usada: high."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Revisión PASS tras dos iteraciones. Verificados los 5 criterios de aceptación y la Definition of Done: Node 22.23.5 y pnpm 12.18.0 vía Corepack documentados; TypeScript 5.9.3 estricto; ESLint 10.14.0 flat y Prettier sin conflicto; Vitest 5.1.0 con jsdom y Testing Library DOM; Playwright 1.65.0 con smoke sin servidor; scripts dev, build, lint, typecheck, test, test:e2e, format y format:check ejecutados; CI con jobs lint (incluye format:check), typecheck, test y build como required checks, más e2e, gitleaks y audit no bloqueantes; Dependabot semanal; .env.example sin secretos y esquema Zod con tests; script de rulesets con -RequiredChecks y -DryRun verificado. QA detectó y se corrigieron: 2 vulnerabilidades críticas de tinypool por Vitest 3 (subido a Vitest 5.1.0 + Vite 8.3.8), auditoría de CI limitada a producción (ahora completa), ESLint 9 no soportado (subido a ESLint 10.14.0), permisos de gitleaks y formato en CI. Queda 1 vulnerabilidad moderada de minimatch en el árbol de eslint/typescript-eslint sin parche compatible, aceptada y documentada (0 HIGH, 0 críticas). Los rulesets remotos y la ejecución real de Actions no se pueden verificar en local-first: se validan al publicar. Responsive, dos temas y accesibilidad no aplican: no hay UI."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "MEDIUM corregido: actions por tag mutable; ahora todas fijadas por SHA completo con comentario de versión.",
+      "MEDIUM corregido: Dependabot sin target-branch podía abrir PRs contra main; ahora target-branch: dev en npm y github-actions.",
+      "MEDIUM aceptado y documentado: el esquema de entorno mezcla claves públicas y de servidor; no hay cliente todavía y en #7 se separará o se marcará server-only.",
+      "MEDIUM aceptado y documentado: gitleaks y audit no son required porque el conjunto acordado en la issue #5 es lint/typecheck/test/build; push protection, secret scanning y la puerta de seguridad los cubren.",
+      "LOW corregido: persist-credentials: false en los siete checkouts.",
+      "LOW corregido: validación owner/name de -Repo en set-branch-protection.ps1.",
+      "LOW aceptado: NODE_ENV vacío cae en development; se revisará con el arranque real en #7.",
+      "LOW aceptado: 1 vulnerabilidad moderada de minimatch en el árbol de eslint/typescript-eslint, sin parche compatible; 0 HIGH y 0 críticas."
+    ],
+    "notes": "Escaneo PASS en dos iteraciones. Revisados los 25 archivos del cambio, .env.example (solo claves vacías), .gitignore, workflow, composite action, Dependabot, lockfile, script de rulesets y documentación. Sin secretos, tokens, claves privadas, correos reales ni .env reales. Sin servicios de pago ni dependencias injustificadas: zod es la única dependencia de producto. `pnpm audit --audit-level=high` sale 0 (solo 1 moderada de minimatch, compartida por eslint y typescript-eslint). Corregidos el pinning de actions por SHA, target-branch: dev en Dependabot, persist-credentials: false y la validación de -Repo. Los SHA no se pudieron verificar contra GitHub en la sesión del subagente por falta de shell, pero se obtuvieron con git ls-remote por el agente maestro. Riesgos aceptados documentados en ADR 0016. No aplican RLS, auth, R2, subidas ni CSP en este cambio. Limitación local-first: la ejecución real de Actions y la aplicación de rulesets se verifican al publicar."
+  },
+  "documentation": {
+    "adr": "docs/adr/0016-entorno-tooling-ci.md",
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": null,
+    "notes": "ADR 0016 creado e indexado en docs/adr/README.md, con trazabilidad a D-013/D-014 y al plan §3.7, §4.7 y §5.2. Registro ampliado con D-013 (entorno y tooling) y D-014 (CI y seguridad de dependencias). docs/proceso-sdd.md §7.7 actualizado con los required checks y su aplicación al publicar; mapa documental y historial ampliados con CI, Dependabot y el arranque local. README y CONTRIBUTING actualizados con requisitos, arranque en menos de 30 minutos, scripts, calidad, CI, Corepack en Windows y required checks. Manual de usuario no aplica: cambio interno sin interfaz visible. Changelog no aplica: no existe. Agentes sin cambios: el equipo, sus responsabilidades y la invocación no cambian. documentation-sync corrigió la referencia a gitleaks-action por SHA/v2.3.9, precisó el esquema de entorno y aclaró que los rulesets se aplican al publicar. Queda pendiente, para una tarea documental futura, alinear la tabla de documentos de AGENTS.md y documentation-sync con el arranque local ya disponible; no se tocan en esta sesión por la regla de coste de contexto (ADR 0015)."
+  }
+}

@@ -1,0 +1,18 @@
+dist/
+coverage/
+node_modules/
+playwright-report/
+test-results/
+pnpm-lock.yaml
+.env*
+
+# La documentación y el proceso tienen formato editorial escrito a mano
+# (líneas a 80 columnas); Prettier no los reescribe.
+*.md
+tasks/
+.opencode/
+
+# Plantillas y configuración previas a la adopción de Prettier: se mantienen
+# tal cual para no mezclar reformateos ajenos en los cambios.
+.github/ISSUE_TEMPLATE/
+opencode.jsonc

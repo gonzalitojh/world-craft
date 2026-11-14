@@ -4,14 +4,18 @@
 
 .DESCRIPTION
     Gestiona por nombre los rulesets `protect-dev` y `protect-main` mediante
-    GitHub CLI. Las reglas son: prohibir borrado, prohibir force push y exigir
-    Pull Request con 0 aprobaciones y resolución de hilos.
+    GitHub CLI. Las reglas son: prohibir borrado, prohibir force push, exigir
+    Pull Request con 0 aprobaciones y resolución de hilos, y exigir los
+    required status checks indicados (por defecto `lint`, `typecheck`, `test`
+    y `build`, los jobs de la CI de la issue #6).
 
     - `protect-dev`: sin bypass.
     - `protect-main`: bypass del propietario del repositorio para promover
       `dev` a `main`.
 
-    No configura required status checks: llegan con la issue #6.
+    Los checks no exigen que la rama esté al día
+    (`strict_required_status_checks_policy = $false`): la PR se puede fusionar
+    cuando los checks pasan, sin re-ejecutarlos tras cada merge en `dev`.
 
     Es idempotente: consulta los rulesets existentes y hace PUT si encuentra el
     nombre o POST si no existe.
@@ -22,16 +26,38 @@
 .PARAMETER Repo
     Repositorio en formato owner/name. Si se omite, usa el repo actual de gh.
 
+.PARAMETER RequiredChecks
+    Nombres de los required status checks que deben pasar antes de fusionar.
+    Deben coincidir con los jobs de `.github/workflows/ci.yml`.
+
 .EXAMPLE
     .\scripts\set-branch-protection.ps1 -DryRun
+
+.EXAMPLE
+    .\scripts\set-branch-protection.ps1 -RequiredChecks lint,typecheck,test,build
 #>
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [string]$Repo
+    [string]$Repo,
+    [string[]]$RequiredChecks = @('lint', 'typecheck', 'test', 'build')
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Lista normalizada: admite elementos separados por comas (también al invocar
+# con `-File`, que entrega un único argumento) y descarta vacíos y duplicados.
+$RequiredChecks = @(
+    $RequiredChecks |
+        Where-Object { $_ -and $_.Trim() } |
+        ForEach-Object { $_ -split ',' } |
+        Where-Object { $_.Trim() } |
+        ForEach-Object { $_.Trim() } |
+        Select-Object -Unique
+)
+if ($RequiredChecks.Count -eq 0) {
+    throw 'RequiredChecks no puede estar vacío: indica al menos un check.'
+}
 
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     throw 'No se ha encontrado GitHub CLI (gh) en el PATH.'
@@ -42,6 +68,12 @@ if (-not $Repo) {
     if ($LASTEXITCODE -ne 0 -or -not $Repo) {
         throw 'No se pudo determinar el repositorio actual. Usa -Repo owner/name.'
     }
+}
+
+# El valor se interpola en llamadas a `gh api`: se valida para no aceptar rutas
+# ni opciones inyectadas.
+if ($Repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+    throw "Repositorio no válido: '$Repo'. Usa el formato owner/name (solo letras, dígitos, punto, guion y guion bajo)."
 }
 
 Write-Host "Repositorio: $Repo"
@@ -64,7 +96,8 @@ function New-RulesetPayload {
     param(
         [string]$Name,
         [string]$Ref,
-        [array]$BypassActors
+        [array]$BypassActors,
+        [string[]]$StatusChecks
     )
 
     return [ordered]@{
@@ -89,6 +122,17 @@ function New-RulesetPayload {
                     require_last_push_approval        = $false
                     required_review_thread_resolution = $true
                 }
+            },
+            [ordered]@{
+                type       = 'required_status_checks'
+                parameters = [ordered]@{
+                    # Un merge en `dev` no invalida los checks de la PR abierta.
+                    strict_required_status_checks_policy = $false
+                    do_not_enforce_on_create             = $false
+                    required_status_checks               = @(
+                        $StatusChecks | ForEach-Object { [ordered]@{ context = $_ } }
+                    )
+                }
             }
         )
         bypass_actors = $BypassActors
@@ -106,11 +150,11 @@ $bypassMain = @(
 $objetivos = @(
     [ordered]@{
         Name    = 'protect-dev'
-        Payload = New-RulesetPayload -Name 'protect-dev' -Ref 'refs/heads/dev' -BypassActors @()
+        Payload = New-RulesetPayload -Name 'protect-dev' -Ref 'refs/heads/dev' -BypassActors @() -StatusChecks $RequiredChecks
     },
     [ordered]@{
         Name    = 'protect-main'
-        Payload = New-RulesetPayload -Name 'protect-main' -Ref 'refs/heads/main' -BypassActors $bypassMain
+        Payload = New-RulesetPayload -Name 'protect-main' -Ref 'refs/heads/main' -BypassActors $bypassMain -StatusChecks $RequiredChecks
     }
 )
 
@@ -198,6 +242,19 @@ foreach ($nombre in @('protect-dev', 'protect-main')) {
     $reglas = (@($detalle.rules) | ForEach-Object { $_.type }) -join ', '
     $actoresBypass = @($detalle.bypass_actors | ForEach-Object { "$($_.actor_type):$($_.actor_id)" })
 
+    $reglaChecks = @($detalle.rules) | Where-Object { $_.type -eq 'required_status_checks' } | Select-Object -First 1
+    $checksAplicados = @(
+        if ($reglaChecks) {
+            $reglaChecks.parameters.required_status_checks | ForEach-Object { $_.context }
+        }
+    )
+    $checksEsperados = @($RequiredChecks)
+    $checksOrdenados = (@($checksAplicados | Sort-Object) -join ', ')
+    $esperadosOrdenados = (@($checksEsperados | Sort-Object) -join ', ')
+    if ($checksOrdenados -ne $esperadosOrdenados) {
+        Write-Warning "  - ${nombre}: checks esperados '${esperadosOrdenados}' y encontrados '${checksOrdenados}'."
+    }
+
     if ($nombre -eq 'protect-dev' -and $actoresBypass.Count -gt 0) {
         Write-Warning "  - ${nombre}: no debería tener bypass y tiene $($actoresBypass -join ', ')."
     }
@@ -209,7 +266,8 @@ foreach ($nombre in @('protect-dev', 'protect-main')) {
     }
 
     $bypassTexto = if ($actoresBypass.Count -gt 0) { $actoresBypass -join ', ' } else { 'ninguno' }
-    Write-Host "  - $nombre (id $($resumen.id)): enforcement=$($detalle.enforcement); reglas=$reglas; bypass=$bypassTexto"
+    $checksTexto = if ($checksAplicados.Count -gt 0) { $checksAplicados -join ', ' } else { 'ninguno' }
+    Write-Host "  - $nombre (id $($resumen.id)): enforcement=$($detalle.enforcement); reglas=$reglas; checks=$checksTexto; bypass=$bypassTexto"
 }
 
 Write-Host 'Protección de ramas aplicada.'
