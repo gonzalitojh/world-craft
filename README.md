@@ -252,6 +252,22 @@ conectarlo como proyecto:
 3. Cada rama y cada PR genera una **preview** con su propio dominio; `main`
    queda para la versión estable.
 
+### `vercel.json`
+
+El proyecto de Vercel se creó cuando el repositorio solo tenía el tooling de
+M0-05, que compilaba con `tsc` a `dist`. Esa configuración hacía que el
+despliegue buscara una salida estática `dist` que `next build` ya no genera
+(`STATIC_BUILD_NO_OUT_DIR`).
+
+`vercel.json` fija `"framework": "nextjs"` de forma explícita para que la build
+y la salida las gestione Next.js y el despliegue no dependa de ajustes
+manuales del panel. No declara `outputDirectory` a propósito: con el framework
+de Next.js, Vercel usa `.next` y detecta la salida por su cuenta.
+
+El panel **no debe sobrescribir** el *Output Directory*: si en Project
+Settings → Build & Development Settings sigue apareciendo `dist` (o cualquier
+otra ruta), hay que vaciar ese campo para que mande el framework.
+
 La preview desde una rama o PR se crea al publicar y conectar el proyecto; es
 una acción del propietario en Vercel, no del repositorio.
 
