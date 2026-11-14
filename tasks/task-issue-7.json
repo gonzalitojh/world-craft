@@ -1,7 +1,7 @@
 {
   "title": "Scaffold de Next.js, TypeScript y Tailwind",
   "description": "Código de plan: M0-06. Fase M0. Depende de M0-04 (issue #5, fusionada) y M0-05 (issue #6, fusionada). Crea la primera base ejecutable de la aplicación sin funcionalidad de producto: Next.js con App Router, TypeScript estricto y Tailwind CSS, shadcn/ui, Lucide y fuentes, estructura por dominios, aliases y validación de entorno, páginas base, metadatos, favicon, manifest inicial, configuración de imágenes y preview de Vercel. No incluye autenticación (M1-01, issue #11) ni base de datos (M0-08, issue #9).",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 7,
@@ -35,7 +35,7 @@
   "validation": {
     "result": "user-approved",
     "date": "2026-11-14",
-    "notes": "El usuario aprobó el plan completo y eligió conectar el proyecto en Vercel al publicar; el criterio de preview queda pendiente de esa acción externa hasta la publicación. Se creará el ADR 0017 y se marcará el ADR 0016 como supersedido según docs/adr/README.md. Variante recomendada y usada: high."
+    "notes": "El usuario aprobó el plan completo y eligió conectar el proyecto en Vercel al publicar; el criterio de preview queda pendiente de esa acción externa hasta la publicación. Se creará el ADR 0017 y se marcará el ADR 0016 como supersedido según docs/adr/README.md. Variante recomendada y usada: high. Publicada en la PR #54 contra dev; el criterio de aceptación «Preview de Vercel generada desde una rama/PR» sigue pendiente de acción externa del usuario y no se marca como cumplido hasta verificarlo."
   },
   "qa": {
     "result": "PASS",
@@ -61,5 +61,12 @@
     "changelog": null,
     "agents": null,
     "notes": "Creado el ADR 0017 (scaffold de Next.js y contrato de entorno) y marcado el ADR 0016 como supersedido por ADR 0017, conservando sus subdecisiones de Node 22, pnpm/Corepack, CI, gitleaks/audit y protección de ramas. Actualizados el índice de ADRs (fila 0017, estado del 0016, historial de supersesiones y trazabilidad) y el registro de decisiones con D-015. README revisado y corregido: la referencia a los required checks apunta al ADR 0017 y se mantiene el enlace a la línea base de Lighthouse. Manual de usuario: no existe todavía; se creará como esqueleto en M0-09 (issue #10). Este cambio visible se cubrirá allí en «Primeros pasos» (arranque, rutas y entorno local) y en «Estados del sistema» (home, login placeholder, health, 404, error/loading, temas automáticos y noindex). No hay changelog; no cambian el equipo de agentes, AGENTS.md, docs/proceso-sdd.md ni docs/agentes.md."
+  },
+  "pr": {
+    "number": 54,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/54",
+    "title": "chore: scaffold the Next.js app and environment contract (#7)",
+    "branch": "chore/issue-7-nextjs-scaffold",
+    "commit": "5cf5b7e"
   }
 }
