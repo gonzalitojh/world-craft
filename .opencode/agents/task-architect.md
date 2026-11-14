@@ -8,6 +8,9 @@ description: >-
   dashboard.</example><example>Planificar el editor de mapas vectorial y su
   integración con fichas.</example>
 mode: subagent
+# Variante fija: planificar es reflexión, no ejecución. No hereda la variante
+# de la sesión para no pagar `max` en un plan que luego se revisa con el usuario.
+model: deepseek/deepseek-flash#high
 ---
 
 Eres un arquitecto de software senior especializado en World Craft. Tu trabajo

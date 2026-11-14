@@ -6,6 +6,8 @@ description: >-
   Las PRs van siempre contra dev y no llevan keywords de cierre. Lee task files,
   git diff y ADRs para componer el resumen.
 mode: subagent
+# Variante fija (ADR 0015): los comandos git/gh están definidos paso a paso.
+model: deepseek/deepseek-flash#low
 ---
 
 > **Autoridad documental:** la especificación canónica está en `AGENTS.md`
@@ -21,8 +23,9 @@ y no publicas nada hasta que lo pida explícitamente.
 ## Modos
 
 Los modos, precondiciones y prohibiciones canónicos están en
-`docs/proceso-sdd.md` (sección 7); este archivo los implementa sin cambiar el
-comportamiento local-first.
+`docs/proceso-sdd.md` (sección 7), resumidos en la skill `repo-map` (sección 6);
+este archivo los implementa sin cambiar el comportamiento local-first. No
+abras `docs/proceso-sdd.md` completo si la skill ya cubre el caso.
 
 | Modo | Cuándo | Qué hace |
 |---|---|---|
@@ -34,13 +37,11 @@ de publicar.
 
 ## Pre-flight (siempre)
 
-1. **Comprueba el repositorio:**
+1. **Comprueba el repositorio** con una sola llamada:
    ```bash
-   git status --short
-   git branch --show-current
-   git log --oneline -5
-   git remote -v
+   git status --short && git branch --show-current && git log --oneline -5
    ```
+   y solo si hace falta, `git remote -v`.
 2. **Localiza el task file** de la tarea (`tasks/task-issue-<N>.json` o
    `tasks/task-local-<slug>.json`). Si no existe, pide que se cree antes de
    publicar; no inventes el contexto de la issue.

@@ -4,7 +4,9 @@
 > [#3](https://github.com/gonzalitojh/world-craft/issues/3), M0-02);
 > actualizado el 14/11/2026 (issues
 > [#48](https://github.com/gonzalitojh/world-craft/issues/48) y
-> [#5](https://github.com/gonzalitojh/world-craft/issues/5), M0-13 y M0-04).
+> [#5](https://github.com/gonzalitojh/world-craft/issues/5), M0-13 y M0-04) y
+> con la orquestación proporcional por coste (ADR 0015, tarea local
+> `optimizacion-coste-cache`).
 > **Ámbito:** flujo de trabajo, puertas, task files, etiquetas, estados, hitos,
 > publicación local-first, protección de ramas y mantenimiento documental.
 > **Origen:** consolida el plan [`plan-desarrollo.md`](plan-desarrollo.md)
@@ -65,7 +67,7 @@ implementación operativa:
 ```text
 Issue abierta (label ai + status: todo + variant: *)
   → adopción: comprobar labels y variante, crear tasks/task-issue-<N>.json
-  → planificación (task-architect)
+  → planificación (task-architect, si la issue no trae plan)
   → implementación (tdd-ddd-architect; ui-ux-designer si hay UI)
   → QA (qa-reviewer); si falla, vuelve a implementación
   → seguridad (security-champion); si hay HIGH, vuelve a implementación
@@ -78,25 +80,45 @@ Issue abierta (label ai + status: todo + variant: *)
 ```
 
 No existe un modo autónomo de CI ni publicación automática. El usuario revisa
-en local antes de publicar.
+en local antes de publicar. En tareas documentales, QA, seguridad y
+documentación se resuelven con el checklist de la sección 9 sin subagentes
+(sección 3.2).
 
-### 3.2 Puertas
+### 3.2 Orquestación proporcional al coste
+
+Cada subagente arranca con contexto limpio y vuelve a cargar su prompt y las
+instrucciones del proyecto, así que el flujo no invoca agentes que no aportan
+(ADR 0015):
+
+- **Tareas documentales o de proceso** (solo documentación, agentes,
+  configuración o `.json` de `tasks/`): no se invocan `task-architect`,
+  `ui-ux-designer`, `qa-reviewer`, `security-champion` ni `documentation-sync`.
+  El checklist de la sección 9 y el escaneo de secretos se resuelven en la
+  propia tarea y el informe se registra en el task file.
+- **Tareas de código:** solo los subagentes que la tarea necesita. Si la issue
+  ya trae un plan detallado, se usa como plan aprobado sin `task-architect`.
+- `ui-ux-designer` se invoca una sola vez por tarea de UI; la revisión visual
+  va incluida en el checklist de `qa-reviewer`.
+- El proceso se consulta primero en la skill `repo-map`; `docs/proceso-sdd.md`
+  completo se abre solo si cambia el proceso.
+
+### 3.3 Puertas
 
 | Transición | Responsable | Evidencia |
 |---|---|---|
 | Issue → adopción | `sdd-master` | Issue abierta con `ai`; labels corregidos, incluido un `variant: *`; `tasks/task-issue-<N>.json` creado con estado `created` y `model_variant`. |
-| `created` → `planned` | `sdd-master` + `task-architect` | Plan escrito en el campo `plan`; alcance, riesgos, pruebas e impacto documental; aprobación del usuario registrada en `validation`. |
+| `created` → `planned` | `sdd-master` + `task-architect` (solo si la issue no trae plan) | Plan escrito en el campo `plan`; alcance, riesgos, pruebas e impacto documental; aprobación del usuario registrada en `validation`. |
 | `planned` → `implemented` | `tdd-ddd-architect` (+ `ui-ux-designer`) | Diff implementado; pruebas y comprobaciones locales ejecutadas; task file actualizado. |
-| `implemented` → `validated` | `qa-reviewer` | Informe de QA con criterios, responsive, temas, accesibilidad y manual; `qa.result` = `PASS`. |
-| `validated` → `security-cleared` | `security-champion` | Informe de seguridad; sin hallazgos HIGH; `security.result` = `PASS` y `findings` actualizados. |
-| `security-cleared` → `documented` | `documentation-sync` | ADR, manual, changelog, `AGENTS.md`, `docs/proceso-sdd.md`, `docs/agentes.md` o `docs/arquitectura.md` actualizados según aplique; campos `documentation.*` completos. |
+| `implemented` → `validated` | `qa-reviewer`, o checklist documental en tareas documentales | Informe de QA con criterios, responsive, temas, accesibilidad y manual; `qa.result` = `PASS`. |
+| `validated` → `security-cleared` | `security-champion`, o escaneo de secretos en tareas documentales | Informe de seguridad; sin hallazgos HIGH; `security.result` = `PASS` y `findings` actualizados. |
+| `security-cleared` → `documented` | `documentation-sync`, o edición directa en tareas documentales | ADR, manual, changelog, `AGENTS.md`, `docs/proceso-sdd.md`, `docs/agentes.md` o `docs/arquitectura.md` actualizados según aplique; campos `documentation.*` completos. |
 | `documented` → `review` | `publisher` en modo `preparar` | Rama local, commit y diff; comandos de prueba; sin push ni PR. |
 | `review` → `published` | `publisher` en modo `publicar` | Confirmación explícita del usuario; PR contra `dev`; bloque `pr` añadido; issue en `status: needs-review`. |
 | `published` → issue cerrada | Usuario (merge) + `sdd-master` | PR fusionada en `dev`; issue cerrada con `status: done`; task file conservado en `published`. |
 | Cualquier estado → `blocked` | `sdd-master` | Motivo escrito en el task file; label `status: blocked`; `needs-decision` si falta una decisión. |
 | `blocked` → estado anterior | `sdd-master` | Decisión del usuario registrada o fallo resuelto; se retira `status: blocked` y se reanuda desde la última puerta superada. |
 
-### 3.3 Camino bloqueado y reanudación
+### 3.4 Camino bloqueado y reanudación
 
 - `blocked` no es un estado final. Se usa cuando falta una decisión del usuario
   o cuando un fallo se repite y no se puede avanzar.
@@ -108,7 +130,7 @@ en local antes de publicar.
 - Si el bloqueo afecta a una regla de `AGENTS.md`, el agente se detiene y pide
   confirmación antes de continuar.
 
-### 3.4 Significado de `review` y `published`
+### 3.5 Significado de `review` y `published`
 
 - **`review`**: existe una rama y un commit locales, pero **no hay PR**. El
   usuario puede probar el cambio en su máquina. Es el estado por defecto al
@@ -552,7 +574,9 @@ código, no a los datos de los usuarios.
 | `scripts/set-branch-protection.ps1` | Vigente | Crea o actualiza los rulesets `protect-dev` y `protect-main`; admite `-DryRun`. |
 | `LICENSE` | Vigente | Licencia MIT con titular `gonzalitojh`. |
 | `SECURITY.md` | Vigente | Alcance y reporte privado de vulnerabilidades. |
-| `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente. |
+| `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente y su variante fija. |
+| `.opencode/repo-map.md` | Vigente | Mapa de qué documento cargar y reglas de uso eficiente del contexto; se registra en `instructions`. |
+| `.opencode/skills/repo-map/SKILL.md` | Vigente | Resumen operativo del proceso (puertas, estados, task files, labels y publicación) para no abrir este documento completo. |
 | `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier; índice en `docs/adr/README.md`. Los creó M0-03 (issue #4). |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional. Su creación formal corresponde a M5-01 (issue #28), pero cualquier funcionalidad visible anterior debe actualizarlo y dejar constancia en el task file. |
 | `docs/arquitectura.md` | Previsto | Mapa de módulos y flujos; documentación base M0-09 (issue #10). |
@@ -574,6 +598,9 @@ existan.
 - **`.opencode/agents/*.md`:** junto con `AGENTS.md`, `docs/proceso-sdd.md` o
   `docs/agentes.md` según el cambio, para que la implementación operativa no
   derive de la especificación.
+- **`.opencode/repo-map.md` y la skill `repo-map`:** al cambiar puertas,
+  estados, esquema de task files, labels o publicación, para que el resumen
+  siga coincidiendo con este documento.
 - **Manual de usuario (ruta prevista `docs/manual-de-usuario.md`):** en la misma
   tarea que cambia algo visible para el usuario. Su creación formal corresponde
   a M5-01, pero si antes aparece una funcionalidad visible, la tarea que la
@@ -680,6 +707,13 @@ para equipo, responsabilidades e invocación. Cada issue tocada debe tener
 exactamente un label `variant: *` y su `model_variant` debe coincidir con el
 task file.
 
+En tareas documentales o de proceso, este checklist sustituye a las puertas de
+QA, seguridad y documentación con subagentes (sección 3.2): el resultado se
+anota en `qa.notes` y `security.notes` del task file. El escaneo de secretos
+comprueba al menos prefijos de claves (`sk-`, `ghp_`, `github_pat_`,
+`AKIA`, `xox[baprs]-`), claves privadas, URLs con credenciales y correos reales
+en el diff.
+
 ## 10. Historial de cambios
 
 | Fecha | Issue | Cambio |
@@ -688,3 +722,4 @@ task file.
 | 2026-11-14 | #48 (M0-13) | Añade labels `variant: *`, `model_variant` en el task file, plantilla de issue con variante recomendada y política de permisos/autonomía de agentes. |
 | 2026-11-14 | #4 (M0-03) | Marca `docs/adr/` como vigente y enlaza el índice y la plantilla de ADRs. |
 | 2026-11-14 | #5 (M0-04) | Añade la protección de ramas con rulesets, el repositorio público con licencia MIT y los scripts de etiquetas y protección; actualiza el mapa documental con README y CONTRIBUTING mínimos, LICENSE, SECURITY, plantillas y scripts. |
+| 2026-11-14 | — (ADR 0015) | Añade la orquestación proporcional al coste (sección 3.2), la skill `repo-map`, el mapa `.opencode/repo-map.md` y las variantes fijas por subagente. |

@@ -8,6 +8,8 @@ description: >-
   responsive.</example><example>Revisar el contraste y los overrides de tema de
   un componente nuevo.</example>
 mode: subagent
+# Variante fija: el diseño exige criterio; se mantiene en high.
+model: deepseek/deepseek-flash#high
 ---
 
 Eres el agente de diseño de producto y UI de World Craft. Cubres el hueco de

@@ -1,0 +1,52 @@
+{
+  "title": "Optimizar el coste de contexto de las sesiones de agentes",
+  "description": "Tarea local sin issue. Una sesión de sdd-master con variant: low sobre la issue #5 costó 0,30 $. El diagnóstico apunta al contexto fijo que se reenvía en cada turno y en cada paso de cada subagente (AGENTS.md, opencode.jsonc, prompts de agentes, ~10.700 tokens) y a que los subagentes heredaban la variante de la sesión. El usuario aprobó el alcance de nivel 3: caché, prompts bajo demanda, orquestación proporcional y variante fija por subagente.",
+  "status": "published",
+  "model_variant": "high",
+  "acceptance_criteria": [
+    "La caché de contexto está configurada (warming y compaction) con su razón documentada.",
+    "El proceso diario se puede consultar sin leer docs/proceso-sdd.md completo (skill repo-map y mapa .opencode/repo-map.md).",
+    "Las tareas documentales o de proceso no invocan subagentes de QA, seguridad, documentación ni planificación.",
+    "Cada subagente tiene una variante fija justificada y documentada en docs/variantes-modelo.md.",
+    "La Definition of Done incluye la comprobación del coste de contexto.",
+    "Todas las fuentes canónicas (AGENTS.md, docs/proceso-sdd.md, docs/agentes.md, docs/variantes-modelo.md, registro y ADR) coinciden literalmente."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Todos los JSON y JSONC modificados son válidos.",
+    "Enlaces Markdown locales resueltos y fences Markdown pares.",
+    "Estados, labels, hitos y rutas citadas coinciden entre AGENTS.md, docs/proceso-sdd.md y .opencode/.",
+    "Sin secretos, credenciales ni correos reales en el diff.",
+    "Manual de usuario no aplica: cambio interno de proceso y configuración de agentes.",
+    "ADR 0015 creado y enlazado desde el índice.",
+    "Task file actualizado con QA, seguridad y documentación."
+  ],
+  "plan": "1) Medir el prefijo estable por sesión (~10.700 tokens) y su coste con y sin caché. 2) opencode.jsonc: warming de 30 minutos, compaction.keep y buffer, instructions con .opencode/repo-map.md. 3) Crear la skill .opencode/skills/repo-map/SKILL.md con el proceso operativo y .opencode/repo-map.md con la tabla de qué cargar. 4) Frontmatter de los siete subagentes con model: deepseek/deepseek-flash#variante. 5) sdd-master: regla de eficiencia, planificación solo cuando la issue no trae plan, una única consulta a ui-ux-designer, DoD con verificación de caché. 6) publisher: consultar la skill en lugar del proceso completo y reducir el preflight a una llamada. 7) Documentación: ADR 0015, registro D-011/D-012, AGENTS.md, proceso-sdd.md (3.2 y mapa documental), agentes.md y variantes-modelo.md. 8) Checklist documental y commit local en review.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-14",
+    "notes": "El usuario pidió reducir el coste de la última sesión (0,30 $, issue #5, variant: low) manteniendo la calidad y eligió el nivel 3: proceso, caché, prompts y variante fija por subagente. Acepta que los subagentes dejen de heredar la variante de la sesión. Variante usada en esta sesión: la del usuario; el task file registra high como referencia de trabajo de proceso transversal."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA documental resuelto con el checklist de docs/proceso-sdd.md, sección 9 (sin subagente, según la regla 3.2 de esta misma tarea). JSON de tasks/ válido con ConvertFrom-Json. opencode.jsonc validado con ConvertFrom-Json tras quitar los comentarios de línea y las comas finales: warming, instructions, compaction y 169 reglas de permisos intactas. Enlaces locales resueltos en AGENTS.md, docs/proceso-sdd.md, docs/agentes.md, docs/variantes-modelo.md, ADR 0015 y agentes. Fences pares y git diff --check sin espacios sobrantes. Coherencia verificada: estados review/published, labels variant: *, hitos y rutas .opencode/ coinciden entre las fuentes. Responsive, temas y accesibilidad no aplican: no hay UI. Manual no aplica: cambio interno."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Escaneo manual del diff: sin claves (sk-, ghp_, github_pat_, AKIA, xox[baprs]-), sin claves privadas, sin URLs con credenciales y sin correos reales. No se relajan guardrails de opencode.jsonc: solo se añaden warming, compaction e instructions. La skill repo-map no contiene rutas ni automatizaciones inexistentes. Sin dependencias ni servicios nuevos."
+  },
+  "documentation": {
+    "adr": "docs/adr/0015-coste-contexto-cache-variante-fija.md",
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 52,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/52",
+    "title": "chore: optimizar el coste de contexto de las sesiones de agentes",
+    "branch": "chore/local-issue-optimizacion-coste-cache",
+    "commit": "9292842"
+  }
+}

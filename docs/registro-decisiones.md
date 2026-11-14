@@ -76,3 +76,14 @@ El usuario validó las decisiones y se retiró el label `needs-decision` de la i
 | D-010 | Protección de ramas | Crear los rulesets **`protect-dev`** y **`protect-main`**: PR obligatoria, sin force push ni borrado, 0 aprobaciones y resolución de hilos. Bypass del propietario **solo en `main`** para promover `dev` → `main`. Sin required status checks hasta la issue #6. | El flujo de PR contra `dev` se refuerza en GitHub y el propietario conserva la promoción a `main`. Los checks obligatorios llegan con CI (M0-05, issue #6). Las acciones administrativas del repositorio requieren confirmación explícita. Se registra en el ADR 0014. |
 
 Estas decisiones se documentan en el [ADR 0014](adr/0014-public-repo-mit-and-branch-protection.md) y en [`docs/proceso-sdd.md`](proceso-sdd.md) §7.7.
+
+## 2026-11-14 — Coste de contexto de las sesiones de agentes (tarea local)
+
+**Contexto.** Una sesión `variant: low` sobre la issue #5 costó 0,30 $. El prefijo estable de cada sesión (system prompt, `AGENTS.md`, permisos y prompts de agentes) ronda los 10.700 tokens y se reenvía en cada turno y en cada paso de cada subagente; los subagentes además heredaban la variante de la sesión.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-011 | Caché y contexto | Activar `warming` 30 minutos, mantener la caché caliente sin cambiar de modelo ni variante a mitad de sesión, crear la skill `repo-map` y el mapa `.opencode/repo-map.md`, y omitir subagentes en tareas documentales o de proceso. | El prefijo se lee de caché (0,003 $/M frente a 0,15 $/M) y las tareas documentales pasan a un único contexto. Se añade una comprobación de coste a la Definition of Done. |
+| D-012 | Variante por subagente | Fijar `deepseek/deepseek-flash#high` en `task-architect`, `tdd-ddd-architect`, `ui-ux-designer` y `security-champion`, y `#low` en `qa-reviewer`, `documentation-sync` y `publisher`. `sdd-master` sigue la variante de la sesión. | El coste por puerta es predecible y no hereda `max`. Los subagentes ya no siguen la variante elegida en la sesión; un FAIL repetido sube la variante y se anota en el task file. |
+
+Estas decisiones se documentan en el [ADR 0015](adr/0015-coste-contexto-cache-variante-fija.md).
