@@ -1,7 +1,7 @@
 {
   "title": "Configurar entorno de desarrollo y CI base",
+  "status": "published",
   "description": "Código de plan: M0-05. Fase M0. Depende de M0-04 (issue #5, fusionada). Deja la máquina de desarrollo y el repositorio con un entorno reproducible: Node 22 LTS, pnpm vía Corepack, TypeScript estricto, ESLint, Prettier, Vitest, Testing Library, Playwright, scripts de calidad, CI en GitHub Actions, gitleaks, auditoría de dependencias, Dependabot y validación de variables de entorno con Zod. No incluye el scaffold de Next.js, que corresponde a M0-06 (issue #7).",
-  "status": "review",
   "model_variant": "high",
   "issue": {
     "number": 6,
@@ -62,5 +62,12 @@
     "changelog": null,
     "agents": null,
     "notes": "ADR 0016 creado e indexado en docs/adr/README.md, con trazabilidad a D-013/D-014 y al plan §3.7, §4.7 y §5.2. Registro ampliado con D-013 (entorno y tooling) y D-014 (CI y seguridad de dependencias). docs/proceso-sdd.md §7.7 actualizado con los required checks y su aplicación al publicar; mapa documental y historial ampliados con CI, Dependabot y el arranque local. README y CONTRIBUTING actualizados con requisitos, arranque en menos de 30 minutos, scripts, calidad, CI, Corepack en Windows y required checks. Manual de usuario no aplica: cambio interno sin interfaz visible. Changelog no aplica: no existe. Agentes sin cambios: el equipo, sus responsabilidades y la invocación no cambian. documentation-sync corrigió la referencia a gitleaks-action por SHA/v2.3.9, precisó el esquema de entorno y aclaró que los rulesets se aplican al publicar. Queda pendiente, para una tarea documental futura, alinear la tabla de documentos de AGENTS.md y documentation-sync con el arranque local ya disponible; no se tocan en esta sesión por la regla de coste de contexto (ADR 0015)."
+  },
+  "pr": {
+    "number": 53,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/53",
+    "title": "chore: configurar entorno de desarrollo y CI base (#6)",
+    "branch": "chore/issue-6-dev-env-ci",
+    "commit": "f29479c"
   }
 }
