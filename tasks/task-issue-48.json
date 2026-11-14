@@ -1,7 +1,7 @@
 {
   "title": "Política de variantes de modelo y autonomía de permisos de los agentes",
   "description": "Código de plan: M0-13. Fase M0. Depende de M0-02 (issue #3, cerrada). Define una recomendación de variante de modelo por issue y reduce los prompts de permisos de los agentes sin relajar los guardrails de publicación, borrado o secretos.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 48,
@@ -51,5 +51,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 49,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/49",
+    "title": "chore(agents): add model variant policy and tighten permissions (#48)",
+    "branch": "chore/issue-48-agent-variants-permissions",
+    "commit": "c48d781"
   }
 }
