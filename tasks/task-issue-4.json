@@ -1,0 +1,51 @@
+{
+  "title": "Crear los ADRs fundacionales",
+  "description": "Código de plan: M0-03. Fase M0. Depende de M0-01 y M0-02 (issues #2 y #3, cerradas y fusionadas en dev). Documenta en ADRs las decisiones de arquitectura, tecnología y producto ya cerradas en docs/plan-desarrollo.md (D1–D17) y en docs/registro-decisiones.md (D-001–D-008), sin introducir decisiones nuevas ni cambiar el alcance aprobado.",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 4,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/4",
+    "title": "Crear los ADRs fundacionales"
+  },
+  "acceptance_criteria": [
+    "Carpeta docs/adr/ con plantilla e índice.",
+    "Un ADR por decisión, con alternativas y riesgos de free tier.",
+    "Las decisiones coinciden con docs/plan-desarrollo.md.",
+    "Se registran las decisiones cerradas del 12/11/2026 (R2, keep-alive, dos temas, roles, i18n, dominio).",
+    "El usuario valida las decisiones (label needs-decision)."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "13 ADRs (0001–0013) más plantilla e índice, sin números duplicados y enlazados entre sí.",
+    "Cada ADR incluye contexto, decisión, alternativas, consecuencias, riesgos de free tier, plan de revisión y referencias.",
+    "Decisiones coincidentes con el plan y el registro; sin decisiones nuevas.",
+    "JSON válido en todos los task files y enlaces Markdown locales resueltos.",
+    "Fences Markdown pares y git diff --check limpio.",
+    "Coherencia de estados, labels e hitos con docs/proceso-sdd.md.",
+    "Manual de usuario no aplica: cambio técnico interno sin efecto en la interfaz.",
+    "QA y seguridad superados; task file actualizado.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "1) Resolver la puerta de decisión: confirmar que los ADRs registran las decisiones ya cerradas el 12/11/2026, fijar el estado inicial y retirar needs-decision. 2) Crear docs/adr/0000-template.md y docs/adr/README.md con índice, convenciones, estados y trazabilidad plan/registro. 3) Crear los 13 ADRs: 0001 Next.js/React/TypeScript; 0002 Supabase Postgres + Drizzle + Zod; 0003 Supabase Auth, allowlist e invitaciones; 0004 Cloudflare R2 + StorageAdapter; 0005 Vercel Hobby y dominio; 0006 MapLibre + Terra Draw + GeoJSON; 0007 React Flow + ELK.js; 0008 Tiptap + exportadores; 0009 testing, PWA y backups; 0010 dos temas y sistema de diseño; 0011 allowlist, roles por mundo y mundos propios; 0012 i18n centralizada; 0013 continuidad de free tiers. 4) Actualizar docs/proceso-sdd.md, .opencode/agents/documentation-sync.md, AGENTS.md y el registro append-only. 5) Verificar JSON, enlaces, fences, numeración, contenido y coherencia; pasar QA, seguridad, documentación y preparar commit local sin push ni PR.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-14",
+    "notes": "El usuario aprueba el plan, confirma que los ADRs registran las decisiones cerradas el 12/11/2026 sin introducir otras nuevas y autoriza retirar needs-decision. Los 13 ADRs se crean como aceptados con fecha de decisión 2026-11-12. También aprueba actualizar docs/proceso-sdd.md, documentation-sync, AGENTS.md y el registro append-only. Variante recomendada y usada: high."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Revisión documental completa. Verificados los 5 criterios de aceptación, los 13 ADRs (0001–0013) más plantilla e índice, las 7 secciones obligatorias de cada ADR, la coherencia con docs/plan-desarrollo.md §3.2 D1–D17, §3.3, §3.4, §3.7, §4.7 y §7 y con D-001–D-008 del registro. Comprobados JSON válido, enlaces locales, fences pares, git diff --check, numeración sin duplicados, cobertura del índice y ausencia de referencias antiguas o rutas inexistentes. Corregido un hallazgo LOW de trazabilidad: la sección de decisiones sin ADR mezclaba D-007/D-008 del registro con D11/D17 del plan y se renombró a «Decisiones sin ADR propio». Sin HIGH ni MEDIUM. Responsive, dos temas y accesibilidad no aplican: no hay UI. La sesión del subagente qa-reviewer agotó la cuota gratuita; la revisión la completó el agente principal con los mismos criterios y comandos."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Escaneo de los 20 archivos del cambio (ADRs, índice, plantilla, task file y documentos actualizados): 0 secretos, 0 credenciales, 0 correos reales, 0 claves privadas y 0 tokens. No hay .env en disco ni trackeado; .gitignore cubre .env*. No se han añadido dependencias, servicios, código de auth/RLS ni cambios en opencode.jsonc. Los ejemplos son ficticios y las URLs son enlaces públicos al repositorio. Cambio exclusivamente documental, sin hallazgos HIGH ni MEDIUM. La sesión del subagente security-champion agotó la cuota gratuita; el escaneo lo completó el agente principal con patrones de secretos y revisión del diff."
+  },
+  "documentation": {
+    "adr": "docs/adr/README.md",
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": ".opencode/agents/documentation-sync.md"
+  }
+}

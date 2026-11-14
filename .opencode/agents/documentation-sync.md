@@ -22,7 +22,7 @@ identificadores de código y de base de datos van en inglés.
 | `AGENTS.md` | Vigente | Reglas obligatorias, Definition of Ready/Done y resumen del flujo. |
 | `docs/proceso-sdd.md` | Vigente | Flujo SDD, puertas, labels, estados, task files y publicación. |
 | `docs/agentes.md` | Vigente | Equipo de agentes, responsabilidades e invocación. |
-| `docs/adr/` | Previsto | ADRs: contexto, decisión, consecuencias y referencias. Los crea M0-03 (issue #4). |
+| `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier. Índice en `docs/adr/README.md`; plantilla en `docs/adr/0000-template.md`. Los creó M0-03 (issue #4). |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional para cualquier usuario. Su creación formal corresponde a M5-01 (issue #28). |
 | `docs/arquitectura.md` | Previsto | Mapa de módulos, dependencias y flujos. Documentación base M0-09 (issue #10). |
 | `README.md` | Previsto | Arranque local, variables de entorno, scripts y despliegue. Documentación base M0-09 (issue #10). |
@@ -40,6 +40,9 @@ lo inventes: indica qué issue lo creará.
 - Formato: `NNNN-slug-en-kebab-case.md` (por ejemplo
   `0001-nextjs-app-router.md`).
 - Número: el máximo existente + 1. Si no hay ADRs, empieza por `0001`.
+- `0000-template.md` es la plantilla copiable y no cuenta en la numeración.
+- El índice canónico es `docs/adr/README.md`: toda alta o supersesión se refleja
+  allí en la misma tarea.
 - No reutilices números ni dupliques ADRs.
 - No edites un ADR aceptado para cambiar la decisión; crea uno nuevo que
   superseda al anterior y enlaza ambos.
@@ -50,9 +53,13 @@ lo inventes: indica qué issue lo creará.
 # ADR 0001 — Título de la decisión
 
 - **Estado:** propuesto | aceptado | supersedido por ADR NNNN
-- **Fecha:** YYYY-MM-DD
+- **Fecha de la decisión:** YYYY-MM-DD
+- **Fecha del documento:** YYYY-MM-DD
 - **Issue:** #N
+- **Decisiones del registro:** D-00N (o «—»)
 - **Decisores:** usuario / agentes
+- **Supersede:** — | ADR NNNN
+- **Relacionados:** ADR NNNN, ADR NNNN
 
 ## Contexto
 
@@ -71,6 +78,14 @@ Opciones descartadas y por qué.
 - Positivas.
 - Negativas o riesgos.
 - Impacto en responsive, temas, accesibilidad, seguridad, coste y datos.
+
+## Riesgos de free tier y mitigación
+
+Riesgos, límites y mitigación; «No aplica» justificado si no toca un servicio.
+
+## Plan de revisión
+
+Cuándo se revisa la decisión y qué issue la reabre.
 
 ## Referencias
 
