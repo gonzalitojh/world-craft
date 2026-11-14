@@ -1,0 +1,62 @@
+{
+  "title": "Política de variantes de modelo y autonomía de permisos de los agentes",
+  "description": "Código de plan: M0-13. Fase M0. Depende de M0-02 (issue #3, cerrada). Define una recomendación de variante de modelo por issue y reduce los prompts de permisos de los agentes sin relajar los guardrails de publicación, borrado o secretos.",
+  "status": "published",
+  "model_variant": "high",
+  "issue": {
+    "number": 48,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/48",
+    "title": "Política de variantes de modelo y autonomía de permisos de los agentes"
+  },
+  "acceptance_criteria": [
+    "Existe una tabla de decisión de variantes con criterios objetivos y ejemplos.",
+    "Los labels variant: * existen en GitHub y están documentados.",
+    "Todas las issues existentes tienen exactamente un label variant: *.",
+    "La plantilla de issue incluye «Variante recomendada» y el task file incluye model_variant.",
+    "security-champion completa un escaneo de un diff de prueba sin prompts.",
+    "sdd-master y publisher no piden permiso para comandos de solo lectura habituales.",
+    "git push, gh pr create, las operaciones destructivas y git add . siguen protegidos.",
+    "Las lecturas de .env siguen bloqueadas o requieren confirmación.",
+    "Se documenta la viabilidad y los riesgos de la automatización por plugin.",
+    "QA, seguridad, documentación y task file actualizados."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "JSON válido en todos los task files.",
+    "Enlaces Markdown locales resueltos y fences pares.",
+    "Coherencia de labels, estados e hitos entre AGENTS.md, docs/proceso-sdd.md y los agentes.",
+    "Sin secretos, credenciales ni datos personales.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "Manual de usuario no aplica: cambio interno de proceso y configuración de agentes.",
+    "Task file actualizado con QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario, sin push ni PR."
+  ],
+  "plan": "1) Crear los labels variant: default, low, high y max y aplicarlos a todas las issues existentes. 2) Documentar la tabla de decisión en docs/variantes-modelo.md y enlazarla desde AGENTS.md y docs/proceso-sdd.md. 3) Añadir model_variant al esquema de task files y una sección de variante recomendada a la plantilla de issue. 4) Actualizar sdd-master, task-architect y qa-reviewer para comprobar y registrar la variante. 5) Mover los guardrails comunes a opencode.jsonc y sustituir las reglas ask amplias de security-champion por una allowlist de solo lectura. 6) Simplificar los permisos de sdd-master y publisher, que heredan los guardrails comunes. 7) Verificar JSON, enlaces, fences, labels y permisos; pasar QA y seguridad; preparar commit local sin push ni PR.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-13",
+    "notes": "El usuario pidió crear la issue en M0 y ejecutarla a continuación, incluyendo la recomendación de variante y la reducción de prompts de permisos. Variante recomendada y usada: high; no se cambió a max."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Pasada 1: FAIL con 4 HIGH (el shell de security-champion podía leer .env y ejecutar rg --pre; el guardrail global de .env solo cubría read; la allowlist git -c permitía configuración inyectable; git clean -f* no cubría -df/-xdf) y 7 recomendaciones; corregidas. Pasada 2: FAIL con 1 HIGH (security-champion sin external_directory) y 5 recomendaciones; corregidas: external_directory ask global y deny en security-champion, stageo amplio, plan M0-13, plantilla y comandos destructivos. Pasada final: PASS con 0 HIGH y 0 MEDIUM; recomendaciones LOW aplicadas (denies de git add/stage --force, .gitignore de credenciales y glob denegado). La sesión de QA inicial agotó la cuota gratuita; una sesión nueva completó la revisión. Simulación propia: 89 casos sin fallos; QA independiente: 99 casos sin fallos reales. Responsive, temas y accesibilidad no aplican: sin UI."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Pasada 1: FAIL con 1 HIGH (reglas destructivas sin argumento) y 5 recomendaciones; corregidas. Pasada 2: PASS con 0 HIGH, 2 MEDIUM y 3 LOW; corregidas. Pasada final: PASS con 0 HIGH; se añadieron external_directory, patrones **, claves SSH, credenciales compuestas y certificados, y se movió el catch-all de .env. Sin secretos, .env trackeados, credenciales, datos personales, dependencias nuevas ni servicios de pago. Guardrails de publicación, borrado, stageo amplio y secretos verificados. Cambio local sin push ni PR."
+  },
+  "documentation": {
+    "adr": null,
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 49,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/49",
+    "title": "chore(agents): add model variant policy and tighten permissions (#48)",
+    "branch": "chore/issue-48-agent-variants-permissions",
+    "commit": "c48d781"
+  }
+}

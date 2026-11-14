@@ -7,7 +7,11 @@ description: >-
   un informe accionable. Úsalo después de que QA haya pasado.
 mode: subagent
 permissions:
+  # Solo lectura: no edita, no publica, no navega y no lanza subagentes.
   - action: edit
+    resource: "*"
+    effect: deny
+  - action: external_directory
     resource: "*"
     effect: deny
   - action: webfetch
@@ -16,9 +20,27 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
+  - action: browser
+    resource: "*"
+    effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
   - action: subagent
     resource: "*"
     effect: deny
+
+  # La herramienta grep no permite filtrar por ruta en V2; se usa read sobre
+  # los archivos del diff, que deniega .env. glob también se deniega para no
+  # listar rutas externas ni secretos.
+  - action: grep
+    resource: "*"
+    effect: deny
+  - action: glob
+    resource: "*"
+    effect: deny
+
+  # Secretos: denegar .env, claves y credenciales; permitir los ejemplos.
   - action: read
     resource: "*.env*"
     effect: deny
@@ -28,23 +50,134 @@ permissions:
   - action: read
     resource: "**/*.env*"
     effect: deny
-  - action: grep
-    resource: "*.env*"
+  - action: read
+    resource: "*.key"
     effect: deny
-  - action: grep
-    resource: "**/.env*"
+  - action: read
+    resource: "**/*.key"
     effect: deny
-  - action: grep
-    resource: "**/*.env*"
+  - action: read
+    resource: "*.pem"
     effect: deny
-  - action: glob
-    resource: "*.env*"
+  - action: read
+    resource: "**/*.pem"
     effect: deny
-  - action: glob
-    resource: "**/.env*"
+  - action: read
+    resource: "*.p12"
     effect: deny
-  - action: glob
-    resource: "**/*.env*"
+  - action: read
+    resource: "**/*.p12"
+    effect: deny
+  - action: read
+    resource: "*.pfx"
+    effect: deny
+  - action: read
+    resource: "**/*.pfx"
+    effect: deny
+  - action: read
+    resource: "*.keystore"
+    effect: deny
+  - action: read
+    resource: "**/*.keystore"
+    effect: deny
+  - action: read
+    resource: "*.jks"
+    effect: deny
+  - action: read
+    resource: "**/*.jks"
+    effect: deny
+  - action: read
+    resource: "*.cert"
+    effect: deny
+  - action: read
+    resource: "**/*.cert"
+    effect: deny
+  - action: read
+    resource: "*.crt"
+    effect: deny
+  - action: read
+    resource: "**/*.crt"
+    effect: deny
+  - action: read
+    resource: "*credentials.json"
+    effect: deny
+  - action: read
+    resource: "**/*credentials.json"
+    effect: deny
+  - action: read
+    resource: "*credentials.yml"
+    effect: deny
+  - action: read
+    resource: "**/*credentials.yml"
+    effect: deny
+  - action: read
+    resource: "*credentials.yaml"
+    effect: deny
+  - action: read
+    resource: "**/*credentials.yaml"
+    effect: deny
+  - action: read
+    resource: "*.credentials"
+    effect: deny
+  - action: read
+    resource: "**/*.credentials"
+    effect: deny
+  - action: read
+    resource: "*secrets.yml"
+    effect: deny
+  - action: read
+    resource: "**/*secrets.yml"
+    effect: deny
+  - action: read
+    resource: "*secrets.yaml"
+    effect: deny
+  - action: read
+    resource: "**/*secrets.yaml"
+    effect: deny
+  - action: read
+    resource: "*passwords.txt"
+    effect: deny
+  - action: read
+    resource: "**/*passwords.txt"
+    effect: deny
+  - action: read
+    resource: "*secrets.txt"
+    effect: deny
+  - action: read
+    resource: "**/*secrets.txt"
+    effect: deny
+  - action: read
+    resource: "*.git/config"
+    effect: deny
+  - action: read
+    resource: "**/.git/config"
+    effect: deny
+  - action: read
+    resource: "**/.ssh/**"
+    effect: deny
+  - action: read
+    resource: "*id_rsa*"
+    effect: deny
+  - action: read
+    resource: "**/id_rsa*"
+    effect: deny
+  - action: read
+    resource: "*id_ed25519*"
+    effect: deny
+  - action: read
+    resource: "**/id_ed25519*"
+    effect: deny
+  - action: read
+    resource: "*id_ecdsa*"
+    effect: deny
+  - action: read
+    resource: "**/id_ecdsa*"
+    effect: deny
+  - action: read
+    resource: "*id_dsa*"
+    effect: deny
+  - action: read
+    resource: "**/id_dsa*"
     effect: deny
   - action: read
     resource: "*.env.example"
@@ -55,47 +188,32 @@ permissions:
   - action: read
     resource: "**/*.env.example"
     effect: allow
+
+  # Shell: denegar todo por defecto y permitir solo inspección de lectura.
+  # Así el escaneo no genera prompts y no puede mutar el repositorio.
   - action: shell
     resource: "*"
-    effect: ask
+    effect: deny
   - action: shell
     resource: "git status"
-    effect: allow
-  - action: shell
-    resource: "git diff"
-    effect: allow
-  - action: shell
-    resource: "git diff -- *"
     effect: allow
   - action: shell
     resource: "git diff --stat"
     effect: allow
   - action: shell
-    resource: "git diff --stat -- *"
+    resource: "git diff --cached --stat"
     effect: allow
   - action: shell
     resource: "git diff --name-only"
     effect: allow
   - action: shell
-    resource: "git diff --name-only -- *"
-    effect: allow
-  - action: shell
-    resource: "git diff --cached"
-    effect: allow
-  - action: shell
-    resource: "git diff --cached -- *"
-    effect: allow
-  - action: shell
-    resource: "git diff --cached --stat"
-    effect: allow
-  - action: shell
-    resource: "git diff --cached --stat -- *"
-    effect: allow
-  - action: shell
     resource: "git diff --cached --name-only"
     effect: allow
   - action: shell
-    resource: "git diff --cached --name-only -- *"
+    resource: "git diff --numstat"
+    effect: allow
+  - action: shell
+    resource: "git diff --cached --numstat"
     effect: allow
   - action: shell
     resource: "git ls-files"
@@ -104,8 +222,55 @@ permissions:
     resource: "git ls-files --others --exclude-standard"
     effect: allow
   - action: shell
-    resource: "git grep --name-only"
+    resource: "git rev-parse --show-toplevel"
     effect: allow
+  - action: shell
+    resource: "git rev-parse --is-inside-work-tree"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse HEAD"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse --abbrev-ref HEAD"
+    effect: allow
+  - action: shell
+    resource: "git branch --show-current"
+    effect: allow
+  - action: shell
+    resource: "git branch -a"
+    effect: allow
+  - action: shell
+    resource: "git remote"
+    effect: allow
+
+  # Endurecimiento: ni .env ni opciones que ejecutan comandos o escriben.
+  - action: shell
+    resource: "*.env*"
+    effect: deny
+  - action: shell
+    resource: "git *--output*"
+    effect: deny
+  - action: shell
+    resource: "git *--no-index*"
+    effect: deny
+  - action: shell
+    resource: "git *--ext-diff*"
+    effect: deny
+  - action: shell
+    resource: "git *--open-files-in-pager*"
+    effect: deny
+  - action: shell
+    resource: "git grep *--no-index*"
+    effect: deny
+  - action: shell
+    resource: "git grep *--untracked*"
+    effect: deny
+  - action: shell
+    resource: "git grep *-O*"
+    effect: deny
+  - action: shell
+    resource: "git *--textconv*"
+    effect: deny
 ---
 
 Eres el Security Champion del flujo SDD de World Craft. Revisas los cambios
@@ -145,10 +310,12 @@ principales son:
 
 Examina todos los archivos del cambio actual:
 
-- Cambios staged: `git diff --cached --stat` y `git diff --cached`.
-- Cambios unstaged: `git diff --stat` y `git diff`.
+- Cambios staged: `git diff --cached --stat` y `git diff --cached --name-only`.
+- Cambios unstaged: `git diff --stat` y `git diff --name-only`.
 - Archivos nuevos: `git ls-files --others --exclude-standard`.
-- Para cada archivo, revisa tanto la **ruta** como el **contenido**.
+- Lee el contenido de cada archivo con la herramienta `read`, nunca con
+  `git diff` completo ni con lectores de shell. Un `.env*` solo se marca por su
+  ruta, sin abrirlo.
 
 ## Categorías y severidad
 
@@ -187,15 +354,24 @@ Examina todos los archivos del cambio actual:
 
 ## Proceso
 
+No pidas permisos para comandos de solo lectura: las reglas del agente ya los
+permiten. Si un comando se deniega, usa `read`; no intentes saltarte la
+restricción. Las herramientas `grep`, `glob` y los lectores de contenido por
+shell están denegados para no exponer `.env`: usa `read` sobre los archivos del
+diff. Para
+leer contenido no incluyas `.env*` en búsquedas ni en el informe. Si no puedes
+completar el escaneo con las herramientas disponibles, devuelve `BLOCKED`.
+
 0. **Comprueba el entorno:** ejecuta `git status` y `git ls-files`. Si `git`
    no está disponible o los comandos fallan, devuelve `Result: BLOCKED` y
-   explica el error; **nunca devuelvas PASS** sin haber podido escanear.
+   explica el error; **nunca devuelvas PASS** sin haber podido escanear. Si en
+   `git ls-files` aparece un `.env*` trackeado, márcalo HIGH sin abrir su
+   contenido.
 1. **Identifica los archivos cambiados** con los comandos de la sección de
    alcance. Si los comandos funcionan y la lista está vacía, devuelve PASS.
 2. **Escanea rutas** contra los patrones HIGH, MEDIUM y LOW.
-3. **Escanea contenido** de cada archivo de texto. Usa `grep`, `git grep
-   --name-only` o lectura directa. Para binarios, comprueba la extensión y el
-   nombre.
+3. **Escanea contenido** de cada archivo de texto con `read`, incluidos los
+   archivos nuevos. Para binarios, comprueba la extensión y el nombre.
 4. **Revisa el contexto de World Craft:** si el cambio toca Supabase, R2, auth,
    subidas, CSP o permisos, aplica la checklist específica.
 5. **Comprueba `.gitignore`:** si un archivo sensible está trackeado, márcalo.

@@ -1,6 +1,9 @@
 # Proceso SDD de World Craft
 
-> **Estado:** vigente desde el 12/11/2026 (issue [#3](https://github.com/gonzalitojh/world-craft/issues/3), M0-02).
+> **Estado:** vigente desde el 12/11/2026 (issue
+> [#3](https://github.com/gonzalitojh/world-craft/issues/3), M0-02);
+> actualizado el 14/11/2026 (issue
+> [#48](https://github.com/gonzalitojh/world-craft/issues/48), M0-13).
 > **Ámbito:** flujo de trabajo, puertas, task files, etiquetas, estados, hitos,
 > publicación local-first y mantenimiento documental.
 > **Origen:** consolida el plan [`plan-desarrollo.md`](plan-desarrollo.md)
@@ -35,8 +38,9 @@ implementación operativa:
 ## 2. Principios
 
 1. **Issue-first.** Toda funcionalidad nace de una issue con contexto, alcance,
-   criterios de aceptación, dependencias y labels. Las tareas internas pequeñas
-   pueden usar un task file local sin issue.
+   criterios de aceptación, dependencias, labels y una variante de modelo
+   recomendada (`variant: *`). Las tareas internas pequeñas pueden usar un task
+   file local sin issue.
 2. **Local-first.** El trabajo termina por defecto en una rama y un commit
    locales. No hay push ni PR sin confirmación explícita del usuario.
 3. **Una issue, un task file.** Cada tarea tiene un único task file que refleja
@@ -58,8 +62,8 @@ implementación operativa:
 ### 3.1 Flujo completo
 
 ```text
-Issue abierta (label ai + status: todo)
-  → adopción: comprobar labels y crear tasks/task-issue-<N>.json
+Issue abierta (label ai + status: todo + variant: *)
+  → adopción: comprobar labels y variante, crear tasks/task-issue-<N>.json
   → planificación (task-architect)
   → implementación (tdd-ddd-architect; ui-ux-designer si hay UI)
   → QA (qa-reviewer); si falla, vuelve a implementación
@@ -79,7 +83,7 @@ en local antes de publicar.
 
 | Transición | Responsable | Evidencia |
 |---|---|---|
-| Issue → adopción | `sdd-master` | Issue abierta con `ai`; labels corregidos; `tasks/task-issue-<N>.json` creado con estado `created`. |
+| Issue → adopción | `sdd-master` | Issue abierta con `ai`; labels corregidos, incluido un `variant: *`; `tasks/task-issue-<N>.json` creado con estado `created` y `model_variant`. |
 | `created` → `planned` | `sdd-master` + `task-architect` | Plan escrito en el campo `plan`; alcance, riesgos, pruebas e impacto documental; aprobación del usuario registrada en `validation`. |
 | `planned` → `implemented` | `tdd-ddd-architect` (+ `ui-ux-designer`) | Diff implementado; pruebas y comprobaciones locales ejecutadas; task file actualizado. |
 | `implemented` → `validated` | `qa-reviewer` | Informe de QA con criterios, responsive, temas, accesibilidad y manual; `qa.result` = `PASS`. |
@@ -137,6 +141,7 @@ Plantilla de creación (`status: created`, sin bloque `pr`):
   "title": "Título de la tarea",
   "description": "Contexto, alcance y referencia a la issue",
   "status": "created",
+  "model_variant": "high",
   "issue": {
     "number": 0,
     "url": "https://github.com/gonzalitojh/world-craft/issues/0",
@@ -199,6 +204,7 @@ en [`tasks/task-example.json`](../tasks/task-example.json).
 | `title` | string | Sí | Título breve de la tarea. |
 | `description` | string | Sí | Contexto, alcance y relación con la issue. |
 | `status` | string | Sí | `created`, `planned`, `implemented`, `validated`, `security-cleared`, `documented`, `review`, `published`, `blocked`. |
+| `model_variant` | string | Sí en `task-issue-<N>`; opcional en `task-local-<slug>` | `default`, `low`, `high`, `max`; copia local del label `variant: *`. |
 | `issue` | object | Sí en `task-issue-<N>`; omitido en `task-local-<slug>` | `number` (entero), `url` (URL de GitHub), `title` (string). |
 | `acceptance_criteria` | string[] | Sí | Al menos un criterio verificable. |
 | `definition_of_done` | string[] | Sí | Al menos un elemento comprobable. |
@@ -223,6 +229,8 @@ en [`tasks/task-example.json`](../tasks/task-example.json).
 
 No se inventan campos nuevos sin actualizar este documento. Los campos
 desconocidos de un task file existente se conservan al actualizarlo.
+`model_variant` es obligatorio en los task files de issue; los task files
+cerrados antes de M0-13 se conservan sin el campo y no se reescriben.
 
 ### 4.4 Reglas de actualización
 
@@ -238,6 +246,8 @@ desconocidos de un task file existente se conservan al actualizarlo.
    issue se cierra con `status: done`; no se inventa un estado local `done`.
 7. Los task files de tareas cerradas no se reescriben salvo para corregir un
    error tipográfico evidente, y nunca para cambiar la historia de la tarea.
+8. Al adoptar la issue se copia el label `variant: *` en `model_variant`. Si el
+   usuario elige otra variante, se anota en `validation.notes`.
 
 ## 5. Etiquetas, estados e hitos
 
@@ -290,6 +300,22 @@ Cada issue tiene **exactamente una** prioridad y **exactamente un** tamaño.
   una **bandera**, no un estado: no sustituye a `status: *`.
 - `future`: backlog, fuera del MVP.
 
+#### Variantes de modelo
+
+Cada issue tiene **exactamente un** label de variante, que es una recomendación
+para la sesión de OpenCode:
+
+- `variant: default`: sin variante explícita, comportamiento por defecto para
+  tareas simples y no ambiguas.
+- `variant: low`: trabajo mecánico, repetitivo o totalmente especificado.
+- `variant: high`: implementación, pruebas, QA y documentación estándar.
+- `variant: max`: problemas ambiguos, transversales o de alto riesgo.
+
+La recomendación se justifica en la sección «Variante recomendada» de la issue
+y se copia al task file en `model_variant`. La tabla de decisión está en
+[`variantes-modelo.md`](variantes-modelo.md). La variante es una guía, no una
+obligación: el usuario puede elegir otra y anotarlo en `validation.notes`.
+
 ### 5.6 Hitos
 
 - `M0 · Proceso y fundaciones`
@@ -305,6 +331,8 @@ fuera del MVP.
 
 ### 5.7 Sincronización task file → label
 
+0. Al adoptar la issue, se comprueba que existe exactamente un `variant: *`;
+   si falta, se recomienda y se añade. El label no cambia con el estado.
 1. Al crear el task file, la issue pasa a `status: todo`.
 2. Al empezar la implementación, a `status: in-progress`.
 3. Al terminar el commit local, a `status: needs-review`.
@@ -324,6 +352,7 @@ fija la **evidencia** que debe quedar registrada.
 
 - Issue abierta, con contexto, alcance, criterios de aceptación, dependencias y
   labels completos.
+- Exactamente un label `variant: *`, con la recomendación justificada.
 - Sin `needs-decision`, o con la decisión ya tomada y registrada.
 - Task file creado con el esquema de este documento.
 - Plan aprobado antes de implementar.
@@ -344,6 +373,7 @@ La evidencia esperada por puerta es:
 | QA | `qa.result` = `PASS`; informe con responsive, temas, accesibilidad y manual. |
 | Seguridad | `security.result` = `PASS`; sin HIGH; `findings` actualizados. |
 | Documentación | `documentation.*` completo; manual actualizado si el cambio es visible. |
+| Variante | `model_variant` coincide con el label `variant: *`; la variante usada está anotada si difiere. |
 | Revisión local | Rama, commit y comandos de prueba; sin push ni PR. |
 | Publicación | PR contra `dev`, bloque `pr` y issue en `status: needs-review`. |
 | Merge | Issue cerrada con `status: done`; task file conservado en `published`. |
@@ -482,6 +512,8 @@ Antes de preparar o publicar:
 | [`docs/registro-decisiones.md`](registro-decisiones.md) | Vigente | Registro append-only de decisiones de producto y arquitectura. |
 | [`docs/agentes.md`](agentes.md) | Vigente | Equipo de agentes y responsabilidades. |
 | [`tasks/task-example.json`](../tasks/task-example.json) | Vigente | Ejemplo válido del esquema de task files. |
+| [`docs/variantes-modelo.md`](variantes-modelo.md) | Vigente | Política de variantes de modelo por issue y automatización futura. |
+| `.github/ISSUE_TEMPLATE/task.md` | Vigente | Plantilla de issue con sección de variante recomendada. |
 | `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente. |
 | `docs/adr/` | Previsto | ADRs; los crea M0-03 (issue #4). |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional. Su creación formal corresponde a M5-01 (issue #28), pero cualquier funcionalidad visible anterior debe actualizarlo y dejar constancia en el task file. |
@@ -509,6 +541,8 @@ existan.
   a M5-01, pero si antes aparece una funcionalidad visible, la tarea que la
   implemente debe crear o actualizar la sección correspondiente y dejar
   constancia en el task file.
+- **`docs/variantes-modelo.md`:** al cambiar la tabla de decisión, los labels
+  `variant: *` o el campo `model_variant`.
 - **`docs/adr/`:** ante una decisión de framework, librería, servicio, modelo de
   datos, permisos, almacenamiento, despliegue, temas, i18n, mapas o juego con
   consecuencias técnicas. Un ADR aceptado no se edita para cambiar la decisión:
@@ -548,7 +582,8 @@ Get-ChildItem tasks/task-*.json | ForEach-Object {
 }
 
 # 2. Enlaces Markdown locales resueltos (documentos canónicos y agentes)
-$docs = 'AGENTS.md', 'docs/proceso-sdd.md', 'docs/agentes.md'
+$docs = 'AGENTS.md', 'docs/proceso-sdd.md', 'docs/agentes.md',
+        'docs/variantes-modelo.md'
 $files = @($docs) + @(Get-ChildItem .opencode/agents/*.md | ForEach-Object { $_.FullName })
 foreach ($file in $files) {
   $base = Split-Path $file -Parent
@@ -580,24 +615,35 @@ foreach ($file in $files) {
   if ($count % 2 -ne 0) { Write-Output "FENCES IMPARES: $file ($count)" }
 }
 
-# 6. Espacios y conflictos de git, incluidos los archivos nuevos
-# Sustituir <archivos nuevos> por las rutas sin trackear de la tarea.
-git add -N <archivos nuevos>          # intent-to-add: no stagea contenido
+# 6. Espacios y conflictos, incluidos los archivos nuevos
+# Se revisan sin stagear para no dejar intent-to-add ni pedir confirmación.
 git diff --check
-git reset -- <archivos nuevos>        # limpia solo el intent-to-add
+$nuevos = git ls-files --others --exclude-standard
+foreach ($file in $nuevos) {
+  $n = 0
+  Get-Content $file | ForEach-Object {
+    $n++
+    if ($_ -match '[ \t]+$') { Write-Output "ESPACIOS: ${file}:$n" }
+    if ($_ -match '^(<<<<<<<|=======|>>>>>>>)') {
+      Write-Output "CONFLICTO: ${file}:$n"
+    }
+  }
+}
 ```
 
-En el paso 6, si no hay archivos nuevos se ejecuta solo `git diff --check`. Si
-ya había contenido stageado antes de la comprobación, `git reset -- <archivos
-nuevos>` no lo altera porque limita el reset a esas rutas.
+En el paso 6, `git diff --check` cubre los cambios trackeados y el bucle cubre
+los archivos nuevos sin stagearlos.
 
 Además, se revisa manualmente que los estados, labels y hitos coincidan
 literalmente entre `AGENTS.md`, este documento y todos los agentes operativos
 que los referencien (`.opencode/agents/*.md`); `docs/agentes.md` se revisa solo
-para equipo, responsabilidades e invocación.
+para equipo, responsabilidades e invocación. Cada issue tocada debe tener
+exactamente un label `variant: *` y su `model_variant` debe coincidir con el
+task file.
 
 ## 10. Historial de cambios
 
 | Fecha | Issue | Cambio |
 |---|---|---|
 | 2026-11-12 | #3 (M0-02) | Versión inicial. Consolida el plan §4.3–4.6 y §4.8, las decisiones D-001–D-008 y la revisión de `AGENTS.md` y del flujo SDD. |
+| 2026-11-14 | #48 (M0-13) | Añade labels `variant: *`, `model_variant` en el task file, plantilla de issue con variante recomendada y política de permisos/autonomía de agentes. |

@@ -106,6 +106,8 @@ Cuando la tarea toque HTML, CSS o UI:
 ### 7. Seguridad básica
 
 - [ ] No hay secretos ni credenciales en el diff.
+- [ ] No se han relajado los guardrails de publicación (`git push`,
+      `gh pr create`), las operaciones destructivas ni las lecturas de `.env`.
 - [ ] Las mutaciones comprueban permisos en servidor.
 - [ ] Las tablas nuevas tienen RLS y tests de aislamiento, si aplica.
 - [ ] Los archivos van a R2 con bucket privado y URLs firmadas, si aplica.
@@ -115,6 +117,10 @@ Cuando la tarea toque HTML, CSS o UI:
 ### 8. Labels y estado
 
 - [ ] La issue tiene exactamente un label `type: ...`.
+- [ ] La issue tiene exactamente un label `variant: default`, `variant: low`,
+      `variant: high` o `variant: max`, y coincide con `model_variant` del
+      task file. Si el usuario usó otra variante, está anotado en
+      `validation.notes`.
 - [ ] El label `status: ...` coincide con el estado del task file:
   - `todo` para `created`/`planned`.
   - `in-progress` para `implemented`/`validated`/`security-cleared`/`documented`.

@@ -1,7 +1,8 @@
 # Equipo de agentes de World Craft
 
 > **Estado:** vigente desde el 12/11/2026. Revisado en M0-02 (issue
-> [#3](https://github.com/gonzalitojh/world-craft/issues/3)).
+> [#3](https://github.com/gonzalitojh/world-craft/issues/3)) y actualizado en
+> M0-13 (issue [#48](https://github.com/gonzalitojh/world-craft/issues/48)).
 > **Ámbito:** equipo de agentes, responsabilidades e invocación.
 > **Jerarquía documental:** [`AGENTS.md`](../AGENTS.md) contiene las reglas
 > obligatorias; [`docs/proceso-sdd.md`](proceso-sdd.md) es la fuente canónica del
@@ -68,7 +69,7 @@ Se quitaron de todos los agentes:
 El proceso no se redefine aquí. Resumen:
 
 ```text
-issue → adopción y task file → plan → implementación → QA → seguridad
+issue → adopción (variante incluida) y task file → plan → implementación → QA → seguridad
   → documentación → publisher local → revisión del usuario → publicación
   explícita → PR a dev → merge → issue done
 ```
@@ -108,6 +109,9 @@ Mientras tanto, el contenido se revisa con `documentation-sync` y
 - **Documentar:** pide `documentation-sync`.
 - **Preparar publicación local:** pide `publisher`.
 - **Diseñar o revisar UI:** pide `ui-ux-designer`.
+- **Antes de trabajar una issue:** revisa el label `variant: *` y selecciona la
+  variante recomendada en OpenCode. `sdd-master` la comprueba y te la recuerda.
+- **Permisos y autonomía:** consulta la sección 7.
 
 Ejemplos:
 
@@ -117,11 +121,65 @@ Usa ui-ux-designer para revisar el contraste de la pantalla de fichas en los dos
 Usa publisher en modo local para preparar la rama y el commit, sin push.
 ```
 
-## 7. Mantenimiento
+## 7. Permisos y autonomía
+
+Los permisos se definen en dos niveles y se combinan por orden; la última regla
+que coincide gana:
+
+- `opencode.jsonc`: guardrails comunes para todos los agentes.
+- `.opencode/agents/*.md`: restricciones adicionales de cada agente.
+
+Guardrails comunes:
+
+- `git push`, `gh pr create`, `gh pr merge` y `gh api` requieren confirmación
+  explícita.
+- Las operaciones destructivas (`git reset --hard`, `git clean`, `git restore`,
+  `git checkout --force`, `git switch --force`, `rm`, `Remove-Item`,
+  `git stash drop`) requieren confirmación.
+- `git add .`, `git add -A`, `git add --all` y equivalentes están denegados;
+  cualquier otro `git add` o `git stage` pide confirmación. Las formas amplias
+  de `git stage` también están denegadas.
+- La herramienta de lectura pide confirmación para `.env`, `.envrc`, claves,
+  certificados, credenciales habituales, `.git/config` y claves SSH, también en
+  rutas anidadas, y permite `.env.example`. Los comandos de shell que nombran
+  `.env` también piden confirmación. Cualquier ruta externa al proyecto pide
+  confirmación antes de leerse o editarse. `.env*`, claves y credenciales están
+  en `.gitignore`; un `.env` trackeado se marca HIGH sin abrirlo.
+- `git -C` y `git -c` requieren confirmación. Los comandos git de solo lectura
+  habituales no preguntan, salvo las excepciones de esta lista.
+- Las opciones git que ejecutan comandos externos o escriben archivos
+  (`--output`, `--ext-diff`, `--textconv`, `--open-files-in-pager`,
+  `--no-index`, `grep -O`) piden confirmación.
+
+Reglas por agente:
+
+- `security-champion` solo puede leer y ejecutar comandos git de inspección de
+  solo lectura. No edita, no publica, no navega, no usa Code Mode ni lanza
+  subagentes; su shell está denegado por defecto, no puede acceder a rutas
+  externas al proyecto y no puede leer `.env`, claves, credenciales,
+  `.git/config` ni claves SSH con `read`, `grep`, `glob` ni lectores de shell.
+  Si un `.env` aparece trackeado, lo marca HIGH sin abrirlo.
+- Los agentes que no declaran permisos heredan los guardrails comunes y la
+  política por defecto de OpenCode.
+
+Uso de «Allow always»:
+
+- Al responder a un prompt, «Allow always» guarda una aprobación persistente
+  por proyecto. Las reglas `deny` configuradas siempre prevalecen sobre esas
+  aprobaciones; entre reglas configuradas, gana la última que coincide.
+- Se usa para comandos de solo lectura que se repiten; no para publicación,
+  borrados ni secretos.
+- Si un agente necesita un comando nuevo, se añade a la allowlist en la misma
+  tarea y se documenta. No se concede `allow` global a publicación, borrados o
+  lectura de secretos.
+
+## 8. Mantenimiento
 
 - M0-02 (issue #3) revisó este documento para eliminar duplicidades con
   `AGENTS.md` y `docs/proceso-sdd.md`. La auditoría de la sección 2 se conserva
   como registro histórico no normativo.
+- M0-13 (issue #48) añadió la política de variantes y la sección de permisos.
+  Al cambiar `opencode.jsonc` o los agentes, revisa ambas secciones.
 - Si se añade, elimina o renombra un agente, o cambian sus responsabilidades,
   actualiza este documento y `.opencode/agents/` en la misma tarea.
 - Si cambia el flujo, las etiquetas, los estados, los hitos, el esquema de task
