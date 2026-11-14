@@ -1,7 +1,7 @@
 {
   "title": "Optimizar el coste de contexto de las sesiones de agentes",
   "description": "Tarea local sin issue. Una sesión de sdd-master con variant: low sobre la issue #5 costó 0,30 $. El diagnóstico apunta al contexto fijo que se reenvía en cada turno y en cada paso de cada subagente (AGENTS.md, opencode.jsonc, prompts de agentes, ~10.700 tokens) y a que los subagentes heredaban la variante de la sesión. El usuario aprobó el alcance de nivel 3: caché, prompts bajo demanda, orquestación proporcional y variante fija por subagente.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "acceptance_criteria": [
     "La caché de contexto está configurada (warming y compaction) con su razón documentada.",
@@ -41,5 +41,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 52,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/52",
+    "title": "chore: optimizar el coste de contexto de las sesiones de agentes",
+    "branch": "chore/local-issue-optimizacion-coste-cache",
+    "commit": "9292842"
   }
 }
