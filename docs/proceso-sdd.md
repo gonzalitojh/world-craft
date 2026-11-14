@@ -515,7 +515,7 @@ Antes de preparar o publicar:
 | [`docs/variantes-modelo.md`](variantes-modelo.md) | Vigente | Política de variantes de modelo por issue y automatización futura. |
 | `.github/ISSUE_TEMPLATE/task.md` | Vigente | Plantilla de issue con sección de variante recomendada. |
 | `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente. |
-| `docs/adr/` | Previsto | ADRs; los crea M0-03 (issue #4). |
+| `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier; índice en `docs/adr/README.md`. Los creó M0-03 (issue #4). |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional. Su creación formal corresponde a M5-01 (issue #28), pero cualquier funcionalidad visible anterior debe actualizarlo y dejar constancia en el task file. |
 | `docs/arquitectura.md` | Previsto | Mapa de módulos y flujos; documentación base M0-09 (issue #10). |
 | `README.md` | Previsto | Arranque local, variables de entorno, scripts y despliegue; documentación base M0-09 (issue #10). |
@@ -546,7 +546,8 @@ existan.
 - **`docs/adr/`:** ante una decisión de framework, librería, servicio, modelo de
   datos, permisos, almacenamiento, despliegue, temas, i18n, mapas o juego con
   consecuencias técnicas. Un ADR aceptado no se edita para cambiar la decisión:
-  se crea otro que lo superseda.
+  se crea otro que lo superseda. El índice y la plantilla viven en
+  `docs/adr/README.md` y `docs/adr/0000-template.md`.
 - **`CHANGELOG.md`:** cuando exista y el cambio sea relevante para el usuario o
   el despliegue.
 - **`docs/arquitectura.md`:** cuando cambian módulos, dependencias, flujos o
@@ -647,3 +648,4 @@ task file.
 |---|---|---|
 | 2026-11-12 | #3 (M0-02) | Versión inicial. Consolida el plan §4.3–4.6 y §4.8, las decisiones D-001–D-008 y la revisión de `AGENTS.md` y del flujo SDD. |
 | 2026-11-14 | #48 (M0-13) | Añade labels `variant: *`, `model_variant` en el task file, plantilla de issue con variante recomendada y política de permisos/autonomía de agentes. |
+| 2026-11-14 | #4 (M0-03) | Marca `docs/adr/` como vigente y enlaza el índice y la plantilla de ADRs. |

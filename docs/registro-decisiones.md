@@ -1,6 +1,6 @@
 # Registro de decisiones de World Craft
 
-Registro append-only de las decisiones de producto y arquitectura tomadas durante la planificación y el desarrollo. Cada entrada indica la fecha, el contexto, la decisión, sus consecuencias y las issues afectadas. Cuando una decisión sea arquitectónica, se reflejará también en un ADR (issue M0-03); este registro conserva el histórico de la conversación y del plan.
+Registro append-only de las decisiones de producto y arquitectura tomadas durante la planificación y el desarrollo. Cada entrada indica la fecha, el contexto, la decisión, sus consecuencias y las issues afectadas. Las decisiones arquitectónicas se reflejan también en `docs/adr/`; este registro conserva el histórico de la conversación y del plan.
 
 ## 2026-11-12 — Cierre de las 8 decisiones del plan (issue #1)
 
@@ -43,3 +43,25 @@ El usuario revisó y aprobó el plan. El trabajo se publica mediante la **PR [#4
 ## 2026-11-12 — Aprobación del plan y publicación en `dev`
 
 El usuario revisó el plan y lo aprobó. Se publica el trabajo mediante la PR [#45](https://github.com/gonzalitojh/world-craft/pull/45), con base en la rama de integración `dev`. A partir de este momento, `dev` es la rama de integración y `main` queda reservada para versiones estables.
+
+## 2026-11-14 — ADRs fundacionales (issue #4, M0-03)
+
+Se crean los 13 ADRs fundacionales en [`docs/adr/`](adr/README.md) para registrar las decisiones ya cerradas el 12/11/2026, sin introducir decisiones nuevas ni cambiar el alcance. El índice relaciona cada ADR con el plan y con las entradas D-001–D-008 de este registro.
+
+| ADR | Tema | Plan | Registro |
+|---|---|---|---|
+| [0001](adr/0001-nextjs-app-router.md) | Next.js, React y TypeScript | §3.2 D1 | — |
+| [0002](adr/0002-supabase-postgres-drizzle-zod.md) | Supabase Postgres, Drizzle y Zod | §3.2 D3–D4 | D-001 |
+| [0003](adr/0003-supabase-auth-allowlist-invitations.md) | Supabase Auth, allowlist e invitaciones | §3.2 D5, §3.4 | D-004 |
+| [0004](adr/0004-cloudflare-r2-storage-adapter.md) | Cloudflare R2 y `StorageAdapter` | §3.2 D6 | D-001 |
+| [0005](adr/0005-vercel-hobby.md) | Vercel Hobby y dominio | §3.2 D7, §7 | D-006 |
+| [0006](adr/0006-maplibre-terra-draw-geojson.md) | MapLibre, Terra Draw y GeoJSON | §3.2 D8 | D-003 |
+| [0007](adr/0007-react-flow-elk.md) | React Flow y ELK.js | §3.2 D9 | — |
+| [0008](adr/0008-tiptap-exporters.md) | Tiptap y exportadores | §3.2 D10 | — |
+| [0009](adr/0009-testing-pwa-backups.md) | Testing, PWA y backups | §3.2 D12–D14, §4.7 | — |
+| [0010](adr/0010-two-themes-design-system.md) | Dos temas y sistema de diseño | §3.2 D2 y D15 | D-002 |
+| [0011](adr/0011-allowlist-world-roles-own-worlds.md) | Allowlist, roles y mundos propios | §3.4, §7 | D-004 |
+| [0012](adr/0012-i18n-centralized-roadmap.md) | Internacionalización centralizada | §3.2 D16 | D-005 |
+| [0013](adr/0013-free-tier-continuity.md) | Continuidad de free tiers | §3.7 | D-001 |
+
+El usuario validó las decisiones y se retiró el label `needs-decision` de la issue #4. Cualquier cambio futuro de una decisión aceptada se hará con un ADR nuevo que superseda al anterior, sin reescribir el histórico.

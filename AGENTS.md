@@ -343,6 +343,8 @@ fase correspondiente. Si falta una decisión, se marca `needs-decision` o
 - [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md): plan aprobado y alcance.
 - [`docs/registro-decisiones.md`](docs/registro-decisiones.md): decisiones de
   producto y arquitectura.
+- [`docs/adr/README.md`](docs/adr/README.md): índice de ADRs con contexto,
+  decisión, alternativas, consecuencias y riesgos de free tier.
 - [`tasks/task-example.json`](tasks/task-example.json): ejemplo válido del
   esquema de task files.
 - `opencode.jsonc` y `.opencode/agents/*.md`: permisos, guardrails y autonomía
