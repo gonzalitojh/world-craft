@@ -1,7 +1,7 @@
 {
   "title": "Configurar repositorio, ramas, etiquetas y plantillas",
   "description": "Código de plan: M0-04. Fase M0. Depende de: —. Deja el repositorio listo para el flujo SDD: rama de integración dev, protección de main y dev, plantillas de issue y PR, taxonomía de etiquetas reproducible, archivos base del proyecto (.gitignore, .editorconfig, .nvmrc, README, CONTRIBUTING, SECURITY) y decisión sobre licencia y visibilidad. El repositorio parte de un estado privado en GitHub Free, que impedía proteger ramas; el usuario decidió hacerlo público con licencia MIT.",
-  "status": "review",
+  "status": "published",
   "model_variant": "low",
   "issue": {
     "number": 5,
@@ -50,5 +50,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": ".opencode/agents/documentation-sync.md"
+  },
+  "pr": {
+    "number": 51,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/51",
+    "title": "chore: configurar repositorio, ramas, etiquetas y plantillas (#5)",
+    "branch": "chore/issue-5-repo-bootstrap",
+    "commit": "6149113"
   }
 }
