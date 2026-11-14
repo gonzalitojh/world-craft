@@ -65,3 +65,14 @@ Se crean los 13 ADRs fundacionales en [`docs/adr/`](adr/README.md) para registra
 | [0013](adr/0013-free-tier-continuity.md) | Continuidad de free tiers | §3.7 | D-001 |
 
 El usuario validó las decisiones y se retiró el label `needs-decision` de la issue #4. Cualquier cambio futuro de una decisión aceptada se hará con un ADR nuevo que superseda al anterior, sin reescribir el histórico.
+
+## 2026-11-14 — Repositorio público y protección de ramas (issue #5, M0-04)
+
+**Contexto.** El repositorio estaba privado en GitHub Free, plan que no permite rulesets ni protección de ramas en repositorios privados. El plan asume un repositorio público sin secretos para Actions ilimitado y coste 0 €/mes. Faltaba decidir la visibilidad, la licencia y cómo proteger `main` y `dev` sin pagar GitHub Pro.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-009 | Visibilidad y licencia | Hacer público el repositorio y usar **licencia MIT** con titular `gonzalitojh` y año 2026. Los commits futuros usan el correo `noreply` de GitHub; el historial anterior no se reescribe. | El código y el historial quedan públicos, incluido el correo de commits antiguos. Se habilitan rulesets, escaneo de secretos, push protection y Actions sin límite de minutos en repos públicos. Se registra en el ADR 0014. |
+| D-010 | Protección de ramas | Crear los rulesets **`protect-dev`** y **`protect-main`**: PR obligatoria, sin force push ni borrado, 0 aprobaciones y resolución de hilos. Bypass del propietario **solo en `main`** para promover `dev` → `main`. Sin required status checks hasta la issue #6. | El flujo de PR contra `dev` se refuerza en GitHub y el propietario conserva la promoción a `main`. Los checks obligatorios llegan con CI (M0-05, issue #6). Las acciones administrativas del repositorio requieren confirmación explícita. Se registra en el ADR 0014. |
+
+Estas decisiones se documentan en el [ADR 0014](adr/0014-public-repo-mit-and-branch-protection.md) y en [`docs/proceso-sdd.md`](proceso-sdd.md) §7.7.

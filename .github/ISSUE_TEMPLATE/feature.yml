@@ -1,0 +1,56 @@
+name: Nueva funcionalidad
+description: Propone una funcionalidad nueva para World Craft.
+title: "[Feature] "
+labels: ["status: todo", "type: feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por proponer una funcionalidad. Antes de enviar, comprueba que
+        no exista ya una issue similar. La issue debe incluir contexto, alcance
+        y criterios verificables.
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: ¿Qué problema existe y por qué importa?
+    validations:
+      required: true
+  - type: textarea
+    id: alcance
+    attributes:
+      label: Alcance
+      description: ¿Qué cambios entran y qué queda fuera?
+    validations:
+      required: true
+  - type: textarea
+    id: dependencias
+    attributes:
+      label: Dependencias
+      description: Issues, decisiones o servicios de los que depende.
+      placeholder: "Ninguna."
+    validations:
+      required: false
+  - type: textarea
+    id: variante
+    attributes:
+      label: Variante recomendada
+      description: "Indica la variante y añade exactamente un label variant: default, variant: low, variant: high o variant: max. La sección y el label deben coincidir."
+      placeholder: "variant: high — justificación breve según docs/variantes-modelo.md."
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Un criterio verificable por línea.
+      placeholder: "- [ ] Criterio verificable."
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas y riesgos
+      description: Decisiones pendientes, riesgos o información adicional.
+    validations:
+      required: false

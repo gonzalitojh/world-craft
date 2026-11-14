@@ -5,7 +5,7 @@
 > **Ámbito:** decisiones de arquitectura, tecnología y producto con
 > consecuencias técnicas.
 > **Origen:** [`docs/plan-desarrollo.md`](../plan-desarrollo.md) §3.2 (D1–D17) y
-> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-008).
+> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-010).
 
 Este directorio conserva el **porqué** de las decisiones que sostienen World
 Craft. El plan define el alcance; el registro de decisiones conserva el
@@ -18,7 +18,8 @@ revertir una decisión sin contexto.
   cambia, no se reescribe el ADR aceptado: se crea otro que lo superseda.
 - **Estados permitidos:** `propuesto`, `aceptado` y `supersedido por ADR NNNN`.
   Los 13 ADRs fundacionales están `aceptados` porque el usuario cerró las
-  decisiones el 12/11/2026.
+  decisiones el 12/11/2026. El ADR 0014 también está `aceptado`: recoge la
+  decisión del 14/11/2026 sobre visibilidad, licencia y protección de ramas.
 - **Numeración:** cuatro dígitos y slug en inglés kebab-case
   (`NNNN-slug-en-kebab-case.md`). `0000` es la
   [`plantilla`](0000-template.md) y no cuenta como ADR.
@@ -43,6 +44,7 @@ revertir una decisión sin contexto.
 | [0011](0011-allowlist-world-roles-own-worlds.md) | Allowlist, roles y mundos propios | Allowlist para la app; membresía y roles por mundo; mundos propios | aceptado | 2026-11-12 | #4 |
 | [0012](0012-i18n-centralized-roadmap.md) | Internacionalización | Español en el MVP con mensajes tipados y ruta a inglés e italiano | aceptado | 2026-11-12 | #4 |
 | [0013](0013-free-tier-continuity.md) | Continuidad de free tiers | R2, keep-alive, backups y revisión de cuotas para sostener 0 €/mes | aceptado | 2026-11-12 | #4 |
+| [0014](0014-public-repo-mit-and-branch-protection.md) | Repositorio público, MIT y protección de ramas | Repo público con MIT y rulesets en `dev`/`main`, con bypass del owner solo en `main` | aceptado | 2026-11-14 | #5 |
 
 ## Trazabilidad con el plan y el registro
 
@@ -54,6 +56,7 @@ revertir una decisión sin contexto.
 | Acceso y roles | 0003, 0011 | §3.2 D5, §3.4 | D-004 |
 | Idioma | 0012 | §3.2 D16 | D-005 |
 | Dominio | 0005 | §3.2 D7, §7 | D-006 |
+| Visibilidad, licencia y protección de ramas | 0014 | §3.7, §4.4 | D-009, D-010 |
 
 ### Decisiones sin ADR propio
 

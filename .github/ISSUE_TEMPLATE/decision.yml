@@ -1,0 +1,91 @@
+name: Decisión
+description: Registra una decisión pendiente que requiere al usuario.
+title: "[Decisión] "
+labels: ["status: todo", "type: docs", "needs-decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Usa esta plantilla cuando falte una decisión y el trabajo deba detenerse.
+        La issue lleva el label `needs-decision` hasta que el usuario la resuelva.
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: ¿Por qué hay que decidir ahora y qué bloquea?
+    validations:
+      required: true
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema
+      description: Describe la disyuntiva con precisión.
+    validations:
+      required: true
+  - type: textarea
+    id: opciones
+    attributes:
+      label: Opciones
+      description: Enumera las alternativas reales, con ventajas e inconvenientes.
+    validations:
+      required: true
+  - type: textarea
+    id: recomendacion
+    attributes:
+      label: Recomendación
+      description: Opción propuesta y justificación.
+    validations:
+      required: true
+  - type: textarea
+    id: consecuencias
+    attributes:
+      label: Consecuencias
+      description: Impacto técnico, de coste, de seguridad y de alcance.
+    validations:
+      required: true
+  - type: textarea
+    id: issues-afectadas
+    attributes:
+      label: Issues afectadas
+      description: Issues, hitos o documentos que dependen de la decisión.
+      placeholder: "#0, #0"
+    validations:
+      required: false
+  - type: textarea
+    id: alcance
+    attributes:
+      label: Alcance
+      description: ¿Qué cambia cuando se decida y qué queda fuera?
+    validations:
+      required: true
+  - type: textarea
+    id: dependencias
+    attributes:
+      label: Dependencias
+      description: Issues, decisiones o servicios relacionados.
+      placeholder: "Ninguna."
+    validations:
+      required: false
+  - type: textarea
+    id: variante
+    attributes:
+      label: Variante recomendada
+      description: "Indica la variante y añade exactamente un label variant: default, variant: low, variant: high o variant: max. La sección y el label deben coincidir."
+      placeholder: "variant: max — justificación breve según docs/variantes-modelo.md."
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Un criterio verificable por línea.
+      placeholder: "- [ ] La decisión está registrada y el trabajo puede reanudarse."
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas y riesgos
+      description: Información adicional o riesgos de la decisión.
+    validations:
+      required: false

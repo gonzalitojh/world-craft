@@ -1,0 +1,54 @@
+{
+  "title": "Configurar repositorio, ramas, etiquetas y plantillas",
+  "description": "Código de plan: M0-04. Fase M0. Depende de: —. Deja el repositorio listo para el flujo SDD: rama de integración dev, protección de main y dev, plantillas de issue y PR, taxonomía de etiquetas reproducible, archivos base del proyecto (.gitignore, .editorconfig, .nvmrc, README, CONTRIBUTING, SECURITY) y decisión sobre licencia y visibilidad. El repositorio parte de un estado privado en GitHub Free, que impedía proteger ramas; el usuario decidió hacerlo público con licencia MIT.",
+  "status": "review",
+  "model_variant": "low",
+  "issue": {
+    "number": 5,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/5",
+    "title": "Configurar repositorio, ramas, etiquetas y plantillas"
+  },
+  "acceptance_criteria": [
+    "dev existe en local y en origin.",
+    "main y dev están protegidas.",
+    "Plantillas disponibles y probadas.",
+    "Etiquetas creadas de forma idempotente.",
+    "Documentación de ramas, commits y PRs.",
+    "No hay secretos ni archivos de entorno en el repo."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "dev existe en local y origin; documentada la promoción dev → main.",
+    "Protección de main y dev activa o, si el plan GitHub Free lo impide, decisión del usuario registrada y guardrails locales documentados.",
+    "Plantillas de issue (feature, bug, chore, decisión) y de PR disponibles.",
+    "Script de sincronización de etiquetas idempotente y ejecutado.",
+    ".gitignore, .editorconfig, .nvmrc/.node-version, README.md, CONTRIBUTING.md y SECURITY.md presentes y coherentes.",
+    "Licencia decidida y registrada, con archivo LICENSE si procede.",
+    "Visibilidad del repositorio decidida y registrada.",
+    "Responsive, dos temas y accesibilidad no aplican: cambio de infraestructura y documentación sin UI.",
+    "Manual de usuario no aplica: cambio interno sin efecto en la interfaz.",
+    "QA y seguridad superados; task file actualizado.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "1) Preflight: sincronizar dev, crear chore/issue-5-repo-bootstrap desde origin/dev y auditar el historial en busca de secretos, .env, correos y artefactos. 2) Archivos base: ampliar .gitignore con Node/Next, crear .editorconfig, .nvmrc (22), LICENSE MIT (titular gonzalitojh), README, CONTRIBUTING y SECURITY mínimos. 3) Plantillas: issues feature, bug, chore y decisión, config.yml sin issues en blanco y pull_request_template. 4) scripts/sync-labels.ps1 idempotente con las 44 etiquetas actuales, parámetro -Repo y -WhatIf; ejecutarlo dos veces y comparar. 5) scripts/set-branch-protection.ps1 con rulesets protect-dev y protect-main (PR obligatoria, sin force push ni borrado, 0 aprobaciones, bypass del owner solo en main), sin required checks hasta #6. 6) Hacer público el repo tras la auditoría; activar secret scanning, push protection, reporte privado de vulnerabilidades, borrado de rama al fusionar y permisos de Actions de solo lectura. 7) Aplicar y verificar los rulesets. 8) Documentación: ADR 0014, registro append-only D-009/D-010, proceso SDD, mapa documental y corrección de la nota de la issue #5, comentarios en #6 y #10. 9) QA, seguridad, documentation-sync y commit local en review, sin push ni PR.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-14",
+    "notes": "El usuario decide hacer público el repositorio y usar licencia MIT con titular gonzalitojh. Acepta que el historial exponga el correo de los commits y pide usar noreply en adelante. Aprueba la protección propuesta: PR obligatoria, sin force push ni borrado, 0 aprobaciones y bypass del propietario solo en main para promover dev → main. Acepta verificar plantillas por API y con la primera PR real, sin sandbox. Variante recomendada y usada: low."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Revisión final PASS tras dos iteraciones. Verificados los 6 criterios de aceptación: dev en local y origin; rulesets protect-dev/protect-main activos y efectivos con deletion, non_fast_forward y pull_request (0 aprobaciones, resolución de hilos), bypass solo del owner en main; 44 etiquetas idénticas a la taxonomía y script idempotente; plantillas YAML válidas y sin label ai (triaje manual); protección de secretos activa con 0 alertas; documentación de ramas, commits y PRs. QA detectó dos bloqueantes corregidos: documentación que afirmaba un estado remoto aún no aplicado (se aplicó y verificó antes del commit) y email personal en el commit (configurado noreply). También corrigió la idempotencia de set-branch-protection.ps1, que anidaba el array de rulesets y concatenaba sus ids; ahora usa --jq '.[] | @json' y verifica el bypass. Las plantillas y LICENSE no son visibles en GitHub hasta publicar la rama: verificación remota pendiente por diseño local-first, no es un fallo. Responsive, dos temas y accesibilidad no aplican: no hay UI."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Escaneo final sin hallazgos HIGH ni MEDIUM. Auditoría manual de todo el historial (git log -p --all): sin claves, tokens, .env, credenciales, blobs grandes ni correos reales; el único dato personal es el email del autor en commits antiguos, aceptado y documentado en el ADR 0014. Verificado en remoto: repo público, secret scanning y push protection activos con 0 alertas, reporte privado de vulnerabilidades activo, borrado de rama al fusionar, Actions en solo lectura. Scripts sin escritura fuera del repo (JSON por stdin), sin push ni borrado de etiquetas, y bypass de rulesets limitado al propietario 24208890 con comprobación de login. Sin dependencias ni servicios de pago nuevos."
+  },
+  "documentation": {
+    "adr": "docs/adr/0014-public-repo-mit-and-branch-protection.md",
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": ".opencode/agents/documentation-sync.md"
+  }
+}

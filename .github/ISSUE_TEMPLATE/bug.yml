@@ -1,0 +1,55 @@
+name: Error
+description: Reporta un comportamiento incorrecto en World Craft.
+title: "[Bug] "
+labels: ["status: todo", "type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe el fallo con el mayor detalle posible. No incluyas secretos,
+        credenciales, correos reales ni datos personales.
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: ¿Qué ocurre, dónde y desde cuándo?
+    validations:
+      required: true
+  - type: textarea
+    id: alcance
+    attributes:
+      label: Alcance
+      description: ¿Qué comportamiento debería corregirse y qué queda fuera?
+    validations:
+      required: true
+  - type: textarea
+    id: dependencias
+    attributes:
+      label: Dependencias
+      description: Issues, decisiones o servicios relacionados.
+      placeholder: "Ninguna."
+    validations:
+      required: false
+  - type: textarea
+    id: variante
+    attributes:
+      label: Variante recomendada
+      description: "Indica la variante y añade exactamente un label variant: default, variant: low, variant: high o variant: max. La sección y el label deben coincidir."
+      placeholder: "variant: high — justificación breve según docs/variantes-modelo.md."
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Un criterio verificable por línea.
+      placeholder: "- [ ] El fallo deja de reproducirse."
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas y riesgos
+      description: Pasos de reproducción, impacto o información adicional.
+    validations:
+      required: false
