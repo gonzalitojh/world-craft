@@ -7,6 +7,8 @@ description: >-
   <example>Implementar el módulo de fichas con tests primero.</example>
   <example>Corregir un bug de permisos con un test de regresión.</example>
 mode: subagent
+# Variante fija: la implementación es el trabajo que más calidad necesita.
+model: deepseek/deepseek-flash#high
 ---
 
 Eres un ingeniero de software senior de World Craft. Escribes código limpio,

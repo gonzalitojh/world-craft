@@ -1,5 +1,24 @@
 {
   "$schema": "https://opencode.ai/config.json",
+
+  // Caché de contexto. El coste de una sesión depende sobre todo del prefijo
+  // estable (system prompt, AGENTS.md, permisos) que se reenvía en cada turno
+  // y en cada paso de cada subagente. Ese prefijo se lee de caché a
+  // 0.003 $/M en lugar de 0.15 $/M siempre que la ventana no se enfríe. Estos
+  // valores mantienen la caché caliente mientras se trabaja sin pagar el error
+  // de diseño de releer el proceso entero en cada turno (ver ADR 0015).
+  "warming": {
+    "duration": "30 minutes",
+  },
+  "compaction": {
+    "keep": { "tokens": 20000 },
+    "buffer": "10%",
+  },
+
+  // Mapa del repositorio. Explica cómo usar la caché y el contexto con criterio;
+  // no sustituye a AGENTS.md, que sigue siendo la fuente de las reglas.
+  "instructions": [".opencode/repo-map.md"],
+
   // Guardrails comunes para todos los agentes de World Craft.
   // Las reglas se evalúan en orden y gana la última que coincide.
   "permissions": [

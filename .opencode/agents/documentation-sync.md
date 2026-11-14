@@ -7,6 +7,8 @@ description: >-
   la documentación existente haya quedado desactualizada. Verifica que cada
   issue visible actualice el manual y que los ADRs referencien su issue.
 mode: subagent
+# Variante fija (ADR 0015): redactar y comprobar enlaces es trabajo mecánico.
+model: deepseek/deepseek-flash#low
 ---
 
 Eres el agente de documentación de World Craft. Mantienes la documentación

@@ -2,7 +2,9 @@
 
 > **Estado:** vigente desde el 12/11/2026. Revisado en M0-02 (issue
 > [#3](https://github.com/gonzalitojh/world-craft/issues/3)) y actualizado en
-> M0-13 (issue [#48](https://github.com/gonzalitojh/world-craft/issues/48)).
+> M0-13 (issue [#48](https://github.com/gonzalitojh/world-craft/issues/48)) y
+> con la variante fija por subagente (ADR 0015, tarea local
+> `optimizacion-coste-cache`).
 > **Ámbito:** equipo de agentes, responsabilidades e invocación.
 > **Jerarquía documental:** [`AGENTS.md`](../AGENTS.md) contiene las reglas
 > obligatorias; [`docs/proceso-sdd.md`](proceso-sdd.md) es la fuente canónica del
@@ -53,16 +55,22 @@ Se quitaron de todos los agentes:
 
 ## 3. Equipo resultante
 
-| Agente | Modo | Responsabilidad |
-|---|---|---|
-| `sdd-master` | `primary` | Punto de entrada obligatorio. Adopta issues, crea task files, orquesta planificación, implementación, QA, seguridad, documentación y publisher local. Sincroniza labels y estados. |
-| `task-architect` | `subagent` | Plan técnico: arquitectura, pasos, riesgos, pruebas, estimación y preguntas abiertas. |
-| `tdd-ddd-architect` | `subagent` | Implementación con TDD pragmático, principios SOLID y diseño por dominio cuando aporta valor. |
-| `qa-reviewer` | `subagent` | Revisión de criterios de aceptación, casos límite, responsive, temas, accesibilidad, pruebas y manual. |
-| `security-champion` | `subagent` | Escaneo de secretos, credenciales y datos sensibles; revisión de RLS, R2, auth, CSP y subidas. |
-| `documentation-sync` | `subagent` | ADRs, manual de usuario, changelog, arquitectura y coherencia documental. |
-| `publisher` | `subagent` | Rama + commit + diff en local. Push y PR solo con confirmación explícita. |
-| `ui-ux-designer` | `subagent` | Sistema de diseño, tokens, componentes, dos temas, responsive, accesibilidad y revisión visual. |
+| Agente | Modo | Variante fija | Responsabilidad |
+|---|---|---|---|
+| `sdd-master` | `primary` | la de la sesión | Punto de entrada obligatorio. Adopta issues, crea task files, orquesta planificación, implementación, QA, seguridad, documentación y publisher local. Sincroniza labels y estados. |
+| `task-architect` | `subagent` | `high` | Plan técnico: arquitectura, pasos, riesgos, pruebas, estimación y preguntas abiertas. |
+| `tdd-ddd-architect` | `subagent` | `high` | Implementación con TDD pragmático, principios SOLID y diseño por dominio cuando aporta valor. |
+| `qa-reviewer` | `subagent` | `low` | Revisión de criterios de aceptación, casos límite, responsive, temas, accesibilidad, pruebas y manual. |
+| `security-champion` | `subagent` | `high` | Escaneo de secretos, credenciales y datos sensibles; revisión de RLS, R2, auth, CSP y subidas. |
+| `documentation-sync` | `subagent` | `low` | ADRs, manual de usuario, changelog, arquitectura y coherencia documental. |
+| `publisher` | `subagent` | `low` | Rama + commit + diff en local. Push y PR solo con confirmación explícita. |
+| `ui-ux-designer` | `subagent` | `high` | Sistema de diseño, tokens, componentes, dos temas, responsive, accesibilidad y revisión visual. |
+
+Las variantes fijas se declaran en el frontmatter de cada agente y no heredan la
+de la sesión (ADR 0015; motivo de cada una en
+[`docs/variantes-modelo.md`](variantes-modelo.md), sección 5). `sdd-master` sigue
+la variante que el usuario seleccione para la sesión, según el label
+`variant: *` de la issue.
 
 ## 4. Flujo, etiquetas y publicación
 
@@ -111,6 +119,13 @@ Mientras tanto, el contenido se revisa con `documentation-sync` y
 - **Diseñar o revisar UI:** pide `ui-ux-designer`.
 - **Antes de trabajar una issue:** revisa el label `variant: *` y selecciona la
   variante recomendada en OpenCode. `sdd-master` la comprueba y te la recuerda.
+  No cambies de modelo ni de variante a mitad de una sesión: invalida la caché
+  de contexto y multiplica el coste (ADR 0015).
+- **Proceso sin abrir la especificación:** pide la skill `repo-map`; resume
+  puertas, estados, esquema de task files, labels y publicación.
+- **Tareas documentales o de proceso:** el flujo no invoca QA, seguridad,
+  documentación ni planificación como subagentes; se resuelven con el
+  checklist de `docs/proceso-sdd.md`, sección 9.
 - **Permisos y autonomía:** consulta la sección 7.
 
 Ejemplos:
@@ -180,6 +195,9 @@ Uso de «Allow always»:
   como registro histórico no normativo.
 - M0-13 (issue #48) añadió la política de variantes y la sección de permisos.
   Al cambiar `opencode.jsonc` o los agentes, revisa ambas secciones.
+- ADR 0015 (tarea local `optimizacion-coste-cache`) fijó una variante por
+  subagente y añadió la skill `repo-map`. Si cambias la variante de un agente,
+  actualiza la tabla de la sección 3 y `docs/variantes-modelo.md`, sección 5.
 - Si se añade, elimina o renombra un agente, o cambian sus responsabilidades,
   actualiza este documento y `.opencode/agents/` en la misma tarea.
 - Si cambia el flujo, las etiquetas, los estados, los hitos, el esquema de task

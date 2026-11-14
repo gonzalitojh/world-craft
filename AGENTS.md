@@ -279,6 +279,9 @@ task file y en el informe final:
 - [ ] Sin servicios de pago ni dependencias injustificadas.
 - [ ] La variante recomendada y la usada están registradas en el task file.
 - [ ] Task file actualizado con estados, QA, seguridad y documentación.
+- [ ] Coste de contexto revisado: no se cambió de modelo ni de variante a mitad
+      de sesión ni se editaron `AGENTS.md` o los agentes mientras se usaban
+      (ADR 0015).
 - [ ] Cambio en `review` para la revisión local del usuario, o PR fusionada en
       `dev` si ya se publicó.
 
@@ -333,12 +336,18 @@ No se saltan puertas. Si QA, seguridad o documentación fallan, se vuelve a la
 fase correspondiente. Si falta una decisión, se marca `needs-decision` o
 `status: blocked` y se detiene el trabajo.
 
+La orquestación es **proporcional al coste** (ADR 0015): las tareas
+documentales o de proceso resuelven QA, seguridad y documentación con el
+checklist documental, sin invocar subagentes; el detalle está en la sección 3.2
+de [`docs/proceso-sdd.md`](docs/proceso-sdd.md).
+
 ## Documentos de referencia
 
 - [`docs/proceso-sdd.md`](docs/proceso-sdd.md): flujo canónico, task files,
   etiquetas, estados, hitos y publicación local-first.
 - [`docs/variantes-modelo.md`](docs/variantes-modelo.md): política de variantes
-  de modelo por issue y automatización futura.
+  de modelo por issue, variante fija por subagente, caché de contexto y
+  automatización futura.
 - [`docs/agentes.md`](docs/agentes.md): equipo de agentes y responsabilidades.
 - [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md): plan aprobado y alcance.
 - [`docs/registro-decisiones.md`](docs/registro-decisiones.md): decisiones de

@@ -45,6 +45,7 @@ revertir una decisión sin contexto.
 | [0012](0012-i18n-centralized-roadmap.md) | Internacionalización | Español en el MVP con mensajes tipados y ruta a inglés e italiano | aceptado | 2026-11-12 | #4 |
 | [0013](0013-free-tier-continuity.md) | Continuidad de free tiers | R2, keep-alive, backups y revisión de cuotas para sostener 0 €/mes | aceptado | 2026-11-12 | #4 |
 | [0014](0014-public-repo-mit-and-branch-protection.md) | Repositorio público, MIT y protección de ramas | Repo público con MIT y rulesets en `dev`/`main`, con bypass del owner solo en `main` | aceptado | 2026-11-14 | #5 |
+| [0015](0015-coste-contexto-cache-variante-fija.md) | Coste de contexto: caché, prompts bajo demanda y variante fija | `warming`, skill `repo-map`, orquestación proporcional y variante fija por subagente | aceptado | 2026-11-14 | — (tarea local) |
 
 ## Trazabilidad con el plan y el registro
 
@@ -57,6 +58,7 @@ revertir una decisión sin contexto.
 | Idioma | 0012 | §3.2 D16 | D-005 |
 | Dominio | 0005 | §3.2 D7, §7 | D-006 |
 | Visibilidad, licencia y protección de ramas | 0014 | §3.7, §4.4 | D-009, D-010 |
+| Coste de contexto y variante por subagente | 0015 | §4.3, §4.9 | — |
 
 ### Decisiones sin ADR propio
 

@@ -8,6 +8,9 @@ description: >-
   usuario pide QA de una feature recién implementada.</example><example>El
   agente maestro invoca QA después de la implementación.</example>
 mode: subagent
+# Variante fija (ADR 0015): QA es comprobar contra una checklist, no diseñar.
+# Antes heredaba la variante de la sesión y costaba lo mismo con `max`.
+model: deepseek/deepseek-flash#low
 ---
 
 Eres el agente de QA de World Craft. Revisas el trabajo con ojo crítico y

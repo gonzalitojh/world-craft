@@ -1,9 +1,11 @@
 # Variantes de modelo en World Craft
 
 > **Estado:** vigente desde el 14/11/2026 (issue
-> [#48](https://github.com/gonzalitojh/world-craft/issues/48), M0-13).
+> [#48](https://github.com/gonzalitojh/world-craft/issues/48), M0-13);
+> ampliado con la variante fija por subagente (ADR 0015, tarea local
+> `optimizacion-coste-cache`).
 > **Ámbito:** recomendación de variante por issue, uso de `default`, `low`,
-> `high` y `max`, y automatización futura.
+> `high` y `max`, variante fija por subagente y automatización futura.
 > **Jerarquía documental:** mandan [`AGENTS.md`](../AGENTS.md) y
 > [`docs/proceso-sdd.md`](proceso-sdd.md). Este documento desarrolla la
 > política sin contradecirlos.
@@ -12,10 +14,10 @@
 
 En OpenCode, una variante es una opción con nombre dentro de un modelo. Se
 selecciona con `proveedor/modelo#variante`, por ejemplo
-`opencode/deepseek-v4.1-flash-free#high`. Las variantes suelen ajustar el
-esfuerzo de razonamiento o el presupuesto de tokens; no son modelos distintos.
+`deepseek/deepseek-flash#high`. Las variantes suelen ajustar el esfuerzo de
+razonamiento o el presupuesto de tokens; no son modelos distintos.
 
-El modelo gratuito de DeepSeek en OpenCode expone las variantes `low`, `high` y
+El modelo `deepseek/deepseek-flash` expone las variantes `none`, `low`, `high` y
 `max`. La etiqueta `default` no fija ninguna variante: usa el comportamiento por
 defecto del modelo.
 
@@ -82,9 +84,9 @@ en tareas de seguridad, datos o permisos solo para ahorrar tokens.
 3. El task file copia la recomendación en el campo `model_variant`.
 4. `sdd-master` comprueba el label al adoptar la issue y recuerda al usuario la
    variante que debe seleccionar en OpenCode.
-5. Los subagentes heredan la variante de la sesión. Si en el futuro se fija
-   una variante por agente, se documenta el modelo completo en el frontmatter
-   del agente y se revisa al cambiar de modelo.
+5. Cada subagente declara una variante fija en el frontmatter con
+   `model: <proveedor>/<modelo>#<variante>`; ya no hereda la variante de la
+   sesión. La tabla está en la sección 5.0.
 6. Al cerrar la tarea, el task file conserva `model_variant` y, si el usuario
    usó otra variante, la decisión queda en `validation.notes`.
 
@@ -92,7 +94,31 @@ La variante recomendada es una guía, no una puerta: no bloquea la adopción ni
 la implementación. Lo que sí es obligatorio es que la issue tenga un label
 `variant: *` y que la recomendación esté justificada.
 
-## 5. Automatización
+## 5. Variante fija por subagente
+
+Desde ADR 0015 cada subagente fija su modelo y variante en el frontmatter. El
+motivo es que un subagente arranca con contexto limpio y heredaba la variante de
+la sesión: una tarea `low` podía terminar pagando `max` en QA o documentación
+sin que nadie lo eligiera. Fijarla por agente hace el coste predecible.
+
+| Agente | Variante fija | Motivo |
+|---|---|---|
+| `task-architect` | `high` | Planifica y compara alternativas; se revisa con el usuario antes de implementar. |
+| `tdd-ddd-architect` | `high` | Es la implementación: donde más importa la calidad. |
+| `ui-ux-designer` | `high` | El diseño exige criterio y conocimiento del sistema visual. |
+| `qa-reviewer` | `low` | Comprueba una checklist explícita; los bloqueantes los decide el agente maestro. |
+| `security-champion` | `high` | Puerta de seguridad: mantiene esfuerzo alto aunque no herede `max`. |
+| `documentation-sync` | `low` | Redactar, enlazar y comprobar JSON es trabajo mecánico. |
+| `publisher` | `low` | Los comandos git y `gh` están definidos paso a paso. |
+
+`#none` (sin razonamiento) no se usa en ninguna puerta de calidad. Si una
+variante fija produce un FAIL que se repite dos veces, se sube un nivel y se
+anota en el task file, igual que con la variante de la issue.
+
+El modelo `<proveedor>/<modelo>` se revisa al cambiar de modelo de sesión: no
+se deduce del catálogo, se deja escrito en el agente.
+
+## 5.1 Automatización
 
 ### Lo que OpenCode permite hoy
 
@@ -123,15 +149,9 @@ la selección explícita del usuario debe poder ganar.
 
 ### Alternativa nativa
 
-Si se decide fijar variantes por agente, el frontmatter admite:
-
-```yaml
-model: opencode/deepseek-v4.1-flash-free#high
-```
-
-Eso fija también el modelo, no solo la variante. Solo se hará si el usuario
-acepta que ese agente deje de heredar el modelo de la sesión. No es el valor
-por defecto de esta política.
+El frontmatter admite `model: <proveedor>/<modelo>#<variante>`, que fija
+también el modelo y no solo la variante. Es la mecánica que usa la sección 5:
+el usuario aceptó que los subagentes dejen de heredar la variante de la sesión.
 
 ## 6. Medición y revisión
 
@@ -153,11 +173,28 @@ La API de sesiones expone estadísticas en
 sesión. La medición es opcional: la política no depende de que exista una
 herramienta concreta.
 
+### Caché de contexto y coste real de una sesión
+
+El coste de una sesión no depende solo de la variante. La mayor parte del gasto
+es el prefijo estable (system prompt, `AGENTS.md`, `opencode.jsonc`, agentes)
+que se reenvía en cada turno y en cada paso de cada subagente. DeepSeek lo cobra
+a 0,15 $/M si se procesa y a 0,003 $/M si se lee de caché: una diferencia de 50
+veces. Reglas operativas (ADR 0015):
+
+1. No cambiar de modelo ni de variante a mitad de sesión.
+2. No editar `AGENTS.md` ni `.opencode/agents/*` mientras se trabaja con ellos.
+3. Mantener un prefijo estable: no reordenar las instrucciones entre turnos.
+4. `warming` mantiene la caché caliente 30 minutos tras la última petición.
+5. Con `OPENCODE_LOG_LEVEL=DEBUG`, el log del servidor muestra `input` y
+   `cache.read` por llamada; si el mismo prefijo aparece como `input` en
+   llamadas consecutivas, la caché está fallando.
+
 ## 7. Mantenimiento
 
-- Si cambian los labels, la tabla o el campo `model_variant`, actualizar este
-  documento, [`docs/proceso-sdd.md`](proceso-sdd.md) y
-  [`AGENTS.md`](../AGENTS.md) en la misma tarea.
+- Si cambian los labels, la tabla, el campo `model_variant` o la variante fija
+  por subagente, actualizar este documento,
+  [`docs/proceso-sdd.md`](proceso-sdd.md) y [`AGENTS.md`](../AGENTS.md) en la
+  misma tarea.
 - Si se implementa el plugin de automatización, documentar aquí su precedencia,
   su configuración y cómo desactivarlo.
 - Si el modelo gratuito deja de estar disponible, revisar las variantes y las
