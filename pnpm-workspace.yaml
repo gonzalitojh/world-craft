@@ -1,0 +1,10 @@
+# Configuración de pnpm (pnpm 12 ya no lee la clave `pnpm` de package.json).
+#
+# `overrides` fija una única versión de postcss. Vite 8.3.8 pide
+# `postcss: ^8.5.32` y el resolutor de un paquete nuevo puede elegir una
+# versión recién publicada que pnpm rechaza por su política de antigüedad
+# mínima de 24 h en CI (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION). Fijarla aquí
+# deja un lockfile estable y reproducible; Dependabot la sube cuando la nueva
+# versión haya superado la ventana.
+overrides:
+  postcss: 8.5.32

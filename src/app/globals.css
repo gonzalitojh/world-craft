@@ -1,0 +1,129 @@
+@import 'tailwindcss';
+
+/*
+ * World Craft · tokens mínimos del scaffold (M0-06, issue #7).
+ *
+ * Hay una única paleta cruda (`--craft-*`) y dos mapeos semánticos: el tema
+ * claro en `:root` (funciona sin JavaScript) y el oscuro en `[data-theme]`.
+ * Los componentes usan solo las utilidades semánticas (`bg-surface`,
+ * `text-foreground`, `border-border`...), nunca `--craft-*` directamente.
+ *
+ * El sistema de diseño completo llega con M0-07 (issue #8).
+ */
+
+:root {
+  /* Paleta cruda · tema claro */
+  --craft-paper: #f7f2e8;
+  --craft-ink: #1f1b16;
+  --craft-paper-raised: #efe8db;
+  --craft-ink-muted: #5a5147;
+  --craft-border-light: #8c7a63;
+  --craft-accent-light: #7a4a2b;
+  --craft-accent-ink-light: #f7f2e8;
+  --craft-danger-light: #8c4a3c;
+  --craft-danger-ink-light: #f7f2e8;
+  --craft-focus-light: #2f6f62;
+
+  /* Paleta cruda · tema oscuro */
+  --craft-night: #15120e;
+  --craft-night-ink: #ede6d8;
+  --craft-night-raised: #211c17;
+  --craft-night-ink-muted: #b9ae9c;
+  --craft-night-border: #7a6a56;
+  --craft-night-accent: #d9a066;
+  --craft-night-accent-ink: #15120e;
+  --craft-night-danger: #e08a7a;
+  --craft-night-danger-ink: #15120e;
+  --craft-night-focus: #7fbfb0;
+}
+
+/* Mapeo semántico · tema claro. Es el valor por defecto sin JavaScript. */
+:root,
+[data-theme='light'] {
+  --surface: var(--craft-paper);
+  --foreground: var(--craft-ink);
+  --surface-raised: var(--craft-paper-raised);
+  --muted-foreground: var(--craft-ink-muted);
+  --border: var(--craft-border-light);
+  --accent: var(--craft-accent-light);
+  --accent-ink: var(--craft-accent-ink-light);
+  --danger: var(--craft-danger-light);
+  --danger-ink: var(--craft-danger-ink-light);
+  --focus: var(--craft-focus-light);
+}
+
+/* Mapeo semántico · tema oscuro. Lo activa el script de `layout.tsx`. */
+[data-theme='dark'] {
+  --surface: var(--craft-night);
+  --foreground: var(--craft-night-ink);
+  --surface-raised: var(--craft-night-raised);
+  --muted-foreground: var(--craft-night-ink-muted);
+  --border: var(--craft-night-border);
+  --accent: var(--craft-night-accent);
+  --accent-ink: var(--craft-night-accent-ink);
+  --danger: var(--craft-night-danger);
+  --danger-ink: var(--craft-night-danger-ink);
+  --focus: var(--craft-night-focus);
+}
+
+/*
+ * `inline` es obligatorio: las utilidades deben resolver `var(--surface)` en
+ * tiempo de ejecución para que el cambio de tema no requiera recompilar CSS.
+ */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-surface-raised: var(--surface-raised);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-focus: var(--focus);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  /* El color de borde es siempre el token semántico: los componentes no
+     repiten `border-border` en cada borde. */
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    background-color: var(--surface);
+  }
+
+  body {
+    @apply bg-surface text-foreground font-sans antialiased;
+    overflow-wrap: break-word;
+  }
+
+  /* Foco visible global: ningún componente puede quitarlo sin sustituto. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  /* Movimiento reducido: se anulan animaciones y transiciones, incluidas las
+     utilidades de Tailwind (`animate-spin`, `transition-colors`...). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

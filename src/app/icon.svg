@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Icono estático de la aplicación. Un SVG no puede leer variables CSS del
+    documento, así que repite la paleta de `src/app/globals.css`:
+      #15120e = --craft-night (--surface en tema oscuro)
+      #f7f2e8 = --craft-paper (--surface y --accent-ink en tema claro)
+      #7a4a2b = --craft-accent-light (--accent en tema claro)
+    Si cambian los tokens, hay que cambiar el icono a mano.
+  -->
+  <rect width="32" height="32" rx="7" fill="#15120e" />
+  <path
+    d="M16 4.5l2.65 7.55L26.5 14.7l-7.85 2.65L16 24.9l-2.65-7.55L5.5 14.7l7.85-2.65z"
+    fill="#f7f2e8"
+  />
+  <circle cx="16" cy="14.7" r="2.1" fill="#7a4a2b" />
+</svg>

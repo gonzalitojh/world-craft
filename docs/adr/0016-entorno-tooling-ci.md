@@ -1,6 +1,12 @@
 # ADR 0016 — Entorno de desarrollo, tooling y CI base
 
-- **Estado:** aceptado
+> **Nota de supersesión:** este ADR queda **supersedido por el
+> [ADR 0017](0017-nextjs-scaffold-and-env-contract.md)** al integrarse Next.js
+> en la issue #7. Se conserva el resto del contenido como histórico. El ADR
+> 0017 mantiene expresamente las subdecisiones sobre Node 22, pnpm/Corepack, CI
+> con cuatro required checks, gitleaks/`pnpm audit` y protección de ramas.
+
+- **Estado:** supersedido por ADR 0017
 - **Fecha de la decisión:** 2026-11-14
 - **Fecha del documento:** 2026-11-14
 - **Issue:** #6 (M0-05)

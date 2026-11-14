@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+# Sin telemetría de Next.js en CI: ni datos de uso ni peticiones de red extra.
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
