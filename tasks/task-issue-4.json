@@ -1,7 +1,7 @@
 {
   "title": "Crear los ADRs fundacionales",
   "description": "Código de plan: M0-03. Fase M0. Depende de M0-01 y M0-02 (issues #2 y #3, cerradas y fusionadas en dev). Documenta en ADRs las decisiones de arquitectura, tecnología y producto ya cerradas en docs/plan-desarrollo.md (D1–D17) y en docs/registro-decisiones.md (D-001–D-008), sin introducir decisiones nuevas ni cambiar el alcance aprobado.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 4,
@@ -47,5 +47,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": ".opencode/agents/documentation-sync.md"
+  },
+  "pr": {
+    "number": 50,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/50",
+    "title": "docs: crear los ADRs fundacionales (#4)",
+    "branch": "docs/issue-4-foundational-adrs",
+    "commit": "4227d53"
   }
 }
