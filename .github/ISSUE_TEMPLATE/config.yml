@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Proceso SDD de World Craft
+    url: https://github.com/gonzalitojh/world-craft/blob/dev/docs/proceso-sdd.md
+    about: Flujo de trabajo, puertas, estados, etiquetas y publicación local-first.
+  - name: Reglas del proyecto
+    url: https://github.com/gonzalitojh/world-craft/blob/dev/AGENTS.md
+    about: Reglas obligatorias, Definition of Ready y Definition of Done.

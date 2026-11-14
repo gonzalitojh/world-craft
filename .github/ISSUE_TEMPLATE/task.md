@@ -2,7 +2,7 @@
 name: Tarea
 about: Issue para el flujo SDD de World Craft
 title: ""
-labels: "ai, status: todo"
+labels: "status: todo"
 assignees: ""
 ---
 

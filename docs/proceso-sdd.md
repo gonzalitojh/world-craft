@@ -2,12 +2,13 @@
 
 > **Estado:** vigente desde el 12/11/2026 (issue
 > [#3](https://github.com/gonzalitojh/world-craft/issues/3), M0-02);
-> actualizado el 14/11/2026 (issue
-> [#48](https://github.com/gonzalitojh/world-craft/issues/48), M0-13).
+> actualizado el 14/11/2026 (issues
+> [#48](https://github.com/gonzalitojh/world-craft/issues/48) y
+> [#5](https://github.com/gonzalitojh/world-craft/issues/5), M0-13 y M0-04).
 > **Ámbito:** flujo de trabajo, puertas, task files, etiquetas, estados, hitos,
-> publicación local-first y mantenimiento documental.
+> publicación local-first, protección de ramas y mantenimiento documental.
 > **Origen:** consolida el plan [`plan-desarrollo.md`](plan-desarrollo.md)
-> §4.3–4.6 y §4.8 y las decisiones D-001–D-008 del
+> §4.3–4.6 y §4.8 y las decisiones D-001–D-010 del
 > [`registro-decisiones.md`](registro-decisiones.md).
 
 ## 1. Autoridad documental y regla de conflicto
@@ -295,9 +296,12 @@ Cada issue tiene **exactamente una** prioridad y **exactamente un** tamaño.
 
 ### 5.5 Otros labels
 
-- `ai`: la issue está lista para ser trabajada por agentes.
+- `ai`: la issue está lista para ser trabajada por agentes. Las plantillas de
+  issue no lo añaden automáticamente: se aplica tras el triaje, para que una
+  issue externa en un repositorio público no sea adoptada sin revisión.
 - `needs-decision`: requiere una decisión del usuario antes de continuar. Es
-  una **bandera**, no un estado: no sustituye a `status: *`.
+  una **bandera**, no un estado: no sustituye a `status: *`. Una issue con
+  `needs-decision` nunca se adopta hasta que el usuario la resuelva.
 - `future`: backlog, fuera del MVP.
 
 #### Variantes de modelo
@@ -500,6 +504,33 @@ Antes de preparar o publicar:
 - Nunca commitear `.env`, claves, tokens, `node_modules/`, `.next/` ni
   artefactos de build.
 
+### 7.7 Protección de ramas y administración del repositorio
+
+El repositorio es **público** y usa licencia **MIT** (ADR 0014, D-009). El
+contenido de la aplicación sigue siendo privado: la visibilidad afecta al
+código, no a los datos de los usuarios.
+
+- **Rulesets.** `protect-dev` y `protect-main` están activos sobre
+  `refs/heads/dev` y `refs/heads/main`. Prohíben el borrado y el force push y
+  exigen Pull Request con 0 aprobaciones y resolución de hilos.
+- **Bypass.** `protect-dev` no tiene bypass. En `protect-main` solo el
+  propietario puede saltarse las reglas para promover `dev` a `main` cuando la
+  versión es estable.
+- **Required status checks.** No se exigen todavía; llegan con la issue #6
+  (M0-05, CI). Añadirlos antes bloquearía todas las PRs.
+- **Seguridad del repositorio.** Escaneo de secretos, push protection y reporte
+  privado de vulnerabilidades activos; el borrado automático de la rama al
+  fusionar está activado y los permisos de GitHub Actions son de solo lectura por
+  defecto.
+- **Confirmación explícita.** Cambiar la visibilidad, la licencia, los rulesets,
+  las etiquetas o cualquier otra configuración administrativa exige una
+  petición explícita del usuario. El publisher no altera la administración del
+  repositorio.
+- **Scripts de mantenimiento.** `scripts/sync-labels.ps1` sincroniza de forma
+  idempotente las 44 etiquetas canónicas y lista las extra sin borrarlas;
+  `scripts/set-branch-protection.ps1` crea o actualiza los rulesets por nombre y
+  admite `-DryRun`. Ambos son herramientas locales: no publican ni abren PRs.
+
 ## 8. Documentación y mantenimiento
 
 ### 8.1 Mapa de documentos
@@ -514,12 +545,19 @@ Antes de preparar o publicar:
 | [`tasks/task-example.json`](../tasks/task-example.json) | Vigente | Ejemplo válido del esquema de task files. |
 | [`docs/variantes-modelo.md`](variantes-modelo.md) | Vigente | Política de variantes de modelo por issue y automatización futura. |
 | `.github/ISSUE_TEMPLATE/task.md` | Vigente | Plantilla de issue con sección de variante recomendada. |
+| `.github/ISSUE_TEMPLATE/feature.yml`, `bug.yml`, `chore.yml`, `decision.yml` | Vigente | Formularios de issue por tipo, con contexto, alcance, dependencias, variante, criterios y notas; la de decisión añade problema, opciones, recomendación, consecuencias e issues afectadas. |
+| `.github/ISSUE_TEMPLATE/config.yml` | Vigente | Deshabilita las issues en blanco y enlaza el proceso SDD y `AGENTS.md`. |
+| `.github/pull_request_template.md` | Vigente | Plantilla de PR: resumen, issue, cambios, pruebas, documentación, UI, seguridad y base `dev`. |
+| `scripts/sync-labels.ps1` | Vigente | Sincronización idempotente de las 44 etiquetas canónicas; no borra etiquetas extra. |
+| `scripts/set-branch-protection.ps1` | Vigente | Crea o actualiza los rulesets `protect-dev` y `protect-main`; admite `-DryRun`. |
+| `LICENSE` | Vigente | Licencia MIT con titular `gonzalitojh`. |
+| `SECURITY.md` | Vigente | Alcance y reporte privado de vulnerabilidades. |
 | `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente. |
 | `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier; índice en `docs/adr/README.md`. Los creó M0-03 (issue #4). |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional. Su creación formal corresponde a M5-01 (issue #28), pero cualquier funcionalidad visible anterior debe actualizarlo y dejar constancia en el task file. |
 | `docs/arquitectura.md` | Previsto | Mapa de módulos y flujos; documentación base M0-09 (issue #10). |
-| `README.md` | Previsto | Arranque local, variables de entorno, scripts y despliegue; documentación base M0-09 (issue #10). |
-| `CONTRIBUTING.md` | Previsto | Flujo, ramas, commits y calidad; documentación base M0-09 (issue #10). |
+| `README.md` | Vigente (mínimo; se amplía en M0-09, issue #10) | Qué es World Craft, stack, estructura, ramas y enlaces; el arranque local llega con M0-05 (issue #6) y M0-09 (issue #10). |
+| `CONTRIBUTING.md` | Vigente (mínimo; se amplía en M0-09, issue #10) | Issue-first, ramas, commits, PRs, calidad y seguridad. |
 | `CHANGELOG.md` | Previsto | Cambios por versión; se crea con la primera versión o cuando el usuario lo pida. No tiene issue asignada. |
 
 Los documentos previstos se citan como código, no como enlaces, hasta que
@@ -649,3 +687,4 @@ task file.
 | 2026-11-12 | #3 (M0-02) | Versión inicial. Consolida el plan §4.3–4.6 y §4.8, las decisiones D-001–D-008 y la revisión de `AGENTS.md` y del flujo SDD. |
 | 2026-11-14 | #48 (M0-13) | Añade labels `variant: *`, `model_variant` en el task file, plantilla de issue con variante recomendada y política de permisos/autonomía de agentes. |
 | 2026-11-14 | #4 (M0-03) | Marca `docs/adr/` como vigente y enlaza el índice y la plantilla de ADRs. |
+| 2026-11-14 | #5 (M0-04) | Añade la protección de ramas con rulesets, el repositorio público con licencia MIT y los scripts de etiquetas y protección; actualiza el mapa documental con README y CONTRIBUTING mínimos, LICENSE, SECURITY, plantillas y scripts. |

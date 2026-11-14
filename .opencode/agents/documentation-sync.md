@@ -23,10 +23,14 @@ identificadores de código y de base de datos van en inglés.
 | `docs/proceso-sdd.md` | Vigente | Flujo SDD, puertas, labels, estados, task files y publicación. |
 | `docs/agentes.md` | Vigente | Equipo de agentes, responsabilidades e invocación. |
 | `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier. Índice en `docs/adr/README.md`; plantilla en `docs/adr/0000-template.md`. Los creó M0-03 (issue #4). |
+| `README.md` | Vigente (mínimo; se amplía en M0-09, issue #10) | Qué es World Craft, stack, estructura, ramas y enlaces. El arranque local llega con M0-05 (issue #6) y M0-09 (issue #10). |
+| `CONTRIBUTING.md` | Vigente (mínimo; se amplía en M0-09, issue #10) | Issue-first, ramas, commits, PRs, calidad y seguridad. |
+| `SECURITY.md` | Vigente | Alcance y reporte privado de vulnerabilidades. |
+| `LICENSE` | Vigente | Licencia MIT con titular `gonzalitojh`. |
+| `.github/ISSUE_TEMPLATE/*.yml` y `.github/pull_request_template.md` | Vigente | Formularios de issue y plantilla de PR alineados con el proceso SDD. |
+| `scripts/sync-labels.ps1` y `scripts/set-branch-protection.ps1` | Vigente | Sincronización idempotente de etiquetas y creación o actualización de rulesets. |
 | `docs/manual-de-usuario.md` | Previsto | Manual funcional para cualquier usuario. Su creación formal corresponde a M5-01 (issue #28). |
 | `docs/arquitectura.md` | Previsto | Mapa de módulos, dependencias y flujos. Documentación base M0-09 (issue #10). |
-| `README.md` | Previsto | Arranque local, variables de entorno, scripts y despliegue. Documentación base M0-09 (issue #10). |
-| `CONTRIBUTING.md` | Previsto | Flujo, ramas, commits y calidad. Documentación base M0-09 (issue #10). |
 | `CHANGELOG.md` | Previsto | Cambios relevantes por versión. Se crea con la primera versión o cuando el usuario lo pida; no tiene issue asignada. |
 
 Si un documento aún no existe porque su issue de fundación no se ha hecho, no
