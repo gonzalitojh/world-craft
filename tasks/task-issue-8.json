@@ -1,7 +1,7 @@
 {
   "title": "Sistema de diseño, temas y shell responsive",
   "description": "Código de plan: M0-07. Fase M0. Depende de M0-06 (issue #7, fusionada en la PR #54). Define los tokens CSS de los dos temas (Claro y Oscuro), la tipografía, la escala, el espaciado, los radios y las sombras; los componentes base (botón, input, textarea, select, card, dialog, drawer, tabs, toast, tooltip, badge y command); el shell (rail lateral, topbar, barra inferior móvil, breadcrumbs y estados vacíos); el selector de tema persistente con respeto a prefers-reduced-motion; y una página de muestra del sistema de diseño con capturas de referencia en ambos temas. La estética es «taller de cartógrafo»: papel, tinta y cartografía, sin dashboards genéricos. No incluye autenticación ni base de datos.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 8,
@@ -61,5 +61,12 @@
     "changelog": null,
     "agents": null,
     "notes": "Creado el ADR 0018 (tokens, componentes, shell, tema persistente y capturas) y actualizados el índice de ADRs, la referencia del ADR 0010, el registro de decisiones con D-016, el README y la guía docs/diseno/sistema-de-diseno.md. No existe todavía el manual de usuario; se creará como esqueleto en M0-09 (issue #10). Este cambio visible se cubrirá allí en «Navegación y estructura» (rail, topbar, barra inferior, breadcrumbs, estados vacíos), «Temas» (Claro, Oscuro y Sistema, persistencia y respeto al sistema) y «Paleta de comandos» (atajo y búsqueda). No hay changelog ni cambios en el equipo de agentes, AGENTS.md, docs/proceso-sdd.md ni docs/agentes.md."
+  },
+  "pr": {
+    "number": 55,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/55",
+    "title": "feat(ui): add the design system, themes and responsive shell (#8)",
+    "branch": "feat/issue-8-design-system",
+    "commit": "3bf2e52"
   }
 }
