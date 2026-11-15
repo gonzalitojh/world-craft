@@ -13,13 +13,15 @@ import { t } from '@/messages';
 export default function LoginPage() {
   return (
     <PageShell className="max-w-md">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
+      <h1 className="min-w-0 font-display text-display-lg tracking-display text-foreground">
         {t('login.title')}
       </h1>
-      <p className="mt-3 text-muted-foreground">{t('login.description')}</p>
+      <p className="mt-3 min-w-0 text-muted-foreground">
+        {t('login.description')}
+      </p>
 
-      <div className="mt-8 rounded-lg border bg-surface-raised p-6">
-        <h2 className="font-display text-xl font-semibold">
+      <div className="mt-8 min-w-0 rounded-lg border bg-surface-raised p-6">
+        <h2 className="min-w-0 font-display text-display-sm tracking-display text-foreground">
           {t('login.cardTitle')}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

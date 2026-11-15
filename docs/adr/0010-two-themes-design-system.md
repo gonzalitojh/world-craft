@@ -95,6 +95,9 @@ sistema de diseño exige un ADR nuevo.
 ## Referencias
 
 - Issue: #4
+- Desarrollado por [ADR 0018](0018-design-system-tokens-and-shell.md): tokens en
+  tres capas, componentes base, shell responsive y tema persistente (M0-07,
+  issue #8)
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D2 y D15, §3.6 y §7
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-002
 - [`AGENTS.md`](../../AGENTS.md), regla 4

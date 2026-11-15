@@ -1,0 +1,88 @@
+/*
+ * Paleta cruda de World Craft.
+ *
+ * Es la ÚNICA fuente de valores `#hex` y `rgb()` del proyecto: ningún otro
+ * archivo CSS, componente o test puede declarar un color, y por eso
+ * `tests/unit/tokens.test.ts` recorre todos los CSS de `src` y falla si
+ * encuentra uno fuera de aquí (issue #8, ADR 0010 y ADR 0018).
+ *
+ * Cada color existe dos veces, con el sufijo del tema (`-light` / `-dark`).
+ * La paleta no depende del tema activo: es `semantic.css` quien decide qué
+ * mitad usa cada modo. Los componentes solo consumen utilidades semánticas
+ * (`bg-surface`, `text-foreground`, `border-border`...), nunca `--craft-*`.
+ *
+ * Contraste: las parejas texto/fondo y borde/fondo están medidas en
+ * `tests/unit/tokens.test.ts` (AA: 4.5:1 texto y 3:1 gráficos). Si cambias un
+ * valor, el test te dirá si deja de cumplir.
+ */
+:root {
+  /* Tema claro · papel y tinta */
+  --craft-paper-light: #f7f2e8;
+  --craft-paper-raised-light: #efe8db;
+  --craft-paper-sunken-light: #f1eadf;
+  --craft-ink-light: #1f1b16;
+  --craft-ink-muted-light: #5a5147;
+
+  /* Tema claro · bordes y acento tierra */
+  --craft-border-light: #8c7a63;
+  --craft-border-strong-light: #6b5c49;
+  --craft-accent-light: #7a4a2b;
+  --craft-accent-strong-light: #633a1f;
+  --craft-accent-ink-light: #f7f2e8;
+  --craft-accent-muted-light: #f0e2d5;
+
+  /* Tema claro · estados */
+  --craft-danger-light: #8c4a3c;
+  --craft-danger-strong-light: #7d4034;
+  --craft-danger-ink-light: #f7f2e8;
+  --craft-danger-surface-light: #f3e3df;
+  --craft-success-light: #2f6b3f;
+  --craft-success-ink-light: #f7f2e8;
+  --craft-success-surface-light: #e6efe1;
+  --craft-warning-light: #7d5600;
+  --craft-warning-ink-light: #f7f2e8;
+  --craft-warning-surface-light: #f7ecd6;
+  --craft-info-light: #2f5d7a;
+  --craft-info-ink-light: #f7f2e8;
+  --craft-info-surface-light: #e3edf3;
+
+  /* Tema claro · foco, velos y sombras */
+  --craft-focus-light: #2f6f62;
+  --craft-overlay-light: rgb(31 27 22 / 0.55);
+  --craft-shadow-tint-light: rgb(31 27 22 / 0.14);
+
+  /* Tema oscuro · papel y tinta */
+  --craft-paper-dark: #15120e;
+  --craft-paper-raised-dark: #211c17;
+  --craft-paper-sunken-dark: #100d0a;
+  --craft-ink-dark: #ede6d8;
+  --craft-ink-muted-dark: #b9ae9c;
+
+  /* Tema oscuro · bordes y acento ocre */
+  --craft-border-dark: #7a6a56;
+  --craft-border-strong-dark: #9b876e;
+  --craft-accent-dark: #d9a066;
+  --craft-accent-strong-dark: #e6b47e;
+  --craft-accent-ink-dark: #15120e;
+  --craft-accent-muted-dark: #2e2418;
+
+  /* Tema oscuro · estados */
+  --craft-danger-dark: #e08a7a;
+  --craft-danger-strong-dark: #e89a8c;
+  --craft-danger-ink-dark: #15120e;
+  --craft-danger-surface-dark: #2a1c19;
+  --craft-success-dark: #8fce9f;
+  --craft-success-ink-dark: #15120e;
+  --craft-success-surface-dark: #1b2a1f;
+  --craft-warning-dark: #e6c07b;
+  --craft-warning-ink-dark: #15120e;
+  --craft-warning-surface-dark: #2a2317;
+  --craft-info-dark: #93c7e0;
+  --craft-info-ink-dark: #15120e;
+  --craft-info-surface-dark: #1a2630;
+
+  /* Tema oscuro · foco, velos y sombras */
+  --craft-focus-dark: #7fbfb0;
+  --craft-overlay-dark: rgb(0 0 0 / 0.65);
+  --craft-shadow-tint-dark: rgb(0 0 0 / 0.55);
+}

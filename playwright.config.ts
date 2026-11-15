@@ -28,6 +28,24 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // La suite funcional no genera PNG: las capturas de referencia viven en
+      // el proyecto `captures` y solo se lanzan con `pnpm design:captures`
+      // (issue #8, fase 4). Así `pnpm test:e2e` sigue siendo rápido y no
+      // ensucia el repositorio.
+      testIgnore: /captures\.spec\.ts/,
+    },
+    {
+      name: 'captures',
+      testMatch: /captures\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Movimiento reducido: el sistema no declara animaciones y la captura
+        // no puede pillar un overlay a medio aparecer.
+        reducedMotion: 'reduce',
+        // Un píxel CSS por píxel de imagen: el PNG no depende de la densidad
+        // de la pantalla de quien lo regenera.
+        deviceScaleFactor: 1,
+      },
     },
   ],
 });

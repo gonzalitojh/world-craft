@@ -9,13 +9,15 @@ datos de los mundos siguen siendo privados.
 ## Estado
 
 **En construcción, fase M0 (fundaciones y proceso).** El repositorio ya tiene
-entorno reproducible, TypeScript estricto, tests y CI (issue #6, M0-05) y una
-aplicación Next.js ejecutable (issue #7, M0-06): App Router, Tailwind CSS,
-shadcn/ui mínimo, fuentes, páginas base y validación de entorno.
+entorno reproducible, TypeScript estricto, tests y CI (issue #6, M0-05), una
+aplicación Next.js ejecutable (issue #7, M0-06) y el sistema de diseño con sus
+temas y el shell responsive (issue #8, M0-07): tokens en capas, doce
+componentes base, rail lateral, topbar, barra inferior móvil y selector de tema
+Claro/Oscuro/Sistema.
 
 Todavía **no hay producto**: no existe autenticación (M1-01), ni base de datos
-(M0-08), ni contenido. `/login` es un placeholder y `/health` solo comprueba que
-el despliegue responde.
+(M0-08), ni contenido. `/login` es un placeholder, `/health` solo comprueba que
+el despliegue responde y `/design-system` documenta la interfaz.
 
 ## Requisitos
 
@@ -76,6 +78,7 @@ Rutas disponibles en esta fase:
 | Ruta | Qué muestra |
 |---|---|
 | `/` | Portada con el estado de la fase y tres pilares del producto. |
+| `/design-system` | Página viva del sistema de diseño: tokens, componentes, patrones, accesibilidad y capturas. |
 | `/login` | Placeholder de acceso: aviso y botón deshabilitado, sin formulario. |
 | `/health` | Estado del despliegue: commit, hora de comprobación y endpoint. |
 | `/api/health` | JSON `{ "status": "ok", "timestamp": "…" }` sin caché. |
@@ -95,6 +98,7 @@ otro `.env*` quedan fuera de git.
 | `pnpm typecheck` | TypeScript estricto sin emitir. |
 | `pnpm test` | Tests unitarios y de componentes con Vitest. |
 | `pnpm test:e2e` | Tests E2E con Playwright; levanta el servidor si hace falta. |
+| `pnpm design:captures` | Regenera las capturas de referencia del sistema de diseño en `docs/diseno/capturas/`. |
 | `pnpm format` | Formatea con Prettier. |
 | `pnpm format:check` | Comprueba el formato sin escribir. |
 
@@ -111,17 +115,25 @@ pnpm exec playwright install chromium
 ```text
 src/
   app/            Rutas del App Router, layouts, metadatos y assets de la app
+    (public)/     Portada, acceso, estado y sus layouts públicos
+    (workspace)/  Espacio de trabajo (rail, topbar y barra inferior); hoy /design-system
     api/health/   Route handler JSON del healthcheck
-  components/     Presentación reutilizable (ui/ para primitivas shadcn)
+  components/     Presentación reutilizable
+    shell/        Topbar, rail, barra inferior, migajas y paleta de comandos
+    theme/        Provider y selector de tema
+    ui/           Componentes base del sistema de diseño
   lib/            Utilidades puras, entorno y helpers sin React
     env/          Esquemas de entorno público y de servidor
   messages/       Textos de interfaz centralizados y tipados
   modules/        Módulos de dominio (fichas, mapas, manuscritos…)
+  styles/         Tokens, base y movimiento del sistema de diseño
+    tokens/       palette.css (única fuente de hex), scales.css y semantic.css
 tests/
   unit/           Vitest + Testing Library
-  e2e/            Playwright (rutas, responsive, temas y axe)
+  e2e/            Playwright (rutas, responsive, temas, capturas y axe)
 scripts/          Utilidades de mantenimiento del repositorio
-docs/             Plan, proceso, decisiones y ADRs
+docs/             Plan, proceso, decisiones, ADRs y diseño
+  diseno/         Guía del sistema de diseño y capturas de referencia
 tasks/            Task files del flujo SDD
 .github/          CI, Dependabot y plantillas de issue y PR
 .opencode/        Agentes y configuración de OpenCode
@@ -134,8 +146,9 @@ de negocio separada de la presentación. Los detalles están en
 ## Stack
 
 - [Next.js 16](https://nextjs.org/) App Router + React 19 + TypeScript estricto.
-- [Tailwind CSS 4](https://tailwindcss.com/) CSS-first, shadcn/ui, Radix, Lucide
-  y `next/font` (Fraunces, Inter y JetBrains Mono).
+- [Tailwind CSS 4](https://tailwindcss.com/) CSS-first, shadcn/ui, Radix Dialog,
+  Tabs y Tooltip, `cmdk`, Lucide y `next/font` (Fraunces, Inter y JetBrains
+  Mono).
 - [Zod](https://zod.dev/) para validar entorno y datos.
 - [Vitest](https://vitest.dev/), Testing Library, [Playwright](https://playwright.dev/)
   y axe.
@@ -154,13 +167,19 @@ de negocio separada de la presentación. Los detalles están en
   `verbatimModuleSyntax`. Sin `any` implícitos ni `@ts-ignore` sin justificar.
 - **Alias `@/*`** hacia `src/*` en TypeScript y Vitest. Los imports relativos se
   reservan a archivos hermanos.
-- **Tailwind CSS 4 CSS-first.** Los tokens viven en `src/app/globals.css`; no
-  hay `tailwind.config`. Los componentes usan utilidades semánticas
-  (`bg-surface`, `text-foreground`, `border-border`, `text-muted-foreground`,
-  `bg-accent`), nunca la paleta cruda `--craft-*` ni prefijos `dark:`.
-- **shadcn/ui mínimo.** `components.json` y `src/lib/utils.ts` (`cn`) permiten
-  añadir componentes con el CLI. Hoy solo hay `Button`, adaptado a los tokens.
-  Lucide es la librería de iconos.
+- **Tailwind CSS 4 CSS-first.** No hay `tailwind.config`. Los tokens viven en
+  `src/styles/tokens/` y se importan desde `src/app/globals.css`:
+  `palette.css` es la única fuente de colores literales, `semantic.css` asigna
+  los papeles por tema y `scales.css` guarda tipografía, radios, medidas y
+  movimiento. Los componentes usan utilidades semánticas (`bg-surface`,
+  `text-foreground`, `border-border`, `text-muted-foreground`, `bg-accent`),
+  nunca la paleta cruda `--craft-*` ni prefijos `dark:`. El detalle está en
+  [`docs/diseno/sistema-de-diseno.md`](docs/diseno/sistema-de-diseno.md).
+- **Componentes base.** `src/components/ui/` reúne botón, campos de formulario,
+  tarjeta, etiqueta de estado, estado vacío, diálogo, panel, pestañas, aviso,
+  globo de ayuda y paleta de comandos. Los primitivos interactivos usan Radix
+  (Dialog, Tabs y Tooltip); los campos son nativos. `cmdk` se carga de forma
+  diferida.
 - **Textos centralizados.** Todo lo visible, incluidos los `aria-label`, vive en
   `src/messages/es.ts` y se lee con `t('clave.con.puntos')` o `getMessages()`.
   No se escriben cadenas de interfaz en los componentes (ADR 0012).
@@ -195,19 +214,37 @@ servidor.
 
 ## Temas
 
-La aplicación tiene dos temas, **Claro y Oscuro**, sin interruptor: el tema se
-elige por `prefers-color-scheme` y se mantiene sincronizado si el sistema
-cambia. Un script mínimo en el `body` fija `data-theme="light"` o `"dark"`
-antes del primer pintado; sin JavaScript, `:root` sirve el tema claro completo.
+La aplicación tiene dos temas, **Claro y Oscuro**, y una tercera opción,
+**Sistema**, que sigue `prefers-color-scheme`. El selector de la topbar es un
+`<select>` nativo etiquetado; la preferencia se guarda en `localStorage` bajo
+`wc-theme` y se mantiene entre visitas.
 
-`globals.css` define una paleta cruda única (`--craft-*`) y dos mapeos
-semánticos: `:root, [data-theme="light"]` y `[data-theme="dark"]`. Las
-utilidades de Tailwind se generan con `@theme inline`, así que cambiar de tema
-no recompila CSS ni exige variantes `dark:`.
+El arranque ocurre antes del primer pintado: un `<script>` en línea en el layout
+raíz escribe `data-theme` y `data-theme-preference` en `<html>`, así que no hay
+destello del tema claro en modo oscuro. No se usa `next/script` con
+`beforeInteractive` porque en esta versión de Next el atributo llegaba tarde y
+producía parpadeo; lo comprueba `tests/e2e/themes.spec.ts`. Sin JavaScript,
+`:root` sirve el tema claro completo.
+
+Las utilidades de Tailwind se generan con `@theme inline`, así que cambiar de
+tema no recompila CSS ni exige variantes `dark:`. `themeColor` y el manifest no
+admiten variables CSS y leen sus colores de `src/lib/theme-palette.ts`, que un
+test compara con la paleta.
 
 Al añadir componentes hay que comprobarlos en los dos temas, con contraste AA
 (4.5:1 texto normal, 3:1 texto grande y elementos gráficos). Los tests E2E
-recorren las cuatro pantallas en ambos temas y pasan axe.
+recorren las pantallas en ambos temas y pasan axe.
+
+## Navegación y shell
+
+- **Escritorio (≥1024 px):** rail lateral completo con etiquetas y grupos.
+- **Tablet (768–1023 px):** rail colapsado a iconos con globo de ayuda.
+- **Móvil (<768 px):** barra inferior con tres destinos y «Más», que abre un
+  panel con acceso, próximamente, licencia y estado.
+- La topbar es `sticky`; el espacio de trabajo muestra migajas y la web pública,
+  navegación horizontal o menú móvil.
+- La paleta de comandos se abre con el botón de búsqueda o con
+  `Ctrl`/`Cmd` + `K`.
 
 ## Accesibilidad y responsive
 
@@ -226,9 +263,11 @@ recorren las cuatro pantallas en ambos temas y pasan axe.
 - TypeScript estricto y ESLint 10 con `@next/eslint-plugin-next` y
   `eslint-plugin-react-hooks` (sin `eslint-config-next`, todavía incompatible
   con los peers de ESLint 10), más Prettier.
-- **Vitest** para esquemas de entorno, mensajes, utilidades, healthcheck y el
-  componente `Button`; **Playwright** para rutas, 404, API, responsive, temas y
-  accesibilidad con `@axe-core/playwright`.
+- **Vitest** para esquemas de entorno, mensajes, utilidades, tokens y contraste,
+  tema, navegación, healthcheck y los componentes base; **Playwright** para
+  rutas, 404, API, responsive, temas, sistema de diseño y accesibilidad con
+  `@axe-core/playwright`. `pnpm design:captures` regenera las imágenes de
+  referencia.
 - GitHub Actions ejecuta `lint`, `typecheck`, `test` y `build` en cada PR y en
   cada push a `dev` y `main`. Son los **required checks** de la protección de
   ramas ([ADR 0017](docs/adr/0017-nextjs-scaffold-and-env-contract.md), que
@@ -275,7 +314,11 @@ una acción del propietario en Vercel, no del repositorio.
 
 - Sin autenticación, base de datos, RLS ni almacenamiento: `/login` es un
   placeholder y no hay contenido.
-- Sin sistema de diseño completo (M0-07): solo los tokens mínimos y un `Button`.
+- La textura de papel y los tokens de entidad llegan con M1-02 y M1-03. Motion
+  no se instala: las animaciones son CSS.
+- El tema no se sincroniza entre pestañas y los avisos pueden quedar sobre la
+  barra inferior en móvil; ambas deudas están registradas en el
+  [ADR 0018](docs/adr/0018-design-system-tokens-and-shell.md).
 - Manifest inicial sin service worker; la PWA completa llega más adelante
   (ADR 0009).
 - Sin CSP con nonce: se añadirá con la autenticación (M1-01).
@@ -298,6 +341,9 @@ una acción del propietario en Vercel, no del repositorio.
 - [docs/registro-decisiones.md](docs/registro-decisiones.md): registro de
   decisiones.
 - [docs/adr/README.md](docs/adr/README.md): índice de ADRs.
+- [docs/diseno/sistema-de-diseno.md](docs/diseno/sistema-de-diseno.md): guía
+  práctica de tokens, componentes, shell y temas, con las capturas de
+  referencia.
 - [CONTRIBUTING.md](CONTRIBUTING.md): ramas, commits, PRs y calidad.
 - [SECURITY.md](SECURITY.md): cómo reportar una vulnerabilidad.
 - [LICENSE](LICENSE): licencia MIT.

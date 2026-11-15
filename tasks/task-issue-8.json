@@ -1,0 +1,65 @@
+{
+  "title": "Sistema de diseño, temas y shell responsive",
+  "description": "Código de plan: M0-07. Fase M0. Depende de M0-06 (issue #7, fusionada en la PR #54). Define los tokens CSS de los dos temas (Claro y Oscuro), la tipografía, la escala, el espaciado, los radios y las sombras; los componentes base (botón, input, textarea, select, card, dialog, drawer, tabs, toast, tooltip, badge y command); el shell (rail lateral, topbar, barra inferior móvil, breadcrumbs y estados vacíos); el selector de tema persistente con respeto a prefers-reduced-motion; y una página de muestra del sistema de diseño con capturas de referencia en ambos temas. La estética es «taller de cartógrafo»: papel, tinta y cartografía, sin dashboards genéricos. No incluye autenticación ni base de datos.",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 8,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/8",
+    "title": "Sistema de diseño, temas y shell responsive"
+  },
+  "acceptance_criteria": [
+    "Los dos temas se ven correctamente y cumplen contraste AA.",
+    "Sin scroll horizontal a 360, 768 y 1280 px.",
+    "Navegación por teclado y foco visible.",
+    "Componentes documentados con ejemplos.",
+    "Capturas de referencia en los dos temas.",
+    "El agente ui-ux-designer revisa el resultado."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "Tokens CSS de los dos temas con una sola fuente de verdad por regla y sin colores hardcodeados fuera de tokens.",
+    "Componentes base implementados y probados: botón, input, textarea, select, card, dialog, drawer, tabs, toast, tooltip, badge y command.",
+    "Shell con rail lateral en escritorio, topbar, barra inferior en móvil, breadcrumbs y estados vacíos.",
+    "Selector de tema persistente (sin parpadeo antes del primer pintado) que respeta prefers-color-scheme y prefers-reduced-motion.",
+    "Página de muestra del sistema de diseño con ejemplos de todos los componentes.",
+    "Responsive comprobado a ~360, ~768 y ~1280 px sin scroll horizontal de página y con contenido largo realista.",
+    "Dos temas comprobados con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, semántica y roles de los componentes interactivos, axe sin errores críticos y prefers-reduced-motion.",
+    "Capturas de referencia de la página de muestra en ambos temas dentro del repositorio.",
+    "Manual de usuario: pendiente de estructura en M0-09 (issue #10); se registra cómo se cubrirá el cambio visible (selector de tema y navegación).",
+    "ADR nuevo o actualización del ADR 0010 si hay decisiones de sistema de diseño relevantes.",
+    "Seguridad revisada: secretos, dependencias, script de tema y cabeceras.",
+    "Task file actualizado con validación, QA, seguridad y documentación.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "Plan de task-architect (pendiente de aprobación del usuario). Arquitectura: partir de origin/dev en feat/issue-8-design-system. 1) Tokens en src/styles/: tokens/palette.css (única fuente de hex), tokens/scales.css (@theme: tipografía fluida clamp, leading, tracking, radios, layout, z-index, movimiento), tokens/semantic.css (mapeo --surface/--foreground/--surface-raised/--muted-foreground/--border/--accent/--accent-ink/--danger/--success/--warning/--info/--focus/--overlay por tema + @theme inline de color y sombra), base.css y motion.css; globals.css solo importa. Palette.css única fuente de hex y semantic.css sin hex, con test que lo verifica. Sin tokens de entidad hasta M1-03. 2) Componentes: button ampliado (variantes y loading con aria-busy), input, textarea, select nativo, field, card, badge, empty-state; dialog/drawer sobre @radix-ui/react-dialog, tabs con @radix-ui/react-tabs, tooltip con @radix-ui/react-tooltip, command con cmdk + dialog y carga diferida; toast propio con dos regiones aria-live, sin sonner ni Radix Toast. 3) Shell: route groups (public) y (workspace); layout raíz solo html/body, fuentes, ThemeProvider, ToastProvider, skip link y script de tema; public-shell conserva header/footer y landmarks actuales; workspace-shell con rail (iconos 768-1023, completo >=1024), topbar sticky, bottom-bar <768 con drawer «Más», breadcrumbs y estados vacíos; page-shell migra a tokens de ancho. 4) Tema: preferencia light/dark/system en localStorage wc-theme, aplicada con Script beforeInteractive sin parpadeo, provider cliente y selector <select> nativo etiquetado; themeColor y manifest leen de theme-palette.ts con test de coincidencia. 5) Página viva /design-system con fundamentos, componentes, patrones y accesibilidad, más docs/diseno/sistema-de-diseno.md y 4 capturas reproducibles con Playwright (1280 y 360, claro y oscuro). 6) Pruebas: unitarias de tokens/contraste, theme, navigation, forms, surfaces, overlays, tabs, toast, command, shell con setup de jsdom para Radix; E2E que amplían routes/responsive/themes/a11y y nuevos design-system.spec.ts y captures.spec.ts, sin duplicar aserciones. 7) Documentación: ADR 0018, índice de ADRs, D-016, enlace desde ADR 0010, README y manual pendiente de M0-09 (#10). 8) Dependencias nuevas justificadas: @radix-ui/react-dialog 1.3.1, @radix-ui/react-tabs 1.2.1, @radix-ui/react-tooltip 1.4.1 y cmdk 1.1.1, todas MIT, compatibles con React 19 y verificadas en el registro; se descartan @radix-ui/react-select, sonner, @radix-ui/react-toast, vaul, next-themes y tailwindcss-animate. Fuera de alcance: CSP con nonce, Motion, next-intl, componentes de producto, textura de papel, colores por entidad y Storybook. Riesgos principales: regresión de rutas al migrar a route groups (mitigado con git mv y suite completa), parpadeo o desajuste de hidratación del tema (script beforeInteractive y test de orden) y peso de cliente (command diferido). Pasos: tokens y tema, componentes, shell y migración, página de muestra y capturas, QA/seguridad/documentación/publisher local.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-15",
+    "notes": "Variante recomendada y usada: high (label variant: high de la issue). Dependencia M0-06 satisfecha: PR #54 fusionada en dev el 2026-11-14. El usuario aprobó el plan completo el 2026-11-15 y cerró las tres decisiones abiertas: (1) se aprueban las cuatro dependencias nuevas (@radix-ui/react-dialog 1.3.1, @radix-ui/react-tabs 1.2.1, @radix-ui/react-tooltip 1.4.1 y cmdk 1.1.1); (2) la textura de papel se aplaza a M1-02; (3) las capturas se guardan en el repositorio como 4 PNG de viewport (1280 y 360, claro y oscuro). Versiones comprobadas en el registro npm y compatibles con React 19. Desviación de orquestación: al cerrar los hallazgos medios/bajos de ui-ux-designer, el subagente tdd-ddd-architect devolvió Insufficient Balance en dos intentos; el usuario autorizó al maestro para aplicar las correcciones, verificar la suite y regenerar capturas. Desviación técnica respecto al plan: el script de tema se emite en línea en vez de con next/script beforeInteractive, porque con Next 16 el atributo llegaba después de DOMContentLoaded y había parpadeo de tema claro; queda cubierto por E2E."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA ejecutado por el maestro el 2026-11-15 con autorización del usuario, porque qa-reviewer devolvió Insufficient Balance (desviación registrada en validation). Criterios y DoD verificados: /typecheck, lint, test (20 archivos / 179 pruebas), build (8 rutas) y test:e2e (52) en verde; design:captures 4/4 estable (4 PNG de viewport, 52-88 KB); axe sin violaciones en /design-system a 360 px en ambos temas y sin críticas ni graves en 5 rutas (/ , /login, /health, /design-system, 404) × 5 anchuras (320/360/768/1280/1920) × 2 temas; data-theme aplicado correctamente y documentElement.scrollWidth <= innerWidth en las 50 combinaciones. ui-ux-designer dio PASS con observaciones y corrigió foco de tabs y command, aviso sobre la barra inferior y señal de destino activo; los hallazgos medios/bajos restantes (landmark-unique, encabezado del empty state, escala display, transición del foco, alto de la barra, área segura del drawer, orden de tabulación y copy) están cerrados y re-verificados, con axe a 0 violaciones en /design-system. Textos visibles solo en src/messages/es.ts, ningún hex fuera de palette.css, sin overflow-x: hidden en html/body, enlaces locales de README y docs resueltos, dependencias justificadas y sin servicios de pago. Deudas aceptadas: error y loading se cubren solo con unitarias; sin sincronización de tema entre pestañas; format:check falla en local por CRLF preexistente (git diff --check limpio); dos selectores de tema en /design-system por ser página de muestra."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "MEDIUM aceptado y documentado: todavía no hay CSP ni Permissions-Policy y el tema se aplica con un script en línea estático; se cierra con nonce o hash en M1-01, cuando exista autenticación y contenido dinámico.",
+      "LOW aceptado: pnpm audit --audit-level=high deja 0 HIGH y 1 moderada preexistente de minimatch en el árbol de eslint/typescript-eslint, sin parche compatible y solo de desarrollo.",
+      "LOW aceptado: la preferencia de tema vive en localStorage ('light' | 'dark' | 'system'), no es un dato personal, no se sincroniza entre pestañas y tolera almacenamiento bloqueado.",
+      "LOW aceptado: /design-system es accesible sin sesión hasta que M1-01 introduzca el gate de acceso; no expone datos, solo el catálogo con contenido sintético.",
+      "LOW aceptado: las capturas de docs/diseno/capturas son contenido sintético de la página de muestra, sin correos, nombres reales ni URLs privadas, aptas para un repositorio público."
+    ],
+    "notes": "Escaneo del árbol completo (src, tests, docs, tasks, scripts) sin claves, tokens, claves privadas ni correos reales; solo aparecen nombres de variables del esquema de entorno y fixtures con dominios reservados (*.example, ejemplo.test). Único .env trackeado: .env.example. La frontera cliente/servidor del scaffold sigue intacta (server-only y parsePublicEnv) y no se añadieron rutas con datos. El script de tema es estático: solo interpola constantes del proyecto y colores de theme-palette.ts, nunca datos de usuario; el peligro de inyección es nulo y dangerouslySetInnerHTML solo se usa para esa cadena. Dependencias nuevas verificadas: @radix-ui/react-dialog 1.3.1, @radix-ui/react-tabs 1.2.1, @radix-ui/react-tooltip 1.4.1 y cmdk 1.1.1, todas MIT, una sola versión resuelta por paquete (pnpm why), sin postinstall y compatibles con React 19. Cabeceras de next.config.ts sin cambios y sin relajación. Sin servicios de pago ni telemetría. El job gitleaks de la CI sigue siendo el control de secretos al publicar."
+  },
+  "documentation": {
+    "adr": "docs/adr/0018-design-system-tokens-and-shell.md",
+    "manual": "pendiente (M0-09, issue #10)",
+    "changelog": null,
+    "agents": null,
+    "notes": "Creado el ADR 0018 (tokens, componentes, shell, tema persistente y capturas) y actualizados el índice de ADRs, la referencia del ADR 0010, el registro de decisiones con D-016, el README y la guía docs/diseno/sistema-de-diseno.md. No existe todavía el manual de usuario; se creará como esqueleto en M0-09 (issue #10). Este cambio visible se cubrirá allí en «Navegación y estructura» (rail, topbar, barra inferior, breadcrumbs, estados vacíos), «Temas» (Claro, Oscuro y Sistema, persistencia y respeto al sistema) y «Paleta de comandos» (atajo y búsqueda). No hay changelog ni cambios en el equipo de agentes, AGENTS.md, docs/proceso-sdd.md ni docs/agentes.md."
+  }
+}

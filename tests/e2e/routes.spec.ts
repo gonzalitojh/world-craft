@@ -57,6 +57,26 @@ test.describe('rutas base', () => {
     await expect(page.getByText(es.health.commitLabel)).toBeVisible();
   });
 
+  test('el sistema de diseño se sirve con el shell del taller', async ({
+    page,
+  }) => {
+    await page.goto('/design-system');
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: es.design.title }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(
+      page.getByRole('navigation', { name: es.a11y.sidebarNavigation }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('navigation', { name: es.a11y.breadcrumbs }),
+    ).toBeVisible();
+    await expect(page.getByRole('main')).toBeVisible();
+    // El taller no repite el pie de la web pública.
+    await expect(page.getByRole('contentinfo')).toHaveCount(0);
+  });
+
   test('una ruta inexistente devuelve 404 con la página propia', async ({
     page,
   }) => {
@@ -69,6 +89,11 @@ test.describe('rutas base', () => {
     await expect(
       page.getByRole('link', { name: es.notFound.backHome }),
     ).toBeVisible();
+    // La 404 también lleva el shell público: navegación y salida.
+    await expect(
+      page.getByRole('navigation', { name: es.a11y.mainNavigation }),
+    ).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toBeVisible();
   });
 
   test('el enlace de salto es lo primero en recibir el foco', async ({
