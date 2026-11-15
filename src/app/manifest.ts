@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 
+import { THEME_COLORS } from '@/lib/theme-palette';
 import { t } from '@/messages';
 
 /**
@@ -17,11 +18,11 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: 'es',
     start_url: '/',
     display: 'standalone',
-    // El manifest se sirve como JSON estático y no resuelve variables CSS:
-    // estos valores replican `--craft-paper` (#f7f2e8) y `--craft-ink`
-    // (#1f1b16) de `src/app/globals.css`. Si cambian allí, cámbialos aquí.
-    background_color: '#f7f2e8',
-    theme_color: '#1f1b16',
+    // El manifest se sirve como JSON estático y no resuelve variables CSS: los
+    // valores salen de `src/lib/theme-palette.ts`, que replica la paleta y está
+    // verificado por `tests/unit/tokens.test.ts`.
+    background_color: THEME_COLORS.light.surface,
+    theme_color: THEME_COLORS.light.ink,
     icons: [
       {
         src: '/icon.svg',

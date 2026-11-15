@@ -2,10 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter, JetBrains_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
 
-import { SiteFooter } from '@/components/site-footer';
-import { SiteHeader } from '@/components/site-header';
+import { CommandPaletteProvider } from '@/components/shell/command-palette';
+import { ThemeProvider } from '@/components/theme/theme-provider';
+import { ToastProvider } from '@/components/ui/toast';
 import { serverEnv } from '@/lib/env/server';
 import { resolveSiteUrl } from '@/lib/site-url';
+import { createThemeScript } from '@/lib/theme';
+import { THEME_COLORS } from '@/lib/theme-palette';
 import { t } from '@/messages';
 
 import './globals.css';
@@ -60,41 +63,30 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   // `themeColor` se serializa como valor literal en el HTML y no admite
-  // `var(--surface)`. Estos dos valores replican `--craft-paper` (#f7f2e8) y
-  // `--craft-night` (#15120e) de `src/app/globals.css`: si cambian allí, hay
-  // que cambiarlos aquí.
+  // `var(--surface)`. Los valores salen de `src/lib/theme-palette.ts`, que
+  // replica `--craft-paper-light` y `--craft-paper-dark` de la paleta y está
+  // verificado por `tests/unit/tokens.test.ts`.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f7f2e8' },
-    { media: '(prefers-color-scheme: dark)', color: '#15120e' },
+    {
+      media: '(prefers-color-scheme: light)',
+      color: THEME_COLORS.light.surface,
+    },
+    { media: '(prefers-color-scheme: dark)', color: THEME_COLORS.dark.surface },
   ],
 };
-
-/**
- * Fija el tema antes del primer pintado y lo mantiene sincronizado con la
- * preferencia del sistema. Sin JavaScript, `:root` sirve el tema claro
- * completo, así que nunca se ve una pantalla sin estilos.
- */
-const themeScript = [
-  '(function () {',
-  '  try {',
-  "    var query = window.matchMedia('(prefers-color-scheme: dark)');",
-  '    var apply = function (event) {',
-  "      document.documentElement.setAttribute('data-theme', event.matches ? 'dark' : 'light');",
-  '    };',
-  '    apply(query);',
-  "    if (typeof query.addEventListener === 'function') {",
-  "      query.addEventListener('change', apply);",
-  '    }',
-  '  } catch (error) {',
-  '    // Sin matchMedia se queda el tema claro definido en :root.',
-  '  }',
-  '})();',
-].join('\n');
 
 type RootLayoutProps = {
   children: ReactNode;
 };
 
+/**
+ * Layout raíz.
+ *
+ * Solo el documento y los proveedores globales: fuentes, metadatos, script de
+ * tema, tema, paleta de comandos, avisos y enlace de salto. El chrome (topbar,
+ * rail, pie, barra inferior) vive en los shells de cada route group, porque la
+ * web pública y el espacio de trabajo no comparten estructura.
+ */
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html
@@ -102,19 +94,37 @@ export default function RootLayout({ children }: RootLayoutProps) {
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
-      <body className="flex min-h-dvh flex-col">
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <a
-          href="#contenido"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-foreground"
-        >
-          {t('a11y.skipToContent')}
-        </a>
-        <SiteHeader />
-        <main id="contenido" tabIndex={-1} className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
+      <body className="min-h-dvh">
+        {/*
+          Script de arranque: fija `data-theme` y `data-theme-preference` antes
+          del primer pintado para que no haya destello del tema claro. Es
+          estático (`createThemeScript`) y sin datos de usuario.
+
+          Va como `<script>` en línea y no con `next/script`
+          (`strategy="beforeInteractive"`): en esta versión de Next esa
+          estrategia encola el script (`self.__next_s`) y lo ejecuta el bundle
+          del framework, así que `data-theme` todavía no existe al terminar el
+          parseo y el tema claro llega a pintarse. Lo cubre la prueba de
+          `tests/e2e/themes.spec.ts` («el tema ya está resuelto al terminar de
+          parsear el documento»).
+        */}
+        <script
+          id="wc-theme"
+          dangerouslySetInnerHTML={{ __html: createThemeScript() }}
+        />
+        <ThemeProvider>
+          <CommandPaletteProvider>
+            <ToastProvider>
+              <a
+                href="#contenido"
+                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-foreground"
+              >
+                {t('a11y.skipToContent')}
+              </a>
+              {children}
+            </ToastProvider>
+          </CommandPaletteProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

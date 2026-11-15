@@ -15,19 +15,21 @@ export default function HealthPage() {
 
   return (
     <PageShell className="max-w-3xl">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">
+      <h1 className="min-w-0 font-display text-display-lg tracking-display text-foreground">
         {t('health.title')}
       </h1>
-      <p className="mt-3 text-muted-foreground">{t('health.description')}</p>
+      <p className="mt-3 min-w-0 text-muted-foreground">
+        {t('health.description')}
+      </p>
 
-      <div className="mt-8 flex items-start gap-3 rounded-lg border bg-surface-raised p-6">
+      <div className="mt-8 flex min-w-0 items-start gap-3 rounded-lg border bg-surface-raised p-6">
         {/* El estado no se comunica solo con color: icono + texto. */}
         <CircleCheck
           aria-hidden
           className="mt-0.5 size-6 shrink-0 text-accent"
         />
         <div className="min-w-0">
-          <p className="font-display text-xl font-semibold">
+          <p className="min-w-0 font-display text-display-sm tracking-display text-foreground">
             {t('health.statusOk')}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
