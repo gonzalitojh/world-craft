@@ -7,7 +7,7 @@ description: >-
   git diff y ADRs para componer el resumen.
 mode: subagent
 # Variante fija (ADR 0015): los comandos git/gh están definidos paso a paso.
-model: deepseek/deepseek-flash#low
+model: opencode/deepseek-v4.1-flash-free#low
 ---
 
 > **Autoridad documental:** la especificación canónica está en `AGENTS.md`

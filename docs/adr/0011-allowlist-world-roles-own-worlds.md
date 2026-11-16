@@ -89,6 +89,19 @@ Se revisa si se añade contenido público, si cambia el modelo de roles o si una
 prueba de RLS detecta una fuga. Cualquier cambio de modelo de acceso exige un
 ADR nuevo.
 
+## Nota de actualización (2026-11-15)
+
+La issue [#9](https://github.com/gonzalitojh/world-craft/issues/9) (M0-08) tradujo
+esta decisión a políticas concretas: cada miembro lee, editor u owner escribe,
+`allowed_emails` queda sin políticas ni privilegios, `worlds` no se borra desde el
+cliente (se archiva) y el propietario no puede eliminarse ni degradarse. La
+propiedad tiene una única fuente de verdad, `worlds.owner_id`, protegida por un
+índice único parcial, dos triggers y `app.transfer_world_ownership`, que transfiere
+de forma atómica y deja al antiguo owner como `editor`. La matriz completa está en
+[`docs/base-de-datos/esquema.md`](../base-de-datos/esquema.md) §8 y las decisiones
+en el [ADR 0019](0019-database-schema-migrations-and-rls.md). Esta nota no
+reescribe el histórico.
+
 ## Referencias
 
 - Issue: #4

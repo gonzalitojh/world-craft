@@ -8,3 +8,11 @@
 # versión haya superado la ventana.
 overrides:
   postcss: 8.5.32
+
+# pnpm 12 bloquea por defecto los scripts de instalación de dependencias. Solo
+# se autorizan los que el tooling necesita de verdad: `esbuild` descarga o
+# enlaza su binario nativo y lo usan Vite, Vitest y `drizzle-kit` (este último
+# lo trae de forma transitiva). Sin esta autorización, `pnpm install` falla con
+# `ERR_PNPM_IGNORED_BUILDS`.
+allowBuilds:
+  esbuild: true

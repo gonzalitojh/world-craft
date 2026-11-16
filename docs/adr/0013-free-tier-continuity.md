@@ -100,6 +100,19 @@ cuota supera el 70 %, se documenta y se decide entre optimizar o migrar. Un
 cambio de proveedor o un gasto recurrente exige un ADR nuevo y aprobación del
 usuario.
 
+## Nota de actualización (2026-11-15)
+
+La issue [#9](https://github.com/gonzalitojh/world-craft/issues/9) (M0-08) añadió
+los procedimientos concretos de copia, restauración y conexión:
+`pg_dump --schema=public --format=custom`, comprobación de la copia con
+`pg_restore --list`, restauración con `pg_restore --no-owner --no-privileges`
+seguida de `pnpm db:verify` para detectar privilegios reintroducidos, y el reparto
+entre `DATABASE_URL` (pooler transaccional) y `DIRECT_URL` (pooler de sesión). Los
+límites de 500 MB, la pausa por inactividad y la ausencia de copias automáticas se
+siguen revisando. El runbook está en
+[`docs/base-de-datos/operacion.md`](../base-de-datos/operacion.md) §9–§11. Esta
+nota no reescribe el histórico.
+
 ## Referencias
 
 - Issue: #4

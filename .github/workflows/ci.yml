@@ -52,6 +52,9 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
       - run: pnpm test
+      # Comprueba que el journal y los snapshots de Drizzle Kit están
+      # coherentes. No abre conexión: funciona sin credenciales.
+      - run: pnpm db:check
 
   build:
     name: build

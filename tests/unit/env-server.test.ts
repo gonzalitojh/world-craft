@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { parsePublicEnv } from '@/lib/env/public-schema';
 import { parseServerEnv } from '@/lib/env/server-schema';
 
 describe('parseServerEnv', () => {
@@ -63,5 +64,29 @@ describe('parseServerEnv', () => {
     const env = parseServerEnv({ NEXT_PUBLIC_SITE_URL: '' });
 
     expect(env.NEXT_PUBLIC_SITE_URL).toBeUndefined();
+  });
+
+  it('trata DIRECT_URL vacía como ausente', () => {
+    expect(parseServerEnv({ DIRECT_URL: '' }).DIRECT_URL).toBeUndefined();
+    expect(parseServerEnv({ DIRECT_URL: '   ' }).DIRECT_URL).toBeUndefined();
+  });
+
+  it('acepta DIRECT_URL con protocolo PostgreSQL', () => {
+    const DIRECT_URL =
+      'postgresql://postgres.example:secret@db.example.invalid:5432/postgres';
+
+    expect(parseServerEnv({ DIRECT_URL }).DIRECT_URL).toBe(DIRECT_URL);
+  });
+
+  it('parsePublicEnv no copia secretos aunque reciba el entorno completo', () => {
+    const publicEnv = parsePublicEnv({
+      NEXT_PUBLIC_SITE_URL: 'https://world-craft.example',
+      SUPABASE_SERVICE_ROLE_KEY: 'service-role-secret',
+      DATABASE_URL: 'postgresql://user:secret@db.example.invalid:5432/postgres',
+      DIRECT_URL: 'postgresql://user:secret@db.example.invalid:5432/postgres',
+    });
+
+    expect(Object.keys(publicEnv)).toEqual(['NEXT_PUBLIC_SITE_URL']);
+    expect(JSON.stringify(publicEnv)).not.toContain('secret');
   });
 });

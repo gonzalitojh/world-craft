@@ -87,6 +87,20 @@ Se revisa si se supera el 70 % de la cuota, si la pausa se vuelve recurrente o
 si una función del MVP exige extensiones no disponibles. La migración a Neon
 Free + R2 requiere un ADR nuevo.
 
+## Nota de actualización (2026-11-15)
+
+La issue [#9](https://github.com/gonzalitojh/world-craft/issues/9) (M0-08) hizo
+ejecutable esta decisión: 24 tablas y 7 enums en una cadena única de migraciones
+en `drizzle/`, funciones `security definer` en un esquema `app` no expuesto
+(para las políticas de RLS y la resolución del mundo en tablas hijas),
+privilegios fail-closed por tabla y columna, y una segunda cadena de conexión
+(`DIRECT_URL`, pooler de sesión) para migraciones, seed y pruebas. También se
+prohíbe `drizzle-kit push`. El detalle está en el
+[ADR 0019](0019-database-schema-migrations-and-rls.md), en
+[`docs/base-de-datos/esquema.md`](../base-de-datos/esquema.md) y en
+[`docs/base-de-datos/operacion.md`](../base-de-datos/operacion.md). Esta nota no
+reescribe el histórico: mantiene la decisión original y registra cómo se aplicó.
+
 ## Referencias
 
 - Issue: #4

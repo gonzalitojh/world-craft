@@ -22,6 +22,9 @@ export default tseslint.config(
       'playwright-report/',
       'test-results/',
       'next-env.d.ts',
+      // Migraciones SQL y snapshots de Drizzle Kit: no son TypeScript del
+      // proyecto y se revisan a mano.
+      'drizzle/',
     ],
   },
   js.configs.recommended,

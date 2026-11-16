@@ -9,7 +9,7 @@ mode: subagent
 # Variante fija (ADR 0015): el escaneo es aplicar una checklist exhaustiva, no
 # razonamiento abierto. Se queda en `high` por ser una puerta de seguridad y no
 # hereda `max` de la sesión: los HIGH se revisan después con el usuario.
-model: deepseek/deepseek-flash#high
+model: opencode/deepseek-v4.1-flash-free#high
 permissions:
   # Solo lectura: no edita, no publica, no navega y no lanza subagentes.
   - action: edit

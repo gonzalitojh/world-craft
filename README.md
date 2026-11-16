@@ -10,14 +10,17 @@ datos de los mundos siguen siendo privados.
 
 **En construcción, fase M0 (fundaciones y proceso).** El repositorio ya tiene
 entorno reproducible, TypeScript estricto, tests y CI (issue #6, M0-05), una
-aplicación Next.js ejecutable (issue #7, M0-06) y el sistema de diseño con sus
-temas y el shell responsive (issue #8, M0-07): tokens en capas, doce
-componentes base, rail lateral, topbar, barra inferior móvil y selector de tema
-Claro/Oscuro/Sistema.
+aplicación Next.js ejecutable (issue #7, M0-06), el sistema de diseño con sus
+temas y el shell responsive (issue #8, M0-07) y el modelo de datos definido para
+PostgreSQL con Drizzle, RLS y seed (issue #9, M0-08): 24 tablas, siete
+migraciones, políticas por mundo y pruebas de aislamiento, todavía sin aplicar a
+un proyecto Supabase real.
 
-Todavía **no hay producto**: no existe autenticación (M1-01), ni base de datos
-(M0-08), ni contenido. `/login` es un placeholder, `/health` solo comprueba que
-el despliegue responde y `/design-system` documenta la interfaz.
+Todavía **no hay producto**: no existe autenticación (M1-01), ni almacenamiento de
+archivos (M0-10), ni contenido. `/login` es un placeholder, `/health` solo
+comprueba que el despliegue responde y `/design-system` documenta la interfaz. El
+modelo de datos está definido en el repositorio, pero ninguna pantalla lo usa
+todavía.
 
 ## Requisitos
 
@@ -98,6 +101,14 @@ otro `.env*` quedan fuera de git.
 | `pnpm typecheck` | TypeScript estricto sin emitir. |
 | `pnpm test` | Tests unitarios y de componentes con Vitest. |
 | `pnpm test:e2e` | Tests E2E con Playwright; levanta el servidor si hace falta. |
+| `pnpm test:db` | Tests de integración y RLS contra el proyecto de Supabase de desarrollo (`DIRECT_URL`). |
+| `pnpm db:ping` | Comprueba la conexión, el rol `authenticated` y `auth.uid()`. |
+| `pnpm db:generate` | Genera una migración a partir del diff de `src/lib/db/schema/`. |
+| `pnpm db:migrate` | Aplica las migraciones pendientes (`DIRECT_URL`). |
+| `pnpm db:seed` | Upsert idempotente del catálogo del sistema. |
+| `pnpm db:verify` | Verifica tablas, enums, RLS, privilegios y seed aplicados. |
+| `pnpm db:reset` | **Destructivo**: elimina `public`, `app` y `drizzle` del proyecto de desarrollo y recrea `public`. |
+| `pnpm db:check` | Valida journal y snapshots de Drizzle Kit sin conexión. |
 | `pnpm design:captures` | Regenera las capturas de referencia del sistema de diseño en `docs/diseno/capturas/`. |
 | `pnpm format` | Formatea con Prettier. |
 | `pnpm format:check` | Comprueba el formato sin escribir. |
@@ -109,6 +120,34 @@ navegador:
 ```bash
 pnpm exec playwright install chromium
 ```
+
+## Base de datos
+
+PostgreSQL en Supabase Free con Drizzle ORM. El modelo definido en el
+repositorio son 24 tablas con RLS por mundo, siete migraciones versionadas y un
+seed idempotente del catálogo del sistema (12 tipos de entidad y 15 de relación).
+Aplicarlo contra un proyecto real requiere las credenciales de desarrollo, que
+todavía no están configuradas.
+
+- **Dos cadenas de conexión.** `DATABASE_URL` es el pooler transaccional (6543)
+  del runtime, con `prepare: false`; `DIRECT_URL` es el pooler de sesión (5432)
+  de migraciones, seed, reset y pruebas de RLS.
+- **Scripts.** `pnpm db:ping`, `db:generate`, `db:migrate`, `db:seed`,
+  `db:verify`, `db:reset` y `db:check`. Ninguno se ejecuta sin credenciales
+  salvo `db:generate` y `db:check`.
+- **Migraciones.** Cadena única en `drizzle/`; las aplicadas no se editan y
+  `drizzle-kit push` está prohibido. Cada una tiene su rollback documentado en
+  `drizzle/rollback/`.
+- **Aislamiento.** RLS activa en las 24 tablas, `anon` sin privilegios y
+  privilegios por tabla y columna: una tabla nueva nace cerrada.
+- **Verificación.** `pnpm db:verify` comprueba el modelo aplicado y
+  `pnpm test:db` prueba el aislamiento real con owner, editor, viewer y un
+  usuario ajeno.
+
+El diccionario, la matriz de RLS y los índices están en
+[`docs/base-de-datos/esquema.md`](docs/base-de-datos/esquema.md); el arranque, las
+migraciones, las copias y el runbook, en
+[`docs/base-de-datos/operacion.md`](docs/base-de-datos/operacion.md).
 
 ## Estructura del repositorio
 
@@ -123,16 +162,22 @@ src/
     theme/        Provider y selector de tema
     ui/           Componentes base del sistema de diseño
   lib/            Utilidades puras, entorno y helpers sin React
+    db/           Esquema Drizzle, conexión privilegiada, sesión de usuario y seed
     env/          Esquemas de entorno público y de servidor
+    storage/      Contrato StorageAdapter y claves de assets
   messages/       Textos de interfaz centralizados y tipados
   modules/        Módulos de dominio (fichas, mapas, manuscritos…)
   styles/         Tokens, base y movimiento del sistema de diseño
     tokens/       palette.css (única fuente de hex), scales.css y semantic.css
 tests/
   unit/           Vitest + Testing Library
+  db/             Integración y RLS contra el proyecto de Supabase de desarrollo
   e2e/            Playwright (rutas, responsive, temas, capturas y axe)
 scripts/          Utilidades de mantenimiento del repositorio
-docs/             Plan, proceso, decisiones, ADRs y diseño
+  db/             ping, seed, reset y verify de la base de datos
+drizzle/          Migraciones, journal y rollback documentado
+docs/             Plan, proceso, decisiones, ADRs, diseño y base de datos
+  base-de-datos/  Esquema, RLS y operación
   diseno/         Guía del sistema de diseño y capturas de referencia
 tasks/            Task files del flujo SDD
 .github/          CI, Dependabot y plantillas de issue y PR
@@ -150,13 +195,14 @@ de negocio separada de la presentación. Los detalles están en
   Tabs y Tooltip, `cmdk`, Lucide y `next/font` (Fraunces, Inter y JetBrains
   Mono).
 - [Zod](https://zod.dev/) para validar entorno y datos.
+- [Supabase](https://supabase.com/) (PostgreSQL 15+ con RLS) y
+  [Drizzle ORM](https://orm.drizzle.team/) con el driver `postgres`; migraciones
+  con Drizzle Kit.
 - [Vitest](https://vitest.dev/), Testing Library, [Playwright](https://playwright.dev/)
   y axe.
 - [Vercel](https://vercel.com/) Hobby para el despliegue.
-- Previstos: [Supabase](https://supabase.com/) (PostgreSQL y Auth con allowlist),
-  [Drizzle ORM](https://orm.drizzle.team/),
-  [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/),
-  MapLibre + Terra Draw, React Flow + ELK y Tiptap 3.
+- Previstos: Cloudflare R2 (contrato `StorageAdapter` ya definido), MapLibre +
+  Terra Draw, React Flow + ELK y Tiptap 3.
 
 ## Convenciones
 
@@ -198,8 +244,9 @@ descuido no filtre secretos al navegador:
 |---|---|---|
 | `src/lib/env/public-schema.ts` | Solo claves `NEXT_PUBLIC_*` y helpers. | Cualquier sitio, también cliente. |
 | `src/lib/env/public.ts` | `publicEnv`, ya validado. | Cualquier sitio. |
-| `src/lib/env/server-schema.ts` | Variables públicas + `NODE_ENV`, `VERCEL_URL`, `VERCEL_GIT_COMMIT_SHA`, Supabase, `DATABASE_URL` y R2. | Servidor y tests. |
+| `src/lib/env/server-schema.ts` | Variables públicas + `NODE_ENV`, `VERCEL_URL`, `VERCEL_GIT_COMMIT_SHA`, Supabase, `DATABASE_URL`, `DIRECT_URL` y R2. | Servidor y tests. |
 | `src/lib/env/server.ts` | `serverEnv`, marcado con `server-only`. | Solo servidor. |
+| `src/lib/db/env.ts` | `DATABASE_URL` y `DIRECT_URL`: validación perezosa y estricta. | Servidor y scripts. |
 
 `parsePublicEnv` copia únicamente claves públicas: aunque reciba el
 `process.env` completo, el resultado no contiene secretos. Importar `server.ts`
@@ -208,8 +255,9 @@ desde un componente cliente rompe la compilación gracias a `server-only`.
 `src/lib/site-url.ts` resuelve el origen del sitio en este orden:
 `NEXT_PUBLIC_SITE_URL` → `https://${VERCEL_URL}` → `http://localhost:3000`.
 
-Las claves de Supabase y R2 son opcionales hasta que sus módulos las consuman
-(M0-08 y M0-10). `.env.example` separa las variables públicas de las de
+Las claves de Supabase Auth son opcionales hasta que M1-01 las consuma; las de
+Cloudflare R2, hasta M0-10. `DATABASE_URL` y `DIRECT_URL` ya las usan los scripts
+`db:*` y `pnpm test:db`, y `.env.example` separa las variables públicas de las de
 servidor.
 
 ## Temas
@@ -264,15 +312,19 @@ recorren las pantallas en ambos temas y pasan axe.
   `eslint-plugin-react-hooks` (sin `eslint-config-next`, todavía incompatible
   con los peers de ESLint 10), más Prettier.
 - **Vitest** para esquemas de entorno, mensajes, utilidades, tokens y contraste,
-  tema, navegación, healthcheck y los componentes base; **Playwright** para
-  rutas, 404, API, responsive, temas, sistema de diseño y accesibilidad con
-  `@axe-core/playwright`. `pnpm design:captures` regenera las imágenes de
-  referencia.
+  tema, navegación, healthcheck, componentes base, esquema de base de datos,
+  catálogo del sistema y contrato de almacenamiento; **Playwright** para rutas,
+  404, API, responsive, temas, sistema de diseño y accesibilidad con
+  `@axe-core/playwright`. Las pruebas de RLS e integración viven en
+  `tests/db/` y se ejecutan aparte con `pnpm test:db` contra la base real.
+  `pnpm design:captures` regenera las imágenes de referencia.
 - GitHub Actions ejecuta `lint`, `typecheck`, `test` y `build` en cada PR y en
   cada push a `dev` y `main`. Son los **required checks** de la protección de
   ramas ([ADR 0017](docs/adr/0017-nextjs-scaffold-and-env-contract.md), que
-  mantiene esta subdecisión del ADR 0016). `e2e`, `gitleaks` (secretos) y
-  `audit` (dependencias) también se ejecutan, sin bloquear.
+  mantiene esta subdecisión del ADR 0016). El job de tests ejecuta además
+  `pnpm db:check`, que valida las migraciones sin credenciales. `e2e`,
+  `gitleaks` (secretos) y `audit` (dependencias) también se ejecutan, sin
+  bloquear.
 - CI define `NEXT_TELEMETRY_DISABLED=1`: el servidor de desarrollo y el build no
   envían telemetría.
 - Dependabot revisa cada semana las dependencias npm y las acciones.
@@ -312,8 +364,16 @@ una acción del propietario en Vercel, no del repositorio.
 
 ## Limitaciones actuales
 
-- Sin autenticación, base de datos, RLS ni almacenamiento: `/login` es un
-  placeholder y no hay contenido.
+- Sin autenticación ni almacenamiento de archivos: `/login` es un placeholder y
+  no hay contenido. El esquema, las migraciones y las políticas de RLS están en
+  el repositorio, pero ninguna pantalla los usa todavía y aún no se han aplicado
+  contra un proyecto Supabase real.
+- El proyecto Supabase de desarrollo y sus credenciales son una acción del
+  propietario: sin ellas no se ejecutan `db:migrate`, `db:seed`, `db:verify` ni
+  `test:db`.
+- `pnpm format:check` falla en local en Windows por los finales de línea CRLF de
+  archivos antiguos (`core.autocrlf=true`); el contenido sí cumple Prettier y en
+  Linux no se reproduce.
 - La textura de papel y los tokens de entidad llegan con M1-02 y M1-03. Motion
   no se instala: las animaciones son CSS.
 - El tema no se sincroniza entre pestañas y los avisos pueden quedar sobre la
@@ -344,6 +404,10 @@ una acción del propietario en Vercel, no del repositorio.
 - [docs/diseno/sistema-de-diseno.md](docs/diseno/sistema-de-diseno.md): guía
   práctica de tokens, componentes, shell y temas, con las capturas de
   referencia.
+- [docs/base-de-datos/esquema.md](docs/base-de-datos/esquema.md): modelo de
+  datos, enums, índices, búsqueda, triggers, RLS y privilegios.
+- [docs/base-de-datos/operacion.md](docs/base-de-datos/operacion.md): arranque,
+  migraciones, seed, reset, copias, límites y runbook.
 - [CONTRIBUTING.md](CONTRIBUTING.md): ramas, commits, PRs y calidad.
 - [SECURITY.md](SECURITY.md): cómo reportar una vulnerabilidad.
 - [LICENSE](LICENSE): licencia MIT.

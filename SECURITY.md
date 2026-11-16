@@ -27,9 +27,15 @@ antes de que el problema esté resuelto.
 Se revisan, entre otros:
 
 - La aplicación y sus Server Actions.
-- Autenticación, allowlist, membresía y roles por mundo, y RLS.
+- Autenticación, allowlist, membresía y roles por mundo, y RLS. El modelo
+  aplicado se documenta en
+  [`docs/base-de-datos/esquema.md`](docs/base-de-datos/esquema.md): RLS activa en
+  las 24 tablas, `anon` sin privilegios y la allowlist solo accesible desde el
+  servidor.
 - El bucket privado de Cloudflare R2 y las URLs firmadas.
-- La gestión de secretos y variables de entorno.
+- La gestión de secretos y variables de entorno, incluidas las cadenas de
+  conexión a PostgreSQL (`DATABASE_URL`, `DIRECT_URL`) y
+  `SUPABASE_SERVICE_ROLE_KEY`.
 - Las dependencias y su cadena de suministro.
 
 Quedan fuera de alcance los ataques de denegación de servicio, la ingeniería
