@@ -1,7 +1,7 @@
 {
   "title": "Documentación base del proyecto",
   "description": "Código de plan: M0-09. Fase M0. Depende de M0-04 (issue #5, fusionada). Completa la documentación base para que una persona o un agente nuevo trabaje sin contexto oral: README de arranque, scripts, variables y despliegue; CONTRIBUTING con ramas, commits, PRs y calidad; mapa de arquitectura; registro de decisiones y ADRs enlazados; esqueleto del manual de usuario con aviso de «en construcción»; changelog y plantilla de cambios; enlaces al plan y a las issues. README, CONTRIBUTING, el registro de decisiones y el índice de ADRs ya existían de tareas anteriores: esta issue crea lo que faltaba, los enlaza entre sí y corrige lo que había quedado desactualizado.",
-  "status": "review",
+  "status": "published",
   "model_variant": "low",
   "issue": {
     "number": 10,
@@ -48,5 +48,12 @@
     "changelog": "CHANGELOG.md",
     "agents": "no aplica: no cambian el equipo, sus responsabilidades ni la invocación.",
     "notes": "Documentación creada: docs/arquitectura.md (vista general, capas y directorios, flujo de petición, rutas actuales, límites de confianza, calidad/despliegue y evolución por fases), docs/manual-de-usuario.md (esqueleto no técnico con aviso de «en construcción», lo que ya se puede hacer en M0 y la estructura hasta M5) y CHANGELOG.md (Keep a Changelog, Semantic Versioning, sección «Sin publicar» y reglas de entrada). Actualizados: README (enlaces a arquitectura, manual y changelog, y corrección del estado real de la base de datos), CONTRIBUTING (sección de changelog y documentación), .github/pull_request_template.md (casilla de changelog como plantilla de cambios) y docs/proceso-sdd.md (inventario documental al día). Sin cambios en AGENTS.md ni en .opencode/agents: no cambian reglas, equipo ni proceso."
+  },
+  "pr": {
+    "number": 57,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/57",
+    "title": "docs: documentación base del proyecto (#10)",
+    "branch": "docs/issue-10-base-documentation",
+    "commit": "4c9e5fd"
   }
 }
