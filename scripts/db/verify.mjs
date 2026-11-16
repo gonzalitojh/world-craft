@@ -322,6 +322,10 @@ await runScript('db:verify', async () => {
         from pg_proc p
         join pg_namespace n on n.oid = p.pronamespace
         where n.nspname = 'app'
+          and not (
+            p.proname = 'immutable_array_to_string'
+            and p.provolatile = 'i'
+          )
           and (
             not p.prosecdef
             or p.proconfig is null
@@ -330,6 +334,32 @@ await runScript('db:verify', async () => {
       `;
       assertEmpty(rows, 'funciones sin security definer o sin search_path');
       return 'todas con security definer y search_path';
+    });
+
+    await check('Helper de arrays inmutable', async () => {
+      const [helper] = await sql`
+        select
+          p.provolatile as volatility,
+          p.proconfig::text as config
+        from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'app'
+          and p.proname = 'immutable_array_to_string'
+      `;
+
+      if (!helper) {
+        throw new Error('falta app.immutable_array_to_string');
+      }
+
+      if (helper.volatility !== 'i') {
+        throw new Error('app.immutable_array_to_string no es IMMUTABLE');
+      }
+
+      if (!helper.config?.includes('search_path=')) {
+        throw new Error('app.immutable_array_to_string no fija search_path');
+      }
+
+      return 'IMMUTABLE y con search_path vacío';
     });
 
     await check('Seed del sistema', async () => {

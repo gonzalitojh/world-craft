@@ -150,7 +150,9 @@ describe('contenido del sistema', () => {
           )
         `,
       );
+    });
 
+    await asUser(owner.id, async (tx) => {
       const updated = await tx`
         update public.game_tables set name = 'Cambiada'
         where id = ${systemTableId}::uuid
@@ -185,6 +187,9 @@ describe('tablas de un mundo', () => {
           values (${world.id}::uuid, 'Pack del viewer')
         `,
       );
+    });
+
+    await asUser(viewer.id, async (tx) => {
       await expectPermissionDenied(
         () => tx`
           insert into public.game_tables (
@@ -196,6 +201,9 @@ describe('tablas de un mundo', () => {
           )
         `,
       );
+    });
+
+    await asUser(viewer.id, async (tx) => {
       await expectPermissionDenied(
         () => tx`
           insert into public.game_table_entries (table_id, text)
@@ -354,6 +362,9 @@ describe('registro de actividad', () => {
           where world_id = ${world.id}::uuid
         `,
       );
+    });
+
+    await asUser(owner.id, async (tx) => {
       await expectPermissionDenied(
         () => tx`
           delete from public.activity_log

@@ -322,14 +322,18 @@ describe('assets', () => {
           )
         `,
       );
+    });
 
+    await asUser(editor.id, async (tx) => {
       const updated = await tx`
         update public.assets set alt = 'Descripción'
         where id = ${assetId}::uuid
         returning id
       `;
       expect(updated).toHaveLength(1);
+    });
 
+    await asUser(editor.id, async (tx) => {
       await expectPermissionDenied(
         () => tx`
           update public.assets

@@ -60,6 +60,9 @@ describe('allowlist', () => {
           where email = 'nadie@world-craft.invalid'
         `,
       );
+    });
+
+    await asUser(outsider.id, async (tx) => {
       await expectPermissionDenied(
         () => tx`
           delete from public.allowed_emails
