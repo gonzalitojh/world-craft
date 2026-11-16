@@ -587,14 +587,14 @@ código, no a los datos de los usuarios.
 | `.opencode/repo-map.md` | Vigente | Mapa de qué documento cargar y reglas de uso eficiente del contexto; se registra en `instructions`. |
 | `.opencode/skills/repo-map/SKILL.md` | Vigente | Resumen operativo del proceso (puertas, estados, task files, labels y publicación) para no abrir este documento completo. |
 | `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier; índice en `docs/adr/README.md`. Los creó M0-03 (issue #4). |
-| `docs/manual-de-usuario.md` | Previsto | Manual funcional. Su creación formal corresponde a M5-01 (issue #28), pero cualquier funcionalidad visible anterior debe actualizarlo y dejar constancia en el task file. |
-| `docs/arquitectura.md` | Previsto | Mapa de módulos y flujos; documentación base M0-09 (issue #10). |
-| `README.md` | Vigente (arranque local desde M0-05; se amplía en M0-09, issue #10) | Qué es World Craft, requisitos, arranque local, scripts, calidad y enlaces. |
-| `CONTRIBUTING.md` | Vigente (comandos de calidad desde M0-05; se amplía en M0-09, issue #10) | Issue-first, ramas, commits, PRs, comandos de calidad, seguridad y coste. |
-| `CHANGELOG.md` | Previsto | Cambios por versión; se crea con la primera versión o cuando el usuario lo pida. No tiene issue asignada. |
+| `docs/manual-de-usuario.md` | Vigente (esqueleto desde M0-09, issue #10; se completa en M5-01, issue #28) | Manual funcional en construcción: lo que ya se puede hacer y la estructura prevista, con aviso de estado. Cualquier funcionalidad visible lo actualiza en su tarea. |
+| `docs/arquitectura.md` | Vigente (M0-09, issue #10) | Mapa de módulos, capas, flujos, rutas, límites de confianza y evolución por fases. |
+| `README.md` | Vigente (arranque local desde M0-05; ampliado en M0-09, issue #10) | Qué es World Craft, requisitos, arranque local, scripts, calidad y enlaces. |
+| `CONTRIBUTING.md` | Vigente (comandos de calidad desde M0-05; ampliado en M0-09, issue #10) | Issue-first, ramas, commits, PRs, changelog, comandos de calidad, seguridad y coste. |
+| `CHANGELOG.md` | Vigente (M0-09, issue #10) | Cambios relevantes por versión con Keep a Changelog y Semantic Versioning; sección «Sin publicar» y reglas de entrada. |
 
-Los documentos previstos se citan como código, no como enlaces, hasta que
-existan.
+Los documentos previstos que aún no existan se citan como código, no como
+enlaces, hasta que se creen.
 
 ### 8.2 Cuándo actualizar cada documento
 

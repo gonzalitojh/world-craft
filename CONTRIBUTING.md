@@ -85,6 +85,22 @@ Ejemplo: `docs: documentar el flujo de publicación local-first`.
 - La PR incluye resumen, cambios, pruebas ejecutadas y documentación afectada.
 - Solo el propietario promueve `dev` a `main` cuando la versión es estable.
 
+## Changelog y documentación
+
+- **Changelog.** [`CHANGELOG.md`](CHANGELOG.md) sigue Keep a Changelog y
+  Semantic Versioning. Cada PR con un cambio relevante añade su entrada en
+  «Sin publicar», dentro de `Añadido`, `Cambiado`, `Obsoleto`, `Eliminado`,
+  `Corregido` o `Seguridad`. La casilla está en
+  `.github/pull_request_template.md`.
+- **Arquitectura.** [`docs/arquitectura.md`](docs/arquitectura.md) describe
+  módulos, capas y flujos; se actualiza cuando cambian.
+- **Manual.** [`docs/manual-de-usuario.md`](docs/manual-de-usuario.md) se
+  actualiza con cualquier cambio visible para la persona usuaria, en la misma
+  tarea (regla 3 de `AGENTS.md`).
+- **ADRs.** Una decisión arquitectónica o de producto relevante se registra en
+  [`docs/adr/`](docs/adr/README.md) y en
+  [`docs/registro-decisiones.md`](docs/registro-decisiones.md).
+
 ## Calidad y Definition of Done
 
 Antes de dar una tarea por terminada se comprueba la Definition of Done de

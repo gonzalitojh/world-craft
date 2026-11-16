@@ -1,0 +1,59 @@
+{
+  "title": "Documentación base del proyecto",
+  "description": "Código de plan: M0-09. Fase M0. Depende de M0-04 (issue #5, fusionada). Completa la documentación base para que una persona o un agente nuevo trabaje sin contexto oral: README de arranque, scripts, variables y despliegue; CONTRIBUTING con ramas, commits, PRs y calidad; mapa de arquitectura; registro de decisiones y ADRs enlazados; esqueleto del manual de usuario con aviso de «en construcción»; changelog y plantilla de cambios; enlaces al plan y a las issues. README, CONTRIBUTING, el registro de decisiones y el índice de ADRs ya existían de tareas anteriores: esta issue crea lo que faltaba, los enlaza entre sí y corrige lo que había quedado desactualizado.",
+  "status": "published",
+  "model_variant": "low",
+  "issue": {
+    "number": 10,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/10",
+    "title": "Documentación base del proyecto"
+  },
+  "acceptance_criteria": [
+    "Un colaborador nuevo entiende el proyecto y arranca la app con el README.",
+    "Los enlaces internos funcionan.",
+    "La documentación no contradice el plan ni los ADRs.",
+    "El manual tiene estructura y aviso de «en construcción»."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos y verificados.",
+    "README, CONTRIBUTING, arquitectura, registro de decisiones, ADRs, manual, changelog y enlaces cruzados coherentes entre sí.",
+    "Los enlaces Markdown locales resuelven a rutas existentes.",
+    "Todos los JSON modificados son válidos (ConvertFrom-Json).",
+    "`git diff --check` sin errores y bloques de código cerrados.",
+    "Sin secretos, correos reales ni URLs privadas.",
+    "Sin referencias a rutas, scripts o automatizaciones que no existan en el repositorio.",
+    "Manual con aviso de «en construcción» y estructura de las próximas fases.",
+    "Changelog creado con formato Keep a Changelog y casilla en la plantilla de PR.",
+    "Task file actualizado con validación, QA, seguridad y documentación.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "Tarea documental (variant: low): se resuelve sin subagentes de planificación, QA, seguridad o documentación, con el checklist documental de la skill repo-map. Plan: 1) revisar qué documentos de la issue ya existen y cuáles faltan (existen README, CONTRIBUTING, registro de decisiones y índice de ADRs; faltan docs/arquitectura.md, docs/manual-de-usuario.md, CHANGELOG.md y los enlaces cruzados). 2) Crear docs/arquitectura.md con vista general, capas y directorios, flujo de una petición, rutas actuales, límites de confianza, calidad/despliegue y evolución por fases, enlazando plan y ADRs. 3) Crear docs/manual-de-usuario.md como esqueleto no técnico con aviso de «en construcción», lo que ya se puede hacer en M0 y la estructura prevista hasta M5. 4) Crear CHANGELOG.md con formato Keep a Changelog, sección «Sin publicar» y reglas de entrada; añadir la casilla del changelog a .github/pull_request_template.md como plantilla de cambios. 5) Enlazar arquitectura, manual y changelog desde README y documentar el mantenimiento en CONTRIBUTING. 6) Corregir las afirmaciones del README que habían quedado obsoletas tras aplicar el modelo en el proyecto Supabase de desarrollo (issue #9). 7) Checklist documental y commit local.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-16",
+    "notes": "Adopción el 2026-11-16 a petición del usuario. Variante recomendada y usada: low (label variant: low de la issue; tarea documental mecánica). Dependencia M0-04 (issue #5) satisfecha. El alcance de la issue se usa como plan aprobado: no requiere task-architect por ser tarea documental. Se comprobó el estado real antes de escribir: README, CONTRIBUTING, registro de decisiones, índice de ADRs, plan y proceso ya existían; faltaban docs/arquitectura.md, docs/manual-de-usuario.md, CHANGELOG.md y los enlaces cruzados. Se corrigieron además las afirmaciones del README que habían quedado obsoletas al aplicarse el modelo en el proyecto Supabase de desarrollo (issue #9). Commit local en la rama docs/issue-10-base-documentation, sin push ni PR (local-first): review significa «commit local listo para revisión del usuario»."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA documental con el checklist de la skill repo-map (sección 8), sin subagentes por ser tarea solo documental. 1) Los 12 task files de tasks/ se parsean con ConvertFrom-Json sin errores. 2) Enlaces Markdown locales: 77 comprobados en README, CONTRIBUTING, CHANGELOG, docs/arquitectura.md, docs/manual-de-usuario.md y docs/proceso-sdd.md; 0 roto. 3) Fences balanceados en todos los Markdown tocados y git diff --check sin errores. 4) Prettier --check en verde sobre los ocho archivos tocados. 5) Coherencia revisada contra docs/plan-desarrollo.md §3 y §4.8 y los ADRs: la arquitectura enlaza cada decisión, el manual describe solo lo que existe en M0 y el changelog no inventa versiones publicadas. 6) docs/proceso-sdd.md actualiza el inventario documental (manual como esqueleto vigente, arquitectura y changelog vigentes) sin cambiar el proceso. 7) No aplica responsive, temas ni accesibilidad: el cambio no toca UI."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Escaneo de secretos limitado a los archivos tocados (CHANGELOG.md, docs/arquitectura.md, docs/manual-de-usuario.md, README.md, CONTRIBUTING.md, docs/proceso-sdd.md, .github/pull_request_template.md y el task file): sin tokens, claves, cadenas de conexión con credenciales, correos reales ni URLs privadas. Los únicos valores citados son rutas, nombres de variables y URLs públicas de GitHub. Sin hallazgos HIGH, MEDIUM ni LOW."
+  },
+  "documentation": {
+    "adr": "no aplica: no se toma ninguna decisión arquitectónica o de producto nueva; docs/arquitectura.md enlaza los ADRs existentes.",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": "no aplica: no cambian el equipo, sus responsabilidades ni la invocación.",
+    "notes": "Documentación creada: docs/arquitectura.md (vista general, capas y directorios, flujo de petición, rutas actuales, límites de confianza, calidad/despliegue y evolución por fases), docs/manual-de-usuario.md (esqueleto no técnico con aviso de «en construcción», lo que ya se puede hacer en M0 y la estructura hasta M5) y CHANGELOG.md (Keep a Changelog, Semantic Versioning, sección «Sin publicar» y reglas de entrada). Actualizados: README (enlaces a arquitectura, manual y changelog, y corrección del estado real de la base de datos), CONTRIBUTING (sección de changelog y documentación), .github/pull_request_template.md (casilla de changelog como plantilla de cambios) y docs/proceso-sdd.md (inventario documental al día). Sin cambios en AGENTS.md ni en .opencode/agents: no cambian reglas, equipo ni proceso."
+  },
+  "pr": {
+    "number": 57,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/57",
+    "title": "docs: documentación base del proyecto (#10)",
+    "branch": "docs/issue-10-base-documentation",
+    "commit": "4c9e5fd"
+  }
+}
