@@ -13,8 +13,9 @@ entorno reproducible, TypeScript estricto, tests y CI (issue #6, M0-05), una
 aplicación Next.js ejecutable (issue #7, M0-06), el sistema de diseño con sus
 temas y el shell responsive (issue #8, M0-07) y el modelo de datos definido para
 PostgreSQL con Drizzle, RLS y seed (issue #9, M0-08): 24 tablas, siete
-migraciones, políticas por mundo y pruebas de aislamiento, todavía sin aplicar a
-un proyecto Supabase real.
+migraciones, políticas por mundo y pruebas de aislamiento, aplicadas al proyecto
+Supabase de desarrollo. La documentación base (issue #10, M0-09) reúne la
+arquitectura, el esqueleto del manual de usuario y el changelog.
 
 Todavía **no hay producto**: no existe autenticación (M1-01), ni almacenamiento de
 archivos (M0-10), ni contenido. `/login` es un placeholder, `/health` solo
@@ -126,8 +127,8 @@ pnpm exec playwright install chromium
 PostgreSQL en Supabase Free con Drizzle ORM. El modelo definido en el
 repositorio son 24 tablas con RLS por mundo, siete migraciones versionadas y un
 seed idempotente del catálogo del sistema (12 tipos de entidad y 15 de relación).
-Aplicarlo contra un proyecto real requiere las credenciales de desarrollo, que
-todavía no están configuradas.
+El proyecto de Supabase de desarrollo ya tiene el modelo aplicado y verificado;
+las credenciales viven en `.env.local` y nunca se versionan.
 
 - **Dos cadenas de conexión.** `DATABASE_URL` es el pooler transaccional (6543)
   del runtime, con `prepare: false`; `DIRECT_URL` es el pooler de sesión (5432)
@@ -365,9 +366,9 @@ una acción del propietario en Vercel, no del repositorio.
 ## Limitaciones actuales
 
 - Sin autenticación ni almacenamiento de archivos: `/login` es un placeholder y
-  no hay contenido. El esquema, las migraciones y las políticas de RLS están en
-  el repositorio, pero ninguna pantalla los usa todavía y aún no se han aplicado
-  contra un proyecto Supabase real.
+  no hay contenido. El esquema, las migraciones y las políticas de RLS están
+  aplicados y verificados en el proyecto Supabase de desarrollo, pero ninguna
+  pantalla los usa todavía.
 - El proyecto Supabase de desarrollo y sus credenciales son una acción del
   propietario: sin ellas no se ejecutan `db:migrate`, `db:seed`, `db:verify` ni
   `test:db`.
@@ -401,6 +402,11 @@ una acción del propietario en Vercel, no del repositorio.
 - [docs/registro-decisiones.md](docs/registro-decisiones.md): registro de
   decisiones.
 - [docs/adr/README.md](docs/adr/README.md): índice de ADRs.
+- [docs/arquitectura.md](docs/arquitectura.md): módulos, capas y flujos
+  principales.
+- [docs/manual-de-usuario.md](docs/manual-de-usuario.md): manual en
+  construcción, con lo que ya se puede hacer y la estructura de las próximas
+  fases.
 - [docs/diseno/sistema-de-diseno.md](docs/diseno/sistema-de-diseno.md): guía
   práctica de tokens, componentes, shell y temas, con las capturas de
   referencia.
@@ -409,5 +415,6 @@ una acción del propietario en Vercel, no del repositorio.
 - [docs/base-de-datos/operacion.md](docs/base-de-datos/operacion.md): arranque,
   migraciones, seed, reset, copias, límites y runbook.
 - [CONTRIBUTING.md](CONTRIBUTING.md): ramas, commits, PRs y calidad.
+- [CHANGELOG.md](CHANGELOG.md): cambios relevantes por versión.
 - [SECURITY.md](SECURITY.md): cómo reportar una vulnerabilidad.
 - [LICENSE](LICENSE): licencia MIT.

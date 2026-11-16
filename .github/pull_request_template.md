@@ -27,6 +27,7 @@ Issue: #
 
 - [ ] ADR actualizado o creado (si aplica)
 - [ ] Manual de usuario actualizado (si el cambio es visible)
+- [ ] Changelog actualizado en «Sin publicar» (si el cambio es relevante)
 - [ ] Task file actualizado
 
 ## Checklist de UI (solo si aplica)
