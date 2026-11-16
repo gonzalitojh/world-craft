@@ -9,6 +9,13 @@
 - **Supersede:** —
 - **Relacionados:** ADR 0014, [`docs/variantes-modelo.md`](../variantes-modelo.md)
 
+> **Actualización (2026-11-15):** los siete subagentes usan ahora el modelo
+> gratuito del proveedor OpenCode, `opencode/deepseek-v4.1-flash-free#<variante>`,
+> en lugar de `deepseek/deepseek-flash` con una API key personal. Se mantienen
+> las variantes fijas y las reglas de caché; el coste directo del modelo actual
+> es 0. La decisión se registra en D-018 y se desarrolla en
+> [`docs/variantes-modelo.md`](../variantes-modelo.md), sección 5.
+
 ## Contexto
 
 Una sesión de `sdd-master` dedicada a la issue #5, con `variant: low`, costó
@@ -44,7 +51,8 @@ flujo invocaba seis subagentes incluso en tareas puramente documentales.
    escaneo de secretos se resuelven en la propia tarea y se registran en el
    task file. `ui-ux-designer` se invoca una sola vez por tarea de UI.
 4. **Variante fija por subagente.** Cada agente declara
-   `model: deepseek/deepseek-flash#<variante>` en el frontmatter:
+   `model: opencode/deepseek-v4.1-flash-free#<variante>` en el frontmatter
+   (originalmente `deepseek/deepseek-flash#<variante>`):
    `task-architect`, `tdd-ddd-architect`, `ui-ux-designer` y
    `security-champion` en `high`; `qa-reviewer`, `documentation-sync` y
    `publisher` en `low`.
@@ -120,7 +128,8 @@ log. Reabre la decisión una issue de `area: agents` o `area: architecture`.
 - [`docs/variantes-modelo.md`](../variantes-modelo.md), secciones 5 y 6
 - [`docs/proceso-sdd.md`](../proceso-sdd.md), secciones 3 y 7
 - [`AGENTS.md`](../../AGENTS.md), reglas 16 y Definition of Done
-- Tarifas de Models.dev para `deepseek/deepseek-flash`, consultadas el
-  14/11/2026: entrada 0,15 $/M, salida 0,6 $/M, lectura de caché 0,003 $/M.
+- Tarifas históricas de Models.dev para `deepseek/deepseek-flash` (modelo
+  anterior), consultadas el 14/11/2026: entrada 0,15 $/M, salida 0,6 $/M,
+  lectura de caché 0,003 $/M.
 - Documentación de OpenCode sobre caché, calentamiento y variantes,
   consultada el 14/11/2026.

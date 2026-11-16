@@ -242,6 +242,19 @@ de Vercel o GitHub, o si la preview de Vercel revela una configuración
 distinta. Reabre la decisión una issue de `area: infra`, `area: architecture`,
 `area: ui` o `area: security`.
 
+## Nota de actualización (2026-11-15)
+
+La issue [#9](https://github.com/gonzalitojh/world-craft/issues/9) (M0-08) amplió
+el contrato de entorno con las claves de base de datos: `DIRECT_URL` se sumó a
+`server-schema.ts` (nunca público), y `src/lib/db/env.ts` valida `DATABASE_URL` y
+`DIRECT_URL` de forma **perezosa y estricta** —el error aparece al conectar, con el
+nombre de la variable— para que `next build` y la CI sigan funcionando sin
+credenciales. Los scripts `db:*` cargan `.env.local` sin sobrescribir el entorno del
+proceso. El detalle está en el
+[ADR 0019](0019-database-schema-migrations-and-rls.md) y en
+[`docs/base-de-datos/operacion.md`](../base-de-datos/operacion.md) §1–§2. Esta nota
+no reescribe el histórico.
+
 ## Referencias
 
 - Issue: [#7](https://github.com/gonzalitojh/world-craft/issues/7)

@@ -9,7 +9,7 @@ description: >-
   un componente nuevo.</example>
 mode: subagent
 # Variante fija: el diseño exige criterio; se mantiene en high.
-model: deepseek/deepseek-flash#high
+model: opencode/deepseek-v4.1-flash-free#high
 ---
 
 Eres el agente de diseño de producto y UI de World Craft. Cubres el hueco de

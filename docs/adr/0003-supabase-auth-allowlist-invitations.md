@@ -86,6 +86,20 @@ Se revisa si cambian los límites de Supabase Auth, si el correo se convierte en
 un problema recurrente o si se añade un proveedor de identidad. Un cambio de
 proveedor de Auth requiere un ADR nuevo.
 
+## Nota de actualización (2026-11-15)
+
+La issue [#9](https://github.com/gonzalitojh/world-craft/issues/9) (M0-08)
+concretó esta decisión en tablas y políticas: `allowed_emails` tiene RLS activa
+con **cero políticas y cero privilegios** para `authenticated` y `anon`, así que
+solo la conexión privilegiada del servidor la lee; las invitaciones guardan un
+`token_hash` SHA-256 (64 hex), exigen `expires_at > created_at` y son únicas por
+mundo y correo mientras estén pendientes; los perfiles se crean con el mismo `id`
+que `auth.users`. La simulación de sesión con `set local role authenticated` y
+`request.jwt.claim.sub` queda documentada para las pruebas. El detalle está en el
+[ADR 0019](0019-database-schema-migrations-and-rls.md) y en
+[`docs/base-de-datos/esquema.md`](../base-de-datos/esquema.md). Esta nota no
+reescribe el histórico.
+
 ## Referencias
 
 - Issue: #4

@@ -10,6 +10,10 @@ pnpm-lock.yaml
 next-env.d.ts
 .env*
 
+# Migraciones y snapshots de Drizzle Kit: SQL generado y ficheros auxiliares
+# que se revisan a mano; Prettier no los reescribe.
+drizzle/
+
 # La documentación y el proceso tienen formato editorial escrito a mano
 # (líneas a 80 columnas); Prettier no los reescribe.
 *.md

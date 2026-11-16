@@ -86,6 +86,21 @@ Se revisa si se supera el 70 % de capacidad u operaciones, si R2 cambia sus
 condiciones o si se añade un proveedor de CDN. Cualquier cambio de proveedor de
 almacenamiento exige un ADR nuevo.
 
+## Nota de actualización (2026-11-15)
+
+La issue [#9](https://github.com/gonzalitojh/world-craft/issues/9) (M0-08) fijó el
+contrato y la tabla que lo sostiene: `StorageAdapter` con `upload`,
+`getSignedUrl`, `delete` y `list` (`src/lib/storage/types.ts`), caducidad máxima de
+una hora (`MAX_SIGNED_URL_EXPIRY_SECONDS`), errores de dominio
+(`not_found`, `invalid_key`, `invalid_expiry`, `unavailable`) y claves
+`world/{worldId}/{assetId}.{ext}` con extensión de imagen validada. La tabla
+`assets` guarda `bucket`, `path`, `mime`, `size`, `width`, `height` y `alt`, impone
+el prefijo con un `check` y deja al cliente solo la edición de `alt`. El bucket y
+la implementación real siguen siendo de M0-10. El detalle está en el
+[ADR 0019](0019-database-schema-migrations-and-rls.md) y en
+[`docs/base-de-datos/esquema.md`](../base-de-datos/esquema.md) §9. Esta nota no
+reescribe el histórico.
+
 ## Referencias
 
 - Issue: #4

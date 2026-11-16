@@ -8,7 +8,7 @@ description: >-
   issue visible actualice el manual y que los ADRs referencien su issue.
 mode: subagent
 # Variante fija (ADR 0015): redactar y comprobar enlaces es trabajo mecánico.
-model: deepseek/deepseek-flash#low
+model: opencode/deepseek-v4.1-flash-free#low
 ---
 
 Eres el agente de documentación de World Craft. Mantienes la documentación

@@ -5,10 +5,11 @@
  * desde tests. Nunca desde componentes cliente: expondría nombres de secretos
  * y permitiría leerlos en el navegador.
  *
- * Todavía no hay servicios conectados (Supabase llega con M0-08, issue #9, y
- * R2 con M0-10, issue #40), así que las claves son opcionales. Cuando exista
- * código que las consuma se endurecerán con `superRefine` o con un esquema
- * específico por entorno.
+ * Supabase ya tiene esquema y migraciones (M0-08, issue #9), pero el build y
+ * la CI siguen sin credenciales: la obligatoriedad se aplica de forma perezosa
+ * al conectar (`src/lib/db/env.ts`). R2 llega con M0-10, issue #40. Cuando
+ * exista código que las consuma se endurecerán con `superRefine` o con un
+ * esquema específico por entorno.
  */
 import { z } from 'zod';
 
@@ -35,6 +36,7 @@ export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_ANON_KEY: optionalText,
   SUPABASE_SERVICE_ROLE_KEY: optionalText,
   DATABASE_URL: optionalUrl,
+  DIRECT_URL: optionalUrl,
   // Cloudflare R2 (M0-10, issue #40).
   R2_ACCOUNT_ID: optionalText,
   R2_ACCESS_KEY_ID: optionalText,

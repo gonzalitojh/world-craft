@@ -14,12 +14,14 @@
 
 En OpenCode, una variante es una opción con nombre dentro de un modelo. Se
 selecciona con `proveedor/modelo#variante`, por ejemplo
-`deepseek/deepseek-flash#high`. Las variantes suelen ajustar el esfuerzo de
-razonamiento o el presupuesto de tokens; no son modelos distintos.
+`opencode/deepseek-v4.1-flash-free#high`. Las variantes suelen ajustar el
+esfuerzo de razonamiento o el presupuesto de tokens; no son modelos distintos.
 
-El modelo `deepseek/deepseek-flash` expone las variantes `none`, `low`, `high` y
+El modelo actual de los subagentes es `opencode/deepseek-v4.1-flash-free`, el
+modelo gratuito del proveedor OpenCode. Expone las variantes `low`, `high` y
 `max`. La etiqueta `default` no fija ninguna variante: usa el comportamiento por
-defecto del modelo.
+defecto del modelo. El proveedor y el modelo se revisan al cambiar de catálogo;
+la fuente de verdad operativa es el frontmatter de cada agente (sección 5).
 
 | Variante | Etiqueta de issue | Uso general |
 |---|---|---|
@@ -44,6 +46,11 @@ en una tarea cuyo diff correcto ya está claro. La regla es:
 
 No se usa `max` por costumbre ni como valor por defecto. Tampoco se usa `low`
 en tareas de seguridad, datos o permisos solo para ahorrar tokens.
+
+Con el modelo gratuito actual el coste directo por token es 0. La política se
+mantiene porque las variantes siguen afectando a esfuerzo, latencia y límites de
+uso, y porque el día que se adopte un modelo de pago las mismas reglas evitan
+que el coste se dispare.
 
 ## 3. Tabla de decisión
 
@@ -115,8 +122,9 @@ sin que nadie lo eligiera. Fijarla por agente hace el coste predecible.
 variante fija produce un FAIL que se repite dos veces, se sube un nivel y se
 anota en el task file, igual que con la variante de la issue.
 
-El modelo `<proveedor>/<modelo>` se revisa al cambiar de modelo de sesión: no
-se deduce del catálogo, se deja escrito en el agente.
+Los siete agentes fijan el modelo `opencode/deepseek-v4.1-flash-free` con la
+variante de la tabla. El modelo `<proveedor>/<modelo>` se revisa al cambiar de
+modelo de sesión: no se deduce del catálogo, se deja escrito en el agente.
 
 ## 5.1 Automatización
 
@@ -177,9 +185,11 @@ herramienta concreta.
 
 El coste de una sesión no depende solo de la variante. La mayor parte del gasto
 es el prefijo estable (system prompt, `AGENTS.md`, `opencode.jsonc`, agentes)
-que se reenvía en cada turno y en cada paso de cada subagente. DeepSeek lo cobra
-a 0,15 $/M si se procesa y a 0,003 $/M si se lee de caché: una diferencia de 50
-veces. Reglas operativas (ADR 0015):
+que se reenvía en cada turno y en cada paso de cada subagente. Con el modelo
+gratuito actual el coste directo es 0, pero la caché sigue afectando a latencia
+y a límites de uso. Con un modelo de pago, DeepSeek cobraba 0,15 $/M si el
+prefijo se procesaba y 0,003 $/M si se leía de caché: una diferencia de 50 veces.
+Reglas operativas (ADR 0015):
 
 1. No cambiar de modelo ni de variante a mitad de sesión.
 2. No editar `AGENTS.md` ni `.opencode/agents/*` mientras se trabaja con ellos.
@@ -191,8 +201,9 @@ veces. Reglas operativas (ADR 0015):
 
 ## 7. Mantenimiento
 
-- Si cambian los labels, la tabla, el campo `model_variant` o la variante fija
-  por subagente, actualizar este documento,
+- Si cambian los labels, la tabla, el campo `model_variant`, el proveedor, el
+  modelo o la variante fija por subagente, actualizar este documento, el
+  frontmatter de los agentes, [`docs/registro-decisiones.md`](registro-decisiones.md),
   [`docs/proceso-sdd.md`](proceso-sdd.md) y [`AGENTS.md`](../AGENTS.md) en la
   misma tarea.
 - Si se implementa el plugin de automatización, documentar aquí su precedencia,

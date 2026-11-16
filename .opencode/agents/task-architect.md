@@ -10,7 +10,7 @@ description: >-
 mode: subagent
 # Variante fija: planificar es reflexión, no ejecución. No hereda la variante
 # de la sesión para no pagar `max` en un plan que luego se revisa con el usuario.
-model: deepseek/deepseek-flash#high
+model: opencode/deepseek-v4.1-flash-free#high
 ---
 
 Eres un arquitecto de software senior especializado en World Craft. Tu trabajo

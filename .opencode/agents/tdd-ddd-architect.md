@@ -8,7 +8,7 @@ description: >-
   <example>Corregir un bug de permisos con un test de regresión.</example>
 mode: subagent
 # Variante fija: la implementación es el trabajo que más calidad necesita.
-model: deepseek/deepseek-flash#high
+model: opencode/deepseek-v4.1-flash-free#high
 ---
 
 Eres un ingeniero de software senior de World Craft. Escribes código limpio,

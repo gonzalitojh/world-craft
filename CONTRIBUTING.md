@@ -48,6 +48,32 @@ Se usa [Conventional Commits](https://www.conventionalcommits.org/):
 
 Ejemplo: `docs: documentar el flujo de publicación local-first`.
 
+## Base de datos y migraciones
+
+- El esquema tipado vive en `src/lib/db/schema/` y las migraciones en `drizzle/`.
+  La cadena es única y lineal: no se crean carpetas paralelas.
+- Cambiar el modelo: editar el esquema, `pnpm db:generate`, revisar el SQL y
+  `pnpm db:check`.
+- **Nunca se edita una migración aplicada.** Se corrige con otra migración hacia
+  delante.
+- **`drizzle-kit push` está prohibido:** no versiona, no es reversible y puede
+  borrar políticas, triggers, funciones y privilegios.
+- Lo que Drizzle no modela (RLS, triggers, funciones, privilegios, FKs hacia
+  `auth.users`) se escribe en SQL custom revisado, con `search_path = ''` y
+  `security definer` cuando corresponde.
+- Toda migración nueva lleva su rollback documentado en `drizzle/rollback/`.
+- El seed (`src/lib/db/seed/system-catalog.json`) es idempotente, no borra filas
+  y se valida con Zod.
+- Los scripts `db:*` y `test:db` solo se ejecutan contra el proyecto de Supabase
+  de desarrollo, con `DIRECT_URL` en `.env.local`. Nunca contra producción y
+  nunca con credenciales en el repositorio o en la CI.
+- Una tabla nueva nace sin privilegios: hay que concederla por tabla y columna en
+  `0006_grants.sql` (o en la migración que corresponda) y añadir su política.
+- El modelo se documenta en
+  [`docs/base-de-datos/esquema.md`](docs/base-de-datos/esquema.md) y su operación
+  en [`docs/base-de-datos/operacion.md`](docs/base-de-datos/operacion.md); un
+  cambio de modelo actualiza ambos.
+
 ## Pull Requests
 
 - **Siempre contra `dev`**, nunca contra `main`.
@@ -93,20 +119,31 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm format:check
+pnpm db:check
 pnpm test:e2e
 ```
 
 - `lint`, `typecheck`, `test` y `build` son **required checks**: una PR no se
   fusiona si fallan.
+- `pnpm db:check` corre dentro del job de tests de la CI: valida el journal y los
+  snapshots de Drizzle Kit sin credenciales. `pnpm test:db` (RLS) es local y
+  necesita el proyecto de Supabase de desarrollo.
 - `e2e`, `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear.
 - En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
   (`pnpm.cmd lint`, `pnpm.cmd typecheck`, etc.).
-- Para corregir el formato: `pnpm format`.
+- Para corregir el formato: `pnpm format`. En Windows, `format:check` puede fallar
+  por los finales de línea CRLF de archivos antiguos; no reformatees el
+  repositorio entero: comprueba solo los archivos que has tocado.
 
 ## Seguridad y coste
 
 - Prohibido incluir secretos, tokens, contraseñas, correos reales o URLs
   privadas. Los `.env*` no se versionan.
+- Las cadenas de conexión (`DATABASE_URL`, `DIRECT_URL`) y
+  `SUPABASE_SERVICE_ROLE_KEY` son secretos de servidor: no se pegan en issues,
+  logs ni capturas, y los scripts las imprimen con la contraseña oculta.
+- RLS es la última línea de defensa, no la única: las Server Actions vuelven a
+  comprobar la membresía y el rol.
 - No se añaden servicios de pago ni dependencias injustificadas: el coste
   objetivo es 0 €/mes.
 - Las vulnerabilidades se reportan de forma privada según
