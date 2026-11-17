@@ -1,12 +1,19 @@
 {
   "title": "Fundaciones de internacionalización",
   "description": "Código de plan: M0-12. Fase M0. Depende de M0-06 (issue #6) y M0-07 (issue #7), ambas cerradas. Prepara la base de i18n sin añadir dependencias: catálogo español tipado, acceso a mensajes por locale, proveedor para servidor y cliente, formatos con Intl, locale del perfil y guía para añadir inglés e italiano más adelante. No traduce contenido creado por el usuario ni incorpora next-intl, que queda para B-05 (issue #39).",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 42,
     "url": "https://github.com/gonzalitojh/world-craft/issues/42",
     "title": "Fundaciones de internacionalización"
+  },
+  "pr": {
+    "number": 60,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/60",
+    "title": "chore(i18n): preparar fundaciones de internacionalización (#42)",
+    "branch": "chore/issue-42-i18n-foundations",
+    "commit": "deeca0d"
   },
   "acceptance_criteria": [
     "Todos los textos de UI del MVP salen de src/messages/es.ts.",
