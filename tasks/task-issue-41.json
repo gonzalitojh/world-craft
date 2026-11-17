@@ -1,7 +1,7 @@
 {
   "title": "Keep-alive y continuidad de Supabase",
   "description": "Código de plan: M0-11. Fase M0. Depende de M0-04 (issue #5) y M0-08 (issue #9), ambas cerradas. Evita que Supabase Free pause el proyecto por inactividad y deja un runbook para reaccionar si ocurre: healthcheck real en /api/health, monitor UptimeRobot, keep-alive de respaldo en GitHub Actions, workflow semanal de copia cifrada y documentación de pausa, ventana de restauración y revisión de claves. No añade interfaz de producto: solo actualiza la página de estado /health.",
-  "status": "review",
+  "status": "published",
   "model_variant": "low",
   "issue": {
     "number": 41,
@@ -59,5 +59,12 @@
     "changelog": "CHANGELOG.md (entrada de la issue #41 en Añadido y Cambiado)",
     "agents": null,
     "notes": "Cambio visible en /health, así que el manual se actualiza con el significado de Operativo y Degradado y con la comprobación de Supabase. Documentación técnica: nueva docs/continuidad.md (contrato, UptimeRobot, prueba de 7 días, pausa y reactivación, revisión de claves, ventana de un año, alertas, backup); README (estado, rutas, sección de disponibilidad, estructura, limitaciones y enlaces); docs/base-de-datos/operacion.md (copias, límites, runbook y connect_timeout); docs/arquitectura.md (rutas); ADR 0013 (nota de implementación); CHANGELOG.md (Añadido y Cambiado). No se crea un ADR nuevo: M0-11 desarrolla decisiones ya aceptadas en 0013 y 0009 §9.3. No se modifican AGENTS.md, agentes, dependencias ni modelo de datos."
+  },
+  "pr": {
+    "number": 59,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/59",
+    "title": "chore(infra): add supabase healthcheck and keep-alive (#41)",
+    "branch": "chore/issue-41-supabase-keepalive",
+    "commit": "b91be06"
   }
 }
