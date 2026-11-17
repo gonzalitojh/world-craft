@@ -10,6 +10,7 @@ import {
   assertValidExpiry,
   StorageError,
   type StorageAdapter,
+  type StorageDownloadOptions,
   type StorageListOptions,
   type StorageListResult,
   type StorageObject,
@@ -111,5 +112,29 @@ export class MemoryStorageAdapter implements StorageAdapter {
   /** Devuelve el contenido guardado, solo para aserciones de pruebas. */
   read(key: string): Uint8Array | undefined {
     return this.objects.get(key)?.body.slice();
+  }
+
+  /** Descarga un objeto en memoria, con el mismo tope que los adaptadores reales. */
+  async download(
+    key: string,
+    options: StorageDownloadOptions = {},
+  ): Promise<Uint8Array> {
+    const stored = this.objects.get(key);
+
+    if (stored === undefined) {
+      throw new StorageError('not_found', `No existe el objeto «${key}».`);
+    }
+
+    if (
+      options.maxBytes !== undefined &&
+      stored.body.byteLength > options.maxBytes
+    ) {
+      throw new StorageError(
+        'too_large',
+        `El objeto «${key}» supera los ${options.maxBytes} bytes.`,
+      );
+    }
+
+    return stored.body.slice();
   }
 }

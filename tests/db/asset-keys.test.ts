@@ -91,14 +91,18 @@ describe('claves de assets', () => {
 
   it('un editor inserta un asset válido y el viewer lo lee', async () => {
     await asUser(editor.id, async (tx) => {
+      // La guarda 0007 exige el contexto que fija el servicio de assets.
+      await tx`select set_config('app.asset_write', 'on', true)`;
+      await tx`select set_config('app.asset_bucket', 'world-craft-assets', true)`;
+
       const rows = await tx<{ path: string }[]>`
         insert into public.assets (
-          world_id, uploader_id, bucket, path, mime, size
+          world_id, uploader_id, bucket, path, mime, size, width, height
         )
         values (
           ${world.id}::uuid, ${editor.id}::uuid, 'world-craft-assets',
           ${`world/${world.id}/66666666-6666-4666-8666-666666666666.webp`},
-          'image/webp', 10
+          'image/webp', 1024, 64, 48
         )
         returning path
       `;

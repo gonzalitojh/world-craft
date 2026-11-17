@@ -81,7 +81,7 @@ cp .env.example .env.local        # PowerShell: Copy-Item .env.example .env.loca
 # 2. Que el proyecto responda y la sesión de usuario se pueda simular
 pnpm db:ping
 
-# 3. Cadena de migraciones (7)
+# 3. Cadena de migraciones (8)
 pnpm db:migrate
 
 # 4. Catálogo del sistema
@@ -111,6 +111,7 @@ La cadena es **lineal y única** en `drizzle/`:
 | `0004_rls_content.sql` | Custom | RLS de taxonomías, fichas, relaciones, etiquetas, assets, mapas y manuscritos. |
 | `0005_rls_game_and_activity.sql` | Custom | RLS de juego y actividad. |
 | `0006_grants.sql` | Custom | Cierre por defecto, privilegios por tabla y columna, recarga de la Data API. |
+| `0007_asset_write_guard.sql` | Custom | Guarda `guard_asset_insert` para los metadatos de assets; rollback en `drizzle/rollback/0007_asset_write_guard.down.sql`. |
 
 `0000` va antes que `0001` porque `entities` usa `extensions.gin_trgm_ops` y las
 políticas llaman a funciones de `app`.

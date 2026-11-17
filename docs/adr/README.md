@@ -24,7 +24,8 @@ revertir una decisión sin contexto.
   de entorno. El ADR 0018 también está `aceptado`: desarrolla el sistema de
   diseño, los tokens y el shell aprobados el 15/11/2026. El ADR 0019 también está
   `aceptado`: fija el modelo de datos, las migraciones y la RLS aprobados el
-  15/11/2026. El ADR 0016 está `supersedido por ADR 0017`, que conserva sus
+  15/11/2026. El ADR 0020 está `aceptado`: registra la subida directa firmada a
+  R2 y la finalización en servidor implementadas el 16/11/2026. El ADR 0016 está `supersedido por ADR 0017`, que conserva sus
   subdecisiones de Node, pnpm, CI y seguridad de dependencias.
 - **Numeración:** cuatro dígitos y slug en inglés kebab-case
   (`NNNN-slug-en-kebab-case.md`). `0000` es la
@@ -40,7 +41,7 @@ revertir una decisión sin contexto.
 | [0001](0001-nextjs-app-router.md) | Next.js, React y TypeScript | App Router + RSC/Server Actions sobre React 19 y TypeScript estricto | aceptado | 2026-11-12 | #4 |
 | [0002](0002-supabase-postgres-drizzle-zod.md) | Supabase Postgres, Drizzle y Zod | PostgreSQL gestionado, Drizzle SQL-first y Zod como validación única | aceptado | 2026-11-12 | #4 |
 | [0003](0003-supabase-auth-allowlist-invitations.md) | Supabase Auth, allowlist e invitaciones | Auth con registro cerrado, sesiones SSR e invitaciones de un solo uso | aceptado | 2026-11-12 | #4 |
-| [0004](0004-cloudflare-r2-storage-adapter.md) | Cloudflare R2 y StorageAdapter | R2 privado como almacenamiento principal tras una interfaz abstraída | aceptado | 2026-11-12 | #4 |
+| [0004](0004-cloudflare-r2-storage-adapter.md) | Cloudflare R2 y StorageAdapter | R2 privado como almacenamiento principal, adaptador local y driver por entorno | aceptado | 2026-11-12 | #4, #40 |
 | [0005](0005-vercel-hobby.md) | Vercel Hobby y dominio | Hosting Hobby y subdominio de Vercel; dominio propio fuera del MVP | aceptado | 2026-11-12 | #4 |
 | [0006](0006-maplibre-terra-draw-geojson.md) | MapLibre, Terra Draw y GeoJSON | Mapas vectoriales en GeoJSON con raster opcional y exportación propia | aceptado | 2026-11-12 | #4 |
 | [0007](0007-react-flow-elk.md) | React Flow y ELK.js | Grafo con nodos React y layout automático en Web Worker | aceptado | 2026-11-12 | #4 |
@@ -56,6 +57,7 @@ revertir una decisión sin contexto.
 | [0017](0017-nextjs-scaffold-and-env-contract.md) | Scaffold de Next.js y contrato de entorno | Next.js 16, React 19, Tailwind 4 CSS-first, entorno público/servidor y páginas base con deuda de CSP | aceptado | 2026-11-14 | #7 |
 | [0018](0018-design-system-tokens-and-shell.md) | Sistema de diseño: tokens, componentes y shell | Tokens en tres capas, doce componentes base, shell responsive y tema Claro/Oscuro/Sistema persistente | aceptado | 2026-11-15 | #8 |
 | [0019](0019-database-schema-migrations-and-rls.md) | Esquema de base de datos, migraciones y RLS | Cadena única de migraciones, RLS con funciones `security definer`, privilegios fail-closed y seed idempotente | aceptado | 2026-11-15 | #9 |
+| [0020](0020-direct-signed-upload-to-r2.md) | Subida directa firmada a R2 | PUT prefirmado de corta duración a `tmp/` y `finalizeUpload` con validación y publicación en servidor | aceptado | 2026-11-16 | #40 |
 
 ## Trazabilidad con el plan y el registro
 
@@ -73,6 +75,7 @@ revertir una decisión sin contexto.
 | Scaffold de Next.js y contrato de entorno | 0017 | §3.2 D17, §3.7, §4.7 | D-015 |
 | Sistema de diseño, tokens y shell | 0010, 0018 | §3.2 D2 y D15, §3.6 | D-002, D-016 |
 | Modelo de datos, migraciones y RLS | 0002, 0019 | §3.3, §3.4, §7 | D-017 |
+| Subida directa firmada a R2 | 0004, 0020 | §3.2 D6, §3.4 | D-019 |
 
 ### Decisiones sin ADR propio
 
