@@ -1,9 +1,11 @@
+'use client';
+
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import type { Breadcrumb } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Migajas de pan.
@@ -27,6 +29,8 @@ type BreadcrumbsProps = {
 };
 
 export function Breadcrumbs({ items, label, className }: BreadcrumbsProps) {
+  const { t } = useI18n();
+
   return (
     <nav
       aria-label={label ?? t('a11y.breadcrumbs')}

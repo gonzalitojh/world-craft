@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +23,6 @@ import {
 import { Dialog } from '@/components/ui/dialog';
 import { NAV_LINKS } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Paleta de comandos del shell.
@@ -56,6 +56,7 @@ type CommandPaletteProviderProps = {
 export function CommandPaletteProvider({
   children,
 }: CommandPaletteProviderProps) {
+  const { t } = useI18n();
   const router = useRouter();
   const { setPreference } = useTheme();
   const [open, setOpen] = useState(false);
@@ -146,7 +147,7 @@ export function CommandPaletteProvider({
     ];
 
     return [...navigation, ...theme];
-  }, [router, setPreference]);
+  }, [router, setPreference, t]);
 
   const value = useMemo<CommandPaletteContextValue>(
     () => ({ open: openPalette }),
@@ -190,6 +191,7 @@ type CommandPaletteButtonProps = {
 
 /** Botón de icono que abre la paleta; su etiqueta accesible va en el catálogo. */
 export function CommandPaletteButton({ className }: CommandPaletteButtonProps) {
+  const { t } = useI18n();
   const { open } = useCommandPalette();
 
   return (

@@ -2,13 +2,14 @@
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
   within,
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderWithI18n } from '../helpers/render';
 
 import { AppRail } from '@/components/shell/app-rail';
 import { BottomBar } from '@/components/shell/bottom-bar';
@@ -46,6 +47,28 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+/*
+ * Las páginas de carga y 404 son Server Components asíncronos: resuelven el
+ * idioma con `cookies()`/`headers()`, que no existen en jsdom. Se sustituye el
+ * módulo de servidor por el mismo contrato servido con el catálogo real.
+ */
+vi.mock('@/lib/i18n/server', async () => {
+  const { createFormatters } = await import('@/lib/i18n/format');
+  const { createTranslator } = await import('@/messages/translator');
+  const { es } = await import('@/messages/es');
+
+  return {
+    getLocale: async () => 'es',
+    getI18n: async () => ({
+      locale: 'es',
+      messages: es,
+      t: createTranslator(es),
+      format: createFormatters('es'),
+      availableLocales: ['es'],
+    }),
+  };
+});
+
 beforeEach(() => {
   navigation.pathname = '/';
 });
@@ -59,7 +82,7 @@ afterEach(() => {
 
 /** Envuelve el componente con los proveedores que usa el shell real. */
 function renderInShell(node: ReactNode) {
-  return render(
+  return renderWithI18n(
     <ThemeProvider>
       <CommandPaletteProvider>{node}</CommandPaletteProvider>
     </ThemeProvider>,
@@ -252,7 +275,7 @@ describe('BottomBar', () => {
 
 describe('Breadcrumbs', () => {
   it('usa una lista ordenada, enlaza el padre y marca el actual', () => {
-    render(<Breadcrumbs items={getBreadcrumbs('/design-system')} />);
+    renderWithI18n(<Breadcrumbs items={getBreadcrumbs('/design-system')} />);
 
     const nav = screen.getByRole('navigation', {
       name: es.a11y.breadcrumbs,
@@ -267,7 +290,7 @@ describe('Breadcrumbs', () => {
   });
 
   it('no repite enlace en la página actual', () => {
-    render(<Breadcrumbs items={getBreadcrumbs('/health')} />);
+    renderWithI18n(<Breadcrumbs items={getBreadcrumbs('/health')} />);
 
     const nav = screen.getByRole('navigation', {
       name: es.a11y.breadcrumbs,
@@ -285,8 +308,8 @@ describe('estados de ruta', () => {
    * importa: que no se queden sin chrome y que el enlace de salto tenga destino.
    */
 
-  it('el estado de carga no monta cabecera, main ni pie', () => {
-    render(<Loading />);
+  it('el estado de carga no monta cabecera, main ni pie', async () => {
+    renderWithI18n(await Loading());
 
     expect(screen.queryByRole('banner')).toBeNull();
     expect(screen.queryByRole('main')).toBeNull();
@@ -295,7 +318,7 @@ describe('estados de ruta', () => {
   });
 
   it('la frontera de error conserva el shell público', () => {
-    render(
+    renderWithI18n(
       <ThemeProvider>
         <CommandPaletteProvider>
           <ErrorPage error={new Error('fallo de prueba')} reset={() => {}} />
@@ -309,12 +332,10 @@ describe('estados de ruta', () => {
     expect(screen.getByRole('button', { name: es.error.retry })).toBeTruthy();
   });
 
-  it('la página 404 conserva el shell público', () => {
-    render(
+  it('la página 404 conserva el shell público', async () => {
+    renderWithI18n(
       <ThemeProvider>
-        <CommandPaletteProvider>
-          <NotFound />
-        </CommandPaletteProvider>
+        <CommandPaletteProvider>{await NotFound()}</CommandPaletteProvider>
       </ThemeProvider>,
     );
 

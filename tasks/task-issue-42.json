@@ -1,0 +1,63 @@
+{
+  "title": "Fundaciones de internacionalización",
+  "description": "Código de plan: M0-12. Fase M0. Depende de M0-06 (issue #6) y M0-07 (issue #7), ambas cerradas. Prepara la base de i18n sin añadir dependencias: catálogo español tipado, acceso a mensajes por locale, proveedor para servidor y cliente, formatos con Intl, locale del perfil y guía para añadir inglés e italiano más adelante. No traduce contenido creado por el usuario ni incorpora next-intl, que queda para B-05 (issue #39).",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 42,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/42",
+    "title": "Fundaciones de internacionalización"
+  },
+  "acceptance_criteria": [
+    "Todos los textos de UI del MVP salen de src/messages/es.ts.",
+    "Cambiar el locale no requiere tocar componentes.",
+    "Fechas y números respetan el locale.",
+    "Existe una guía para añadir un idioma.",
+    "Tests de claves faltantes.",
+    "No hay textos hardcodeados en las pantallas nuevas."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos y verificados con pruebas.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "Responsive a ~360, ~768 y ~1280 px sin scroll horizontal en las pantallas afectadas, con contenido largo realista.",
+    "Los dos temas comprobados, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion.",
+    "Manual de usuario actualizado si el cambio es visible o, si no lo es, constancia de por qué no aplica.",
+    "ADR 0012 actualizado con la implementación de M0-12.",
+    "Seguridad revisada: sin secretos, sin datos personales, cookie de locale sin información sensible y sin dependencias nuevas.",
+    "Sin cambios de modelo de datos: profiles.locale ya existe; exportación e importación no aplican.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "Variante recomendada y usada registradas en el task file.",
+    "Task file actualizado con validación, QA, seguridad y documentación.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-17 (opción recomendada). Decisiones: locale por petición con precedencia profiles.locale (M1-06) > cookie wc-locale > Accept-Language > es; cookie HttpOnly SameSite=Lax escrita por Server Action; sin selector visible porque solo existe es; catálogos completos sin stubs ni fallback por clave; /health en UTC explícito con <time> localizado; guía en docs/internacionalizacion.md; se acepta que el layout raíz pase a dinámico. Pasos: 1) separar contrato tipado en src/messages/translator.ts y registro de catálogos en src/messages/index.ts; 2) crear src/lib/i18n/locale.ts, cookie.ts, format.ts, server.ts y actions.ts con pruebas puras de precedencia, negociación, formatos Intl, cookie y acción; 3) crear src/components/i18n/locale-provider.tsx con useI18n y un pseudo-catálogo de prueba; 4) hacer async el layout raíz, resolver locale, <html lang>, generateMetadata y montar el proveedor; 5) migrar páginas y componentes de getMessages/t a getI18n/useI18n, incluidos error/not-found/loading, shell, ui y demos del sistema de diseño; 6) usar Intl en /health y en formatContrastRatio; 7) añadir auditoría estática de literales visibles con allowlist justificada y guardia de imports cliente; 8) ampliar messages.test, añadir pruebas de locale, formatos, proveedor, acción y E2E de i18n; 9) actualizar docs/internacionalizacion.md, ADR 0012, arquitectura, README, CHANGELOG y la fila de /health del manual; 10) ejecutar typecheck, lint, test, build y E2E, registrar QA/seguridad/documentación y dejar el cambio en review local sin push ni PR.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-17",
+    "notes": "Issue #42 adoptada el 2026-11-17. Dependencias M0-06 (#6) y M0-07 (#7) cerradas. Labels revisados: ai, type: chore, status: todo, priority: p1, size: m, area: ui, variant: high y hito M0; sin needs-decision. Plan aprobado por el usuario el 2026-11-17 con la opción recomendada: UTC explícito, sin selector visible, rutas dinámicas aceptadas y guía en docs/internacionalizacion.md. Variante recomendada y usada: high. Implementación completada el 2026-11-17 en la rama chore/issue-42-i18n-foundations, creada desde origin/dev (3266dae). Comandos y resultados finales: pnpm typecheck OK; pnpm lint OK; pnpm test 44 archivos / 462 pruebas OK; pnpm build OK; pnpm test:e2e 57/57 OK (i18n, routes, a11y, themes, responsive, design-system, api); git diff --check sin errores. QA ronda 2 PASS (bloqueante de formato Prettier resuelto y menores 2–9 verificados). Seguridad PASS con 0 HIGH y endurecimiento server-only en el barril de catálogos. Documentación sincronizada: docs/internacionalizacion.md, ADR 0012, arquitectura, README, CHANGELOG y manual de usuario. Preparado en local para revisión: rama + commit, sin push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Ronda 1 (2026-11-17): FAIL. Bloqueante: `pnpm format:check` falla en 8 archivos nuevos por formato de Prettier (`src/lib/i18n/format.ts`, `src/lib/i18n/actions.ts`, `src/messages/index.ts`, `src/components/i18n/locale-provider.tsx`, `tests/unit/i18n-hardcoded.test.ts`, `tests/unit/i18n-provider.test.tsx`, `tests/e2e/i18n.spec.ts`, `tests/unit/overlays.test.tsx`); se formatean solo esos para no convertir CRLF ajenos en un diff masivo. Menores: errata en el comentario de `format.ts`; paso 4 contradictorio de `docs/internacionalizacion.md`; recuento de la allowlist (son cinco literales técnicos: `Aa`, `rem`, `text-base · font-sans`, `font-mono` y `text-eyebrow · tracking-eyebrow`); marcador de cierre del pseudo-catálogo (se corrigió a U+27E7 y se añadió prueba que fija ambos marcadores); año fijo «2026» en `i18n.spec.ts`, ahora derivado del `datetime`; guardia estática sin cubrir expresiones JSX, atributos `label`/`note`, `@/messages/index` ni rutas relativas al catálogo, ahora cubiertas con limitaciones documentadas; comentario de `/health` que hablaba del «mismo instante» y ahora dice «misma referencia UTC»; y FAQ del manual que insinuaba detección de idioma activa, ahora aclarada. Además se formatearon `src/app/(workspace)/design-system/page.tsx` y `tests/unit/command.test.tsx`, que también tenían formato real pendiente y habrían roto CI; el resto de avisos de `format:check` en Windows son CRLF/mixto ajenos y pasan en CI Linux. Ronda 2 (re-QA del delta, 2026-11-17): PASS. Bloqueante resuelto: los 10 archivos pasan formato real y los 51 archivos tocados por la rama no tienen diferencias de Prettier; los 23 avisos restantes de `format:check` son CRLF/mixto de archivos viejos ajenos que en CI Linux pasan. Menores 2–9 resueltos y verificados. Regresiones: `pnpm typecheck` OK; `pnpm lint` OK; `pnpm test` 44 archivos / 462 pruebas OK; E2E `i18n`, `routes`, `a11y`, `themes` 36/36 OK. Guardia estática sin falsos positivos y allowlist sin ampliar (5 entradas). Responsive 360/768/1280, ambos temas, axe, `<html lang>`, `<time datetime>`, hidratación y regresiones del shell ya verificados en la ronda 1. Único housekeeping: `next-env.d.ts` generado por `next dev`, descartado antes del commit. Criterios de aceptación 1–6 cumplidos."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "MEDIUM resuelto: el barril de catálogos (src/messages/index.ts) no importaba server-only y la frontera RSC/cliente dependía solo de la auditoría estática. Se añadió import 'server-only'; Vitest ya lo sustituye por su stub y typecheck, lint, 462 pruebas y build siguen en verde.",
+      "LOW aceptado: setLocale es invocable sin sesión y llama a revalidatePath('/', 'layout'). Sin impacto hoy porque todas las rutas son dinámicas; se revisará con M1-01/M1-06, cuando el locale viaje también a profiles.locale y la invalidación pueda acotarse.",
+      "LOW aceptado: la memoización de Intl no tiene cota y las opciones podrían crecer si alguna pantalla futura formatea con zona del usuario; hoy todos los llamadores usan literales. Se documentará al abrir esa pantalla.",
+      "LOW resuelto: createFormatters y formatContrastRatio aceptaban cualquier string como locale; ahora reciben Locale validado.",
+      "LOW aceptado: wc-locale no usa el prefijo __Host- porque exigiría Secure también en desarrollo por HTTP; la cookie no autoriza nada y el nombre no colisiona.",
+      "LOW aceptado: el catálogo completo viaja al cliente por diseño; src/messages no debe contener información interna ni datos personales, y la guía lo recuerda."
+    ],
+    "notes": "Revisión de seguridad independiente: PASS con 0 HIGH. Comprobado: sin claves, tokens, credenciales, correos reales, cadenas de conexión ni URLs privadas en el diff, tests, fixtures, docs, task file o logs; el único .env* trackeado es .env.example y no se modificó. Cookie wc-locale HttpOnly, SameSite=Lax, Path=/, Secure en producción, un año y valor de enum; única vía de escritura la Server Action setLocale, validada con Zod y contra availableLocales, sin SQL, redirecciones, next params ni errores internos. Accept-Language acotada (512 caracteres, 20 entradas, 35 por etiqueta) con regex lineal; cookie y cabecera manipuladas no sirven un idioma sin catálogo ni afectan a rutas, consultas o HTML. Frontera: server.ts importa server-only, cookies/headers solo en servidor/acción, translator.ts usa import type y los componentes cliente no importan valores de @/messages; se añadió server-only al barril de catálogos para que el límite sea de compilación. cache() por petición, sin unstable_cache, y layout dinámico, sin fuga de preferencias. Sin migraciones ni cambios de RLS o modelo; profiles.locale no concede acceso a mundos. Sin dependencias nuevas ni servicios de pago. /health no expone detalles internos y el script de tema sigue siendo estático. Los hallazgos LOW quedan como deuda aceptada documentada."
+  },
+  "documentation": {
+    "adr": "docs/adr/0012-i18n-centralized-roadmap.md (§ Implementación M0-12 y consecuencias actualizadas)",
+    "manual": "docs/manual-de-usuario.md (§1 fila de /health, nota de hora UTC y FAQ de idioma)",
+    "changelog": "CHANGELOG.md (Añadido y Cambiado)",
+    "agents": null,
+    "notes": "Documentación revisada contra el código de la rama el 2026-11-17. docs/internacionalizacion.md: se precisó que profiles.locale aún no se lee (M1-06/#16), se añadió el motivo de no usar __Host- en la cookie, los namespaces actuales y los reservados sin objetos vacíos, la guía de catálogos completos sin fallback por clave (con la red de seguridad de getMessages), la sección de auditoría estática con sus limitaciones, la comparación con next-intl/B-05 (#39) y la nota de que el catálogo se serializa al cliente. ADR 0012: fecha del documento actualizada, consecuencias negativas ampliadas con rutas dinámicas, catálogo serializado, cookie y ausencia de en/it, más un riesgo de free tier por rutas dinámicas. docs/arquitectura.md: src/components/i18n/ en la tabla de directorios, src/lib/i18n/ con su dependencia de cache(), y flujo de resolución servidor/cliente. README.md: estructura real de components/i18n, lib/i18n y messages, precedencia ajustada a lo implementado y limitación de que solo existe es, sin selector ni catálogos en/it. Manual: fila y nota de /health con formato del idioma de la interfaz; FAQ aclara que la detección del navegador no se aplica hasta que existan catálogos. CHANGELOG: entrada de #42 en Añadido y Cambiado sin duplicados. docs/agentes.md, AGENTS.md y docs/proceso-sdd.md no se tocaron. No se pudo verificar visualmente el texto exacto que ICU devuelve para la zona UTC (se documenta como «UTC o GMT»); el resto de afirmaciones se comprobaron contra src/ y las pruebas."
+  }
+}

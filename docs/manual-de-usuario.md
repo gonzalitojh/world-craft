@@ -20,7 +20,7 @@ Muy poco, y es lo esperado en esta fase:
 |---|---|
 | Portada (`/`) | Leer qué es World Craft, en qué fase está y cuáles son sus tres pilares. |
 | Acceso (`/login`) | Ver el aviso de que el acceso llegará con la autenticación. El botón está deshabilitado: **no hay formulario ni sesión**. |
-| Estado (`/health`) | Comprobar que el despliegue responde y si la base de datos de Supabase está disponible, con el commit y la hora de la comprobación. |
+| Estado (`/health`) | Comprobar que el despliegue responde y si la base de datos de Supabase está disponible, con el commit y la hora de la comprobación (en UTC y con el formato del idioma de la interfaz). |
 | Sistema de diseño (`/design-system`) | Recorrer los colores, tipografía, componentes y patrones de la interfaz, y cambiar entre tema Claro y Oscuro. |
 
 En la página de estado, «Operativo» significa que la aplicación y Supabase
@@ -28,7 +28,9 @@ responden; «Degradado» significa que la aplicación responde pero la comprobac
 de la base de datos no se ha completado. En ese caso no hay nada que puedas hacer
 desde la web: el propietario recibe el aviso del monitor y reactiva el proyecto.
 La comprobación es la misma que usa el monitor externo y se repite cada vez que
-abres la página.
+abres la página. La hora se muestra en UTC (verás `UTC` o `GMT` junto a ella) y
+con el formato del idioma de la interfaz, aunque tu equipo esté en otra zona
+horaria.
 
 Consejo: en el sistema de diseño puedes probar el **selector de tema** de la
 barra superior. La preferencia se guarda en tu navegador y se mantiene entre
@@ -141,8 +143,9 @@ La interfaz ya es responsive y el uso como aplicación instalable llegará con l
 PWA (M5).
 
 **¿En qué idioma estará?**
-En español durante el MVP, con la estructura preparada para añadir inglés e
-italiano.
+En español durante el MVP. La detección del idioma del navegador ya está
+preparada, pero solo se aplicará cuando existan los catálogos de inglés e
+italiano; hasta entonces la aplicación se muestra siempre en español.
 
 ## 14. Cómo se mantiene este manual
 

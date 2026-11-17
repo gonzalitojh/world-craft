@@ -1,13 +1,9 @@
 // @vitest-environment jsdom
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { Search } from 'lucide-react';
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { renderWithI18n } from '../helpers/render';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,9 +35,14 @@ import {
 
 afterEach(cleanup);
 
+/** Monta overlays dentro del proveedor de idioma que consumen. */
+function renderInI18n(ui: Parameters<typeof renderWithI18n>[0]) {
+  return renderWithI18n(ui);
+}
+
 describe('Dialog', () => {
   function renderDialog() {
-    return render(
+    return renderInI18n(
       <Dialog>
         <DialogTrigger asChild>
           <Button>Abrir ajustes</Button>
@@ -108,7 +109,7 @@ describe('Dialog', () => {
   });
 
   it('mantiene el nombre accesible con el título oculto a la vista', async () => {
-    render(
+    renderInI18n(
       <Dialog open>
         <DialogContent title="Paleta de comandos" titleHidden hideCloseButton>
           <p>Contenido</p>
@@ -126,7 +127,7 @@ describe('Dialog', () => {
   });
 
   it('pinta un botón de cierre con nombre accesible', async () => {
-    render(
+    renderInI18n(
       <Dialog open>
         <DialogContent title="Ajustes">Contenido</DialogContent>
       </Dialog>,
@@ -140,7 +141,7 @@ describe('Dialog', () => {
   });
 
   it('tabula el cierre antes que el contenido, como se ve en pantalla', async () => {
-    render(
+    renderInI18n(
       <Dialog open>
         <DialogContent title="Ajustes">
           <button type="button">Guardar</button>
@@ -165,7 +166,7 @@ describe('Drawer', () => {
 
   for (const side of sides) {
     it(`abre por el lado ${side} y cierra con Escape`, async () => {
-      render(
+      renderInI18n(
         <Drawer>
           <DrawerTrigger asChild>
             <Button>Abrir panel</Button>
@@ -195,7 +196,7 @@ describe('Drawer', () => {
   }
 
   it('ofrece un cierre propio con nombre accesible', async () => {
-    render(
+    renderInI18n(
       <Drawer>
         <DrawerTrigger asChild>
           <Button>Abrir panel</Button>
@@ -215,7 +216,7 @@ describe('Drawer', () => {
   });
 
   it('tabula el cierre antes que el contenido', async () => {
-    render(
+    renderInI18n(
       <Drawer open>
         <DrawerContent title="Más opciones">
           <button type="button">Licencia</button>
@@ -234,7 +235,7 @@ describe('Drawer', () => {
   });
 
   it('reserva el área segura cuando entra por abajo', async () => {
-    render(
+    renderInI18n(
       <Drawer open>
         <DrawerContent side="bottom" title="Más opciones">
           <p>Navegación</p>
@@ -254,7 +255,7 @@ describe('Drawer', () => {
 
 describe('Tooltip', () => {
   it('describe el disparador sin sustituir su etiqueta accesible', async () => {
-    render(
+    renderInI18n(
       <TooltipProvider delayDuration={0}>
         <Tooltip>
           <TooltipTrigger asChild>

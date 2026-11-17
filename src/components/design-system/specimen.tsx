@@ -1,7 +1,9 @@
+'use client';
+
 import type { ReactNode } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Piezas de maquetación de la página viva del sistema de diseño.
@@ -63,6 +65,8 @@ export function Specimen({
   children,
   className,
 }: SpecimenProps) {
+  const { t } = useI18n();
+
   return (
     <section aria-labelledby={`${id}-title`} className="min-w-0">
       <h3

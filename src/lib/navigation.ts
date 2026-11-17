@@ -1,4 +1,4 @@
-import type { MessageKey } from '@/messages';
+import type { MessageKey } from '@/messages/translator';
 
 /**
  * Modelo de navegación del shell (issue #8, fase 3).

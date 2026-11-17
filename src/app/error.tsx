@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { PageShell } from '@/components/page-shell';
 import { PublicShell } from '@/components/shell/public-shell';
 import { Button } from '@/components/ui/button';
-import { t } from '@/messages';
 
 type ErrorPageProps = {
   /** Next.js lo pasa, pero no se muestra: puede filtrar detalles internos. */
@@ -22,6 +22,8 @@ type ErrorPageProps = {
  * salto dejaría de tener destino.
  */
 export default function ErrorPage({ reset }: ErrorPageProps) {
+  const { t } = useI18n();
+
   return (
     <PublicShell>
       <PageShell className="max-w-xl">

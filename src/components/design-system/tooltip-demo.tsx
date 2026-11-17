@@ -2,6 +2,7 @@
 
 import { Search } from 'lucide-react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -9,7 +10,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { t } from '@/messages';
 
 /**
  * Isla interactiva del globo de ayuda.
@@ -18,6 +18,7 @@ import { t } from '@/messages';
  * al enfocar o al pasar el ratón, pero nunca es la única etiqueta.
  */
 export function TooltipDemo() {
+  const { t } = useI18n();
   const label = t('design.components.tooltip.trigger');
 
   return (

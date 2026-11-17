@@ -36,8 +36,14 @@ describe('contrastRatio', () => {
 });
 
 describe('formatContrastRatio', () => {
-  it('usa un decimal con coma española', () => {
+  it('usa un decimal con coma española por defecto', () => {
     expect(formatContrastRatio(12.34)).toBe('12,3:1');
     expect(formatContrastRatio(4.5)).toBe('4,5:1');
+  });
+
+  it('usa el separador del idioma cuando se indica', () => {
+    expect(formatContrastRatio(12.34, 'es')).toBe('12,3:1');
+    expect(formatContrastRatio(12.34, 'en')).toBe('12.3:1');
+    expect(formatContrastRatio(4.5, 'it')).toBe('4,5:1');
   });
 });

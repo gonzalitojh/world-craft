@@ -2,14 +2,15 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter, JetBrains_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
 
+import { LocaleProvider } from '@/components/i18n/locale-provider';
 import { CommandPaletteProvider } from '@/components/shell/command-palette';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { ToastProvider } from '@/components/ui/toast';
 import { serverEnv } from '@/lib/env/server';
+import { getI18n } from '@/lib/i18n/server';
 import { resolveSiteUrl } from '@/lib/site-url';
 import { createThemeScript } from '@/lib/theme';
 import { THEME_COLORS } from '@/lib/theme-palette';
-import { t } from '@/messages';
 
 import './globals.css';
 
@@ -40,25 +41,29 @@ const siteUrl = resolveSiteUrl({
   VERCEL_URL: serverEnv.VERCEL_URL,
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: t('meta.title'),
-    template: t('meta.titleTemplate'),
-  },
-  description: t('meta.description'),
-  applicationName: t('meta.applicationName'),
-  icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-  },
-  manifest: '/manifest.webmanifest',
-  // Aplicación privada: no debe aparecer en buscadores.
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: t('meta.title'),
+      template: t('meta.titleTemplate'),
+    },
+    description: t('meta.description'),
+    applicationName: t('meta.applicationName'),
+    icons: {
+      icon: '/icon.svg',
+      shortcut: '/icon.svg',
+    },
+    manifest: '/manifest.webmanifest',
+    // Aplicación privada: no debe aparecer en buscadores.
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   colorScheme: 'light dark',
@@ -87,10 +92,12 @@ type RootLayoutProps = {
  * rail, pie, barra inferior) vive en los shells de cada route group, porque la
  * web pública y el espacio de trabajo no comparten estructura.
  */
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const { locale, messages, availableLocales, t } = await getI18n();
+
   return (
     <html
-      lang="es"
+      lang={locale}
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
@@ -112,19 +119,25 @@ export default function RootLayout({ children }: RootLayoutProps) {
           id="wc-theme"
           dangerouslySetInnerHTML={{ __html: createThemeScript() }}
         />
-        <ThemeProvider>
-          <CommandPaletteProvider>
-            <ToastProvider>
-              <a
-                href="#contenido"
-                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-foreground"
-              >
-                {t('a11y.skipToContent')}
-              </a>
-              {children}
-            </ToastProvider>
-          </CommandPaletteProvider>
-        </ThemeProvider>
+        <LocaleProvider
+          locale={locale}
+          messages={messages}
+          availableLocales={availableLocales}
+        >
+          <ThemeProvider>
+            <CommandPaletteProvider>
+              <ToastProvider>
+                <a
+                  href="#contenido"
+                  className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-foreground"
+                >
+                  {t('a11y.skipToContent')}
+                </a>
+                {children}
+              </ToastProvider>
+            </CommandPaletteProvider>
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

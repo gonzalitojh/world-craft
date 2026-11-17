@@ -9,6 +9,27 @@
  * El archivo se carga también en los tests de entorno `node` (el defecto), así
  * que todo va guardado por `typeof window`.
  */
+import { vi } from 'vitest';
+
+/*
+ * Cualquier componente que consuma `useI18n` monta `LocaleProvider`, y este
+ * llama a `useRouter`. Fuera del App Router, Next lanza una invariante; el
+ * mock global devuelve la superficie mínima que usan los componentes. Los
+ * tests que necesiten una ruta concreta registran su propio mock en el archivo.
+ */
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: () => {},
+    replace: () => {},
+    refresh: () => {},
+    back: () => {},
+    forward: () => {},
+    prefetch: () => {},
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({}),
+}));
 
 /** `MediaQueryList` de juguete: `matches` siempre falso salvo que un test lo cambie. */
 class MockMediaQueryList extends EventTarget {

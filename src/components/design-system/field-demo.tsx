@@ -1,8 +1,8 @@
 'use client';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { getMessages } from '@/messages';
 
 /**
  * Isla interactiva del campo con etiqueta.
@@ -12,7 +12,8 @@ import { getMessages } from '@/messages';
  * composición vive en cliente y no se puede serializar desde el servidor.
  */
 export function FieldDemo() {
-  const field = getMessages().design.components.field;
+  const { messages } = useI18n();
+  const field = messages.design.components.field;
 
   return (
     <div className="grid w-full min-w-0 max-w-(--prose-max) gap-4 sm:grid-cols-2">

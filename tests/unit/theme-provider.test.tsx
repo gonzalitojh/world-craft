@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { renderWithI18n } from '../helpers/render';
 
 import { ThemeProvider, useTheme } from '@/components/theme/theme-provider';
 import { ThemeSelector } from '@/components/theme/theme-selector';
@@ -22,7 +24,7 @@ function ThemeProbe() {
 }
 
 function renderSelector() {
-  render(
+  renderWithI18n(
     <ThemeProvider>
       <ThemeSelector />
       <ThemeProbe />

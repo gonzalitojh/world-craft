@@ -1,59 +1,70 @@
+import 'server-only';
+
 /**
- * Acceso a los mensajes de la interfaz.
+ * Acceso a los mensajes de la interfaz en el servidor.
  *
- * El MVP es monolingüe (español), pero la estructura ya es la del ADR 0012:
- * un catálogo por idioma, un `Locale` tipado y dos accesos, `getMessages()` y
- * `t()`. Añadir `en.ts` o `it.ts` solo exige registrarlo en `catalogs`.
+ * El MVP es monolingüe (español), pero el registro ya es el del ADR 0012: un
+ * catálogo por idioma, un `Locale` tipado y acceso por locale. Añadir `en.ts` o
+ * `it.ts` solo exige registrarlo en `catalogs` cuando esté completo; no se
+ * crean stubs ni se resuelven claves sueltas contra el español.
+ *
+ * Los componentes cliente **no deben importar valores de este módulo**: el
+ * catálogo no viaja en su bundle. Reciben `locale` y `messages` del
+ * `LocaleProvider` y crean su traductor con `createTranslator`.
  */
+import { defaultLocale, LOCALES, type Locale } from '@/lib/i18n/locale';
+
 import { es } from './es';
+import {
+  createTranslator,
+  type MessageKey,
+  type Messages,
+  type Translator,
+} from './translator';
 
-/** Catálogos disponibles, indexados por idioma. */
-const catalogs = { es } as const;
+export type { Locale, MessageKey, Messages, Translator };
 
-/** Idioma por defecto del MVP. */
-export const defaultLocale = 'es' as const;
-
-/** Idiomas con catálogo propio. */
-export type Locale = keyof typeof catalogs;
-
-/** Forma del catálogo de mensajes. */
-export type Messages = (typeof catalogs)[Locale];
+/** Catálogos registrados, indexados por idioma. */
+export const catalogs: Partial<Record<Locale, Messages>> = { es };
 
 /**
- * Rutas con punto a cada texto: `'home.title'`, `'error.retry'`, etc.
+ * Idiomas con catálogo propio y completo.
  *
- * Se derivan del catálogo, así que una clave inexistente es un error de
- * compilación y no un texto en blanco en producción.
+ * `LOCALES` refleja el CHECK de `profiles.locale` (incluye idiomas todavía sin
+ * catálogo); esta lista solo contiene los que ya se pueden servir.
  */
-type LeafPath<Catalog> = {
-  [Key in keyof Catalog & string]: Catalog[Key] extends string
-    ? Key
-    : `${Key}.${LeafPath<Catalog[Key]>}`;
-}[keyof Catalog & string];
+export const availableLocales: readonly Locale[] = LOCALES.filter(
+  (locale) => catalogs[locale] !== undefined,
+);
 
-/** Clave válida de un mensaje visible. */
-export type MessageKey = LeafPath<Messages>;
+/** Traductores memoizados por idioma para no recorrer la ruta en cada texto. */
+const translators = new Map<Locale, Translator>();
 
-/** Devuelve el catálogo completo del idioma indicado. */
-export function getMessages(locale: Locale = defaultLocale): Messages {
-  return catalogs[locale];
+function translatorFor(locale: Locale): Translator {
+  const cached = translators.get(locale);
+
+  if (cached) {
+    return cached;
+  }
+
+  const translator = createTranslator(getMessages(locale));
+  translators.set(locale, translator);
+
+  return translator;
 }
 
 /**
- * Devuelve el texto de una clave.
+ * Devuelve el catálogo completo del idioma indicado.
  *
- * Si en tiempo de ejecución faltara el texto (por ejemplo, un catálogo futuro
- * incompleto), devuelve la propia clave en lugar de una cadena vacía: es más
- * fácil de detectar en una revisión.
+ * Si el idioma aún no tiene catálogo, usa el catálogo base. Así una cookie o
+ * una cabecera manipuladas nunca dejan la interfaz sin texto; la validación de
+ * disponibilidad se hace antes, en `resolveLocale` y en la Server Action.
  */
+export function getMessages(locale: Locale = defaultLocale): Messages {
+  return catalogs[locale] ?? es;
+}
+
+/** Devuelve el texto de una clave en el idioma indicado. */
 export function t(key: MessageKey, locale: Locale = defaultLocale): string {
-  const value = key.split('.').reduce<unknown>((node, segment) => {
-    if (typeof node !== 'object' || node === null) {
-      return undefined;
-    }
-
-    return (node as Record<string, unknown>)[segment];
-  }, getMessages(locale));
-
-  return typeof value === 'string' ? value : key;
+  return translatorFor(locale)(key);
 }

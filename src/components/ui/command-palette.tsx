@@ -4,8 +4,8 @@ import { Command } from 'cmdk';
 import { Search } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 import type { CommandPaletteItem } from './command';
 
@@ -29,9 +29,9 @@ export type CommandPaletteProps = {
 /** Agrupa por `group` conservando el orden de llegada de los grupos. */
 function groupItems(
   items: readonly CommandPaletteItem[],
+  fallback: string,
 ): Array<[string, CommandPaletteItem[]]> {
   const groups = new Map<string, CommandPaletteItem[]>();
-  const fallback = t('command.groupDefault');
 
   for (const item of items) {
     const key = item.group ?? fallback;
@@ -52,7 +52,11 @@ export function CommandPalette({
   onClose,
   className,
 }: CommandPaletteProps) {
-  const groups = useMemo(() => groupItems(items), [items]);
+  const { t } = useI18n();
+  const groups = useMemo(
+    () => groupItems(items, t('command.groupDefault')),
+    [items, t],
+  );
 
   return (
     <Command

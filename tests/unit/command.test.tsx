@@ -1,12 +1,8 @@
 // @vitest-environment jsdom
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { renderWithI18n } from '../helpers/render';
 
 import {
   CommandPaletteDialog,
@@ -58,7 +54,7 @@ describe('CommandPaletteDialog', () => {
   it('no carga el contenido hasta que se abre', () => {
     const handlers = buildSpies();
 
-    render(<CommandPaletteDialog items={buildItems(handlers)} />);
+    renderWithI18n(<CommandPaletteDialog items={buildItems(handlers)} />);
 
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -67,7 +63,7 @@ describe('CommandPaletteDialog', () => {
   it('abre con el atajo Ctrl+K y muestra los comandos agrupados', async () => {
     const handlers = buildSpies();
 
-    render(<CommandPaletteDialog items={buildItems(handlers)} />);
+    renderWithI18n(<CommandPaletteDialog items={buildItems(handlers)} />);
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 
@@ -89,7 +85,7 @@ describe('CommandPaletteDialog', () => {
   it('abre con el disparador y cierra con Escape devolviendo el foco', async () => {
     const handlers = buildSpies();
 
-    render(<CommandPaletteDialog items={buildItems(handlers)} />);
+    renderWithI18n(<CommandPaletteDialog items={buildItems(handlers)} />);
 
     const trigger = screen.getByRole('button', {
       name: /Abrir la paleta de comandos/,
@@ -111,7 +107,7 @@ describe('CommandPaletteDialog', () => {
   it('filtra los comandos al escribir', async () => {
     const handlers = buildSpies();
 
-    render(<CommandPaletteDialog items={buildItems(handlers)} />);
+    renderWithI18n(<CommandPaletteDialog items={buildItems(handlers)} />);
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 
@@ -128,7 +124,7 @@ describe('CommandPaletteDialog', () => {
   it('muestra el estado vacío cuando nada coincide', async () => {
     const handlers = buildSpies();
 
-    render(<CommandPaletteDialog items={buildItems(handlers)} />);
+    renderWithI18n(<CommandPaletteDialog items={buildItems(handlers)} />);
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 
@@ -144,7 +140,7 @@ describe('CommandPaletteDialog', () => {
   it('mueve la selección con las flechas y ejecuta con Enter', async () => {
     const handlers = buildSpies();
 
-    render(<CommandPaletteDialog items={buildItems(handlers)} />);
+    renderWithI18n(<CommandPaletteDialog items={buildItems(handlers)} />);
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 

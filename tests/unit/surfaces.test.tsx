@@ -3,6 +3,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { Check, Map } from 'lucide-react';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { renderWithI18n } from '../helpers/render';
+
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import {
   Card,
@@ -109,7 +111,7 @@ describe('Badge', () => {
 
 describe('EmptyState', () => {
   it('muestra icono, título, descripción y acción', () => {
-    render(
+    renderWithI18n(
       <EmptyState
         icon={<Map aria-hidden="true" />}
         title="Todavía no hay mapas"
@@ -131,13 +133,13 @@ describe('EmptyState', () => {
   });
 
   it('cae al título genérico del catálogo si no se indica', () => {
-    render(<EmptyState />);
+    renderWithI18n(<EmptyState />);
 
     expect(screen.getByText('Todavía no hay nada aquí')).toBeTruthy();
   });
 
   it('pinta el título como h3 por defecto', () => {
-    render(<EmptyState title="Todavía no hay mapas" />);
+    renderWithI18n(<EmptyState title="Todavía no hay mapas" />);
 
     expect(
       screen.getByRole('heading', { level: 3, name: 'Todavía no hay mapas' }),
@@ -145,7 +147,7 @@ describe('EmptyState', () => {
   });
 
   it('permite bajar o anular el nivel cuando la página ya tiene su h3', () => {
-    const { unmount } = render(
+    const { unmount } = renderWithI18n(
       <EmptyState title="Ningún mapa todavía" titleAs="h4" />,
     );
 
@@ -156,7 +158,7 @@ describe('EmptyState', () => {
     unmount();
 
     // `p` no crea encabezado: para un hueco dentro de una lista o una tarjeta.
-    render(<EmptyState title="Ningún mapa todavía" titleAs="p" />);
+    renderWithI18n(<EmptyState title="Ningún mapa todavía" titleAs="p" />);
 
     expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.getByText('Ningún mapa todavía')).toBeTruthy();

@@ -3,11 +3,12 @@ import {
   act,
   cleanup,
   fireEvent,
-  render,
   screen,
   within,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { renderWithI18n } from '../helpers/render';
 
 import { ToastProvider, useToast } from '@/components/ui/toast';
 
@@ -84,7 +85,7 @@ function Harness() {
 }
 
 function renderToasts() {
-  render(
+  renderWithI18n(
     <ToastProvider>
       <Harness />
     </ToastProvider>,

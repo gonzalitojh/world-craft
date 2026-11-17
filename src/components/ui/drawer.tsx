@@ -6,8 +6,8 @@ import type { ComponentProps } from 'react';
 
 import { DialogDescription, DialogOverlay, DialogTitle } from './dialog';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Panel lateral (drawer) sobre el mismo primitivo que `Dialog`.
@@ -62,6 +62,8 @@ export function DrawerContent({
   children,
   ...props
 }: DrawerContentProps) {
+  const { t } = useI18n();
+
   return (
     <DialogPrimitive.Portal>
       <DialogOverlay />

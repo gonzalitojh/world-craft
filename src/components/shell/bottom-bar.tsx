@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { NavIcon } from '@/components/shell/nav-icon';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import {
@@ -14,7 +15,6 @@ import {
   type NavItem,
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Barra inferior de móvil.
@@ -41,6 +41,7 @@ import { t } from '@/messages';
 const BAR_ITEMS = NAV_LINKS;
 
 export function BottomBar() {
+  const { t } = useI18n();
   const pathname = usePathname() ?? '/';
   const [open, setOpen] = useState(false);
   const close = () => {

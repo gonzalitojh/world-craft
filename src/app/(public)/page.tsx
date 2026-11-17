@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 import { PageShell } from '@/components/page-shell';
 import { Button } from '@/components/ui/button';
-import { getMessages, t } from '@/messages';
+import { getI18n } from '@/lib/i18n/server';
 
-export default function HomePage() {
-  const messages = getMessages();
+export default async function HomePage() {
+  const { messages, t } = await getI18n();
 
   return (
     <PageShell>

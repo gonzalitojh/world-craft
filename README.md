@@ -19,7 +19,9 @@ arquitectura, el esqueleto del manual de usuario y el changelog. El
 almacenamiento (issue #40, M0-10) tiene adaptador R2 y adaptador local, pipeline
 de imagen y guarda de escritura; el bucket real se crea en Cloudflare. La
 continuidad (issue #41, M0-11) añade un healthcheck con consulta real a Supabase,
-el workflow de keep-alive y el runbook de pausa y reactivación.
+el workflow de keep-alive y el runbook de pausa y reactivación. La base de
+internacionalización (issue #42, M0-12) centraliza los textos, resuelve el idioma
+por petición y prepara formatos `Intl`, con el español como único catálogo.
 
 Todavía **no hay producto**: no existe autenticación (M1-01) ni contenido.
 `/login` es un placeholder, `/health` comprueba el despliegue y la disponibilidad
@@ -191,13 +193,15 @@ src/
   components/     Presentación reutilizable
     shell/        Topbar, rail, barra inferior, migajas y paleta de comandos
     theme/        Provider y selector de tema
+    i18n/         LocaleProvider, useI18n y acceso al idioma en cliente
     ui/           Componentes base del sistema de diseño
   lib/            Utilidades puras, entorno y helpers sin React
     db/           Esquema Drizzle, conexión privilegiada, sesión de usuario y seed
     env/          Esquemas de entorno público y de servidor
+    i18n/         Locale por petición, cookie, formatos Intl y Server Action setLocale
     storage/      Contrato StorageAdapter, adaptadores R2 y local, driver y claves
     assets/       Límites, pipeline sharp y servicio de assets
-  messages/       Textos de interfaz centralizados y tipados
+  messages/       Contrato tipado (translator.ts), catálogo es.ts y registro por idioma
   modules/        Módulos de dominio (fichas, mapas, manuscritos…)
   styles/         Tokens, base y movimiento del sistema de diseño
     tokens/       palette.css (única fuente de hex), scales.css y semantic.css
@@ -261,9 +265,13 @@ de negocio separada de la presentación. Los detalles están en
   globo de ayuda y paleta de comandos. Los primitivos interactivos usan Radix
   (Dialog, Tabs y Tooltip); los campos son nativos. `cmdk` se carga de forma
   diferida.
-- **Textos centralizados.** Todo lo visible, incluidos los `aria-label`, vive en
-  `src/messages/es.ts` y se lee con `t('clave.con.puntos')` o `getMessages()`.
-  No se escriben cadenas de interfaz en los componentes (ADR 0012).
+- **Textos centralizados e i18n.** Todo lo visible, incluidos los `aria-label`,
+  vive en `src/messages/es.ts` con claves tipadas. El servidor lee con
+  `getI18n()` y el cliente con `useI18n()`; un `'use client'` solo importa tipos
+  de `@/messages/translator`. El idioma se resuelve por petición (cookie
+  `wc-locale` > `Accept-Language` > `es`; `profiles.locale` llegará con M1-06) y
+  fechas y números usan `Intl` (ADR 0012,
+  [`docs/internacionalizacion.md`](docs/internacionalizacion.md)).
 - **Lógica de negocio fuera de la presentación.** Los componentes no validan
   reglas de dominio: eso vive en `src/modules/` y en funciones puras de
   `src/lib/`.
@@ -420,6 +428,10 @@ una acción del propietario en Vercel, no del repositorio.
   restauración son acciones operativas del propietario; el procedimiento está en
   [`docs/continuidad.md`](docs/continuidad.md). La copia semanal no genera nada
   hasta configurar `SUPABASE_DB_URL` y `BACKUP_PASSPHRASE` en GitHub.
+- La interfaz solo tiene catálogo español: no hay selector de idioma visible ni
+  catálogos `en`/`it`. La cookie y `Accept-Language` ya se resuelven, pero no
+  cambian la vista hasta que exista un catálogo completo (B-05, issue #39). El
+  layout raíz es dinámico por la lectura del idioma por petición.
 - `pnpm format:check` falla en local en Windows por los finales de línea CRLF de
   archivos antiguos (`core.autocrlf=true`); el contenido sí cumple Prettier y en
   Linux no se reproduce.
@@ -452,6 +464,8 @@ una acción del propietario en Vercel, no del repositorio.
 - [docs/adr/README.md](docs/adr/README.md): índice de ADRs.
 - [docs/arquitectura.md](docs/arquitectura.md): módulos, capas y flujos
   principales.
+- [docs/internacionalizacion.md](docs/internacionalizacion.md): precedencia del
+  idioma, cookie, `Intl`, auditoría de textos y guía para añadir un idioma.
 - [docs/manual-de-usuario.md](docs/manual-de-usuario.md): manual en
   construcción, con lo que ya se puede hacer y la estructura de las próximas
   fases.

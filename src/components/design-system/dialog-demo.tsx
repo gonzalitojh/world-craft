@@ -1,5 +1,6 @@
 'use client';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,7 +9,6 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { t } from '@/messages';
 
 /**
  * Isla interactiva del diálogo.
@@ -18,6 +18,8 @@ import { t } from '@/messages';
  * el servidor.
  */
 export function DialogDemo() {
+  const { t } = useI18n();
+
   return (
     <Dialog>
       <DialogTrigger asChild>

@@ -17,8 +17,8 @@ import {
   NAV_ITEMS,
   PUBLIC_NAV_LINKS,
 } from '@/lib/navigation';
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Barra superior del shell.
@@ -44,6 +44,7 @@ const linkClasses =
   'inline-flex min-h-11 items-center rounded-sm px-1 text-sm underline-offset-4 hover:text-accent hover:underline';
 
 export function Topbar({ variant = 'public' }: TopbarProps) {
+  const { t } = useI18n();
   const pathname = usePathname() ?? '/';
 
   return (
@@ -82,6 +83,8 @@ type PathnameProps = {
 
 /** Navegación horizontal de la web pública (escritorio). */
 function PublicNav({ pathname }: PathnameProps) {
+  const { t } = useI18n();
+
   return (
     <nav aria-label={t('a11y.mainNavigation')} className="min-w-0">
       <ul className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">
@@ -117,6 +120,7 @@ function PublicNav({ pathname }: PathnameProps) {
  * provocaría un render en cascada.
  */
 function MobileMenu({ pathname }: PathnameProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const close = () => {
     setOpen(false);

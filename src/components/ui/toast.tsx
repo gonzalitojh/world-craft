@@ -18,8 +18,8 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Avisos efímeros propios (sin sonner ni Radix Toast).
@@ -120,6 +120,7 @@ type ToastItemProps = {
 };
 
 function ToastItem({ record, onDismiss }: ToastItemProps) {
+  const { t } = useI18n();
   const [paused, setPaused] = useState(false);
   const { id, title, description, variant, duration } = record;
 
@@ -176,6 +177,7 @@ type ToastProviderProps = {
 };
 
 export function ToastProvider({ children }: ToastProviderProps) {
+  const { t } = useI18n();
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
   const counter = useRef(0);
 

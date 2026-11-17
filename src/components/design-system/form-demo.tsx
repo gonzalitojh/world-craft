@@ -1,11 +1,11 @@
 'use client';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { getMessages, t } from '@/messages';
 
 /**
  * Isla interactiva del patrón de formulario.
@@ -18,7 +18,7 @@ import { getMessages, t } from '@/messages';
  * se asocia al control y el borde cambia de token.
  */
 export function FormDemo() {
-  const messages = getMessages();
+  const { messages, t } = useI18n();
   const form = messages.design.patterns.form;
   const field = messages.design.components.field;
 
