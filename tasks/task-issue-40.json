@@ -1,7 +1,7 @@
 {
   "title": "Configurar Cloudflare R2 y el adaptador de almacenamiento",
   "description": "Código de plan: M0-10. Fase M0. Depende de M0-03 (issue #4) y M0-06 (issue #7), ambas fusionadas. Configura Cloudflare R2 como almacenamiento privado de assets e implementa la versión real del contrato StorageAdapter definido en M0-08 (issue #9): buckets separados para desarrollo y producción, cliente S3 solo en servidor, variables R2 validadas con Zod, URLs firmadas de corta duración con comprobación de membresía, validación de MIME real, tamaño y dimensiones, conversión a WebP y miniaturas con sharp, claves world/{worldId}/{assetId}, CORS restringido, lifecycle para temporales y documentación de límites y coste. No añade interfaz de producto: la primera pantalla que sube assets llega con M1-03.",
-  "status": "review",
+  "status": "published",
   "model_variant": "max",
   "issue": {
     "number": 40,
@@ -54,5 +54,12 @@
     "changelog": null,
     "agents": null,
     "notes": "Cambio interno de infraestructura sin interfaz visible ni textos de usuario: el manual de usuario no aplica y no se toca. Actualizados: ADR 0004 con adaptadores, driver, claves world/{worldId}/{assetId}, tmp/, miniatura UUIDv5, límites, dependencias, pruebas, coste y pendientes; ADR 0020 con D1 y sus alternativas; nueva guía docs/almacenamiento.md; docs/adr/README.md; README.md (estado, stack, rutas, scripts, entorno, estructura, limitaciones y enlaces); docs/arquitectura.md (R2 implementado, rutas y seguridad); docs/registro-decisiones.md (D-019); docs/base-de-datos/esquema.md y operacion.md (migración 0007, guarda y claves); task file. No se modifican AGENTS.md, .opencode/agents/*, código, migraciones, tests ni .env.local. Changelog no existe todavía y no procede crearlo en una tarea interna."
+  },
+  "pr": {
+    "number": 58,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/58",
+    "title": "feat(storage): adaptador R2, subidas firmadas y pipeline de assets (#40)",
+    "branch": "chore/issue-40-cloudflare-r2-storage",
+    "commit": "1999a6b"
   }
 }
