@@ -114,8 +114,8 @@ Hoy solo existe la parte de infraestructura:
 | `/` | Server Component | Portada con el estado de la fase y los pilares del producto. |
 | `/design-system` | Server + cliente | Página viva del sistema de diseño: tokens, componentes, accesibilidad y capturas. |
 | `/login` | Server Component | Placeholder de acceso: aviso y botón deshabilitado, sin formulario (M1-01). |
-| `/health` | Server Component | Estado del despliegue: commit, hora y endpoint. |
-| `/api/health` | Route Handler | JSON `{ "status": "ok", "timestamp": "…" }` sin caché. |
+| `/health` | Server Component | Estado del despliegue y de Supabase: disponibilidad, commit y hora. |
+| `/api/health` | Route Handler | JSON `{ "status": "ok" \| "degraded", "database": "available" \| "paused" \| "error", "timestamp": "…" }` sin caché; `select 1` real con timeout de 5 s. |
 | `/api/storage/local/[...key]` | Route Handler | Adaptador local firmado con HMAC; solo desarrollo y pruebas, 404 en producción. |
 | `/api/storage/self-check` | Route Handler | Diagnóstico de almacenamiento con token; existe en desarrollo y preview, 404 en producción real. |
 

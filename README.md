@@ -17,13 +17,15 @@ migraciones, políticas por mundo y pruebas de aislamiento, aplicadas al proyect
 Supabase de desarrollo. La documentación base (issue #10, M0-09) reúne la
 arquitectura, el esqueleto del manual de usuario y el changelog. El
 almacenamiento (issue #40, M0-10) tiene adaptador R2 y adaptador local, pipeline
-de imagen y guarda de escritura; el bucket real se crea en Cloudflare.
+de imagen y guarda de escritura; el bucket real se crea en Cloudflare. La
+continuidad (issue #41, M0-11) añade un healthcheck con consulta real a Supabase,
+el workflow de keep-alive y el runbook de pausa y reactivación.
 
 Todavía **no hay producto**: no existe autenticación (M1-01) ni contenido.
-`/login` es un placeholder, `/health` solo comprueba que el despliegue responde y
-`/design-system` documenta la interfaz. El modelo de datos está definido en el
-repositorio, pero ninguna pantalla lo usa todavía, y las rutas de almacenamiento
-no se enlazan desde ninguna pantalla.
+`/login` es un placeholder, `/health` comprueba el despliegue y la disponibilidad
+de Supabase, y `/design-system` documenta la interfaz. El modelo de datos está
+definido en el repositorio, pero ninguna pantalla lo usa todavía, y las rutas de
+almacenamiento no se enlazan desde ninguna pantalla.
 
 ## Requisitos
 
@@ -86,8 +88,8 @@ Rutas disponibles en esta fase:
 | `/` | Portada con el estado de la fase y tres pilares del producto. |
 | `/design-system` | Página viva del sistema de diseño: tokens, componentes, patrones, accesibilidad y capturas. |
 | `/login` | Placeholder de acceso: aviso y botón deshabilitado, sin formulario. |
-| `/health` | Estado del despliegue: commit, hora de comprobación y endpoint. |
-| `/api/health` | JSON `{ "status": "ok", "timestamp": "…" }` sin caché. |
+| `/health` | Estado del despliegue y de Supabase: disponibilidad, commit y hora. |
+| `/api/health` | JSON `{ "status": "ok" \| "degraded", "database": "available" \| "paused" \| "error", "timestamp": "…" }` sin caché; consulta real a Supabase. |
 | `/api/storage/local/[...key]` | Adaptador local de almacenamiento (solo desarrollo y pruebas; 404 en producción). |
 | `/api/storage/self-check` | Diagnóstico de almacenamiento con token; 404 en producción real. |
 
@@ -157,6 +159,27 @@ El diccionario, la matriz de RLS y los índices están en
 migraciones, las copias y el runbook, en
 [`docs/base-de-datos/operacion.md`](docs/base-de-datos/operacion.md).
 
+## Disponibilidad y continuidad
+
+Supabase Free pausa los proyectos tras una semana sin actividad. La estrategia
+para evitarlo y reaccionar si ocurre está en
+[`docs/continuidad.md`](docs/continuidad.md) y en el
+[ADR 0013](docs/adr/0013-free-tier-continuity.md):
+
+- **Healthcheck real.** `/api/health` ejecuta `select 1` contra `DATABASE_URL`
+  (sin service role), con timeout de cinco segundos. Devuelve `200` si Supabase
+  responde y `503` si no, con `database: available | paused | error` y sin
+  detalles de infraestructura.
+- **Monitor principal.** UptimeRobot Free cada 30–60 minutos sobre el endpoint,
+  con alerta por correo. Es una acción del propietario y su alta está pendiente.
+- **Keep-alive de respaldo.** `.github/workflows/keepalive.yml` llama al endpoint
+  cada seis horas mediante la variable de repositorio `HEALTHCHECK_URL`; GitHub
+  desactiva los cron tras 60 días sin actividad en un repositorio público.
+- **Copia semanal.** `.github/workflows/backup.yml` hace `pg_dump`, lo verifica,
+  lo cifra con AES-256 y lo guarda 90 días. Necesita los secretos
+  `SUPABASE_DB_URL` y `BACKUP_PASSPHRASE`; si faltan, avisa y no finge una copia.
+  El flujo completo llega con M5-06.
+
 ## Estructura del repositorio
 
 ```text
@@ -186,11 +209,11 @@ scripts/          Utilidades de mantenimiento del repositorio
   db/             ping, seed, reset y verify de la base de datos
   storage/        smoke real de Cloudflare R2
 drizzle/          Migraciones, journal y rollback documentado
-docs/             Plan, proceso, decisiones, ADRs, diseño y base de datos
+docs/             Plan, proceso, decisiones, ADRs, diseño, continuidad y base de datos
   base-de-datos/  Esquema, RLS y operación
   diseno/         Guía del sistema de diseño y capturas de referencia
 tasks/            Task files del flujo SDD
-.github/          CI, Dependabot y plantillas de issue y PR
+.github/          CI, keep-alive, backup, Dependabot y plantillas de issue y PR
 .opencode/        Agentes y configuración de OpenCode
 ```
 
@@ -393,6 +416,10 @@ una acción del propietario en Vercel, no del repositorio.
 - El proyecto Supabase de desarrollo y sus credenciales son una acción del
   propietario: sin ellas no se ejecutan `db:migrate`, `db:seed`, `db:verify` ni
   `test:db`.
+- El monitor de UptimeRobot, la prueba de siete días y la prueba real de pausa y
+  restauración son acciones operativas del propietario; el procedimiento está en
+  [`docs/continuidad.md`](docs/continuidad.md). La copia semanal no genera nada
+  hasta configurar `SUPABASE_DB_URL` y `BACKUP_PASSPHRASE` en GitHub.
 - `pnpm format:check` falla en local en Windows por los finales de línea CRLF de
   archivos antiguos (`core.autocrlf=true`); el contenido sí cumple Prettier y en
   Linux no se reproduce.
@@ -437,6 +464,8 @@ una acción del propietario en Vercel, no del repositorio.
   migraciones, seed, reset, copias, límites y runbook.
 - [docs/almacenamiento.md](docs/almacenamiento.md): R2, driver local, CORS,
   lifecycle, límites, smoke y rotación de credenciales.
+- [docs/continuidad.md](docs/continuidad.md): healthcheck, UptimeRobot,
+  keep-alive, pausa y reactivación de Supabase, y copia semanal.
 - [CONTRIBUTING.md](CONTRIBUTING.md): ramas, commits, PRs y calidad.
 - [CHANGELOG.md](CHANGELOG.md): cambios relevantes por versión.
 - [SECURITY.md](SECURITY.md): cómo reportar una vulnerabilidad.

@@ -1,0 +1,63 @@
+{
+  "title": "Keep-alive y continuidad de Supabase",
+  "description": "Código de plan: M0-11. Fase M0. Depende de M0-04 (issue #5) y M0-08 (issue #9), ambas cerradas. Evita que Supabase Free pause el proyecto por inactividad y deja un runbook para reaccionar si ocurre: healthcheck real en /api/health, monitor UptimeRobot, keep-alive de respaldo en GitHub Actions, workflow semanal de copia cifrada y documentación de pausa, ventana de restauración y revisión de claves. No añade interfaz de producto: solo actualiza la página de estado /health.",
+  "status": "review",
+  "model_variant": "low",
+  "issue": {
+    "number": 41,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/41",
+    "title": "Keep-alive y continuidad de Supabase"
+  },
+  "acceptance_criteria": [
+    "/api/health responde y distingue Supabase disponible de Supabase pausado.",
+    "Monitor configurado y probado; la alerta llega al correo.",
+    "La actividad generada evita la pausa en una prueba de siete días.",
+    "Runbook de reactivación probado en un proyecto de desarrollo.",
+    "Documentado que la pausa conserva datos y que hay que revisar las claves tras restaurar.",
+    "Sin secretos en logs."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos o, cuando dependen de una cuenta o de tiempo real, registrados como pendientes operativos con procedimiento reproducible y sin inventar resultados.",
+    "Typecheck, lint, tests unitarios y build en verde; E2E del healthcheck ejecutado.",
+    "Responsive a ~360, ~768 y ~1280 px sin scroll horizontal en /health, con contenido largo realista.",
+    "Los dos temas comprobados en /health, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad de /health revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion.",
+    "Manual de usuario actualizado con el nuevo significado de /health.",
+    "ADR 0013 actualizado con la implementación de M0-11.",
+    "Seguridad revisada: sin service role en el healthcheck, sin detalles de infraestructura en la respuesta, sin secretos en logs ni en el repositorio, workflows con permisos mínimos.",
+    "Sin datos nuevos ni cambios de modelo de datos: exportación e importación no aplican.",
+    "Sin servicios de pago ni dependencias nuevas.",
+    "Variante recomendada y usada registradas en el task file.",
+    "Task file actualizado con validación, QA, seguridad y documentación.",
+    "Cambio en review para revisión local, sin push ni PR."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-17. Pasos: 1) adoptar la issue y crear este task file en planned; 2) reescribir src/lib/health.ts con una consulta real select 1 sobre DATABASE_URL, timeout de 5 s, payload {status, database, timestamp} y clasificación available/paused/error sin filtrar detalles; 3) adaptar /api/health a 200/503 y la página /health a icono + texto con mensajes centralizados; 4) añadir .github/workflows/keepalive.yml cada 6 h con la variable HEALTHCHECK_URL y backup.yml semanal con pg_dump verificado, cifrado AES-256, artefacto de 90 días y aviso si faltan secretos; 5) crear docs/continuidad.md con contrato del endpoint, alta de UptimeRobot, prueba de 7 días, runbook de pausa y reactivación, revisión de claves, ventana de un año, alertas y copia semanal; 6) actualizar README, operacion.md, arquitectura.md, ADR 0013 y el manual; 7) pruebas unitarias de payload, clasificación, timeout y ruta (200/503) y ajuste de E2E; 8) ejecutar typecheck, lint, test, build, E2E y smoke real del endpoint contra el Supabase de desarrollo; 9) registrar como pendientes operativos el alta de UptimeRobot, la prueba de 7 días y la prueba real de pausa/restauración; 10) commit local en review, sin push ni PR.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-17",
+    "notes": "Issue #41 adoptada el 2026-11-17. Dependencias M0-04 (issue #5) y M0-08 (issue #9) cerradas. Variante recomendada por el label variant: low y usada: low; la tarea está totalmente especificada y no cambia modelo de datos. Plan aprobado por el usuario el 2026-11-17 con la opción recomendada, incluido el workflow de backup semanal. Implementación completada el 2026-11-17 en la rama chore/issue-41-supabase-keepalive, sin push ni PR. Evidencia: pnpm typecheck OK; pnpm lint OK; pnpm test OK (39 archivos, 398 pruebas); pnpm build OK (Next.js 16.4.6, /health y /api/health dinámicos); pnpm test:e2e 51/52 con un selector ambiguo corregido en routes.spec.ts y la prueba de /health después en verde; smoke real con next start y .env.local: HTTP 200 {status: ok, database: available, timestamp: 2026-11-17T19:49:07.513Z}. QA ronda 1 FAIL por dos bloqueantes de gating de workflows (corregidos con outputs y condiciones), un texto impreciso del estado error (corregido), el icono del estado global (unificado), el CHANGELOG ausente (añadido) y el task file en planned (actualizado); re-QA pendiente sobre el delta. Pendientes operativos, con procedimiento en docs/continuidad.md y sin darlos por hechos: alta y prueba del monitor UptimeRobot (§3), prueba de siete días de actividad (§3.1) y prueba real de pausa y restauración en el proyecto de desarrollo (§5). El workflow de backup no genera copias hasta configurar SUPABASE_DB_URL y BACKUP_PASSPHRASE en GitHub (§6). Cierre: QA ronda 2 PASS y seguridad PASS con 0 HIGH; build final OK; smoke final del 2026-11-17T20:04:38.467Z con HTTP 200 y database available. Task file en review, cambio local sin push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Ronda 1 (2026-11-17): FAIL. Dos bloqueantes ALTA en .github/workflows/keepalive.yml y backup.yml: la falta de HEALTHCHECK_URL o de secretos avisaba con exit 0, pero los pasos siguientes se ejecutaban igual y el job quedaba en rojo. Corregido con un output configured y condiciones if en los pasos dependientes (incluido upload-artifact). MEDIA corregidas: textos de error que afirmaban una conexión abierta cuando también cubren configuración ausente; página /health unifica icono y severidad de la tarjeta con el detalle; CHANGELOG con la entrada de la issue #41; task file actualizado. BAJA corregidas: ejemplo de URL con marcador, precisión del contrato (el commit es de la página, no de /api/health), nota de que el cron de backup también se ejecuta desde la rama por defecto y connect_timeout de 5 s en el cliente postgres. Ronda 2 (re-QA del delta, 2026-11-17): PASS, 0 bloqueantes y 0 recomendaciones. Evidencia de QA: tsc --noEmit OK; eslint OK; vitest completo OK (39 archivos, 398 pruebas); playwright routes/api de health OK (2/2); axe de /health en claro y oscuro OK (ronda 1, cambio posterior solo de icono/clase); next build OK con /health y /api/health dinámicos; prettier --check de workflows/docs/task file OK; git diff --check OK; JSON válido; fences pares; enlaces locales 8/8; escaneo de secretos sin coincidencias; next-env.d.ts sin diff. Responsive 360/768/1280 cubierto por responsive.spec.ts; ambos temas, contraste AA y axe cubiertos en E2E; teclado y foco se mantienen (no se añadieron controles interactivos). Los pendientes operativos (UptimeRobot, 7 días y pausa/restauración) siguen declarados sin inventar resultados."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "MEDIUM aceptado: el artefacto de backup con pg_dump de public (incluye correos de allowed_emails y world_invitations) es descargable por cualquiera con acceso de lectura al repositorio público. Mitigación: cifrado GPG AES-256 con BACKUP_PASSPHRASE larga y única guardada en el gestor de contraseñas; docs/continuidad.md §6 lo declara material sensible y M5-06 valorará mover la copia a R2 privado.",
+      "MEDIUM aceptado: /api/health es público y no tiene límite de peticiones propio; un tercero podría consumir conexiones del pooler o cuota. Mitigación: timeout de 5 s, consulta select 1, monitor cada 30-60 min y keep-alive cada 6 h; si aparece abuso, rate limit en Vercel/Cloudflare. Documentado en continuidad.md §2.",
+      "LOW resuelto: curl del keep-alive seguía redirecciones sin revalidar el esquema; se añadió --proto '=https', --tlsv1.2 y --max-redirs 3.",
+      "LOW aceptado: pg_dump recibe la cadena con contraseña en argv del runner efímero; el secreto está enmascarado en logs y no se versiona.",
+      "LOW aceptado: si faltan los secretos de backup, el cron queda verde con warning y sin copia; es intencional para no bloquear M0 y se revisa en el runbook mensual; M5-06 endurecerá el flujo.",
+      "LOW aceptado: /health publica los primeros 7 caracteres del commit de Vercel; es fingerprinting menor y está documentado en el contrato."
+    ],
+    "notes": "Revisión de seguridad independiente: PASS con 0 HIGH. Comprobado: sin secretos, claves, correos reales, tokens, URLs privadas ni cadenas con contraseña en el diff, workflows, docs, task file ni logs; .env.local no se abrió. El healthcheck usa DATABASE_URL (sin SUPABASE_SERVICE_ROLE_KEY), solo devuelve {status, database, timestamp} y no filtra error, host, rol, SQL ni cadena de conexión; Cache-Control no-store y force-dynamic. Workflows con permissions: contents: read, sin pull_request, variables por env entre comillas y acciones fijadas por SHA; upload-artifact solo sube el .gpg y su sha256, nunca el dump en claro. Backup: pg_dump custom, pg_restore --list, test -s, GPG simétrico AES-256 con --passphrase-fd 0 y borrado del material en claro antes de subir; si falla un paso no hay artefacto. Sin cambios de RLS, migraciones ni modelo de datos; connect_timeout es configuración de cliente. Sin dependencias nuevas ni servicios de pago. Los dos MEDIUM quedan como deuda aceptada con mitigación documentada y no bloquean la publicación local."
+  },
+  "documentation": {
+    "adr": "docs/adr/0013-free-tier-continuity.md (nota de implementación de M0-11)",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md (entrada de la issue #41 en Añadido y Cambiado)",
+    "agents": null,
+    "notes": "Cambio visible en /health, así que el manual se actualiza con el significado de Operativo y Degradado y con la comprobación de Supabase. Documentación técnica: nueva docs/continuidad.md (contrato, UptimeRobot, prueba de 7 días, pausa y reactivación, revisión de claves, ventana de un año, alertas, backup); README (estado, rutas, sección de disponibilidad, estructura, limitaciones y enlaces); docs/base-de-datos/operacion.md (copias, límites, runbook y connect_timeout); docs/arquitectura.md (rutas); ADR 0013 (nota de implementación); CHANGELOG.md (Añadido y Cambiado). No se crea un ADR nuevo: M0-11 desarrolla decisiones ya aceptadas en 0013 y 0009 §9.3. No se modifican AGENTS.md, agentes, dependencias ni modelo de datos."
+  }
+}

@@ -215,8 +215,11 @@ GitHub Actions y añadirlas exige un ADR.
 
 ## 9. Copias de seguridad y restauración
 
-Supabase Free no ofrece copias automáticas. Mientras M5-06 no aporte el flujo
-completo, la copia se hace a mano:
+Supabase Free no ofrece copias automáticas. Desde M0-11 existe una **copia
+semanal automática** (`.github/workflows/backup.yml`, ver
+[`docs/continuidad.md`](../continuidad.md) §6) que cifra el volcado y lo guarda
+como artefacto de 90 días. Mientras M5-06 no aporte el flujo completo, la copia
+manual sigue siendo el procedimiento de referencia:
 
 ```bash
 # Copia lógica completa (esquema public y datos)
@@ -255,7 +258,7 @@ pg_restore --list world-craft-20260101.dump | head
 | Recurso | Límite | Efecto | Mitigación |
 |---|---|---|---|
 | Tamaño de base de datos | 500 MB | Se acerca el bloqueo de escrituras | Assets en R2, texto y metadatos, purga de papelera, revisión mensual. |
-| Pausa por inactividad | ~1 semana | El proyecto no responde | Keep-alive real y monitor (M0-11, issue [#41](https://github.com/gonzalitojh/world-craft/issues/41)). |
+| Pausa por inactividad | ~1 semana | El proyecto no responde | Healthcheck real, UptimeRobot y keep-alive (M0-11, issue [#41](https://github.com/gonzalitojh/world-craft/issues/41)); runbook en [`continuidad.md`](../continuidad.md). |
 | Copias automáticas | Ninguna | Pérdida total ante un fallo | `pg_dump` manual y exportación de mundo (ADR 0013, M5-06). |
 | Conexiones del pooler | Limitadas | Errores de conexión bajo carga | `max: 1` por instancia y `prepare: false`. |
 
@@ -279,7 +282,9 @@ optimizar o migrar de proveedor; migrar exige un ADR nuevo.
 | `db:verify` acusa tablas o políticas | Base a medio migrar o `push` accidental | `pnpm db:reset` y vuelve a aplicar la cadena. |
 | El seed duplica o falla | Índice parcial renombrado o catálogo inválido | Ejecuta `pnpm test` (valida el catálogo) y revisa los índices únicos parciales. |
 | `db:reset` cancela | Falta la confirmación o no coincide con el proyecto | Copia el token `CONFIRM_DB_RESET=world-craft-dev:<ref>` que imprime el propio script solo para el proyecto de desarrollo. |
-| El proyecto no responde en frío | Pausa por inactividad | Restáuralo desde el panel de Supabase y ejecuta `pnpm db:ping`. |
+| El proyecto no responde en frío | Pausa por inactividad | Confirma el estado en el panel de Supabase, restáuralo y revisa las claves; después ejecuta `pnpm db:ping` y `pnpm db:verify`. Sigue [`continuidad.md`](../continuidad.md) §5. |
+| `/api/health` devuelve 503 con `database: paused` | Supabase pausado, DNS o red | Abre el panel de Supabase; si está pausado, aplica el runbook de [`continuidad.md`](../continuidad.md) §5. |
+| El workflow de backup avisa de que no está configurado | Faltan los secretos `SUPABASE_DB_URL` o `BACKUP_PASSPHRASE` | Configúralos en GitHub y lanza el workflow a mano; ver [`continuidad.md`](../continuidad.md) §6. |
 
 ## 12. Producción
 
@@ -293,8 +298,9 @@ optimizar o migrar de proveedor; migrar exige un ADR nuevo.
 - El esquema `app` **no** se expone en la Data API y `anon` no tiene privilegios.
   Si el panel de Supabase se reconfigura, compruébalo antes de dar por buena una
   versión.
-- El runtime usa `DATABASE_URL` (pooler transaccional) con `prepare: false` y
-  `max: 1`.
+- El runtime usa `DATABASE_URL` (pooler transaccional) con `prepare: false`,
+  `max: 1` y `connect_timeout: 5`; el timeout de conexión evita que un Supabase
+  pausado deje la única conexión pendiente (healthcheck de `/api/health`).
 
 ## 13. Seguridad operativa
 
@@ -318,3 +324,5 @@ optimizar o migrar de proveedor; migrar exige un ADR nuevo.
   decisiones y alternativas.
 - [`docs/adr/0013-free-tier-continuity.md`](../adr/0013-free-tier-continuity.md):
   continuidad de los planes gratuitos.
+- [`docs/continuidad.md`](../continuidad.md): healthcheck, UptimeRobot,
+  keep-alive, pausa y reactivación, y copia semanal.

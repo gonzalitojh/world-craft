@@ -1,0 +1,87 @@
+name: Keep-alive
+
+# Respaldo del monitor principal (UptimeRobot, ADR 0013). No sustituye a
+# UptimeRobot: GitHub desactiva los workflows programados de un repositorio
+# público tras 60 días sin actividad, así que este cron solo es una red de
+# seguridad mientras el repositorio recibe pushes.
+on:
+  schedule:
+    # Cada seis horas, a un minuto que no coincide con otras tareas.
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: ping /api/health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Comprobar la configuración
+        id: check
+        env:
+          HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+        run: |
+          if [ -z "$HEALTHCHECK_URL" ]; then
+            echo "::warning::Falta la variable de repositorio HEALTHCHECK_URL. El keep-alive de GitHub no se ejecuta; UptimeRobot sigue siendo el monitor principal."
+            {
+              echo "## Keep-alive no configurado"
+              echo
+              echo "Define la variable de repositorio \`HEALTHCHECK_URL\` con la URL de producción, por ejemplo \`https://<dominio-de-producción>/api/health\`."
+              echo "El procedimiento está en \`docs/continuidad.md\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          case "$HEALTHCHECK_URL" in
+            https://*) ;;
+            *)
+              echo "::error::HEALTHCHECK_URL debe empezar por https:// para no enviar la comprobación en claro."
+              exit 1
+              ;;
+          esac
+
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Llamar al endpoint de salud
+        if: steps.check.outputs.configured == 'true'
+        env:
+          HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+        run: |
+          body_file="$RUNNER_TEMP/health.json"
+          status="$(
+            curl --silent --show-error --location \
+              --proto '=https' --tlsv1.2 --max-redirs 3 \
+              --max-time 30 --retry 2 --retry-delay 10 \
+              --output "$body_file" --write-out '%{http_code}' \
+              "$HEALTHCHECK_URL"
+          )"
+
+          echo "HTTP $status"
+          # El cuerpo del healthcheck solo contiene estado, disponibilidad de
+          # Supabase y marca de tiempo: no hay secretos que ocultar. Se recorta
+          # por si la URL apuntara a otra página.
+          head -c 500 "$body_file" || true
+          echo
+
+          if [ "$status" != "200" ]; then
+            {
+              echo "## Keep-alive fallido"
+              echo
+              echo "El endpoint respondió con HTTP $status. Revisa el despliegue y el estado de Supabase con \`docs/continuidad.md\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::El healthcheck respondió con HTTP $status."
+            exit 1
+          fi
+
+          {
+            echo "## Keep-alive correcto"
+            echo
+            echo "El endpoint respondió 200 y Supabase aceptó la consulta."
+          } >> "$GITHUB_STEP_SUMMARY"

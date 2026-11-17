@@ -1,21 +1,32 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('endpoint de salud y cabeceras', () => {
-  test('GET /api/health devuelve JSON sin caché', async ({ request }) => {
+  test('GET /api/health consulta Supabase y devuelve JSON sin caché', async ({
+    request,
+  }) => {
     const response = await request.get('/api/health');
 
-    expect(response.status()).toBe(200);
+    // Sin credenciales (por ejemplo, en CI) el endpoint responde 503, pero
+    // siempre con el mismo contrato y sin caché.
+    expect([200, 503]).toContain(response.status());
     expect(response.headers()['content-type']).toContain('application/json');
     expect(response.headers()['cache-control']).toBe('no-store');
 
     const body = (await response.json()) as {
       status?: string;
+      database?: string;
       timestamp?: string;
     };
 
-    expect(body.status).toBe('ok');
+    expect(['ok', 'degraded']).toContain(body.status);
+    expect(['available', 'paused', 'error']).toContain(body.database);
+    expect(body.status === 'ok').toBe(body.database === 'available');
     expect(Number.isNaN(Date.parse(body.timestamp ?? ''))).toBe(false);
-    expect(Object.keys(body).sort()).toEqual(['status', 'timestamp']);
+    expect(Object.keys(body).sort()).toEqual([
+      'database',
+      'status',
+      'timestamp',
+    ]);
   });
 
   test('las páginas aplican las cabeceras de seguridad', async ({

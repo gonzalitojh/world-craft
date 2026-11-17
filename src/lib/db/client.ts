@@ -40,7 +40,10 @@ let connection: PrivilegedConnection | undefined;
  * `prepare: false` es obligatorio con el pooler transaccional de Supabase
  * (PgBouncer en modo transacción no admite sentencias preparadas con nombre) y
  * `max: 1` evita agotar el pool en un entorno serverless donde cada instancia
- * atiende una petición a la vez.
+ * atiende una petición a la vez. `connect_timeout` acota la espera de una
+ * conexión nueva: sin él, un Supabase pausado o una red que no responde deja la
+ * única conexión de la instancia pendiente durante demasiado tiempo (lo usa el
+ * healthcheck de `/api/health`, ADR 0013).
  */
 export function getPrivilegedDb(): Database {
   if (!connection) {
@@ -48,6 +51,7 @@ export function getPrivilegedDb(): Database {
     const client = postgres(url, {
       prepare: false,
       max: 1,
+      connect_timeout: 5,
       ssl: sslFor(url),
       onnotice: () => undefined,
     });
