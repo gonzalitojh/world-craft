@@ -50,6 +50,13 @@
       "when": 1794778324654,
       "tag": "0006_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794778330000,
+      "tag": "0007_asset_write_guard",
+      "breakpoints": true
     }
   ]
 }

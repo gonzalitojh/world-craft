@@ -11,8 +11,13 @@
  * - Las URLs firmadas caducan como máximo en una hora
  *   (`MAX_SIGNED_URL_EXPIRY_SECONDS`).
  * - Los errores son de dominio (`StorageError`), no de proveedor: la interfaz
- *   traduce `not_found`, `invalid_key`, `invalid_expiry` y `unavailable` sin
- *   conocer R2.
+ *   traduce `not_found`, `invalid_key`, `invalid_expiry`, `too_large` y
+ *   `unavailable` sin conocer R2.
+ *
+ * M0-10 (issue #40) añade `download` de forma **aditiva y opcional** para que el
+ * servidor pueda recuperar un temporal y procesarlo con sharp. Los cuatro
+ * métodos originales no cambian, así que cualquier implementación anterior del
+ * contrato sigue siendo válida.
  */
 export interface StorageObject {
   key: string;
@@ -38,11 +43,26 @@ export interface StorageSignedUrlOptions {
   /** Segundos de validez de la URL. Máximo 3600. */
   expiresInSeconds: number;
   operation: 'get' | 'put';
+  /**
+   * Tipo MIME que el cliente debe enviar en el PUT. Se incluye en la firma
+   * para que el objeto temporal no pueda declarar otro distinto.
+   */
+  contentType?: string;
+  /**
+   * Tamaño exacto que el cliente debe enviar en el PUT. Se incluye en la
+   * firma para acotar la subida antes de leer el objeto.
+   */
+  contentLength?: number;
 }
 
 export interface StorageListResult {
   objects: StorageObject[];
   cursor?: string;
+}
+
+export interface StorageDownloadOptions {
+  /** Tamaño máximo admitido. Si se supera, lanza `too_large`. */
+  maxBytes?: number;
 }
 
 export interface StorageAdapter {
@@ -53,6 +73,14 @@ export interface StorageAdapter {
     prefix: string,
     options?: StorageListOptions,
   ): Promise<StorageListResult>;
+  /**
+   * Descarga un objeto completo en memoria.
+   *
+   * Es opcional para no romper implementaciones antiguas del contrato. La usa
+   * el servidor para leer el temporal de una subida directa antes de
+   * procesarlo; `maxBytes` acota el consumo de memoria.
+   */
+  download?(key: string, options?: StorageDownloadOptions): Promise<Uint8Array>;
 }
 
 /** Caducidad máxima admitida para una URL firmada: una hora. */
@@ -60,7 +88,7 @@ export const MAX_SIGNED_URL_EXPIRY_SECONDS = 3600;
 
 /** Códigos de error estables del dominio de almacenamiento. */
 export type StorageErrorCode =
-  'not_found' | 'invalid_key' | 'invalid_expiry' | 'unavailable';
+  'not_found' | 'invalid_key' | 'invalid_expiry' | 'too_large' | 'unavailable';
 
 /**
  * Error de almacenamiento con un código estable.

@@ -7,13 +7,16 @@
 > `drizzle/*.sql` (estado aplicado). Este documento describe el resultado, no
 > sustituye a las migraciones.
 > **Decisión asociada:** [ADR 0019](../adr/0019-database-schema-migrations-and-rls.md).
+> **Actualización:** 17/11/2026 (issue
+> [#40](https://github.com/gonzalitojh/world-craft/issues/40), M0-10): migración
+> `0007` con la guarda `guard_asset_insert` y claves de almacenamiento reales.
 
 ## 1. Cómo se mantiene
 
 | Pieza | Ruta | Responsabilidad |
 |---|---|---|
 | Esquema tipado | `src/lib/db/schema/*.ts` | Una tabla por archivo de dominio; sin `server-only` para que Drizzle Kit lo lea. |
-| Migraciones | `drizzle/0000`–`0006` | Cadena lineal única; la `0001` la genera Drizzle Kit y el resto es SQL revisado. |
+| Migraciones | `drizzle/0000`–`0007` | Cadena lineal única; la `0001` la genera Drizzle Kit y el resto es SQL revisado. |
 | Journal | `drizzle/meta/_journal.json` | Orden y comprobación de deriva (`pnpm db:check`). |
 | Rollback | `drizzle/rollback/*.down.sql` | SQL de reversión documentado; **no** lo aplica ninguna herramienta. |
 | Seed | `src/lib/db/seed/system-catalog.json` | Catálogo del sistema idempotente. |
@@ -150,7 +153,10 @@ Notas:
 | `assets` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `uploader_id uuid` → `profiles` `on delete set null`; `bucket text not null`; `path text not null`; `mime text not null`; `size bigint not null` con `CHK size >= 0`; `width int`; `height int`; `alt text not null default ''`; `created_at`. `CHK path like 'world/' || world_id::text || '/%'`. | UQ `(world_id, path)`; `world_id_idx`; `(world_id, created_at desc)`. |
 
 El binario no vive aquí: `bucket` + `path` apuntan a Cloudflare R2 (M0-10) y el
-bucket es privado. El formato de clave y el contrato de almacenamiento se
+bucket es privado. `mime` es siempre `image/webp`, `path` sigue el patrón
+`world/{worldId}/{assetId}.webp` y el trigger `guard_asset_insert` de la
+migración `0007` impide que `authenticated` falsifique `bucket`, `mime`, `size`,
+`width`, `height` o `path`. El formato de clave y el contrato de almacenamiento se
 describen en la sección 9.
 
 ### 5.4 Mapas
@@ -257,6 +263,7 @@ del esquema se concede al crearlo en `0000`; el `execute` de cada función y el
 | `app.scene_world_id(uuid)` | `uuid` | Mundo de una escena. |
 | `app.game_table_world_id(uuid)` | `uuid` | Mundo de una tabla de juego; `null` si es global. |
 | `app.transfer_world_ownership(uuid, uuid)` | `void` | Transferencia atómica de propiedad. |
+| `app.guard_asset_insert()` | `trigger` | Exige `app.asset_write = 'on'` y `app.asset_bucket`; valida MIME, tamaño, dimensiones y ruta canónica al insertar assets. |
 
 `app.transfer_world_ownership` exige sesión (`auth.uid()` no nulo), que quien
 llama sea el `owner` vigente y que el nuevo propietario ya sea miembro. Bloquea la
@@ -278,6 +285,7 @@ owner a `editor`, promueve al nuevo y registra la acción en `activity_log`.
 | `assert_map_link_world` | `map_entity_links` | Mapa y entidad del mismo mundo. |
 | `assert_scene_entities_world` | `scenes` | POV y lugar del mundo del manuscrito. |
 | `assert_game_entry_world` | `game_table_entries` | Bloquea escribir en tablas con `is_editable = false` desde el cliente. |
+| `guard_asset_insert` (`before insert`) | `assets` | Con rol `authenticated`, exige el contexto `app.asset_write`/`app.asset_bucket` y valida `image/webp`, tamaño 1..10485760, lados 16..4096 y ruta `world/{uuid}/{uuid}.webp`. |
 
 `on_world_created` es lo que hace que un `insert` en `worlds` deje el mundo
 accesible de inmediato. Por eso `worlds_select_member` acepta además
@@ -347,7 +355,8 @@ Decisiones que no se deducen de la tabla:
 - **`worlds`:** sin `DELETE` para `authenticated`. Borrar un mundo exige
   exportación y backup previos (M5); se archiva con `archived_at`.
 - **`assets`:** el cliente solo actualiza `alt`. `bucket`, `path`, `mime`, `size`,
-  `width` y `height` los fija el servidor al subir (M0-10).
+  `width` y `height` los fija el servidor al subir; la guarda `guard_asset_insert`
+  de la `0007` lo impone aunque llegue un `insert` directo (M0-10).
 - **`scene_versions` y `activity_log`:** append-only. No hay `UPDATE` ni
   `DELETE` para clientes.
 - **`game_sessions`:** privacidad dentro del mundo; ni el `owner` ve las tiradas
@@ -388,26 +397,37 @@ permitiera.
 
 ## 9. Assets, claves y contrato de almacenamiento
 
-- **Clave:** `world/{worldId}/{assetId}.{ext}`, con UUID y extensión de
-  `avif`, `gif`, `jpeg`, `jpg`, `png` o `webp`. La tabla impone el prefijo con un
-  `check` y `buildWorldAssetKey` lo construye; `assertWorldAssetKey` rechaza
-  `..`, barras invertidas, rutas absolutas, dobles barras, UUID inválidos,
-  extensiones no permitidas y claves de otro mundo.
+- **Clave publicada:** `world/{worldId}/{assetId}.webp`. `buildWorldAssetKey` la
+  construye y el `check` de la tabla y el trigger `guard_asset_insert` imponen el
+  prefijo; `assertWorldAssetKey` rechaza `..`, barras invertidas, rutas
+  absolutas, dobles barras, UUID inválidos, extensiones no permitidas y claves
+  de otro mundo.
+- **Miniatura:** `world/{worldId}/{thumbnailUuid}.webp`, con
+  `thumbnailUuid = UUIDv5(namespace, assetId)`. No ocupa fila en `assets`: se
+  deriva del asset y se borra con él.
+- **Temporal de subida:** `tmp/{worldId}/{assetId}.upload`. El navegador escribe
+  ahí con un `PUT` firmado y `finalizeUpload` lo procesa; el lifecycle de R2
+  purga lo abandonado ([ADR 0020](../adr/0020-direct-signed-upload-to-r2.md)).
 - **Contrato:** `StorageAdapter` en `src/lib/storage/types.ts` con `upload`,
-  `getSignedUrl`, `delete` y `list`. La implementación real (R2) llega con M0-10.
+  `getSignedUrl`, `delete` y `list`, más `download` opcional para recuperar el
+  temporal. Implementación R2 y adaptador local con driver por entorno
+  ([ADR 0004](../adr/0004-cloudflare-r2-storage-adapter.md)).
 - **URLs firmadas:** caducidad máxima de una hora
   (`MAX_SIGNED_URL_EXPIRY_SECONDS`), validada por `assertValidExpiry`; el bucket
-  es privado y nunca se devuelve una URL pública.
+  es privado y nunca se devuelve una URL pública. La subida caduca en 10 minutos
+  y la descarga dura 5 minutos por defecto.
+- **Límites:** archivo de 10 MiB, entrada de 25 MP y 8192 px, mínimo de 16 px,
+  WebP publicado de 4096 px y `alt` de 500 caracteres en el servicio.
 - **Errores:** `StorageError` con códigos estables `not_found`, `invalid_key`,
-  `invalid_expiry` y `unavailable`. La interfaz traduce el código; nunca se
-  propaga la respuesta del proveedor.
+  `invalid_expiry`, `too_large` y `unavailable`. La interfaz traduce el código;
+  nunca se propaga la respuesta del proveedor.
 
 ## 10. Cómo se comprueba
 
 | Comprobación | Comando | Qué cubre |
 |---|---|---|
 | Deriva del esquema | `pnpm db:check` | Journal y snapshots de Drizzle Kit; no abre conexión. |
-| Modelo aplicado | `pnpm db:verify` | Journal vs. `drizzle.__drizzle_migrations`, 24 tablas, 7 enums, `pg_trgm`, FTS, RLS, políticas, grants y conteos del seed. |
+| Modelo aplicado | `pnpm db:verify` | Journal vs. `drizzle.__drizzle_migrations`, 24 tablas, 7 enums, `pg_trgm`, FTS, RLS, políticas, grants, guarda de assets y conteos del seed. |
 | Contrato del esquema | `pnpm test` | `tests/unit/db/schema-coverage.test.ts` exige las 24 tablas, RLS y política en todas salvo `allowed_emails`, cero privilegios a `anon`, `search_path` vacío en las funciones `security definer` y los tres índices GIN de `entities`. |
 | Aislamiento real | `pnpm test:db` | Cuatro identidades (owner, editor, viewer y ajeno), aislamiento entre mundos, triggers y privilegios. |
 
@@ -415,7 +435,12 @@ permitiera.
 
 - Los valores de `world_status` y `content_status` son provisionales.
 - La purga programada de la papelera y la limpieza de assets huérfanos llegan con
-  M5.
+  M5; mientras tanto, el lifecycle de R2 limpia `tmp/` y `_smoke/`.
+- `assets.alt` está limitado a 500 caracteres en el servicio, pero no tiene
+  `CHECK` en base de datos; añadirlo exige una migración futura.
+- La guarda `guard_asset_insert` cubre `INSERT`; un `UPDATE` de columnas
+  sensibles está acotado por los `grant` de columna (solo `alt`), no por un
+  trigger equivalente.
 - La búsqueda de etiquetas y manuscritos y el índice GIN de `entities.attributes`
   se añaden cuando exista una consulta real.
 - `game_tables` y `game_content_packs` del sistema están modelados y sembrables,

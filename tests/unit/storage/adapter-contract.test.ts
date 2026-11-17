@@ -152,4 +152,21 @@ describe('contrato de StorageAdapter', () => {
       adapter.upload({ key: '', body: BODY, contentType: 'image/png' }),
     ).rejects.toMatchObject({ code: 'invalid_key' });
   });
+
+  it('descarga un objeto y respeta el límite de tamaño', async () => {
+    const adapter = createAdapter();
+    const key = buildWorldAssetKey(WORLD_ID, ASSET_IDS[0], 'png');
+    await adapter.upload({ key, body: BODY, contentType: 'image/png' });
+
+    const download = adapter.download?.bind(adapter);
+
+    expect(download).toBeTypeOf('function');
+    await expect(download!(key)).resolves.toEqual(BODY);
+    await expect(download!(key, { maxBytes: 2 })).rejects.toMatchObject({
+      code: 'too_large',
+    });
+    await expect(
+      download!(buildWorldAssetKey(WORLD_ID, ASSET_IDS[1], 'png')),
+    ).rejects.toMatchObject({ code: 'not_found' });
+  });
 });

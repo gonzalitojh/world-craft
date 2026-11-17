@@ -9,6 +9,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Detecta efectos secundarios y APIs obsoletas en desarrollo.
   reactStrictMode: true,
+  // `sharp` es un binario nativo: se mantiene fuera del bundle de servidor para
+  // que Next no intente empaquetarlo (M0-10, issue #40).
+  serverExternalPackages: ['sharp'],
   // Fija la raíz del proyecto: sin esto Turbopack rastrea el sistema de
   // archivos hacia arriba y avisa de lockfiles ajenos.
   turbopack: {

@@ -34,6 +34,31 @@ export type UserDatabase = PostgresJsDatabase<typeof schema>;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Opciones de la sesión de usuario. */
+export interface UserSessionOptions {
+  /**
+   * GUCs transaccionales que el servicio fija para las guardas de escritura.
+   *
+   * Se aplican con `set_config(..., true)` dentro de la misma transacción, de
+   * modo que desaparecen al cerrarla. Solo se admiten nombres de variable, no
+   * valores: el llamador decide qué contexto declara.
+   */
+  settings?: Readonly<Record<string, string>>;
+}
+
+/** Nombre de GUC admitido: solo el espacio `app.` reservado al servidor. */
+const SETTING_NAME_PATTERN = /^app\.[a-z0-9_]{1,55}$/;
+
+/**
+ * Comprueba si un nombre de GUC pertenece al espacio `app.` del servidor.
+ *
+ * Se excluyen `role`, `request.jwt.claim.*` y cualquier variable que pudiera
+ * alterar el rol o los claims de la sesión desde un llamador mal usado.
+ */
+export function isUserSessionSettingName(name: string): boolean {
+  return SETTING_NAME_PATTERN.test(name);
+}
+
 /**
  * Ejecuta `fn` dentro de una transacción con el rol `authenticated` y el claim
  * `sub` del usuario indicado.
@@ -44,9 +69,18 @@ const UUID_PATTERN =
 export async function withUserSession<T>(
   userId: string,
   fn: (db: UserDatabase) => Promise<T>,
+  options: UserSessionOptions = {},
 ): Promise<T> {
   if (!UUID_PATTERN.test(userId)) {
     throw new Error('withUserSession espera un UUID de usuario válido');
+  }
+
+  const settings = Object.entries(options.settings ?? {});
+
+  for (const [name] of settings) {
+    if (!isUserSessionSettingName(name)) {
+      throw new Error(`Nombre de GUC no válido: ${name}`);
+    }
   }
 
   const url = readDirectUrl();
@@ -63,10 +97,29 @@ export async function withUserSession<T>(
       await tx`select set_config('request.jwt.claim.sub', ${userId}, true)`;
       await tx`select set_config('request.jwt.claim.role', 'authenticated', true)`;
 
-      // `postgres@4` y `drizzle-orm` no comparten todavía el tipo de la
-      // transacción; el runtime es el mismo cliente y Drizzle acepta `Sql`.
+      for (const [name, value] of settings) {
+        await tx`select set_config(${name}, ${value}, true)`;
+      }
+
+      // Drizzle 0.45 lee `options.parsers` y `options.serializers` del cliente
+      // para registrar sus parsers de fechas, pero `postgres@4` no expone
+      // `options` en el cliente de transacción (`tx`). Envolvemos la
+      // transacción con las tres operaciones que Drizzle usa (`unsafe`,
+      // `begin` y `savepoint`) y las opciones del cliente raíz, de modo que
+      // las consultas sigan ejecutándose dentro del ámbito transaccional con
+      // el rol y los claims ya fijados.
+      const drizzleClient = {
+        options: client.options,
+        unsafe: tx.unsafe.bind(tx),
+        begin: tx.begin.bind(tx),
+        savepoint: tx.savepoint.bind(tx),
+      };
+
       return fn(
-        drizzle(tx as unknown as Sql, { schema, casing: 'snake_case' }),
+        drizzle(drizzleClient as unknown as Sql, {
+          schema,
+          casing: 'snake_case',
+        }),
       );
     });
   } finally {

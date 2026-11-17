@@ -12,16 +12,18 @@ datos de los mundos siguen siendo privados.
 entorno reproducible, TypeScript estricto, tests y CI (issue #6, M0-05), una
 aplicación Next.js ejecutable (issue #7, M0-06), el sistema de diseño con sus
 temas y el shell responsive (issue #8, M0-07) y el modelo de datos definido para
-PostgreSQL con Drizzle, RLS y seed (issue #9, M0-08): 24 tablas, siete
+PostgreSQL con Drizzle, RLS y seed (issue #9, M0-08): 24 tablas, ocho
 migraciones, políticas por mundo y pruebas de aislamiento, aplicadas al proyecto
 Supabase de desarrollo. La documentación base (issue #10, M0-09) reúne la
-arquitectura, el esqueleto del manual de usuario y el changelog.
+arquitectura, el esqueleto del manual de usuario y el changelog. El
+almacenamiento (issue #40, M0-10) tiene adaptador R2 y adaptador local, pipeline
+de imagen y guarda de escritura; el bucket real se crea en Cloudflare.
 
-Todavía **no hay producto**: no existe autenticación (M1-01), ni almacenamiento de
-archivos (M0-10), ni contenido. `/login` es un placeholder, `/health` solo
-comprueba que el despliegue responde y `/design-system` documenta la interfaz. El
-modelo de datos está definido en el repositorio, pero ninguna pantalla lo usa
-todavía.
+Todavía **no hay producto**: no existe autenticación (M1-01) ni contenido.
+`/login` es un placeholder, `/health` solo comprueba que el despliegue responde y
+`/design-system` documenta la interfaz. El modelo de datos está definido en el
+repositorio, pero ninguna pantalla lo usa todavía, y las rutas de almacenamiento
+no se enlazan desde ninguna pantalla.
 
 ## Requisitos
 
@@ -86,6 +88,8 @@ Rutas disponibles en esta fase:
 | `/login` | Placeholder de acceso: aviso y botón deshabilitado, sin formulario. |
 | `/health` | Estado del despliegue: commit, hora de comprobación y endpoint. |
 | `/api/health` | JSON `{ "status": "ok", "timestamp": "…" }` sin caché. |
+| `/api/storage/local/[...key]` | Adaptador local de almacenamiento (solo desarrollo y pruebas; 404 en producción). |
+| `/api/storage/self-check` | Diagnóstico de almacenamiento con token; 404 en producción real. |
 
 `.env.example` está versionado y no contiene secretos. `.env.local` y cualquier
 otro `.env*` quedan fuera de git.
@@ -110,6 +114,7 @@ otro `.env*` quedan fuera de git.
 | `pnpm db:verify` | Verifica tablas, enums, RLS, privilegios y seed aplicados. |
 | `pnpm db:reset` | **Destructivo**: elimina `public`, `app` y `drizzle` del proyecto de desarrollo y recrea `public`. |
 | `pnpm db:check` | Valida journal y snapshots de Drizzle Kit sin conexión. |
+| `pnpm storage:smoke` | Smoke real de Cloudflare R2: PUT, rechazo sin firma, lectura firmada, caducidad y borrado. |
 | `pnpm design:captures` | Regenera las capturas de referencia del sistema de diseño en `docs/diseno/capturas/`. |
 | `pnpm format` | Formatea con Prettier. |
 | `pnpm format:check` | Comprueba el formato sin escribir. |
@@ -125,8 +130,10 @@ pnpm exec playwright install chromium
 ## Base de datos
 
 PostgreSQL en Supabase Free con Drizzle ORM. El modelo definido en el
-repositorio son 24 tablas con RLS por mundo, siete migraciones versionadas y un
+repositorio son 24 tablas con RLS por mundo, ocho migraciones versionadas y un
 seed idempotente del catálogo del sistema (12 tipos de entidad y 15 de relación).
+La `0007` añade la guarda `guard_asset_insert` para que `authenticated` no pueda
+falsificar los metadatos de un asset.
 El proyecto de Supabase de desarrollo ya tiene el modelo aplicado y verificado;
 las credenciales viven en `.env.local` y nunca se versionan.
 
@@ -165,7 +172,8 @@ src/
   lib/            Utilidades puras, entorno y helpers sin React
     db/           Esquema Drizzle, conexión privilegiada, sesión de usuario y seed
     env/          Esquemas de entorno público y de servidor
-    storage/      Contrato StorageAdapter y claves de assets
+    storage/      Contrato StorageAdapter, adaptadores R2 y local, driver y claves
+    assets/       Límites, pipeline sharp y servicio de assets
   messages/       Textos de interfaz centralizados y tipados
   modules/        Módulos de dominio (fichas, mapas, manuscritos…)
   styles/         Tokens, base y movimiento del sistema de diseño
@@ -176,6 +184,7 @@ tests/
   e2e/            Playwright (rutas, responsive, temas, capturas y axe)
 scripts/          Utilidades de mantenimiento del repositorio
   db/             ping, seed, reset y verify de la base de datos
+  storage/        smoke real de Cloudflare R2
 drizzle/          Migraciones, journal y rollback documentado
 docs/             Plan, proceso, decisiones, ADRs, diseño y base de datos
   base-de-datos/  Esquema, RLS y operación
@@ -199,11 +208,13 @@ de negocio separada de la presentación. Los detalles están en
 - [Supabase](https://supabase.com/) (PostgreSQL 15+ con RLS) y
   [Drizzle ORM](https://orm.drizzle.team/) con el driver `postgres`; migraciones
   con Drizzle Kit.
+- [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/) como
+  almacenamiento privado de assets, con `StorageAdapter`, adaptador local,
+  AWS SDK v3 y `sharp`.
 - [Vitest](https://vitest.dev/), Testing Library, [Playwright](https://playwright.dev/)
   y axe.
 - [Vercel](https://vercel.com/) Hobby para el despliegue.
-- Previstos: Cloudflare R2 (contrato `StorageAdapter` ya definido), MapLibre +
-  Terra Draw, React Flow + ELK y Tiptap 3.
+- Previstos: MapLibre + Terra Draw, React Flow + ELK y Tiptap 3.
 
 ## Convenciones
 
@@ -248,6 +259,8 @@ descuido no filtre secretos al navegador:
 | `src/lib/env/server-schema.ts` | Variables públicas + `NODE_ENV`, `VERCEL_URL`, `VERCEL_GIT_COMMIT_SHA`, Supabase, `DATABASE_URL`, `DIRECT_URL` y R2. | Servidor y tests. |
 | `src/lib/env/server.ts` | `serverEnv`, marcado con `server-only`. | Solo servidor. |
 | `src/lib/db/env.ts` | `DATABASE_URL` y `DIRECT_URL`: validación perezosa y estricta. | Servidor y scripts. |
+| `src/lib/storage/env.ts` | `STORAGE_*` y `R2_*`: validación perezosa y estricta. | Servidor, scripts y tests. |
+| `src/lib/storage/server.ts` | Punto de entrada del almacenamiento, marcado `server-only`. | Solo servidor. |
 
 `parsePublicEnv` copia únicamente claves públicas: aunque reciba el
 `process.env` completo, el resultado no contiene secretos. Importar `server.ts`
@@ -256,10 +269,13 @@ desde un componente cliente rompe la compilación gracias a `server-only`.
 `src/lib/site-url.ts` resuelve el origen del sitio en este orden:
 `NEXT_PUBLIC_SITE_URL` → `https://${VERCEL_URL}` → `http://localhost:3000`.
 
-Las claves de Supabase Auth son opcionales hasta que M1-01 las consuma; las de
-Cloudflare R2, hasta M0-10. `DATABASE_URL` y `DIRECT_URL` ya las usan los scripts
-`db:*` y `pnpm test:db`, y `.env.example` separa las variables públicas de las de
-servidor.
+Las claves de Supabase Auth son opcionales hasta que M1-01 las consuma. Las de
+Cloudflare R2 ya las usa el almacenamiento, pero solo en servidor: sin ellas, el
+driver local cubre desarrollo y pruebas y producción falla cerrado.
+`DATABASE_URL` y `DIRECT_URL` ya las usan los scripts `db:*` y `pnpm test:db`, y
+`.env.example` separa las variables públicas de las de servidor. La guía de
+buckets, CORS, lifecycle y smoke está en
+[`docs/almacenamiento.md`](docs/almacenamiento.md).
 
 ## Temas
 
@@ -314,7 +330,8 @@ recorren las pantallas en ambos temas y pasan axe.
   con los peers de ESLint 10), más Prettier.
 - **Vitest** para esquemas de entorno, mensajes, utilidades, tokens y contraste,
   tema, navegación, healthcheck, componentes base, esquema de base de datos,
-  catálogo del sistema y contrato de almacenamiento; **Playwright** para rutas,
+  catálogo del sistema, contrato y adaptadores de almacenamiento, pipeline de
+  imagen y servicio de assets; **Playwright** para rutas,
   404, API, responsive, temas, sistema de diseño y accesibilidad con
   `@axe-core/playwright`. Las pruebas de RLS e integración viven en
   `tests/db/` y se ejecutan aparte con `pnpm test:db` contra la base real.
@@ -365,10 +382,14 @@ una acción del propietario en Vercel, no del repositorio.
 
 ## Limitaciones actuales
 
-- Sin autenticación ni almacenamiento de archivos: `/login` es un placeholder y
-  no hay contenido. El esquema, las migraciones y las políticas de RLS están
+- Sin autenticación ni contenido: `/login` es un placeholder y no hay pantallas
+  de producto. El esquema, las migraciones y las políticas de RLS están
   aplicados y verificados en el proyecto Supabase de desarrollo, pero ninguna
   pantalla los usa todavía.
+- El almacenamiento tiene adaptador R2, adaptador local, pipeline de imagen y
+  guarda de escritura. El smoke real de R2 pasó el 17/11/2026 contra el bucket de
+  desarrollo (PUT, rechazo sin firma, lectura firmada, caducidad y borrado); el
+  bucket de producción y el self-check de preview siguen pendientes.
 - El proyecto Supabase de desarrollo y sus credenciales son una acción del
   propietario: sin ellas no se ejecutan `db:migrate`, `db:seed`, `db:verify` ni
   `test:db`.
@@ -414,6 +435,8 @@ una acción del propietario en Vercel, no del repositorio.
   datos, enums, índices, búsqueda, triggers, RLS y privilegios.
 - [docs/base-de-datos/operacion.md](docs/base-de-datos/operacion.md): arranque,
   migraciones, seed, reset, copias, límites y runbook.
+- [docs/almacenamiento.md](docs/almacenamiento.md): R2, driver local, CORS,
+  lifecycle, límites, smoke y rotación de credenciales.
 - [CONTRIBUTING.md](CONTRIBUTING.md): ramas, commits, PRs y calidad.
 - [CHANGELOG.md](CHANGELOG.md): cambios relevantes por versión.
 - [SECURITY.md](SECURITY.md): cómo reportar una vulnerabilidad.

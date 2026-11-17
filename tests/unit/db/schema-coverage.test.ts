@@ -45,6 +45,7 @@ const MIGRATIONS = [
   '0004_rls_content.sql',
   '0005_rls_game_and_activity.sql',
   '0006_grants.sql',
+  '0007_asset_write_guard.sql',
 ];
 
 function readMigration(name: string): string {
@@ -163,6 +164,21 @@ describe('cobertura del esquema', () => {
     expect(grantsSql).toMatch(
       /grant\s+usage\s+on\s+schema\s+public\s+to\s+authenticated,\s*service_role,\s*authenticator/i,
     );
+  });
+
+  it('0007 instala la guarda de escritura de assets', () => {
+    const guard = readMigration('0007_asset_write_guard.sql');
+
+    expect(guard).toMatch(
+      /create\s+or\s+replace\s+function\s+app\.guard_asset_insert/i,
+    );
+    expect(guard).toMatch(/security\s+definer/i);
+    expect(guard).toMatch(/set\s+search_path\s*=\s*''/i);
+    expect(guard).toMatch(
+      /create\s+trigger\s+guard_asset_insert\s+before\s+insert\s+on\s+public\.assets/i,
+    );
+    expect(guard).toMatch(/app\.asset_write/i);
+    expect(guard).toMatch(/app\.asset_bucket/i);
   });
 
   it('0000 instala pg_trgm en extensions y crea el esquema app', () => {

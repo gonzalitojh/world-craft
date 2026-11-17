@@ -336,6 +336,40 @@ await runScript('db:verify', async () => {
       return 'todas con security definer y search_path';
     });
 
+    await check('Guarda de escritura de assets', async () => {
+      const [trigger] = await sql`
+        select t.tgname as name
+        from pg_trigger t
+        join pg_class c on c.oid = t.tgrelid
+        join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public'
+          and c.relname = 'assets'
+          and t.tgname = 'guard_asset_insert'
+          and not t.tgisinternal
+      `;
+
+      if (!trigger) {
+        throw new Error('falta el trigger guard_asset_insert en public.assets');
+      }
+
+      const [fn] = await sql`
+        select p.prosecdef as definer, p.proconfig::text as config
+        from pg_proc p
+        join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'app' and p.proname = 'guard_asset_insert'
+      `;
+
+      if (!fn?.definer) {
+        throw new Error('app.guard_asset_insert no es security definer');
+      }
+
+      if (!fn.config?.includes('search_path=')) {
+        throw new Error('app.guard_asset_insert no fija search_path');
+      }
+
+      return 'trigger + función endurecida';
+    });
+
     await check('Helper de arrays inmutable', async () => {
       const [helper] = await sql`
         select

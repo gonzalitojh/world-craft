@@ -27,17 +27,17 @@ function readJournal(): Journal {
 }
 
 describe('journal de migraciones', () => {
-  it('declara PostgreSQL y siete migraciones', () => {
+  it('declara PostgreSQL y ocho migraciones', () => {
     const journal = readJournal();
 
     expect(journal.dialect).toBe('postgresql');
-    expect(journal.entries).toHaveLength(7);
+    expect(journal.entries).toHaveLength(8);
   });
 
   it('numera las entradas de forma contigua desde cero', () => {
     const { entries } = readJournal();
 
-    expect(entries.map((entry) => entry.idx)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(entries.map((entry) => entry.idx)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   });
 
   it('ordena las entradas por fecha creciente', () => {
@@ -90,6 +90,7 @@ describe('journal de migraciones', () => {
       '0004_rls_content.sql',
       '0005_rls_game_and_activity.sql',
       '0006_grants.sql',
+      '0007_asset_write_guard.sql',
     ];
 
     for (const file of sqlFiles) {

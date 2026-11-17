@@ -11,6 +11,7 @@ export {
 } from './types';
 export type {
   StorageAdapter,
+  StorageDownloadOptions,
   StorageErrorCode,
   StorageListOptions,
   StorageListResult,
