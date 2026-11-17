@@ -134,11 +134,24 @@ export const es = {
   health: {
     title: 'Estado del sistema',
     description:
-      'Comprobación mínima de que la aplicación está desplegada y responde.',
+      'Comprobación de que la aplicación está desplegada y de que la base de datos de Supabase acepta consultas.',
     statusLabel: 'Estado',
     statusOk: 'Operativo',
     statusOkDescription:
-      'La aplicación responde y el endpoint de salud devuelve un estado correcto.',
+      'La aplicación responde y la base de datos de Supabase ha contestado a la comprobación.',
+    statusDegraded: 'Degradado',
+    statusDegradedDescription:
+      'La aplicación responde, pero la comprobación de la base de datos no se ha completado. Consulta el detalle y el estado de Supabase antes de seguir.',
+    databaseLabel: 'Base de datos',
+    databaseAvailable: 'Disponible',
+    databaseAvailableDescription:
+      'Supabase ha respondido a una consulta mínima en menos de cinco segundos.',
+    databasePaused: 'Sin respuesta (posible pausa)',
+    databasePausedDescription:
+      'No se ha podido abrir la conexión: el proyecto puede estar pausado por inactividad o la red no llega a Supabase.',
+    databaseError: 'Error de consulta',
+    databaseErrorDescription:
+      'No se ha podido completar la consulta: revisa la configuración de la conexión, las credenciales y los permisos de Supabase.',
     detailsTitle: 'Detalles del despliegue',
     commitLabel: 'Commit',
     commitUnknown: 'local (sin datos de Vercel)',

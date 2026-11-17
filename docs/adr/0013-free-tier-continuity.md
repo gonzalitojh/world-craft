@@ -113,6 +113,20 @@ siguen revisando. El runbook está en
 [`docs/base-de-datos/operacion.md`](../base-de-datos/operacion.md) §9–§11. Esta
 nota no reescribe el histórico.
 
+## Nota de actualización (2026-11-17)
+
+La issue [#41](https://github.com/gonzalitojh/world-craft/issues/41) (M0-11)
+implementó el keep-alive: `/api/health` ejecuta un `select 1` real contra
+`DATABASE_URL` (sin service role), con timeout de cinco segundos y respuesta
+`200`/`503` (`available`, `paused` o `error`); la página `/health` muestra ese
+estado. Se añadieron el workflow `keepalive.yml` cada seis horas como respaldo,
+el workflow semanal de copia cifrada `backup.yml` y el runbook completo en
+[`docs/continuidad.md`](../continuidad.md), que cubre UptimeRobot, la prueba de
+siete días, la pausa y reactivación, la ventana de un año y la revisión de claves.
+El alta del monitor, la prueba de siete días y la prueba real de pausa y
+restauración quedan como acciones operativas del propietario; no se fingen
+resultados. Esta nota no reescribe el histórico.
+
 ## Referencias
 
 - Issue: #4

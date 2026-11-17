@@ -43,7 +43,7 @@ test.describe('rutas base', () => {
     await expect(page.locator('form')).toHaveCount(0);
   });
 
-  test('health muestra el estado operativo con texto, no solo color', async ({
+  test('health muestra el estado con texto, no solo color', async ({
     page,
   }) => {
     await page.goto('/health');
@@ -51,8 +51,15 @@ test.describe('rutas base', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: es.health.title }),
     ).toBeVisible();
+    // Con o sin credenciales de base de datos, el estado siempre se comunica
+    // con texto: operativo si Supabase responde, degradado si no.
     await expect(
-      page.getByText(es.health.statusOk, { exact: true }),
+      page
+        .getByText(es.health.statusOk, { exact: true })
+        .or(page.getByText(es.health.statusDegraded, { exact: true })),
+    ).toBeVisible();
+    await expect(
+      page.getByText(es.health.databaseLabel, { exact: true }),
     ).toBeVisible();
     await expect(page.getByText(es.health.commitLabel)).toBeVisible();
   });

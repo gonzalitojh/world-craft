@@ -12,6 +12,11 @@ cambios se acumulan en «Sin publicar» hasta la primera versión estable.
 
 ### Añadido
 
+- Healthcheck real y continuidad de Supabase (issue
+  [#41](https://github.com/gonzalitojh/world-craft/issues/41)): `/api/health`
+  consulta la base, distingue disponible de pausado y devuelve 200/503; la página
+  `/health` muestra el estado, y se añaden keep-alive de respaldo, copia semanal
+  cifrada y runbook de pausa y reactivación.
 - Documentación base del proyecto (issue
   [#10](https://github.com/gonzalitojh/world-craft/issues/10)): mapa de
   arquitectura, esqueleto del manual de usuario, este changelog y enlaces cruzados
@@ -41,6 +46,10 @@ cambios se acumulan en «Sin publicar» hasta la primera versión estable.
 
 ### Cambiado
 
+- `/health` y `/api/health` dejan de ser una comprobación superficial: informan
+  de la disponibilidad de Supabase y publican un contrato JSON nuevo con
+  `status`, `database` y `timestamp` (issue
+  [#41](https://github.com/gonzalitojh/world-craft/issues/41)).
 - El repositorio deja de ser un esqueleto heredado y pasa a tener reglas,
   proceso, entorno, diseño y modelo de datos propios (fase M0).
 
