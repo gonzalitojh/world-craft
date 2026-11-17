@@ -2,9 +2,10 @@
 
 import { useId } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { isThemePreference, type ThemePreference } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { t, type MessageKey } from '@/messages';
+import type { MessageKey } from '@/messages/translator';
 
 import { useTheme } from './theme-provider';
 
@@ -34,6 +35,7 @@ type ThemeSelectorProps = {
  * necesita dependencias. La etiqueta es visible y está asociada con `htmlFor`.
  */
 export function ThemeSelector({ className }: ThemeSelectorProps) {
+  const { t } = useI18n();
   const { preference, setPreference } = useTheme();
   const selectId = useId();
 

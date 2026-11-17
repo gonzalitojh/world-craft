@@ -6,6 +6,8 @@
  * Es una función pura y sin dependencias para poder probarla con facilidad.
  */
 
+import { defaultLocale, type Locale } from '@/lib/i18n/locale';
+
 type Rgb = { r: number; g: number; b: number };
 
 /** Convierte `#rgb`, `#rrggbb` o `#rrggbbaa` (sin alfa) a canales 0-255. */
@@ -55,9 +57,15 @@ export function contrastRatio(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/** Formatea un ratio con un decimal y coma decimal española: `4,8:1`. */
-export function formatContrastRatio(ratio: number): string {
-  const formatted = new Intl.NumberFormat('es', {
+/**
+ * Formatea un ratio con un decimal y el separador decimal del idioma:
+ * `4,8:1` en español, `4.8:1` en inglés.
+ */
+export function formatContrastRatio(
+  ratio: number,
+  locale: Locale = defaultLocale,
+): string {
+  const formatted = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(ratio);

@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { PageShell } from '@/components/page-shell';
 import { Button } from '@/components/ui/button';
-import { t } from '@/messages';
+import { getI18n } from '@/lib/i18n/server';
 
 /**
  * Placeholder de acceso: no hay formulario falso.
@@ -10,7 +10,9 @@ import { t } from '@/messages';
  * La autenticación real llega con M1-01 (issue #11). Se muestra un botón
  * deshabilitado junto a la explicación visible de por qué no está activo.
  */
-export default function LoginPage() {
+export default async function LoginPage() {
+  const { t } = await getI18n();
+
   return (
     <PageShell className="max-w-md">
       <h1 className="min-w-0 font-display text-display-lg tracking-display text-foreground">

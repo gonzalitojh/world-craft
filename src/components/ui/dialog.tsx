@@ -4,8 +4,8 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import type { ComponentProps } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Diálogo modal sobre `@radix-ui/react-dialog`.
@@ -117,6 +117,8 @@ export function DialogContent({
   children,
   ...props
 }: DialogContentProps) {
+  const { t } = useI18n();
+
   return (
     <DialogPortal>
       <DialogOverlay />

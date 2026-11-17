@@ -1,7 +1,7 @@
 'use client';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getMessages, t } from '@/messages';
 
 /**
  * Isla interactiva de las pestañas.
@@ -10,7 +10,7 @@ import { getMessages, t } from '@/messages';
  * Fin) lo aporta el primitivo de Radix.
  */
 export function TabsDemo() {
-  const messages = getMessages();
+  const { messages, t } = useI18n();
   const tabs = messages.design.components.tabs;
 
   return (

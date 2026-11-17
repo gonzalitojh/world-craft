@@ -1,9 +1,13 @@
+'use client';
+
 import Link from 'next/link';
 
-import { t } from '@/messages';
+import { useI18n } from '@/components/i18n/locale-provider';
 
 /** Pie de la web pública: privacidad, licencia y acceso al estado técnico. */
 export function SiteFooter() {
+  const { t } = useI18n();
+
   return (
     <footer className="border-t">
       <div className="mx-auto flex w-full max-w-(--content-max) min-w-0 flex-col gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:px-6 lg:px-8">

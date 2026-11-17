@@ -1,7 +1,9 @@
+'use client';
+
 import type { ReactNode } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Estado vacío: «aquí todavía no hay nada».
@@ -35,6 +37,7 @@ export function EmptyState({
   action,
   className,
 }: EmptyStateProps) {
+  const { t } = useI18n();
   const Title = titleAs;
 
   return (

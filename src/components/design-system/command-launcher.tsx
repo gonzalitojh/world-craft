@@ -2,9 +2,9 @@
 
 import { Command as CommandIcon } from 'lucide-react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { useCommandPalette } from '@/components/shell/command-palette';
 import { Button } from '@/components/ui/button';
-import { t } from '@/messages';
 
 /**
  * Botón de la página que abre **la misma** paleta del shell.
@@ -14,6 +14,7 @@ import { t } from '@/messages';
  * con el botón de la topbar.
  */
 export function CommandLauncher({ label }: { label?: string } = {}) {
+  const { t } = useI18n();
   const { open } = useCommandPalette();
 
   return (

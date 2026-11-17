@@ -1,21 +1,25 @@
 import type { MetadataRoute } from 'next';
 
+import { defaultLocale } from '@/lib/i18n/locale';
 import { THEME_COLORS } from '@/lib/theme-palette';
-import { t } from '@/messages';
+import { getMessages } from '@/messages';
 
 /**
  * Manifest inicial de la aplicación.
  *
  * Es deliberadamente mínimo: icons, colores de tema y nombre. La PWA completa
  * (service worker, install prompt, offline) llega en una fase posterior
- * (ADR 0009).
+ * (ADR 0009). El manifest es un recurso estático: no negocia `Accept-Language`
+ * y usa el catálogo base y el idioma por defecto.
  */
 export default function manifest(): MetadataRoute.Manifest {
+  const messages = getMessages();
+
   return {
-    name: t('meta.applicationName'),
-    short_name: t('meta.applicationName'),
-    description: t('meta.manifestDescription'),
-    lang: 'es',
+    name: messages.meta.applicationName,
+    short_name: messages.meta.applicationName,
+    description: messages.meta.manifestDescription,
+    lang: defaultLocale,
     start_url: '/',
     display: 'standalone',
     // El manifest se sirve como JSON estático y no resuelve variables CSS: los

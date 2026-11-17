@@ -40,7 +40,7 @@ Supabase (PostgreSQL + RLS)   Cloudflare R2 (implementado, M0-10)
 | Cloudflare R2 tras `StorageAdapter` | Implementado (M0-10): adaptadores R2 y local, pipeline sharp y guarda 0007; bucket pendiente de crear | [ADR 0004](adr/0004-cloudflare-r2-storage-adapter.md), [ADR 0020](adr/0020-direct-signed-upload-to-r2.md) |
 | Vercel Hobby | Configurado | [ADR 0005](adr/0005-vercel-hobby.md) |
 | Tailwind 4 CSS-first, dos temas y shell | Implementado (M0-07) | [ADR 0010](adr/0010-two-themes-design-system.md), [ADR 0018](adr/0018-design-system-tokens-and-shell.md) |
-| Textos centralizados en español | Implementado el mecanismo; i18n completa prevista (M0-12) | [ADR 0012](adr/0012-i18n-centralized-roadmap.md) |
+| Textos centralizados y base de i18n | Implementado (M0-12): locale por petición, catálogo tipado y formatos `Intl`; traducciones completas en B-05 | [ADR 0012](adr/0012-i18n-centralized-roadmap.md), [guía](internacionalizacion.md) |
 
 ## 2. Capas y directorios
 
@@ -50,10 +50,10 @@ la presentación no contiene reglas de negocio: los componentes pintan y delegan
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
 | `src/app/` | Rutas del App Router, layouts, metadatos y route handlers. | Todo lo demás |
-| `src/components/` | Presentación reutilizable: `ui/` base, `shell/` navegación, `theme/` y `design-system/`. | `lib/`, `messages/`, otros componentes |
+| `src/components/` | Presentación reutilizable: `ui/` base, `shell/` navegación, `theme/`, `i18n/` (proveedor de idioma) y `design-system/`. | `lib/`, `messages/`, otros componentes |
 | `src/modules/` | Lógica de dominio por área (fichas, mapas, manuscritos, juego…). Hoy solo el README: se llena en M1–M4. | `lib/`, tipos de dominio |
-| `src/lib/` | Utilidades puras y acceso a infraestructura: `db/`, `env/`, `storage/`, helpers. | Nada de React |
-| `src/messages/` | Textos de interfaz centralizados y tipados (`es.ts`). | — |
+| `src/lib/` | Utilidades puras y acceso a infraestructura: `db/`, `env/`, `i18n/`, `storage/`, helpers. | Nada de React como componente; `i18n/server.ts` usa `cache()` de React. |
+| `src/messages/` | Contrato tipado (`translator.ts`), catálogo español (`es.ts`) y registro por idioma (`index.ts`). | — |
 | `src/styles/` | Tokens de diseño: `palette.css` (única fuente de colores), `scales.css` y `semantic.css`. | — |
 | `tests/` | `unit/` (Vitest + Testing Library), `db/` (integración y RLS) y `e2e/` (Playwright + axe). | Código de `src/` |
 | `scripts/` | Utilidades de mantenimiento: `clean.mjs` y `db/` (ping, seed, reset, verify). | Código de `src/lib/db` |
@@ -66,7 +66,9 @@ Reglas de dependencia:
 2. **`src/lib/db` solo se importa desde servidor, scripts y tests.** Las claves
    privilegiadas nunca llegan al cliente.
 3. **Los textos visibles viven en `src/messages/`.** No se escriben cadenas de
-   interfaz en componentes (regla 16 de `AGENTS.md`).
+   interfaz en componentes (regla 16 de `AGENTS.md`). El servidor los lee con
+   `getI18n()` y el cliente con `useI18n()`; un `'use client'` solo puede
+   importar **tipos** de `@/messages/translator`.
 4. **Los tokens viven en `src/styles/tokens/`.** Los componentes usan utilidades
    semánticas, nunca la paleta cruda ni variantes `dark:`.
 
@@ -106,6 +108,28 @@ Hoy solo existe la parte de infraestructura:
 - **Presentación.** El shell (`topbar`, rail, barra inferior, migajas) y los
   componentes base están en `src/components/`; `/design-system` los documenta en
   vivo.
+- **Internacionalización.** `src/lib/i18n/` resuelve el locale por petición
+  (cookie `wc-locale` > `Accept-Language` > `es`; `profiles.locale` llegará con
+  M1-06), expone formatos `Intl` y una Server Action para cambiar de idioma. El
+  detalle está en [`docs/internacionalizacion.md`](internacionalizacion.md).
+
+Resolución del idioma y dependencia servidor/cliente:
+
+```text
+Petición
+  → src/lib/i18n/server.ts: getLocale() lee cookie wc-locale y Accept-Language
+      (profiles.locale llegará con M1-06) y resolveLocale() valida contra availableLocales
+  → getMessages(locale) + createTranslator() + createFormatters(locale)
+  → layout raíz: <html lang>, generateMetadata y <LocaleProvider locale messages …>
+  → componentes de servidor: getI18n() (memoizado con cache() por petición)
+  → componentes cliente: useI18n() / useMessages() / useLocale()
+      setLocale() → Server Action src/lib/i18n/actions.ts → cookie HttpOnly + revalidatePath
+```
+
+`src/messages/index.ts` y `src/lib/i18n/server.ts` están marcados con
+`server-only`. Un `'use client'` solo puede importar **tipos** de
+`@/messages/translator` y las utilidades puras de `src/lib/i18n/format.ts` y
+`src/lib/i18n/locale.ts`; el catálogo le llega serializado desde el proveedor.
 
 ## 4. Rutas actuales
 

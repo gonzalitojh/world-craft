@@ -39,6 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { contrastRatio, formatContrastRatio } from '@/lib/contrast';
+import { getI18n } from '@/lib/i18n/server';
 import { getBreadcrumbs } from '@/lib/navigation';
 import {
   PALETTE,
@@ -46,7 +47,7 @@ import {
   type ResolvedThemeName,
 } from '@/lib/theme-palette';
 import { cn } from '@/lib/utils';
-import { getMessages, t, type MessageKey } from '@/messages';
+import type { MessageKey } from '@/messages/translator';
 
 /**
  * Página viva del sistema de diseño (issue #8, fase 3).
@@ -61,9 +62,11 @@ import { getMessages, t, type MessageKey } from '@/messages';
  * `palette.css`: no hay números escritos a mano.
  */
 
-export const metadata: Metadata = {
-  title: t('nav.design'),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+
+  return { title: t('nav.design') };
+}
 
 /** Secciones ancladas, en el orden del documento. */
 const SECTIONS: ReadonlyArray<{ id: string; labelKey: MessageKey }> = [
@@ -282,18 +285,24 @@ const STATES: ReadonlyArray<{
 ];
 
 /** Etiqueta de estado con su icono decorativo; el texto nunca falta. */
-function StateBadge({ state }: { state: (typeof STATES)[number] }): ReactNode {
+function StateBadge({
+  state,
+  label,
+}: {
+  state: (typeof STATES)[number];
+  label: string;
+}): ReactNode {
   const Icon = state.icon;
 
   return (
     <Badge variant={state.variant} icon={<Icon aria-hidden="true" />}>
-      {t(state.labelKey)}
+      {label}
     </Badge>
   );
 }
 
-export default function DesignSystemPage() {
-  const messages = getMessages();
+export default async function DesignSystemPage() {
+  const { t, locale, messages } = await getI18n();
   const design = messages.design;
 
   return (
@@ -447,7 +456,7 @@ export default function DesignSystemPage() {
                           color: PALETTE[theme][pair.foreground],
                         }}
                       >
-                        Aa {formatContrastRatio(ratio)}
+                        Aa {formatContrastRatio(ratio, locale)}
                       </span>
                     </li>
                   );
@@ -604,7 +613,11 @@ export default function DesignSystemPage() {
           note={design.states.note}
         >
           {STATES.map((state) => (
-            <StateBadge key={state.id} state={state} />
+            <StateBadge
+              key={state.id}
+              state={state}
+              label={t(state.labelKey)}
+            />
           ))}
         </Specimen>
       </DesignSection>
@@ -981,7 +994,11 @@ export default function DesignSystemPage() {
         >
           <div className="flex min-w-0 flex-wrap gap-2">
             {STATES.map((state) => (
-              <StateBadge key={state.id} state={state} />
+              <StateBadge
+                key={state.id}
+                state={state}
+                label={t(state.labelKey)}
+              />
             ))}
           </div>
         </Specimen>

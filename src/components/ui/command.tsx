@@ -4,9 +4,9 @@ import { Search } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { t } from '@/messages';
 
 /**
  * Paleta de comandos global.
@@ -87,6 +87,8 @@ export function CommandDialogContent({
   onCloseAutoFocus,
   className,
 }: CommandDialogContentProps) {
+  const { t } = useI18n();
+
   return (
     <DialogContent
       title={t('command.title')}
@@ -112,6 +114,7 @@ export function CommandPaletteDialog({
   triggerLabel,
   className,
 }: CommandPaletteDialogProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const trigger = triggerLabel ?? t('a11y.openCommandPalette');
   const toggle = useCallback(() => {

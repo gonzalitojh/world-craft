@@ -8,7 +8,8 @@ import {
   probeDatabase,
   type DatabaseStatus,
 } from '@/lib/health';
-import { t, type MessageKey } from '@/messages';
+import { getI18n } from '@/lib/i18n/server';
+import type { MessageKey } from '@/messages/translator';
 
 // La comprobación se renderiza en cada petición: no se cachea un estado viejo.
 export const dynamic = 'force-dynamic';
@@ -44,13 +45,29 @@ const databasePresentation: Record<
 };
 
 export default async function HealthPage() {
-  const database = await probeDatabase();
+  const [{ t, format }, database] = await Promise.all([
+    getI18n(),
+    probeDatabase(),
+  ]);
   const payload = buildHealthPayload(database);
   const available = database === 'available';
   const commitSha = serverEnv.VERCEL_GIT_COMMIT_SHA;
   const commit = commitSha ? commitSha.slice(0, 7) : t('health.commitUnknown');
   const databaseInfo = databasePresentation[database];
   const DatabaseIcon = databaseInfo.icon;
+  // La página y `/api/health` comparten la misma referencia UTC (cada uno
+  // genera su instante); aquí se presenta con `Intl` y nombre de zona, no en
+  // crudo.
+  const checkedAt = format.dateTime(payload.timestamp, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  });
 
   return (
     <PageShell className="max-w-3xl">
@@ -108,7 +125,9 @@ export default async function HealthPage() {
           <dt className="font-medium sm:w-32 sm:shrink-0">
             {t('health.checkedAtLabel')}
           </dt>
-          <dd className="min-w-0 break-all font-mono">{payload.timestamp}</dd>
+          <dd className="min-w-0 break-words">
+            <time dateTime={payload.timestamp}>{checkedAt}</time>
+          </dd>
         </div>
         <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
           <dt className="font-medium sm:w-32 sm:shrink-0">

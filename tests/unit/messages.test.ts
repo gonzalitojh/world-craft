@@ -1,7 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
-import { defaultLocale, getMessages, t, type MessageKey } from '@/messages';
+import { defaultLocale } from '@/lib/i18n/locale';
+import {
+  availableLocales,
+  catalogs,
+  getMessages,
+  t,
+  type MessageKey,
+} from '@/messages';
 import { es } from '@/messages/es';
+import {
+  collectLeaves,
+  createTranslator,
+  diffCatalogs,
+} from '@/messages/translator';
+
+import {
+  catalogWithoutHomeTitle,
+  tinyCatalog,
+} from '../fixtures/i18n/catalog-incomplete';
+import {
+  PSEUDO_CLOSE,
+  PSEUDO_OPEN,
+  pseudoMessages,
+  pseudoText,
+} from '../fixtures/i18n/pseudo';
 
 /** Recorre el catálogo y devuelve todos los textos con su ruta. */
 function collectTexts(
@@ -65,6 +88,73 @@ describe('mensajes', () => {
         'loading',
         'notFound',
       ]),
+    );
+  });
+});
+
+describe('registro de catálogos', () => {
+  it('solo ofrece idiomas con catálogo completo', () => {
+    expect(availableLocales).toEqual(['es']);
+
+    for (const locale of availableLocales) {
+      expect(catalogs[locale]).toBeDefined();
+    }
+  });
+
+  it('no registra stubs para los idiomas del modelo sin traducir', () => {
+    expect(catalogs.en).toBeUndefined();
+    expect(catalogs.it).toBeUndefined();
+  });
+
+  it('cae al catálogo base si se pide un idioma sin catálogo', () => {
+    expect(getMessages('en')).toBe(es);
+  });
+});
+
+describe('auditoría de catálogos', () => {
+  it('collectLeaves recorre objetos y listas', () => {
+    const paths = collectLeaves(es).map((leaf) => leaf.path);
+
+    expect(paths).toContain('home.title');
+    expect(paths).toContain('home.pillars.0.title');
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it('diffCatalogs detecta la clave ausente', () => {
+    expect(diffCatalogs(es, catalogWithoutHomeTitle)).toEqual(['home.title']);
+  });
+
+  it('diffCatalogs señala todo lo que falta en un catálogo mínimo', () => {
+    const missing = diffCatalogs(es, tinyCatalog);
+
+    expect(missing).toContain('meta.description');
+    expect(missing).toContain('home.pillars.0.title');
+    expect(missing).not.toContain('meta.title');
+    expect(missing).not.toContain('home.title');
+  });
+
+  it('un catálogo completo no tiene diferencias', () => {
+    expect(diffCatalogs(es, es)).toEqual([]);
+    expect(diffCatalogs(es, pseudoMessages)).toEqual([]);
+  });
+});
+
+describe('pseudo-catálogo', () => {
+  it('usa marcas distintas y cierra con U+27E7', () => {
+    expect(PSEUDO_OPEN).toBe('\u27e6');
+    expect(PSEUDO_CLOSE).toBe('\u27e7');
+    expect(PSEUDO_OPEN).not.toBe(PSEUDO_CLOSE);
+    expect(pseudoText('hola')).toBe('\u27e6hola\u27e7');
+  });
+});
+
+describe('createTranslator', () => {
+  it('liga el traductor al catálogo recibido', () => {
+    const translate = createTranslator(pseudoMessages);
+
+    expect(translate('home.title')).toBe(pseudoText(es.home.title));
+    expect(translate('a11y.skipToContent')).toBe(
+      pseudoText(es.a11y.skipToContent),
     );
   });
 });

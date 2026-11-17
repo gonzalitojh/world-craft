@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { NavIcon } from '@/components/shell/nav-icon';
 import {
   Tooltip,
@@ -18,7 +19,6 @@ import {
   type NavItem,
 } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
-import { t } from '@/messages';
 
 /**
  * Rail lateral del espacio de trabajo.
@@ -38,6 +38,7 @@ import { t } from '@/messages';
 const GROUPS: readonly NavGroup[] = ['main', 'upcoming'];
 
 export function AppRail() {
+  const { t } = useI18n();
   const pathname = usePathname() ?? '/';
 
   return (
@@ -71,6 +72,7 @@ type RailEntryProps = {
 };
 
 function RailEntry({ item, pathname }: RailEntryProps) {
+  const { t } = useI18n();
   const label = t(item.labelKey);
   const active = isNavItemActive(item, pathname);
   const base =

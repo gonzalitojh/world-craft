@@ -1,5 +1,6 @@
 'use client';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -8,7 +9,7 @@ import {
   DrawerTrigger,
   type DrawerSide,
 } from '@/components/ui/drawer';
-import { t, type MessageKey } from '@/messages';
+import type { MessageKey } from '@/messages/translator';
 
 /** Un disparador por cada borde del panel. */
 const SIDES: ReadonlyArray<{ side: DrawerSide; labelKey: MessageKey }> = [
@@ -19,6 +20,8 @@ const SIDES: ReadonlyArray<{ side: DrawerSide; labelKey: MessageKey }> = [
 
 /** Isla interactiva del panel lateral: los tres lados del componente. */
 export function DrawerDemo() {
+  const { t } = useI18n();
+
   return (
     <div className="flex min-w-0 flex-wrap gap-2">
       {SIDES.map(({ side, labelKey }) => (

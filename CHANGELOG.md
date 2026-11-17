@@ -12,6 +12,15 @@ cambios se acumulan en «Sin publicar» hasta la primera versión estable.
 
 ### Añadido
 
+- Base de internacionalización (issue
+  [#42](https://github.com/gonzalitojh/world-craft/issues/42)): contrato tipado
+  de mensajes, catálogo único sin stubs, resolución del idioma por petición
+  (`profiles.locale` > cookie `wc-locale` > `Accept-Language` > `es`),
+  `LocaleProvider` para servidor y cliente, formatos con `Intl`, Server Action
+  `setLocale` con cookie HttpOnly y guía en
+  [`docs/internacionalizacion.md`](docs/internacionalizacion.md). Incluye
+  auditoría estática contra textos hardcodeados e imports del catálogo en
+  componentes cliente.
 - Healthcheck real y continuidad de Supabase (issue
   [#41](https://github.com/gonzalitojh/world-craft/issues/41)): `/api/health`
   consulta la base, distingue disponible de pausado y devuelve 200/503; la página
@@ -46,6 +55,10 @@ cambios se acumulan en «Sin publicar» hasta la primera versión estable.
 
 ### Cambiado
 
+- El layout raíz resuelve el idioma de la petición y pasa a ser dinámico; el
+  shell y los componentes base leen los textos con `useI18n`/`getI18n`, y la
+  hora de `/health` se presenta con `Intl` en UTC dentro de `<time dateTime>`
+  (issue [#42](https://github.com/gonzalitojh/world-craft/issues/42)).
 - `/health` y `/api/health` dejan de ser una comprobación superficial: informan
   de la disponibilidad de Supabase y publican un contrato JSON nuevo con
   `status`, `database` y `timestamp` (issue

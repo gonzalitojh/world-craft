@@ -1,8 +1,9 @@
 'use client';
 
+import { useI18n } from '@/components/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import { useToast, type ToastVariant } from '@/components/ui/toast';
-import { getMessages, t, type MessageKey } from '@/messages';
+import type { MessageKey } from '@/messages/translator';
 
 /**
  * Isla interactiva de los avisos.
@@ -45,7 +46,7 @@ const VARIANTS: ReadonlyArray<{
 
 export function ToastDemo() {
   const { toast } = useToast();
-  const messages = getMessages();
+  const { messages, t } = useI18n();
   const labels = messages.design.components.toast;
 
   return (
