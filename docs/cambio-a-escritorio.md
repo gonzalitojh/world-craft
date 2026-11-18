@@ -53,9 +53,9 @@ El historial web anterior se conserva en el historial de git y no se restaura.
 | `src/modules/README.md` | Descripción de módulos con infraestructura Supabase/R2. |
 | `src/styles/**` | Tokens, base y movimiento del sistema de diseño web. |
 
-La carpeta `src/` se reconstruye con `src/shared/app-info.ts` como único módulo
-compartido; el scaffold de Electron creará `src/main/`, `src/preload/` y
-`src/renderer/`.
+La carpeta `src/` se reconstruye con `src/shared/app-info.ts` como módulo
+compartido; el scaffold de Electron (#62) ya creó `src/main/`, `src/preload/` y
+`src/renderer/`, y los módulos de producto se añaden con sus issues.
 
 ### 2.2 Persistencia PostgreSQL
 

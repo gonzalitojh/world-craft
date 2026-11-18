@@ -103,7 +103,7 @@ Antes de dar una tarea por terminada se comprueba la Definition of Done de
 [`AGENTS.md`](AGENTS.md):
 
 - Criterios de aceptación cumplidos.
-- Typecheck, lint, tests y build en verde cuando existan.
+- Typecheck, lint, tests y build en verde.
 - QA y revisión de seguridad superadas.
 - Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página, si
   hay UI.
@@ -121,25 +121,47 @@ Antes de dar una tarea por terminada se comprueba la Definition of Done de
 Requisitos: Node 22 LTS y pnpm vía Corepack (`corepack enable`). La primera vez,
 instala las dependencias con `pnpm install`.
 
-Mientras no exista el scaffold de Electron, los checks disponibles son:
-
 ```bash
+pnpm dev          # ventana de Electron en desarrollo
+pnpm build        # compila main, preload y renderer en out/
+pnpm start        # previsualiza el build de producción
+pnpm verify:build # valida artefactos, CSP y ausencia de URLs remotas
+pnpm clean        # borra out/ y otros artefactos locales
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm format:check
 ```
 
-Cuando existan, se añadirán `pnpm build`, `pnpm test:e2e` y los comandos de
-migración; no se documentan como disponibles antes de tiempo.
+`pnpm build` escribe `out/main/index.cjs`, `out/preload/index.cjs` y
+`out/renderer/index.html`; **no genera un instalador**. `pnpm start` compila y
+abre el build de producción (se puede omitir la compilación con
+`--skipBuild`). `test:integration`, `test:e2e` y los comandos de empaquetado se
+añadirán con sus issues y no se documentan como disponibles antes de tiempo.
 
 - `lint`, `typecheck` y `test` son **required checks**: una PR no se fusiona si
   fallan.
+- El job `build` (`pnpm build` y `pnpm verify:build`) ya se ejecuta en la CI,
+  pero no es required hasta la issue #69.
 - `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear.
-- En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`.
+- En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
+  (por ejemplo `pnpm.cmd typecheck`).
 - Para corregir el formato: `pnpm format`. En Windows, `format:check` puede fallar
   por finales de línea CRLF de archivos antiguos; comprueba solo los archivos que
   has tocado.
+
+## Dependencias
+
+- El renderer y el preload se compilan con Vite; React y las herramientas de
+  build viven en `devDependencies`.
+- Una dependencia que el proceso principal necesite en tiempo de ejecución y no
+  se pueda empaquetar (por ejemplo, un módulo nativo) va en `dependencies` y se
+  justifica con tamaño, licencia, mantenimiento, seguridad y alternativa
+  gratuita.
+- No se duplica funcionalidad ya disponible en el stack ni se añaden librerías
+  propietarias o con licencias incompatibles.
+- El lockfile se versiona y cualquier cambio de dependencias explica el motivo
+  en la PR.
 
 ## Seguridad y coste
 
@@ -147,12 +169,26 @@ migración; no se documentan como disponibles antes de tiempo.
   privadas. Los `.env*` no se versionan.
 - El renderer no accede a Node, al sistema de archivos ni a SQLite; todo pasa por
   la API tipada del preload.
-- Todo canal IPC está en una allowlist y valida la entrada con Zod.
+- Cuando exista IPC (issue #63), todo canal estará en una allowlist y validará la
+  entrada con Zod.
 - No se carga contenido remoto en la ventana y la CSP es estricta en producción.
 - No se añaden servicios de pago ni dependencias injustificadas: el coste
   objetivo es 0 €/mes.
 - Las vulnerabilidades se reportan de forma privada según
   [`SECURITY.md`](SECURITY.md).
+
+### Invariantes que no se relajan sin un ADR
+
+- `contextIsolation`, `sandbox`, `nodeIntegration: false` y `webSecurity: true`
+  en todas las ventanas; el renderer nunca recibe Node ni `ipcRenderer`.
+- El preload solo expone funciones concretas del contrato de
+  `src/shared/contracts/`; nunca un `invoke` genérico.
+- CSP estricta en producción, sin `unsafe-eval` ni `unsafe-inline`; en
+  desarrollo solo se permite loopback para Vite y su recarga en caliente.
+- Nada de contenido remoto: se bloquean navegación, ventanas nuevas, webviews,
+  descargas y peticiones HTTP(S)/WS remotas.
+- `pnpm verify:build` debe seguir en verde: comprueba los artefactos, la CSP y
+  la ausencia de URLs remotas.
 
 ## Comandos básicos
 

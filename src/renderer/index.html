@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Título estático de respaldo. El renderer lo fija con los mensajes tipados
+      en `src/renderer/main.tsx`.
+    -->
+    <title>World Craft</title>
+    <!--
+      La CSP se inyecta desde `electron.vite.config.ts` con
+      `injectTo: 'head-prepend'`, antes de cualquier script.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>

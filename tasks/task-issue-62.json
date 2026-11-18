@@ -1,0 +1,86 @@
+{
+  "title": "Scaffold de Electron, Vite, React y TypeScript",
+  "description": "Scaffold mínimo, seguro y reproducible de la aplicación de escritorio: electron-vite con procesos main, preload y renderer, BrowserWindow segura, scripts de desarrollo y build, y estructura de carpetas del ADR 0014. No incluye SQLite, diseño visual ni funciones de producto.",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 62,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/62",
+    "title": "Scaffold de Electron, Vite, React y TypeScript"
+  },
+  "acceptance_criteria": [
+    "pnpm dev abre una ventana de World Craft y pnpm build genera los artefactos de los tres procesos.",
+    "El renderer no tiene acceso a Node, require ni rutas absolutas; el preload solo expone la API mínima.",
+    "TypeScript estricto y lint pasan sin errores en el scaffold.",
+    "No se carga contenido remoto y la ventana aplica la configuración de seguridad del ADR 0004.",
+    "La estructura de carpetas coincide con el ADR 0014 y está documentada."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página.",
+    "Los dos temas (Claro y Oscuro) comprobados si el scaffold define estilos.",
+    "Accesibilidad revisada cuando exista interfaz visible.",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Funcionamiento offline comprobado: la ventana arranca sin red.",
+    "Manual de usuario actualizado si el cambio es visible.",
+    "ADR actualizado o creado si hay una decisión arquitectónica relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas y contenido no confiable.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario, o PR fusionada en dev si ya se publicó."
+  ],
+  "plan": "Plan aprobado (task-architect, 2026-11-18). Arquitectura: electron-vite 6 con Vite 8, React 19 y TypeScript 5.9 estricto; main y preload en CJS (.cjs) por sandbox y type module, renderer en ESM. Dependencias nuevas como devDependencies: electron 45.3.4 exacto, electron-vite, vite, @vitejs/plugin-react, react, react-dom, @types/react, @types/react-dom, eslint-plugin-react-hooks y globals; autorizar builds de electron y esbuild en pnpm-workspace.yaml antes de instalar. Estructura: src/main (index, window, window-options, security/content-security-policy, navigation, guards), src/preload/index, src/renderer (index.html, main.tsx, App.tsx, env.d.ts, messages/es.ts, styles/base.css) y src/shared/contracts/world-craft-api.ts. Seguridad ADR 0004: contextIsolation, sandbox, nodeIntegration false, webSecurity true, webviewTag false, app.enableSandbox, preload con contextBridge congelado que solo expone worldCraft.appInfo, CSP estricta inyectada en build, CSP de desarrollo solo loopback para HMR, bloqueo de will-navigate/will-redirect/window.open/webview, permisos denegados y peticiones http(s) remotas canceladas. Sin IPC ni Zod (issue #63), sin SQLite (#64), sin sistema de diseño (#65). Scripts dev, build, start, verify:build, clean, typecheck por proyecto (tsconfig.node y tsconfig.web, web sin tipos Node) y lint con globals y restricciones de imports en renderer. Pruebas unitarias de opciones de ventana, navegación, CSP y API del preload, más scripts/check-build.mjs que verifica los tres artefactos, la CSP y la ausencia de URLs remotas. CI añade job build con pnpm build y verify:build. Documentación en la puerta posterior: README, CONTRIBUTING, arquitectura, manual, plan de pruebas y CHANGELOG; sin ADR nuevo porque implementa ADR 0001/0004/0014. Datos: N/A, no se escribe en userData ni hay migraciones. Verificación manual pendiente del usuario: ventana a 1024/1280/1600, temas claro/oscuro, DevTools sin require/process, navegación externa bloqueada y arranque sin red.",
+  "validation": {
+    "result": "pending-user-review",
+    "date": "2026-11-18",
+    "notes": "Issue adoptada con label ai, sin needs-decision. Dependencia M0-01 (#61) cerrada. Variante recomendada high; variante usada high durante toda la sesión. QA PASS, seguridad PASS sin HIGH introducidos y documentación actualizada (README, CONTRIBUTING, arquitectura, manual, plan de pruebas, CHANGELOG). Commit local en la rama chore/issue-62-electron-scaffold creada desde origin/dev: sin push y sin PR. Verificaciones en verde: lint, typecheck, 25 tests, build, verify:build, format:check, JSON de tasks válido y git diff --check. Pendiente la revisión visual final del usuario: ventana a 1024/1280/1600 sin scroll horizontal, temas claro y oscuro, DevTools sin require/process, navegación externa bloqueada y arranque sin red."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA independiente (2026-11-18) sobre rama chore/issue-62-electron-scaffold. Ejecutados lint, typecheck, test (25 tras las correcciones), build, verify:build (incluida prueba negativa con CSP ausente y URL remota), format:check y git diff --check: todo en verde. Verificados los cinco criterios: ventana real en dev y preview, renderer sin require/process/module/Buffer/global, API congelada solo con appInfo, typecheck web sin tipos Node, ESLint bloquea imports de Electron/Node/main/preload, CSP de producción sin unsafe-* y antes de scripts, guards de navegación/redirect/window.open/webview, permisos denegados, peticiones remotas canceladas, URL dev solo loopback, DevTools desactivadas empaquetado. Ventana a 1024/1280/1600 sin scroll horizontal en ambos temas, contraste AA (15,17:1 y 6,84:1 claro; 15,02:1 y 8,44:1 oscuro), un h1, foco visible, sin animaciones y prefers-reduced-motion. Sin dependencias innecesarias; audit HIGH de picomatch preexistente y dev-only. Datos: N/A, no se escribe en userData ni hay migraciones. Hallazgos no bloqueantes corregidos antes de seguridad: comentario del tema provisional, cancelación ws/wss remotos, CSP antes del preámbulo de React Refresh, verify:build ampliado a main/preload, patrones ESLint profundos, did-fail-load y minificación del renderer si procede. Queda para el usuario la revisión visual final y para issues posteriores la persistencia de tamaño/posición de ventana y el sistema de diseño definitivo."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "status": "resuelto",
+        "description": "resolveRendererTarget aceptaba ELECTRON_RENDERER_URL loopback también empaquetado; ahora se ignora cuando app.isPackaged y se carga siempre el HTML empaquetado, con test."
+      },
+      {
+        "severity": "MEDIUM",
+        "status": "aceptado-documentado",
+        "description": "minimumReleaseAgeExclude para electron@45.3.4: versión exacta, integridad en lockfile y origen oficial; se retirará la exención cuando exista versión madura."
+      },
+      {
+        "severity": "MEDIUM",
+        "status": "verificado",
+        "description": "Lockfile consistente: pnpm install --frozen-lockfile --ignore-scripts en verde."
+      },
+      {
+        "severity": "MEDIUM",
+        "status": "diferido",
+        "description": "Jobs audit, gitleaks y build no son required checks; se asignan a la issue #69 (CI de escritorio)."
+      },
+      {
+        "severity": "LOW",
+        "status": "resuelto",
+        "description": "did-fail-load ya no registra rutas absolutas; spellcheck desactivado; will-frame-navigate y will-download bloqueados; guards aplicados a todos los webContents salvo DevTools."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "CSP como meta y picomatch HIGH preexistente dev-only de vitest; no introducido por #62 ni distribuido."
+      }
+    ],
+    "notes": "Security-champion (2026-11-18): PASS sin HIGH introducidos. Revisados diff, main, preload, renderer, shared, configs, scripts, tests, CI, package.json, pnpm-workspace.yaml, lockfile por tramos y artefactos de out/. Comprobados aislamiento (contextIsolation, sandbox, nodeIntegration false, webSecurity, webviewTag false, app.enableSandbox), preload congelado sin ipcRenderer/invoke, CSP de producción sin unsafe-* y en head-prepend antes de scripts, CSP dev solo loopback, navegación/redirect/window.open/webview/frame/download bloqueados, permisos denegados, peticiones http(s)/ws(s) remotas canceladas, URL dev ignorada empaquetado, DevTools deshabilitadas empaquetado, sin secretos ni contenido remoto en artefactos, scripts clean/verify:build confinados al repo. Picomatch HIGH preexistente (vitest, dev-only) no bloquea. Limitación: el subagente no pudo ejecutar pnpm audit ni gitleaks por permisos del entorno; se ejecutaron después install --frozen-lockfile, lint, typecheck, 25 tests, build, verify:build y format:check en verde."
+  },
+  "documentation": {
+    "adr": "no aplica: implementa ADR 0001, 0004 y 0014; no hay decisión nueva",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": "no aplica"
+  }
+}

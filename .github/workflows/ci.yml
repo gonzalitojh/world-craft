@@ -49,6 +49,20 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm test
 
+  # Todavía no es required: añadirlo a la protección de `dev` corresponde a la
+  # issue #69. Comprueba que el scaffold compila y que los artefactos cumplen la
+  # CSP y no cargan contenido remoto.
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm build
+      - run: pnpm verify:build
+
   # No es required: un fallo de la acción de secretos no debe bloquear una PR
   # que no toca credenciales. Se revisa en la puerta de seguridad.
   gitleaks:

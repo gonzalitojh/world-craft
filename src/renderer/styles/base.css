@@ -1,0 +1,117 @@
+/*
+ * Estilos base del scaffold.
+ *
+ * Paleta provisional de andamiaje con tokens `--wc-*`: superficies y texto
+ * cumplen contraste AA en claro y oscuro, pero no son el sistema de diseño
+ * definitivo. El ADR 0006 define la elección de tema del usuario (Claro u
+ * Oscuro), no el modo del sistema; aquí `prefers-color-scheme` es solo el
+ * fallback temporal mientras no exista selector. La issue #65 sustituirá esta
+ * paleta por los tokens definitivos y los overrides `[data-theme="light"]` y
+ * `[data-theme="dark"]`. Sin animaciones ni recursos externos: todo funciona
+ * sin conexión.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Tema claro: papel cálido con tinta oscura. */
+  --wc-paper: #f7f3ea;
+  --wc-ink: #201d18;
+  --wc-muted: #5b5347;
+  --wc-rule: #c9bfa9;
+  --wc-focus: #1f5d8a;
+
+  --wc-font-ui: 'Segoe UI', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --wc-font-heading:
+    'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Tema oscuro: papel profundo con tinta clara. */
+    --wc-paper: #1b1917;
+    --wc-ink: #f3eddf;
+    --wc-muted: #bcb3a2;
+    --wc-rule: #4a443b;
+    --wc-focus: #8fc7ef;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--wc-paper);
+  color: var(--wc-ink);
+  font-family: var(--wc-font-ui);
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+#root {
+  min-width: 0;
+}
+
+.wc-scaffold {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  min-width: 0;
+  min-height: 100vh;
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vw, 4rem);
+}
+
+.wc-scaffold__title {
+  margin: 0;
+  font-family: var(--wc-font-heading);
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+}
+
+.wc-scaffold__lead {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--wc-muted);
+  overflow-wrap: break-word;
+}
+
+.wc-scaffold__version {
+  margin: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--wc-rule);
+  color: var(--wc-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+}
+
+:focus-visible {
+  outline: 3px solid var(--wc-focus);
+  outline-offset: 2px;
+}
+
+/* El scaffold no anima nada; la regla deja constancia del respeto al ajuste. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

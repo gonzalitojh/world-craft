@@ -2,7 +2,15 @@
 #
 # pnpm 12 bloquea por defecto los scripts de instalación de dependencias. Solo
 # se autorizan los que el tooling necesita de verdad: `esbuild` descarga o
-# enlaza su binario nativo y lo usan Vite y Vitest. Sin esta autorización,
-# `pnpm install` falla con `ERR_PNPM_IGNORED_BUILDS`.
+# enlaza su binario nativo y lo usan Vite y Vitest; `electron` descarga el
+# binario del runtime al instalar. Sin esta autorización, `pnpm install` falla
+# con `ERR_PNPM_IGNORED_BUILDS`.
 allowBuilds:
+  electron: true
   esbuild: true
+
+# `electron` se fija a una versión recién publicada que la política local de
+# antigüedad de pnpm aún no considera madura; se excluye solo esa versión para
+# que la instalación con el lockfile sea reproducible.
+minimumReleaseAgeExclude:
+  - electron@45.3.4

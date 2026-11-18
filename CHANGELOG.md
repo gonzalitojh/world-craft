@@ -20,6 +20,13 @@ primera versión estable.
   archivos eliminados y cuentas externas que hay que cerrar.
 - Tooling mínimo de calidad para el repositorio de escritorio: TypeScript
   estricto, ESLint, Prettier, Vitest, CI y Dependabot.
+- Scaffold de escritorio con Electron, electron-vite, React y TypeScript estricto
+  (#62): `pnpm dev` abre una ventana segura con una pantalla inicial provisional,
+  `pnpm build` compila los tres procesos en `out/` (todavía sin instalador),
+  `pnpm start` previsualiza el build y `pnpm verify:build` valida artefactos, CSP
+  y ausencia de URLs remotas.
+- Pruebas unitarias del scaffold (25) y job `build` en la CI, todavía no
+  required hasta #69.
 - Catálogo de GitHub de escritorio: 46 etiquetas, 7 hitos y 41 issues
   (#61–#101) con contexto, alcance, dependencias, criterios y variante.
 
@@ -45,6 +52,15 @@ primera versión estable.
 - Escaneo de secretos con `gitleaks` y auditoría de dependencias en la CI.
 - Reglas de aislamiento de Electron, allowlist IPC y validación con Zod en la
   documentación y en el proceso de revisión.
+- Ventana con `contextIsolation`, `sandbox`, `nodeIntegration: false`,
+  `webSecurity: true` y `webviewTag: false`; DevTools deshabilitadas en la
+  versión empaquetada (#62).
+- CSP estricta de producción inyectada antes de los scripts y CSP de desarrollo
+  limitada a loopback; navegación, redirecciones, ventanas nuevas, webviews y
+  descargas bloqueadas, permisos denegados y peticiones HTTP(S)/WS remotas
+  canceladas (#62).
+- Preload congelado que solo expone `window.worldCraft.appInfo`, sin
+  `ipcRenderer` ni `invoke` genérico (#62); el IPC tipado con Zod llega en #63.
 
 ## Cómo se escribe una entrada
 

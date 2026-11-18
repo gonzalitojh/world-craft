@@ -8,30 +8,32 @@ código se publica bajo licencia MIT.
 
 ## Estado
 
-**Pivote a escritorio en curso.** El repositorio ya no contiene la aplicación web
-(Next.js, Supabase, Vercel y Cloudflare R2); conserva el proceso SDD, las reglas,
-la arquitectura de escritorio y el tooling mínimo de calidad. **Todavía no hay
-una versión instalable**: el scaffold de Electron, la base SQLite y las primeras
-pantallas llegan en las issues de las fases M0 y M1.
+**Scaffold de escritorio ejecutable.** El repositorio ya contiene la base
+técnica de Electron con electron-vite, React y TypeScript estricto: `pnpm dev`
+abre una ventana segura con una pantalla inicial provisional y `pnpm build`
+compila los tres procesos en `out/`. **Todavía no hay una versión instalable**:
+no existe empaquetado NSIS ni base de datos, y las funciones de producto llegan
+con las issues de las fases M0 y M1. La pantalla actual no es el sistema de
+diseño definitivo.
 
 El inventario de lo eliminado y las cuentas externas que hay que cerrar están en
 [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md). El plan aprobado,
 en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 
-## Arquitectura objetivo
+## Stack de escritorio
 
-| Capa | Tecnología |
-|---|---|
-| Shell de escritorio | Electron + electron-vite |
-| Interfaz | React + TypeScript estricto + Vite |
-| Estilos | Tailwind CSS 4 + shadcn/ui + Radix + Lucide + Motion |
-| Base de datos | SQLite local con better-sqlite3 + Drizzle ORM |
-| Búsqueda | SQLite FTS5 |
-| Archivos | Sistema de archivos local bajo `app.getPath('userData')` |
-| Editor | Tiptap 3 |
-| Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js |
-| Instalador | electron-builder + NSIS |
-| Actualizaciones | electron-updater + GitHub Releases |
+| Capa | Tecnología | Estado |
+|---|---|---|
+| Shell de escritorio | Electron + electron-vite | Implementado (scaffold) |
+| Interfaz | React + TypeScript estricto + Vite | Implementado (scaffold) |
+| Estilos | Tailwind CSS 4 + shadcn/ui + Radix + Lucide + Motion | Previsto (#65) |
+| Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Previsto (#64) |
+| Búsqueda | SQLite FTS5 | Previsto |
+| Archivos | Sistema de archivos local bajo `app.getPath('userData')` | Previsto (#66) |
+| Editor | Tiptap 3 | Previsto (M3) |
+| Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |
+| Instalador | electron-builder + NSIS | Previsto (#68) |
+| Actualizaciones | electron-updater + GitHub Releases | Previsto (M5) |
 
 El renderer no accede a Node, al sistema de archivos ni a SQLite: usa una API
 tipada expuesta por el preload. Los detalles están en
@@ -58,20 +60,43 @@ En Windows, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
 
 ## Arranque local
 
-Mientras no exista el scaffold de Electron, el repositorio solo ofrece el
-tooling de calidad:
+Instala las dependencias una vez y usa los scripts del `package.json`:
 
 ```bash
 pnpm install
+pnpm dev          # abre la ventana de Electron en desarrollo
+pnpm build        # compila main, preload y renderer en out/
+pnpm start        # previsualiza el build de producción
+pnpm verify:build # valida artefactos, CSP y ausencia de URLs remotas
+pnpm clean        # borra out/ y otros artefactos locales
+```
+
+Los checks de calidad son:
+
+```bash
 pnpm lint
 pnpm typecheck
 pnpm test
-pnpm format:check
+pnpm format       # corrige el formato
+pnpm format:check # comprueba el formato
 ```
 
-Cuando el scaffold esté disponible, `pnpm dev` abrirá la ventana de Electron y
-`pnpm build` generará el instalador; los comandos exactos se documentarán en la
-issue que los introduzca. No inventes ni ejecutes scripts que aún no existan.
+`pnpm build` **no genera un instalador**: produce `out/main/index.cjs`,
+`out/preload/index.cjs` y `out/renderer/index.html`. El instalador NSIS llega
+con la issue del empaquetado (#68) y la carpeta `out/` no se versiona.
+
+## Seguridad del scaffold
+
+- El renderer no accede a Node, al sistema de archivos ni a Electron. El preload
+  congela y expone solo `window.worldCraft.appInfo`; el IPC tipado llega en la
+  issue #63.
+- `contextIsolation`, `sandbox`, `nodeIntegration: false`, `webSecurity: true` y
+  `webviewTag: false`; DevTools están deshabilitadas en la versión empaquetada.
+- CSP estricta de producción inyectada antes de los scripts y CSP de desarrollo
+  limitada a loopback para Vite y su recarga en caliente.
+- Navegación, redirecciones, ventanas nuevas, webviews y descargas bloqueadas;
+  permisos denegados y peticiones remotas canceladas. `pnpm verify:build` lo
+  comprueba sobre los artefactos.
 
 ## Privacidad y datos
 
@@ -91,19 +116,25 @@ El detalle está en [`docs/persistencia.md`](docs/persistencia.md) y
 
 ```text
 src/
-  shared/         Código compartido sin Node, Electron ni React
+  main/           Proceso principal: ventana, ciclo de vida y seguridad
+    security/     CSP, navegación, sesión y guards de red
+  preload/        Puente congelado que solo expone window.worldCraft
+  renderer/       React, mensajes tipados y estilos provisionales
+  shared/         Identidad y contratos sin Node, Electron ni React
+tests/unit/       Pruebas unitarias de la configuración segura
 docs/             Plan, proceso, arquitectura, persistencia, diseño y ADRs
   adr/            Decisiones de arquitectura y producto
   base-de-datos/  Esquema SQLite y migraciones
   calidad/        Plan de pruebas
 tasks/            Task files del flujo SDD
-scripts/          Utilidades de mantenimiento del repositorio
+scripts/          check-build, clean y utilidades de mantenimiento
 .github/          CI, Dependabot y plantillas de issue y PR
 .opencode/        Agentes y configuración de OpenCode
 ```
 
-Las carpetas `src/main/`, `src/preload/`, `src/renderer/` y `src/modules/` se
-crearán con el scaffold de Electron y los primeros módulos de dominio.
+Las pantallas y los módulos de producto se añadirán dentro de `src/renderer/` y
+`src/main/` con sus issues; todavía no existen `src/renderer/modules/` ni
+`src/main/db/`.
 
 ## Ramas
 
