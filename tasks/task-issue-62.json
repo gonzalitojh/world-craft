@@ -1,7 +1,7 @@
 {
   "title": "Scaffold de Electron, Vite, React y TypeScript",
   "description": "Scaffold mínimo, seguro y reproducible de la aplicación de escritorio: electron-vite con procesos main, preload y renderer, BrowserWindow segura, scripts de desarrollo y build, y estructura de carpetas del ADR 0014. No incluye SQLite, diseño visual ni funciones de producto.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 62,
@@ -82,5 +82,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": "no aplica"
+  },
+  "pr": {
+    "number": 103,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/103",
+    "title": "chore: crear scaffold de Electron, Vite y React (#62)",
+    "branch": "chore/issue-62-electron-scaffold",
+    "commit": "8e0353c"
   }
 }
