@@ -1,7 +1,7 @@
 {
   "title": "Pivote de World Craft a aplicación de escritorio",
   "description": "Tarea local de proceso y documentación: sustituye la aplicación web (Next.js, Supabase, Vercel y R2) por una aplicación de escritorio Windows con persistencia local. Reescribe reglas, proceso, agentes, plan, arquitectura, persistencia, diseño, i18n, pruebas y ADRs; elimina el código y la configuración web; actualiza el catálogo de etiquetas, hitos e issues. No implementa todavía Electron ni SQLite.",
-  "status": "review",
+  "status": "published",
   "model_variant": "max",
   "issue": {
     "number": 61,
@@ -31,13 +31,13 @@
     "Etiquetas, hitos e issues de GitHub creados y verificados contra el catálogo.",
     "Rulesets de dev y main actualizados a los checks lint, typecheck y test.",
     "Task file actualizado con el resultado real.",
-    "Rama y commit locales, sin push ni PR."
+    "Rama publicada y PR contra dev, sin keywords de cierre."
   ],
-  "plan": "1) Reescribir AGENTS.md, plan, arquitectura, proceso, agentes y variantes. 2) Crear la documentación de persistencia, esquema SQLite, migraciones, continuidad, diseño, i18n, pruebas y ADRs 0001–0015. 3) Eliminar el código y la configuración web. 4) Reducir el tooling a TypeScript, ESLint, Prettier y Vitest con un módulo compartido y su prueba. 5) Reescribir README, CONTRIBUTING, SECURITY, CHANGELOG, CI y plantilla de PR. 6) Documentar el inventario del pivote y las cuentas a cerrar. 7) Validar JSON, enlaces, lint, typecheck, tests y formato. 8) Eliminar las 45 issues web y los hitos #2–#8, sincronizar 46 etiquetas y crear los hitos #9–#15 y las issues #61–#101. 9) Verificar el catálogo remoto y preparar el commit local.",
+  "plan": "1) Reescribir AGENTS.md, plan, arquitectura, proceso, agentes y variantes. 2) Crear la documentación de persistencia, esquema SQLite, migraciones, continuidad, diseño, i18n, pruebas y ADRs 0001–0015. 3) Eliminar el código y la configuración web. 4) Reducir el tooling a TypeScript, ESLint, Prettier y Vitest con un módulo compartido y su prueba. 5) Reescribir README, CONTRIBUTING, SECURITY, CHANGELOG, CI y plantilla de PR. 6) Documentar el inventario del pivote y las cuentas a cerrar. 7) Validar JSON, enlaces, lint, typecheck, tests y formato. 8) Eliminar las 45 issues web y los hitos #2–#8, sincronizar 46 etiquetas y crear los hitos #9–#15 y las issues #61–#101. 9) Verificar el catálogo remoto y preparar el commit local. 10) Publicar la rama y abrir la PR contra dev, sin keywords de cierre.",
   "validation": {
     "result": "user-approved",
     "date": "2026-11-18",
-    "notes": "El usuario autorizó el pivote a escritorio, la eliminación de issues obsoletas (incluidas las cerradas), la retirada de modelos forzados de los agentes y el cierre posterior de las cuentas externas por su cuenta. El trabajo termina en local, sin push ni PR."
+    "notes": "El usuario autorizó el pivote a escritorio, la eliminación de issues obsoletas (incluidas las cerradas), la retirada de modelos forzados de los agentes, la actualización de los rulesets y la publicación de la rama y la PR contra dev. El cierre de las cuentas externas corre por su cuenta."
   },
   "qa": {
     "result": "PASS",
@@ -53,5 +53,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 102,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/102",
+    "title": "docs: pivotar World Craft a aplicación de escritorio",
+    "branch": "docs/desktop-pivot",
+    "commit": "b79bb41"
   }
 }
