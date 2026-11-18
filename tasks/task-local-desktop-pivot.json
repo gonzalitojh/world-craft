@@ -1,0 +1,57 @@
+{
+  "title": "Pivote de World Craft a aplicación de escritorio",
+  "description": "Tarea local de proceso y documentación: sustituye la aplicación web (Next.js, Supabase, Vercel y R2) por una aplicación de escritorio Windows con persistencia local. Reescribe reglas, proceso, agentes, plan, arquitectura, persistencia, diseño, i18n, pruebas y ADRs; elimina el código y la configuración web; actualiza el catálogo de etiquetas, hitos e issues. No implementa todavía Electron ni SQLite.",
+  "status": "review",
+  "model_variant": "max",
+  "issue": {
+    "number": 61,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/61",
+    "title": "Pivote a escritorio: documentación, agentes y limpieza del repositorio web"
+  },
+  "acceptance_criteria": [
+    "AGENTS.md describe una aplicación de escritorio Windows, sin requisitos web, móviles ni responsive.",
+    "El plan, la arquitectura, la persistencia y las migraciones describen Electron, SQLite y app.getPath('userData').",
+    "El proceso SDD, las etiquetas, los hitos y las variantes de modelo están adaptados a escritorio.",
+    "Los ocho agentes de .opencode/agents/ no tienen model: fijado y no contienen referencias a Supabase, R2, Vercel ni responsive web.",
+    "El código, las migraciones PostgreSQL, las pruebas y la configuración web se han eliminado del repositorio.",
+    "El tooling mínimo (lint, typecheck, test y formato) funciona sin Next.js ni dependencias web.",
+    "Existe docs/cambio-a-escritorio.md con los archivos eliminados, las issues retiradas y las cuentas externas a cerrar.",
+    "El manual de usuario mantiene todas las funciones como previstas y no presenta nada como disponible.",
+    "No hay secretos, credenciales, correos reales ni servicios de pago en el cambio."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests y formato en verde.",
+    "JSON de tasks válido y enlaces Markdown locales resueltos.",
+    "Ventana de escritorio y dos temas documentados en las reglas y en el sistema de diseño.",
+    "Preservación de datos, copias y restauración documentadas y reflejadas en la Definition of Done.",
+    "Seguridad Electron documentada: aislamiento, IPC tipado, CSP y protocolo de assets.",
+    "Manual de usuario revisado; sin funciones nuevas visibles que presentar como disponibles.",
+    "ADRs 0001–0015 creados y registrados en el índice.",
+    "Etiquetas, hitos e issues de GitHub creados y verificados contra el catálogo.",
+    "Rulesets de dev y main actualizados a los checks lint, typecheck y test.",
+    "Task file actualizado con el resultado real.",
+    "Rama y commit locales, sin push ni PR."
+  ],
+  "plan": "1) Reescribir AGENTS.md, plan, arquitectura, proceso, agentes y variantes. 2) Crear la documentación de persistencia, esquema SQLite, migraciones, continuidad, diseño, i18n, pruebas y ADRs 0001–0015. 3) Eliminar el código y la configuración web. 4) Reducir el tooling a TypeScript, ESLint, Prettier y Vitest con un módulo compartido y su prueba. 5) Reescribir README, CONTRIBUTING, SECURITY, CHANGELOG, CI y plantilla de PR. 6) Documentar el inventario del pivote y las cuentas a cerrar. 7) Validar JSON, enlaces, lint, typecheck, tests y formato. 8) Eliminar las 45 issues web y los hitos #2–#8, sincronizar 46 etiquetas y crear los hitos #9–#15 y las issues #61–#101. 9) Verificar el catálogo remoto y preparar el commit local.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-18",
+    "notes": "El usuario autorizó el pivote a escritorio, la eliminación de issues obsoletas (incluidas las cerradas), la retirada de modelos forzados de los agentes y el cierre posterior de las cuentas externas por su cuenta. El trabajo termina en local, sin push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Checklist documental: JSON válido, enlaces y rutas revisados, sin referencias a servicios web ni a scripts inexistentes. Se comprueban lint, typecheck, test y formato tras reducir el tooling. GitHub: 45 issues web eliminadas (#1–#44 y #48), hitos #2–#8 eliminados, 46 etiquetas sincronizadas y área auth borrada; hitos #9–#15 e issues #61–#101 creados y verificados (41 abiertas, labels y hitos correctos, #61 en needs-review, #98–#101 en future, #99/#101 con needs-decision). Los rulesets protect-dev y protect-main se actualizaron a lint, typecheck y test; protect-main conserva el bypass del propietario. La ventana 1024/1280/1600 y los dos temas quedan documentados para las tareas de UI; esta tarea no añade pantallas."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Sin secretos ni credenciales en el diff. Se elimina .env.local del árbol de trabajo y se documentan las claves a rotar y las cuentas a cerrar. Los guardrails de OpenCode se mantienen: push, PR, gh api, operaciones destructivas y lectura de .env siguen pidiendo confirmación."
+  },
+  "documentation": {
+    "adr": "docs/adr/README.md",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": "docs/agentes.md"
+  }
+}

@@ -1,122 +1,69 @@
-# ADRs de World Craft
+# Registro de decisiones de arquitectura (ADR)
 
-> **Estado:** vigente desde el 14/11/2026 (issue
-> [#4](https://github.com/gonzalitojh/world-craft/issues/4), M0-03).
-> **Ámbito:** decisiones de arquitectura, tecnología y producto con
-> consecuencias técnicas.
-> **Origen:** [`docs/plan-desarrollo.md`](../plan-desarrollo.md) §3.2 (D1–D17) y
-> [`docs/registro-decisiones.md`](../registro-decisiones.md) (D-001–D-017).
+> **Estado:** serie vigente desde el 18/11/2026 para la aplicación de escritorio.
+> **Ámbito:** decisiones arquitectónicas y de producto con consecuencias
+> técnicas. El histórico de la etapa web se conserva en git y no se mantiene.
 
-Este directorio conserva el **porqué** de las decisiones que sostienen World
-Craft. El plan define el alcance; el registro de decisiones conserva el
-histórico de la conversación; los ADRs son el registro durable que evita
-revertir una decisión sin contexto.
+## 1. Qué es un ADR
 
-## Cómo se usa este índice
+Un ADR documenta una decisión importante: el contexto, la decisión, las
+alternativas, las consecuencias y los riesgos. Un ADR aceptado **no se edita**
+para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
+[`0000-template.md`](0000-template.md).
 
-- **Un ADR, una decisión o un grupo coherente de subdecisiones.** Si una decisión
-  cambia, no se reescribe el ADR aceptado: se crea otro que lo superseda.
-- **Estados permitidos:** `propuesto`, `aceptado` y `supersedido por ADR NNNN`.
-  Los 13 ADRs fundacionales están `aceptados` porque el usuario cerró las
-  decisiones el 12/11/2026. Los ADRs 0014, 0015 y 0017 también están
-  `aceptados`: recogen las decisiones del 14/11/2026 sobre visibilidad y
-  protección de ramas, coste de contexto y scaffold de Next.js con su contrato
-  de entorno. El ADR 0018 también está `aceptado`: desarrolla el sistema de
-  diseño, los tokens y el shell aprobados el 15/11/2026. El ADR 0019 también está
-  `aceptado`: fija el modelo de datos, las migraciones y la RLS aprobados el
-  15/11/2026. El ADR 0020 está `aceptado`: registra la subida directa firmada a
-  R2 y la finalización en servidor implementadas el 16/11/2026. El ADR 0016 está `supersedido por ADR 0017`, que conserva sus
-  subdecisiones de Node, pnpm, CI y seguridad de dependencias.
-- **Numeración:** cuatro dígitos y slug en inglés kebab-case
-  (`NNNN-slug-en-kebab-case.md`). `0000` es la
-  [`plantilla`](0000-template.md) y no cuenta como ADR.
-- **Equivalencia con la issue:** `ADR-001` = `0001`, `ADR-002` = `0002`, etc.
-- **Idioma:** el nombre del archivo y los identificadores van en inglés; el
-  cuerpo y la documentación, en español.
+## 2. Índice
 
-## Índice de ADRs
-
-| ADR | Título | Decisión en una línea | Estado | Fecha | Issue |
-|---|---|---|---|---|---|
-| [0001](0001-nextjs-app-router.md) | Next.js, React y TypeScript | App Router + RSC/Server Actions sobre React 19 y TypeScript estricto | aceptado | 2026-11-12 | #4 |
-| [0002](0002-supabase-postgres-drizzle-zod.md) | Supabase Postgres, Drizzle y Zod | PostgreSQL gestionado, Drizzle SQL-first y Zod como validación única | aceptado | 2026-11-12 | #4 |
-| [0003](0003-supabase-auth-allowlist-invitations.md) | Supabase Auth, allowlist e invitaciones | Auth con registro cerrado, sesiones SSR e invitaciones de un solo uso | aceptado | 2026-11-12 | #4 |
-| [0004](0004-cloudflare-r2-storage-adapter.md) | Cloudflare R2 y StorageAdapter | R2 privado como almacenamiento principal, adaptador local y driver por entorno | aceptado | 2026-11-12 | #4, #40 |
-| [0005](0005-vercel-hobby.md) | Vercel Hobby y dominio | Hosting Hobby y subdominio de Vercel; dominio propio fuera del MVP | aceptado | 2026-11-12 | #4 |
-| [0006](0006-maplibre-terra-draw-geojson.md) | MapLibre, Terra Draw y GeoJSON | Mapas vectoriales en GeoJSON con raster opcional y exportación propia | aceptado | 2026-11-12 | #4 |
-| [0007](0007-react-flow-elk.md) | React Flow y ELK.js | Grafo con nodos React y layout automático en Web Worker | aceptado | 2026-11-12 | #4 |
-| [0008](0008-tiptap-exporters.md) | Tiptap y exportadores | Editor MIT con extensiones propias y exportación a DOCX/PDF/EPUB/Markdown | aceptado | 2026-11-12 | #4 |
-| [0009](0009-testing-pwa-backups.md) | Testing, PWA y backups | Calidad verificable, offline con IndexedDB y backups recuperables | aceptado | 2026-11-12 | #4 |
-| [0010](0010-two-themes-design-system.md) | Dos temas y sistema de diseño | Solo Claro y Oscuro, tokens accesibles y estética de cartógrafo | aceptado | 2026-11-12 | #4 |
-| [0011](0011-allowlist-world-roles-own-worlds.md) | Allowlist, roles y mundos propios | Allowlist para la app; membresía y roles por mundo; mundos propios | aceptado | 2026-11-12 | #4 |
-| [0012](0012-i18n-centralized-roadmap.md) | Internacionalización | Español en el MVP con mensajes tipados y ruta a inglés e italiano | aceptado | 2026-11-12 | #4 |
-| [0013](0013-free-tier-continuity.md) | Continuidad de free tiers | R2, keep-alive, backups y revisión de cuotas para sostener 0 €/mes | aceptado | 2026-11-12 | #4 |
-| [0014](0014-public-repo-mit-and-branch-protection.md) | Repositorio público, MIT y protección de ramas | Repo público con MIT y rulesets en `dev`/`main`, con bypass del owner solo en `main` | aceptado | 2026-11-14 | #5 |
-| [0015](0015-coste-contexto-cache-variante-fija.md) | Coste de contexto: caché, prompts bajo demanda y variante fija | `warming`, skill `repo-map`, orquestación proporcional y variante fija por subagente | aceptado | 2026-11-14 | — (tarea local) |
-| [0016](0016-entorno-tooling-ci.md) | Entorno de desarrollo, tooling y CI base | Node 22, pnpm/Corepack, TS estricto, ESLint/Prettier, Vitest/Playwright y CI con cuatro required checks | supersedido por ADR 0017 | 2026-11-14 | #6 |
-| [0017](0017-nextjs-scaffold-and-env-contract.md) | Scaffold de Next.js y contrato de entorno | Next.js 16, React 19, Tailwind 4 CSS-first, entorno público/servidor y páginas base con deuda de CSP | aceptado | 2026-11-14 | #7 |
-| [0018](0018-design-system-tokens-and-shell.md) | Sistema de diseño: tokens, componentes y shell | Tokens en tres capas, doce componentes base, shell responsive y tema Claro/Oscuro/Sistema persistente | aceptado | 2026-11-15 | #8 |
-| [0019](0019-database-schema-migrations-and-rls.md) | Esquema de base de datos, migraciones y RLS | Cadena única de migraciones, RLS con funciones `security definer`, privilegios fail-closed y seed idempotente | aceptado | 2026-11-15 | #9 |
-| [0020](0020-direct-signed-upload-to-r2.md) | Subida directa firmada a R2 | PUT prefirmado de corta duración a `tmp/` y `finalizeUpload` con validación y publicación en servidor | aceptado | 2026-11-16 | #40 |
-
-## Trazabilidad con el plan y el registro
-
-| Decisión cerrada | ADR | Plan | Registro |
+| ADR | Tema | Estado | Registro |
 |---|---|---|---|
-| Stack y free tiers | 0001, 0002, 0004, 0005, 0013 | §3.2 D1–D7, §3.7 | D-001 |
-| Temas | 0010 | §3.2 D2 y D15 | D-002 |
-| Mapas | 0006 | §3.2 D8 | D-003 |
-| Acceso y roles | 0003, 0011 | §3.2 D5, §3.4 | D-004 |
-| Idioma | 0012 | §3.2 D16 | D-005 |
-| Dominio | 0005 | §3.2 D7, §7 | D-006 |
-| Visibilidad, licencia y protección de ramas | 0014 | §3.7, §4.4 | D-009, D-010 |
-| Coste de contexto y variante por subagente | 0015 | §4.3, §4.9 | — |
-| Entorno, tooling y CI base | 0016 | §3.7, §4.7, §5.2 | D-013, D-014 |
-| Scaffold de Next.js y contrato de entorno | 0017 | §3.2 D17, §3.7, §4.7 | D-015 |
-| Sistema de diseño, tokens y shell | 0010, 0018 | §3.2 D2 y D15, §3.6 | D-002, D-016 |
-| Modelo de datos, migraciones y RLS | 0002, 0019 | §3.3, §3.4, §7 | D-017 |
-| Subida directa firmada a R2 | 0004, 0020 | §3.2 D6, §3.4 | D-019 |
+| [0001](0001-electron-vite-react-typescript.md) | Electron + Vite + React + TypeScript | Aceptado | D-020, D-033 |
+| [0002](0002-sqlite-better-sqlite3-drizzle-fts5.md) | SQLite + better-sqlite3 + Drizzle + FTS5 | Aceptado | D-021 |
+| [0003](0003-nsis-installer-electron-updater-data-preservation.md) | Instalador NSIS, electron-updater y preservación | Aceptado | D-023, D-031 |
+| [0004](0004-electron-security-typed-ipc.md) | Seguridad Electron e IPC tipado | Aceptado | D-024, D-025 |
+| [0005](0005-local-assets-custom-protocol.md) | Assets locales y protocolo `wc-asset://` | Aceptado | D-022 |
+| [0006](0006-two-themes-desktop-design-system.md) | Dos temas y sistema de diseño de escritorio | Aceptado | D-026 |
+| [0007](0007-tiptap-editor-exporters.md) | Editor Tiptap y exportadores | Aceptado | D-027 |
+| [0008](0008-maplibre-terra-draw-react-flow-elk.md) | MapLibre/Terra Draw y React Flow/ELK | Aceptado | D-028 |
+| [0009](0009-centralized-i18n.md) | Internacionalización centralizada | Aceptado | D-029 |
+| [0010](0010-testing-strategy.md) | Estrategia de pruebas | Aceptado | D-030 |
+| [0011](0011-single-user-local-model.md) | Modelo local de un solo usuario | Aceptado | D-025 |
+| [0012](0012-backup-restore-recovery.md) | Copias, restauración y recuperación | Aceptado | D-031 |
+| [0013](0013-ci-releases.md) | CI, releases y distribución | Aceptado | D-032 |
+| [0014](0014-repository-structure-tooling.md) | Estructura del repositorio y tooling | Aceptado | D-033, D-038 |
+| [0015](0015-optional-code-signing-smartscreen.md) | Firma de código opcional y SmartScreen | Aceptado | D-034 |
 
-### Decisiones sin ADR propio
+## 3. Relación con otros documentos
 
-- **D-007 del registro (publicación local-first):** ya está normada en
-  [`docs/proceso-sdd.md`](../proceso-sdd.md) §7 y en
-  [`AGENTS.md`](../../AGENTS.md) regla 5. No es una decisión de arquitectura
-  pendiente.
-- **D-008 del registro (contenido de juego ampliable):** se concreta en M4-04
-  (issue [#44](https://github.com/gonzalitojh/world-craft/issues/44)). No hay aún
-  una elección técnica que registrar.
-- **D11 del plan (estado, formularios y contratos):** se aplica en la
-  implementación con React Hook Form, Zustand y TanStack Query cuando haga
-  falta; no fija un proveedor ni una arquitectura nueva.
-- **D17 del plan (estructura del repositorio):** se documentará en
-  `docs/arquitectura.md` (M0-09, issue
-  [#10](https://github.com/gonzalitojh/world-craft/issues/10)) junto con los
-  módulos reales.
+- [`AGENTS.md`](../../AGENTS.md): reglas obligatorias.
+- [`docs/proceso-sdd.md`](../proceso-sdd.md): proceso y puertas.
+- [`docs/plan-desarrollo.md`](../plan-desarrollo.md): alcance y decisiones de
+  producto.
+- [`docs/registro-decisiones.md`](../registro-decisiones.md): histórico
+  append-only.
+- [`docs/arquitectura.md`](../arquitectura.md): implementación de las
+  decisiones.
 
-## Historial de supersesiones
+## 4. Cómo crear un ADR
 
-| Fecha | ADR nuevo | Sustituye a | Motivo |
-|---|---|---|---|
-| 2026-11-14 | [0017](0017-nextjs-scaffold-and-env-contract.md) | [0016](0016-entorno-tooling-ci.md) | La integración de Next.js cambia scripts, `tsconfig`, esquema de entorno y ESLint; se mantienen Node 22, pnpm, CI, gitleaks/audit y protección de ramas. |
+1. Copia `0000-template.md` como `NNNN-slug-en-kebab-case.md` con el siguiente
+   número libre.
+2. Completa todas las secciones; no inventes cifras.
+3. Añade la fila al índice de la sección 2.
+4. Enlaza el ADR desde el plan, la arquitectura o el registro si aplica.
+5. Si supersede a otro, actualiza el estado del anterior y enlaza el nuevo.
+6. Verifica que los enlaces locales resuelven y que el ADR está en español.
 
-## Cómo crear o cambiar un ADR
+## 5. Convenciones
 
-1. Copia [`0000-template.md`](0000-template.md) como
-   `docs/adr/NNNN-slug-en-kebab-case.md`, usando el siguiente número libre.
-2. Completa todas las secciones, incluida la de riesgos de free tier. Si la
-   decisión no toca un servicio, escribe «No aplica» y justifícalo.
-3. Añade la fila al índice y, si procede, a la tabla de trazabilidad.
-4. Enlaza la issue y la entrada del registro de decisiones.
-5. Para cambiar una decisión aceptada: crea un ADR nuevo, marca el antiguo como
-   `supersedido por ADR NNNN` y añade la fila al historial de supersesiones. No
-   reescribas el histórico.
-6. Verifica enlaces, fences, numeración y coherencia con el plan y el registro.
+- Un ADR por decisión coherente.
+- Estados: `propuesto`, `aceptado`, `supersedido por ADR NNNN`.
+- Fecha de decisión y fecha del documento.
+- Al menos una alternativa real y el motivo del descarte.
+- Impacto en ventana, temas, accesibilidad, seguridad, datos y coste.
+- Riesgos de free tier: si no aplica, se explica.
+- Sin secretos, datos personales ni cifras sin fuente.
 
-## Referencias
+## 6. Historial
 
-- [`docs/plan-desarrollo.md`](../plan-desarrollo.md)
-- [`docs/registro-decisiones.md`](../registro-decisiones.md)
-- [`docs/proceso-sdd.md`](../proceso-sdd.md)
-- [`AGENTS.md`](../../AGENTS.md)
-- [`0000-template.md`](0000-template.md)
+| Fecha | Cambio |
+|---|---|
+| 2026-11-18 | Serie de escritorio 0001–0015; se retiran los ADRs web 0001–0020. |

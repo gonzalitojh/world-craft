@@ -51,10 +51,11 @@ descarte.
 
 | Dimensión | Impacto |
 |---|---|
-| Responsive | ... |
+| Ventana y escritorio | ... |
 | Temas (Claro/Oscuro) | ... |
 | Accesibilidad | ... |
 | Seguridad y privacidad | ... |
+| Datos y preservación | ... |
 | Coste | ... |
 | Portabilidad de datos | ... |
 

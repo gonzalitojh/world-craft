@@ -1,165 +1,218 @@
 # Manual de usuario de World Craft
 
-> **Estado: en construcción.** World Craft está en fase **M0** (fundaciones y
-> proceso). Todavía no hay producto: no se puede iniciar sesión, crear mundos ni
-> escribir. Este documento fija la **estructura** del manual y describe lo poco
-> que ya se puede ver. Se completará en la fase M5 (issue
-> [#28](https://github.com/gonzalitojh/world-craft/issues/28)) y se actualizará
-> con cada funcionalidad visible que se añada antes.
+> **Estado:** manual en construcción. World Craft se encuentra en desarrollo y
+> todavía **no hay una versión instalable** para usar. Las funciones se marcan
+> como **previstas** hasta que la issue que las implementa esté terminada y
+> probada. Este manual se actualiza en la misma tarea que cada cambio visible.
 
-World Craft será una aplicación privada para **crear y mantener mundos de
-ficción**: fichas de personajes, lugares y objetos, relaciones entre ellos,
-mapas, un grafo navegable, manuscritos y herramientas de juego creativo. Todo el
-contenido requiere sesión y permisos: **no hay contenido público por defecto**.
+## 1. Qué es World Craft
 
-## 1. Lo que se puede hacer hoy (fase M0)
+World Craft es una aplicación de escritorio para Windows que te ayuda a crear y
+organizar mundos de ficción: personajes, lugares, objetos, relaciones, mapas,
+textos y herramientas de juego. Todo se guarda en tu ordenador. No necesitas
+cuenta, conexión a Internet ni suscripción.
 
-Muy poco, y es lo esperado en esta fase:
+La aplicación está pensada para:
 
-| Página | Qué se puede hacer |
+- Escritores que necesitan consistencia entre escenas y capítulos.
+- Personas que dirigen partidas de rol y quieren un mundo propio a mano.
+- Creadores que disfrutan construyendo mundos por el placer de hacerlo.
+
+## 2. Antes de empezar
+
+### 2.1 Requisitos (previstos)
+
+- Windows 10 u 11 de 64 bits.
+- Al menos 4 GB de memoria RAM y 500 MB libres en disco.
+- Una ventana de al menos 1024×700 píxeles; se recomienda 1280×800 o más.
+- No hace falta conexión a Internet para trabajar.
+
+### 2.2 Instalación (prevista)
+
+1. Descarga el instalador desde la página de releases del proyecto.
+2. Ejecuta el instalador. Windows puede mostrar un aviso de SmartScreen porque
+   el instalador no está firmado; se explica en la sección 13.
+3. Elige la carpeta de instalación o acepta la propuesta.
+4. Abre World Craft desde el menú Inicio.
+
+La instalación es por usuario y no requiere permisos de administrador.
+
+### 2.3 Primer arranque (previsto)
+
+La primera vez se crea la carpeta de datos y una base de datos vacía. Verás una
+pantalla de bienvenida con la opción de crear tu primer mundo o importar uno
+existente.
+
+## 3. La ventana
+
+### 3.1 Partes de la pantalla (previstas)
+
+- **Barra lateral:** acceso a mundos, fichas, mapas, escritura, juego, búsqueda
+  y ajustes. Se puede plegar a iconos.
+- **Barra superior:** nombre del mundo, búsqueda y acciones de la pantalla.
+- **Área central:** el contenido de la pantalla actual.
+- **Paneles:** detalles, filtros o propiedades, según la pantalla.
+- **Barra de estado:** guardado, avisos y mensajes.
+
+### 3.2 Tamaño de ventana
+
+La ventana se puede redimensionar y recuerda su tamaño y posición. El tamaño
+mínimo es 1024×700. A 1024, 1280 y 1600 píxeles de ancho el contenido se adapta
+sin desplazamiento horizontal de página; solo las tablas y el lienzo del mapa
+pueden desplazarse dentro de su propio espacio.
+
+## 4. Mundos (previsto)
+
+- **Crear un mundo:** ponle nombre, sinopsis y, si quieres, una portada.
+- **Abrir un mundo:** selecciónalo en la barra lateral.
+- **Editar:** cambia nombre, sinopsis, géneros y portada.
+- **Archivar:** oculta el mundo de la lista sin borrarlo.
+- **Borrar:** lo mueve a la papelera; puedes restaurarlo.
+- **Exportar:** genera un archivo ZIP con los datos y los archivos del mundo.
+- **Importar:** añade un mundo desde un ZIP exportado.
+
+## 5. Fichas y entidades (previsto)
+
+Las fichas son la base del mundo: personajes, lugares, organizaciones, objetos,
+criaturas, eventos y cualquier tipo que crees.
+
+- **Crear una ficha:** elige el tipo, ponle nombre y rellena los campos.
+- **Campos personalizados:** cada tipo puede tener sus propios campos.
+- **Imagen:** añade una imagen principal; se guarda en tu equipo.
+- **Etiquetas:** clasifica fichas con etiquetas de color.
+- **Favoritos:** marca las fichas que más usas.
+- **Papelera:** las fichas borradas se pueden restaurar.
+- **Duplicar:** crea una copia para partir de una plantilla.
+
+## 6. Relaciones y grafo (previsto)
+
+- **Relaciones:** conecta dos fichas con un tipo («aliado de», «vive en»,
+  «posee»). Cada relación puede tener nota e intensidad.
+- **Grafo:** visualiza las relaciones como un mapa de nodos.
+- **Filtros:** muestra solo ciertos tipos o etiquetas.
+- **Encuadre:** acerca, aleja y centra el grafo.
+- **Abrir ficha:** haz doble clic en un nodo para abrir su ficha.
+
+## 7. Mapas (previsto)
+
+- **Crear un mapa:** elige un nombre y un estilo de fondo.
+- **Dibujar:** punto, línea, polígono, rectángulo, círculo y trazo libre.
+- **Editar:** mueve, cambia el tamaño y edita vértices.
+- **Capas:** organiza el mapa en capas y ocúltalas cuando no las necesites.
+- **Marcadores:** enlaza un punto del mapa con una ficha.
+- **Imagen de fondo:** usa una imagen propia como referencia.
+- **Exportar:** guarda el mapa como SVG o PNG.
+
+## 8. Escritura (previsto)
+
+- **Manuscritos:** agrupa libros, capítulos y escenas.
+- **Editor:** escribe con formato, diálogos y separadores de escena.
+- **Menciones:** enlaza personajes y lugares desde el texto.
+- **Versiones:** guarda una versión de una escena antes de un cambio grande.
+- **Objetivos:** define una meta de palabras.
+- **Modo concentración:** oculta paneles para escribir sin distracciones.
+- **Exportar:** genera Markdown, HTML, EPUB o PDF.
+
+## 9. Juego de inspiración (previsto)
+
+- **Dados:** tira dados y guarda el resultado.
+- **Tablas:** consulta tablas de ideas por categoría.
+- **Tablas propias:** crea y edita tus tablas.
+- **Packs:** importa y exporta contenido de juego.
+- **Sesiones:** guarda el resultado de una sesión y añade notas.
+
+## 10. Búsqueda (previsto)
+
+- **Búsqueda global:** busca en fichas, mapas, escenas y tablas.
+- **Filtros:** por mundo, tipo y etiqueta.
+- **Resultados:** muestra el contexto y abre el elemento.
+- **Reconstruir índice:** desde Ajustes → Datos si los resultados no cuadran.
+
+## 11. Ajustes (previsto)
+
+- **Apariencia:** tema Claro u Oscuro; se aplica a toda la aplicación.
+- **Idioma:** español en el MVP; la estructura está preparada para más idiomas.
+- **Ventana:** recordar tamaño y posición.
+- **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda,
+  compactar y eliminar todos los datos.
+- **Copias:** crear, verificar y restaurar copias.
+- **Actualizaciones:** buscar, descargar e instalar; se puede desactivar.
+- **Ayuda:** abrir este manual y exportar un diagnóstico.
+
+## 12. Tus datos y las copias (previsto)
+
+- Todo se guarda en `%APPDATA%\World Craft`.
+- Actualizar o desinstalar la aplicación **no borra** tus datos.
+- La app crea copias automáticas diarias, semanales y mensuales.
+- Antes de una actualización importante o de una operación destructiva, crea
+  una copia adicional.
+- Puedes restaurar una copia desde Ajustes → Copias. La app guarda la base
+  actual antes de reemplazarla.
+- Puedes exportar un mundo completo para llevarlo a otro equipo.
+- No hay sincronización automática entre equipos.
+
+## 13. Aviso de SmartScreen (previsto)
+
+El instalador del MVP no está firmado con un certificado de código. Windows
+puede mostrar un aviso azul de SmartScreen. Para continuar:
+
+1. Comprueba que has descargado el instalador desde la página oficial del
+   proyecto.
+2. Pulsa «Más información».
+3. Pulsa «Ejecutar de todas formas».
+
+La firma de código es opcional y de pago; se valorará más adelante. El aviso no
+significa que la aplicación tenga un problema.
+
+## 14. Accesibilidad (previsto)
+
+- Navegación completa por teclado.
+- Foco visible en todos los controles.
+- Contraste mínimo WCAG AA en los dos temas.
+- Etiquetas y errores asociados en formularios.
+- Avisos de guardado y cambios con `aria-live`.
+- Respeto de `prefers-reduced-motion`: las animaciones se reducen o se
+  desactivan.
+- Los atajos de teclado se documentarán en la ayuda de la app.
+
+## 15. Problemas frecuentes (previsto)
+
+| Problema | Qué hacer |
 |---|---|
-| Portada (`/`) | Leer qué es World Craft, en qué fase está y cuáles son sus tres pilares. |
-| Acceso (`/login`) | Ver el aviso de que el acceso llegará con la autenticación. El botón está deshabilitado: **no hay formulario ni sesión**. |
-| Estado (`/health`) | Comprobar que el despliegue responde y si la base de datos de Supabase está disponible, con el commit y la hora de la comprobación (en UTC y con el formato del idioma de la interfaz). |
-| Sistema de diseño (`/design-system`) | Recorrer los colores, tipografía, componentes y patrones de la interfaz, y cambiar entre tema Claro y Oscuro. |
+| La app no arranca | Comprueba los requisitos y ejecuta el diagnóstico desde el acceso seguro. |
+| La base no abre | La app arranca en modo seguro; restaura una copia desde Ajustes. |
+| No encuentro una ficha | Revisa la papelera y reconstruye la búsqueda. |
+| Una imagen no se ve | Comprueba que el archivo sigue en la carpeta de assets; restaura una copia. |
+| Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 13. |
+| He borrado un mundo | Restáuralo desde la papelera o desde una copia. |
 
-En la página de estado, «Operativo» significa que la aplicación y Supabase
-responden; «Degradado» significa que la aplicación responde pero la comprobación
-de la base de datos no se ha completado. En ese caso no hay nada que puedas hacer
-desde la web: el propietario recibe el aviso del monitor y reactiva el proyecto.
-La comprobación es la misma que usa el monitor externo y se repite cada vez que
-abres la página. La hora se muestra en UTC (verás `UTC` o `GMT` junto a ella) y
-con el formato del idioma de la interfaz, aunque tu equipo esté en otra zona
-horaria.
+## 16. Glosario
 
-Consejo: en el sistema de diseño puedes probar el **selector de tema** de la
-barra superior. La preferencia se guarda en tu navegador y se mantiene entre
-visitas. La opción **Sistema** sigue el tema de tu dispositivo.
+- **Mundo:** contenedor de todo el contenido de una ambientación.
+- **Ficha o entidad:** personaje, lugar, objeto o concepto del mundo.
+- **Relación:** vínculo entre dos fichas.
+- **Grafo:** representación visual de las relaciones.
+- **Asset:** archivo (imagen, documento) asociado a un mundo.
+- **Manuscrito:** conjunto de textos organizados en libros, capítulos y escenas.
+- **Copia:** archivo de seguridad de la base y, opcionalmente, de los assets.
+- **Modo seguro:** arranque sin escritura para diagnosticar o restaurar.
 
-## 2. Primeros pasos (se completará en M1)
+## 17. Estado de las funciones
 
-Cuando exista el acceso, el recorrido previsto será:
+| Función | Estado |
+|---|---|
+| Instalador y aplicación | Prevista |
+| Mundos | Prevista |
+| Fichas y tipos | Prevista |
+| Relaciones y grafo | Prevista |
+| Mapas | Prevista |
+| Escritura | Prevista |
+| Juego | Prevista |
+| Búsqueda | Prevista |
+| Ajustes y temas | Prevista |
+| Copias y restauración | Prevista |
+| Actualizaciones | Prevista |
+| Manual dentro de la app | Prevista |
 
-1. Entrar con el correo autorizado.
-2. Crear el primer mundo.
-3. Añadir fichas y relacionarlas.
-4. Invitar a otras personas y decidir su rol.
-
-Hasta entonces no hay cuentas, ni invitaciones, ni datos que guardar.
-
-## 3. Acceso a la aplicación
-
-- **Previsto (M1-01):** acceso con correo mediante Supabase Auth y una lista de
-  correos permitidos (allowlist).
-- **Importante:** la allowlist da acceso a la **aplicación**, no a los mundos de
-  otras personas. Cada mundo tiene sus propios miembros y roles.
-- **Hoy:** la página de acceso es un aviso; no se puede entrar.
-
-## 4. Mundos y roles
-
-- **Previsto (M1-02, M1-07):** cualquier persona autorizada podrá crear sus
-  propios mundos y será su propietaria.
-- **Roles por mundo:** `Propietario`, `Editor` y `Lector`.
-  - El propietario gestiona miembros y roles y no puede perder la propiedad sin
-    transferirla antes.
-  - El editor puede crear y modificar contenido.
-  - El lector puede consultar el contenido sin modificarlo.
-- **Invitaciones:** de un solo uso, ligadas al correo y con caducidad.
-
-## 5. Fichas y entidades
-
-- **Previsto (M1-03, M1-04):** fichas de personajes, lugares, organizaciones,
-  objetos, conceptos y demás tipos, con plantillas y un mundo de ejemplo.
-- **Relaciones tipadas y backlinks:** cada ficha mostrará con qué otras está
-  relacionada y en qué dirección.
-
-## 6. Mapas y grafo
-
-- **Previsto (M2):** mapas vectoriales con MapLibre y Terra Draw, con la opción
-  de calcar una imagen de fondo georreferenciada; marcadores y vínculos entre el
-  mapa y las fichas; vista de grafo interactiva.
-
-## 7. Escritura
-
-- **Previsto (M3):** editor de manuscritos con autoguardado, estructura de
-  libros, capítulos y escenas, herramientas de diálogo, historial de versiones y
-  exportación a DOCX, PDF, EPUB y Markdown.
-
-## 8. Juego creativo
-
-- **Previsto (M4):** motor de dados, tablas de inspiración, contenido inicial de
-  fantasía, ciencia ficción, terror y contemporáneo, tablas personalizadas y
-  packs de contenido ampliables desde la propia aplicación.
-
-## 9. Cuenta, preferencias y datos
-
-- **Previsto (M1-06, M5):** ajustes de cuenta y preferencias, cambio de tema y
-  de idioma, exportación e importación de un mundo completo en formatos abiertos,
-  y eliminación de la cuenta.
-- **Hoy:** la única preferencia que funciona es el tema, en el sistema de diseño.
-
-## 10. Búsqueda y atajos
-
-- **Previsto (M1-05):** búsqueda global y paleta de comandos con `Ctrl`/`Cmd` +
-  `K` (el botón de búsqueda ya existe en el shell).
-- **Hoy:** la paleta abre, pero no busca datos porque todavía no hay contenido.
-
-## 11. Temas y accesibilidad
-
-- **Dos temas:** Claro y Oscuro, más la opción **Sistema**.
-- La interfaz se puede recorrer con teclado, el foco es visible y se respeta la
-  preferencia de **movimiento reducido** del sistema operativo.
-- El diseño se adapta a móvil, tablet y ordenador sin desplazamiento horizontal
-  de página.
-
-## 12. Privacidad y frecuencia de actualización
-
-- **Datos privados.** Todo el contenido requiere sesión y permisos; no se
-  publica nada por defecto.
-- **Dónde se guardan.** Los datos vivirán en una base PostgreSQL gestionada por
-  Supabase, con aislamiento por mundo. Los archivos irán a un almacén privado con
-  enlaces temporales.
-- **Frecuencia de actualización.** Las páginas leerán los datos al cargarse; no
-  hay refresco en segundo plano ni sincronización en tiempo real en el alcance
-  inicial. Los borradores sin conexión y la instalación como aplicación llegan
-  con la PWA (M5).
-- **Copias.** Habrá copias de seguridad y exportación de datos; el procedimiento
-  técnico está en
-  [`docs/base-de-datos/operacion.md`](base-de-datos/operacion.md).
-
-## 13. Preguntas frecuentes
-
-**¿Puedo crear una cuenta?**
-Todavía no. El acceso llega con la fase M1.
-
-**¿Se ve mi mundo a otras personas?**
-No. No hay contenido público y cada mundo tiene sus propios miembros.
-
-**¿Cuánto cuesta?**
-El objetivo es 0 €/mes con planes gratuitos. No hay funciones de pago.
-
-**¿Puedo usar la aplicación en el móvil?**
-La interfaz ya es responsive y el uso como aplicación instalable llegará con la
-PWA (M5).
-
-**¿En qué idioma estará?**
-En español durante el MVP. La detección del idioma del navegador ya está
-preparada, pero solo se aplicará cuando existan los catálogos de inglés e
-italiano; hasta entonces la aplicación se muestra siempre en español.
-
-## 14. Cómo se mantiene este manual
-
-Cualquier cambio que afecte a lo que la persona usuaria ve o hace debe
-actualizar este documento en la misma tarea (regla 3 de
-[`AGENTS.md`](../AGENTS.md)). Los cambios puramente internos no lo tocan. La
-versión formal y completa llega con M5-01 (issue
-[#28](https://github.com/gonzalitojh/world-craft/issues/28)); hasta entonces, cada
-funcionalidad visible añade o corrige su sección.
-
-## 15. Más información
-
-- [README](../README.md): qué es el proyecto y cómo arrancarlo en local.
-- [Arquitectura](arquitectura.md): cómo está organizada la aplicación.
-- [Plan de desarrollo](plan-desarrollo.md): alcance y fases.
-- [Registro de decisiones](registro-decisiones.md) e [índice de ADRs](adr/README.md).
-- [Proceso SDD](proceso-sdd.md): cómo se trabaja en el repositorio.
+Este manual se actualizará cuando cada función esté disponible. Mientras una
+función figure como **prevista**, no se debe presentar como si ya existiera.

@@ -1,18 +1,11 @@
 # Proceso SDD de World Craft
 
-> **Estado:** vigente desde el 12/11/2026 (issue
-> [#3](https://github.com/gonzalitojh/world-craft/issues/3), M0-02);
-> actualizado el 14/11/2026 (issues
-> [#48](https://github.com/gonzalitojh/world-craft/issues/48),
-> [#5](https://github.com/gonzalitojh/world-craft/issues/5) y
-> [#6](https://github.com/gonzalitojh/world-craft/issues/6), M0-13, M0-04 y
-> M0-05) y con la orquestación proporcional por coste (ADR 0015, tarea local
-> `optimizacion-coste-cache`).
+> **Estado:** vigente desde el 12/11/2026; reescrito el 18/11/2026 para el
+> pivote a aplicación de escritorio Windows.
 > **Ámbito:** flujo de trabajo, puertas, task files, etiquetas, estados, hitos,
 > publicación local-first, protección de ramas y mantenimiento documental.
-> **Origen:** consolida el plan [`plan-desarrollo.md`](plan-desarrollo.md)
-> §4.3–4.6 y §4.8 y las decisiones D-001–D-010 del
-> [`registro-decisiones.md`](registro-decisiones.md).
+> **Origen:** consolida [`plan-desarrollo.md`](plan-desarrollo.md) §4 y el
+> [`registro-decisiones.md`](registro-decisiones.md) vigente.
 
 ## 1. Autoridad documental y regla de conflicto
 
@@ -55,9 +48,11 @@ implementación operativa:
    la misma historia.
 6. **La documentación es parte del trabajo.** No es una fase opcional ni un
    arreglo posterior.
-7. **Coste cero, privacidad y portabilidad.** Todo servicio cabe en un plan
-   gratuito; los datos son privados, exportables y recuperables.
-8. **Sin referencias muertas.** No se presentan como existentes rutas, scripts,
+7. **Datos a salvo.** Ninguna actualización, migración o desinstalación puede
+   borrar ni corromper los datos del usuario.
+8. **Coste cero, privacidad y portabilidad.** Todo servicio cabe en un plan
+   gratuito; los datos son locales, privados, exportables y recuperables.
+9. **Sin referencias muertas.** No se presentan como existentes rutas, scripts,
    workflows, labels, hitos o estados que no existan en este repositorio. Las
    rutas previstas se citan como código y con la issue que las creará.
 
@@ -88,8 +83,7 @@ documentación se resuelven con el checklist de la sección 9 sin subagentes
 ### 3.2 Orquestación proporcional al coste
 
 Cada subagente arranca con contexto limpio y vuelve a cargar su prompt y las
-instrucciones del proyecto, así que el flujo no invoca agentes que no aportan
-(ADR 0015):
+instrucciones del proyecto, así que el flujo no invoca agentes que no aportan:
 
 - **Tareas documentales o de proceso** (solo documentación, agentes,
   configuración o `.json` de `tasks/`): no se invocan `task-architect`,
@@ -110,7 +104,7 @@ instrucciones del proyecto, así que el flujo no invoca agentes que no aportan
 | Issue → adopción | `sdd-master` | Issue abierta con `ai`; labels corregidos, incluido un `variant: *`; `tasks/task-issue-<N>.json` creado con estado `created` y `model_variant`. |
 | `created` → `planned` | `sdd-master` + `task-architect` (solo si la issue no trae plan) | Plan escrito en el campo `plan`; alcance, riesgos, pruebas e impacto documental; aprobación del usuario registrada en `validation`. |
 | `planned` → `implemented` | `tdd-ddd-architect` (+ `ui-ux-designer`) | Diff implementado; pruebas y comprobaciones locales ejecutadas; task file actualizado. |
-| `implemented` → `validated` | `qa-reviewer`, o checklist documental en tareas documentales | Informe de QA con criterios, responsive, temas, accesibilidad y manual; `qa.result` = `PASS`. |
+| `implemented` → `validated` | `qa-reviewer`, o checklist documental en tareas documentales | Informe de QA con criterios, ventana, temas, accesibilidad, datos y manual; `qa.result` = `PASS`. |
 | `validated` → `security-cleared` | `security-champion`, o escaneo de secretos en tareas documentales | Informe de seguridad; sin hallazgos HIGH; `security.result` = `PASS` y `findings` actualizados. |
 | `security-cleared` → `documented` | `documentation-sync`, o edición directa en tareas documentales | ADR, manual, changelog, `AGENTS.md`, `docs/proceso-sdd.md`, `docs/agentes.md` o `docs/arquitectura.md` actualizados según aplique; campos `documentation.*` completos. |
 | `documented` → `review` | `publisher` en modo `preparar` | Rama local, commit y diff; comandos de prueba; sin push ni PR. |
@@ -253,8 +247,7 @@ en [`tasks/task-example.json`](../tasks/task-example.json).
 
 No se inventan campos nuevos sin actualizar este documento. Los campos
 desconocidos de un task file existente se conservan al actualizarlo.
-`model_variant` es obligatorio en los task files de issue; los task files
-cerrados antes de M0-13 se conservan sin el campo y no se reescriben.
+`model_variant` es obligatorio en los task files de issue.
 
 ### 4.4 Reglas de actualización
 
@@ -288,12 +281,13 @@ mal clasificado, `sdd-master` lo corrige; si hay duda, pregunta.
 
 ### 5.2 Áreas
 
-`area: agents`, `area: architecture`, `area: infra`, `area: data`,
-`area: auth`, `area: worlds`, `area: entities`, `area: graph`, `area: maps`,
-`area: writing`, `area: game`, `area: search`, `area: ui`, `area: docs`,
-`area: security`, `area: qa`.
+`area: agents`, `area: architecture`, `area: infra`, `area: desktop`,
+`area: persistence`, `area: packaging`, `area: data`, `area: worlds`,
+`area: entities`, `area: graph`, `area: maps`, `area: writing`, `area: game`,
+`area: search`, `area: ui`, `area: docs`, `area: security`, `area: qa`.
 
-Cada issue tiene **al menos un** área.
+Cada issue tiene **al menos un** área. `area: auth` ya no existe: World Craft
+es una aplicación local de un solo usuario, sin cuentas ni permisos remotos.
 
 ### 5.3 Estados
 
@@ -342,15 +336,16 @@ La recomendación se justifica en la sección «Variante recomendada» de la iss
 y se copia al task file en `model_variant`. La tabla de decisión está en
 [`variantes-modelo.md`](variantes-modelo.md). La variante es una guía, no una
 obligación: el usuario puede elegir otra y anotarlo en `validation.notes`.
+Los subagentes **no fijan modelo ni variante**: heredan el modelo de la sesión.
 
 ### 5.6 Hitos
 
-- `M0 · Proceso y fundaciones`
-- `M1 · Núcleo de datos y acceso`
+- `M0 · Fundaciones de escritorio`
+- `M1 · Núcleo local`
 - `M2 · Mapas y grafo`
 - `M3 · Escritura`
 - `M4 · Juego creativo`
-- `M5 · Calidad y lanzamiento`
+- `M5 · Calidad y distribución`
 - `Backlog`
 
 Cada issue tiene **exactamente un** hito. `Backlog` es el hito de las tareas
@@ -397,7 +392,7 @@ La evidencia esperada por puerta es:
 | Puerta | Evidencia |
 |---|---|
 | Implementación | Diff revisado; typecheck, lint, tests y build en verde cuando existan. |
-| QA | `qa.result` = `PASS`; informe con responsive, temas, accesibilidad y manual. |
+| QA | `qa.result` = `PASS`; informe con criterios, ventana 1024/1280/1600, temas, accesibilidad, preservación de datos y manual. |
 | Seguridad | `security.result` = `PASS`; sin HIGH; `findings` actualizados. |
 | Documentación | `documentation.*` completo; manual actualizado si el cambio es visible. |
 | Variante | `model_variant` coincide con el label `variant: *`; la variante usada está anotada si difiere. |
@@ -405,9 +400,9 @@ La evidencia esperada por puerta es:
 | Publicación | PR contra `dev`, bloque `pr` y issue en `status: needs-review`. |
 | Merge | Issue cerrada con `status: done`; task file conservado en `published`. |
 
-La estrategia de pruebas del plan §4.7 (Vitest, Testing Library, Playwright,
-axe, Lighthouse y gitleaks) se aplica en las puertas de implementación y QA, y
-en la de seguridad para el escaneo de secretos.
+La estrategia de pruebas del plan §3.2 D11 (Vitest, Testing Library, Playwright
+Electron, axe, gitleaks y auditoría de dependencias) se aplica en las puertas
+de implementación y QA, y en la de seguridad para el escaneo de secretos.
 
 ### 6.3 Variante documental
 
@@ -524,14 +519,14 @@ Antes de preparar o publicar:
 - Nunca `git add .`; siempre rutas explícitas.
 - Nunca publicar con secretos, credenciales o hallazgos HIGH sin resolver.
 - Nunca hacer force push a `dev` o `main`.
-- Nunca commitear `.env`, claves, tokens, `node_modules/`, `.next/` ni
-  artefactos de build.
+- Nunca commitear `.env`, claves, tokens, `node_modules/`, `dist/`, `release/`
+  ni artefactos de build.
 
 ### 7.7 Protección de ramas y administración del repositorio
 
-El repositorio es **público** y usa licencia **MIT** (ADR 0014, D-009). El
-contenido de la aplicación sigue siendo privado: la visibilidad afecta al
-código, no a los datos de los usuarios.
+El repositorio es **público** y usa licencia **MIT**. El contenido de la
+aplicación es local y privado: la visibilidad afecta al código, no a los datos
+de los usuarios.
 
 - **Rulesets.** `protect-dev` y `protect-main` están activos sobre
   `refs/heads/dev` y `refs/heads/main`. Prohíben el borrado y el force push y
@@ -540,12 +535,11 @@ código, no a los datos de los usuarios.
   propietario puede saltarse las reglas para promover `dev` a `main` cuando la
   versión es estable.
 - **Required status checks.** `protect-dev` y `protect-main` exigen los checks
-  `lint`, `typecheck`, `test` y `build`, que son los jobs de
-  `.github/workflows/ci.yml` (ADR 0016). No exigen que la rama esté al día
+  `lint`, `typecheck` y `test`, que son los jobs de
+  `.github/workflows/ci.yml`. `build` se añadirá al scaffold de Electron y
+  entonces pasará a ser required. No exigen que la rama esté al día
   (`strict_required_status_checks_policy = $false`), para no re-ejecutar la CI
-  tras cada merge en `dev`. Los rulesets con checks **se aplican al publicar la
-  issue #6**; hasta entonces las reglas activas solo exigen PR y prohíben
-  borrado y force push.
+  tras cada merge en `dev`.
 - **Seguridad del repositorio.** Escaneo de secretos, push protection y reporte
   privado de vulnerabilidades activos; el borrado automático de la rama al
   fusionar está activado y los permisos de GitHub Actions son de solo lectura por
@@ -555,10 +549,10 @@ código, no a los datos de los usuarios.
   petición explícita del usuario. El publisher no altera la administración del
   repositorio.
 - **Scripts de mantenimiento.** `scripts/sync-labels.ps1` sincroniza de forma
-  idempotente las 44 etiquetas canónicas y lista las extra sin borrarlas;
+  idempotente las 46 etiquetas canónicas y lista las extra sin borrarlas;
   `scripts/set-branch-protection.ps1` crea o actualiza los rulesets por nombre,
-  admite `-DryRun` y recibe `-RequiredChecks` (por defecto `lint`, `typecheck`,
-  `test` y `build`). Ambos son herramientas locales: no publican ni abren PRs.
+  admite `-DryRun` y recibe `-RequiredChecks` (por defecto `lint`, `typecheck`
+  y `test`). Ambos son herramientas locales: no publican ni abren PRs.
 
 ## 8. Documentación y mantenimiento
 
@@ -572,26 +566,34 @@ código, no a los datos de los usuarios.
 | [`docs/registro-decisiones.md`](registro-decisiones.md) | Vigente | Registro append-only de decisiones de producto y arquitectura. |
 | [`docs/agentes.md`](agentes.md) | Vigente | Equipo de agentes y responsabilidades. |
 | [`tasks/task-example.json`](../tasks/task-example.json) | Vigente | Ejemplo válido del esquema de task files. |
-| [`docs/variantes-modelo.md`](variantes-modelo.md) | Vigente | Política de variantes de modelo por issue y automatización futura. |
+| [`docs/variantes-modelo.md`](variantes-modelo.md) | Vigente | Política de variantes de modelo por issue. |
+| [`docs/arquitectura.md`](arquitectura.md) | Vigente | Procesos, capas, flujos y límites de confianza. |
+| [`docs/persistencia.md`](persistencia.md) | Vigente | SQLite, `userData`, assets, migraciones y copias. |
+| [`docs/base-de-datos/esquema.md`](base-de-datos/esquema.md) | Vigente | Diccionario de tablas, columnas e índices. |
+| [`docs/base-de-datos/migraciones.md`](base-de-datos/migraciones.md) | Vigente | Versionado, aplicación y reversión de migraciones. |
+| [`docs/continuidad.md`](continuidad.md) | Vigente | Copias, restauración y recuperación. |
+| [`docs/calidad/plan-de-pruebas.md`](calidad/plan-de-pruebas.md) | Vigente | Estrategia de pruebas y calidad. |
+| [`docs/diseno/sistema-de-diseno.md`](diseno/sistema-de-diseno.md) | Vigente | Tokens, componentes, temas y accesibilidad. |
+| [`docs/internacionalizacion.md`](internacionalizacion.md) | Vigente | Catálogo tipado, locale y formatos. |
+| [`docs/manual-de-usuario.md`](manual-de-usuario.md) | Vigente | Manual no técnico de la aplicación. |
+| [`docs/cambio-a-escritorio.md`](cambio-a-escritorio.md) | Vigente | Inventario del pivote, archivos eliminados, issues y cuentas a cerrar. |
 | `.github/ISSUE_TEMPLATE/task.md` | Vigente | Plantilla de issue con sección de variante recomendada. |
 | `.github/ISSUE_TEMPLATE/feature.yml`, `bug.yml`, `chore.yml`, `decision.yml` | Vigente | Formularios de issue por tipo, con contexto, alcance, dependencias, variante, criterios y notas; la de decisión añade problema, opciones, recomendación, consecuencias e issues afectadas. |
 | `.github/ISSUE_TEMPLATE/config.yml` | Vigente | Deshabilita las issues en blanco y enlaza el proceso SDD y `AGENTS.md`. |
 | `.github/pull_request_template.md` | Vigente | Plantilla de PR: resumen, issue, cambios, pruebas, documentación, UI, seguridad y base `dev`. |
-| `.github/workflows/ci.yml` y `.github/actions/setup` | Vigente | CI de PR y push a `dev`/`main`: jobs `lint` (con `format:check`), `typecheck`, `test` y `build` como required checks, más `e2e`, `gitleaks` y `audit` no bloqueantes; acción compuesta de setup (ADR 0016). |
-| `.github/dependabot.yml` | Vigente | Actualizaciones semanales de npm y GitHub Actions contra `dev`, agrupadas por minor y patch (ADR 0016). |
-| `scripts/sync-labels.ps1` | Vigente | Sincronización idempotente de las 44 etiquetas canónicas; no borra etiquetas extra. |
+| `.github/workflows/ci.yml` y `.github/actions/setup` | Vigente | CI de PR y push a `dev`/`main`: jobs `lint` (con `format:check`), `typecheck` y `test` como required checks, más `gitleaks` y `audit` no bloqueantes. `build` se añade con el scaffold de Electron. |
+| `.github/dependabot.yml` | Vigente | Actualizaciones semanales de npm y GitHub Actions contra `dev`, agrupadas por minor y patch. |
+| `scripts/sync-labels.ps1` | Vigente | Sincronización idempotente de las 46 etiquetas canónicas; no borra etiquetas extra. |
 | `scripts/set-branch-protection.ps1` | Vigente | Crea o actualiza los rulesets `protect-dev` y `protect-main` con sus required checks; admite `-RequiredChecks` y `-DryRun`. |
 | `LICENSE` | Vigente | Licencia MIT con titular `gonzalitojh`. |
 | `SECURITY.md` | Vigente | Alcance y reporte privado de vulnerabilidades. |
-| `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente y su variante fija. |
+| `.opencode/agents/*.md` | Vigente | Implementación operativa de cada agente. |
 | `.opencode/repo-map.md` | Vigente | Mapa de qué documento cargar y reglas de uso eficiente del contexto; se registra en `instructions`. |
 | `.opencode/skills/repo-map/SKILL.md` | Vigente | Resumen operativo del proceso (puertas, estados, task files, labels y publicación) para no abrir este documento completo. |
-| `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos de free tier; índice en `docs/adr/README.md`. Los creó M0-03 (issue #4). |
-| `docs/manual-de-usuario.md` | Vigente (esqueleto desde M0-09, issue #10; se completa en M5-01, issue #28) | Manual funcional en construcción: lo que ya se puede hacer y la estructura prevista, con aviso de estado. Cualquier funcionalidad visible lo actualiza en su tarea. |
-| `docs/arquitectura.md` | Vigente (M0-09, issue #10) | Mapa de módulos, capas, flujos, rutas, límites de confianza y evolución por fases. |
-| `README.md` | Vigente (arranque local desde M0-05; ampliado en M0-09, issue #10) | Qué es World Craft, requisitos, arranque local, scripts, calidad y enlaces. |
-| `CONTRIBUTING.md` | Vigente (comandos de calidad desde M0-05; ampliado en M0-09, issue #10) | Issue-first, ramas, commits, PRs, changelog, comandos de calidad, seguridad y coste. |
-| `CHANGELOG.md` | Vigente (M0-09, issue #10) | Cambios relevantes por versión con Keep a Changelog y Semantic Versioning; sección «Sin publicar» y reglas de entrada. |
+| `docs/adr/` | Vigente | ADRs con contexto, decisión, alternativas, consecuencias y riesgos; índice en `docs/adr/README.md`. |
+| `README.md` | Vigente | Qué es World Craft, requisitos, arranque, scripts, calidad y enlaces. |
+| `CONTRIBUTING.md` | Vigente | Issue-first, ramas, commits, PRs, changelog, comandos de calidad, seguridad y coste. |
+| `CHANGELOG.md` | Vigente | Cambios relevantes por versión con Keep a Changelog y Semantic Versioning. |
 
 Los documentos previstos que aún no existan se citan como código, no como
 enlaces, hasta que se creen.
@@ -600,8 +602,8 @@ enlaces, hasta que se creen.
 
 - **`AGENTS.md`:** al cambiar reglas obligatorias, Definition of Ready/Done o el
   resumen del flujo.
-- **`docs/proceso-sdd.md`:** al cambiar puertas, estados, labels, hitos,
-  esquema de task files, modos de publicación o verificación documental.
+- **`docs/proceso-sdd.md`:** al cambiar puertas, estados, labels, hitos, esquema
+  de task files, modos de publicación o verificación documental.
 - **`docs/agentes.md`:** al añadir, eliminar, renombrar o cambiar las
   responsabilidades de un agente, o al cambiar la forma de invocarlos.
 - **`.opencode/agents/*.md`:** junto con `AGENTS.md`, `docs/proceso-sdd.md` o
@@ -610,25 +612,23 @@ enlaces, hasta que se creen.
 - **`.opencode/repo-map.md` y la skill `repo-map`:** al cambiar puertas,
   estados, esquema de task files, labels o publicación, para que el resumen
   siga coincidiendo con este documento.
-- **Manual de usuario (ruta prevista `docs/manual-de-usuario.md`):** en la misma
-  tarea que cambia algo visible para el usuario. Su creación formal corresponde
-  a M5-01, pero si antes aparece una funcionalidad visible, la tarea que la
-  implemente debe crear o actualizar la sección correspondiente y dejar
-  constancia en el task file.
+- **Manual de usuario:** en la misma tarea que cambia algo visible para el
+  usuario. Mientras una función esté prevista pero no implementada, se marca
+  como **prevista**.
 - **`docs/variantes-modelo.md`:** al cambiar la tabla de decisión, los labels
   `variant: *` o el campo `model_variant`.
 - **`docs/adr/`:** ante una decisión de framework, librería, servicio, modelo de
-  datos, permisos, almacenamiento, despliegue, temas, i18n, mapas o juego con
-  consecuencias técnicas. Un ADR aceptado no se edita para cambiar la decisión:
-  se crea otro que lo superseda. El índice y la plantilla viven en
+  datos, almacenamiento, seguridad, distribución, temas, i18n, mapas o juego
+  con consecuencias técnicas. Un ADR aceptado no se edita para cambiar la
+  decisión: se crea otro que lo superseda. El índice y la plantilla viven en
   `docs/adr/README.md` y `docs/adr/0000-template.md`.
-- **`CHANGELOG.md`:** cuando exista y el cambio sea relevante para el usuario o
-  el despliegue.
-- **`docs/arquitectura.md`:** cuando cambian módulos, dependencias, flujos o
-  responsabilidades.
+- **`CHANGELOG.md`:** cuando el cambio sea relevante para el usuario o la
+  distribución.
+- **`docs/arquitectura.md`, `docs/persistencia.md` y `docs/base-de-datos/`:**
+  cuando cambian módulos, dependencias, flujos, esquema o migraciones.
 - **`README.md` y `CONTRIBUTING.md`:** cuando cambian el arranque local, las
-  variables de entorno, los scripts, el despliegue, las ramas, los commits o la
-  calidad.
+  variables de entorno, los scripts, la distribución, las ramas, los commits o
+  la calidad.
 - **`.github/workflows/ci.yml` y `.github/dependabot.yml`:** cuando cambian los
   jobs, los required checks, las versiones de las actions o la política de
   actualizaciones. En la misma tarea se revisan
@@ -663,7 +663,12 @@ Get-ChildItem tasks/task-*.json | ForEach-Object {
 
 # 2. Enlaces Markdown locales resueltos (documentos canónicos y agentes)
 $docs = 'AGENTS.md', 'docs/proceso-sdd.md', 'docs/agentes.md',
-        'docs/variantes-modelo.md'
+        'docs/variantes-modelo.md', 'docs/plan-desarrollo.md',
+        'docs/arquitectura.md', 'docs/persistencia.md',
+        'docs/base-de-datos/esquema.md', 'docs/base-de-datos/migraciones.md',
+        'docs/continuidad.md', 'docs/calidad/plan-de-pruebas.md',
+        'docs/diseno/sistema-de-diseno.md', 'docs/internacionalizacion.md',
+        'docs/manual-de-usuario.md', 'docs/cambio-a-escritorio.md'
 $files = @($docs) + @(Get-ChildItem .opencode/agents/*.md | ForEach-Object { $_.FullName })
 foreach ($file in $files) {
   $base = Split-Path $file -Parent
@@ -687,7 +692,7 @@ foreach ($m in [regex]::Matches($text, '(docs|tasks)/[A-Za-z0-9._/<>-]+')) {
 
 # 4. Referencias antiguas en documentos canónicos y agentes
 Select-String -Path $files `
-  -Pattern 'gh-issue[.]sh|issues-done-on-de[v]|ADR-0(29|64|66)|ocio/ocio[.]css|proyecto anterio[r]|otr[o] proyecto'
+  -Pattern 'supabase|vercel|cloudflare|r2-adapter|RLS|allowlist|responsiv|360px|768px|PWA'
 
 # 5. Fences Markdown pares, incluidos los indentados
 foreach ($file in $files) {
@@ -730,11 +735,14 @@ en el diff.
 
 ## 10. Historial de cambios
 
-| Fecha | Issue | Cambio |
+| Fecha | Origen | Cambio |
 |---|---|---|
 | 2026-11-12 | #3 (M0-02) | Versión inicial. Consolida el plan §4.3–4.6 y §4.8, las decisiones D-001–D-008 y la revisión de `AGENTS.md` y del flujo SDD. |
-| 2026-11-14 | #48 (M0-13) | Añade labels `variant: *`, `model_variant` en el task file, plantilla de issue con variante recomendada y política de permisos/autonomía de agentes. |
+| 2026-11-14 | #48 (M0-13) | Añade labels `variant: *`, `model_variant` en el task file y plantilla de issue con variante recomendada. |
 | 2026-11-14 | #4 (M0-03) | Marca `docs/adr/` como vigente y enlaza el índice y la plantilla de ADRs. |
-| 2026-11-14 | #5 (M0-04) | Añade la protección de ramas con rulesets, el repositorio público con licencia MIT y los scripts de etiquetas y protección; actualiza el mapa documental con README y CONTRIBUTING mínimos, LICENSE, SECURITY, plantillas y scripts. |
-| 2026-11-14 | — (ADR 0015) | Añade la orquestación proporcional al coste (sección 3.2), la skill `repo-map`, el mapa `.opencode/repo-map.md` y las variantes fijas por subagente. |
-| 2026-11-14 | #6 (M0-05) | Define los required checks `lint`, `typecheck`, `test` y `build` en los rulesets (pendientes de aplicar al publicar), documenta `-RequiredChecks` en el script de protección y actualiza el mapa documental de README y CONTRIBUTING con el arranque local y los comandos de calidad. |
+| 2026-11-14 | #5 (M0-04) | Añade la protección de ramas con rulesets, el repositorio público con licencia MIT y los scripts de etiquetas y protección. |
+| 2026-11-14 | #6 (M0-05) | Define los required checks `lint`, `typecheck`, `test` y `build`. |
+| 2026-11-18 | Pivote a escritorio | Reescritura completa: aplicación Windows, SQLite local, sin auth ni servicios cloud; áreas `desktop`, `persistence` y `packaging`; hitos M0–M5 de escritorio; 46 labels; subagentes sin modelo fijo. |
+
+Las issues #1–#48 citadas en este historial se eliminaron durante el pivote; se
+conservan aquí como referencia histórica y sus números no se reutilizan.

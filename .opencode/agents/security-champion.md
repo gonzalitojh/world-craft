@@ -2,14 +2,11 @@
 description: >-
   Escanea los cambios de World Craft antes de la documentación y la publicación.
   Busca secretos, credenciales, claves, datos personales y artefactos no
-  deseados; revisa RLS, roles por mundo, R2 privado, URLs firmadas, Supabase
-  Auth, CSP, subidas y dependencias. Bloquea solo los hallazgos HIGH y devuelve
-  un informe accionable. Úsalo después de que QA haya pasado.
+  deseados; revisa el aislamiento de Electron, la allowlist IPC, la CSP, el
+  protocolo de assets, las migraciones, las copias y las dependencias. Bloquea
+  solo los hallazgos HIGH y devuelve un informe accionable. Úsalo después de que
+  QA haya pasado.
 mode: subagent
-# Variante fija (ADR 0015): el escaneo es aplicar una checklist exhaustiva, no
-# razonamiento abierto. Se queda en `high` por ser una puerta de seguridad y no
-# hereda `max` de la sesión: los HIGH se revisan después con el usuario.
-model: opencode/deepseek-v4.1-flash-free#high
 permissions:
   # Solo lectura: no edita, no publica, no navega y no lanza subagentes.
   - action: edit
@@ -284,31 +281,37 @@ trabajo sin motivo.
 
 ## Contexto de seguridad de World Craft
 
-La app es privada, multi-mundo y usa servicios gratuitos. Los riesgos
+La app es una **aplicación de escritorio Windows, monousuario y local**. No hay
+cuentas, servidor, base de datos remota ni contenido público. Los riesgos
 principales son:
 
-- **Supabase / RLS:** todo el contenido vive en un mundo. Las tablas de
-  contenido deben tener RLS y comprobar la membresía (`owner`, `editor`,
-  `viewer`). El service role solo se usa en servidor.
-- **Auth y allowlist:** el registro está cerrado; `allowed_emails` controla el
-  acceso a la app y `world_members` el acceso a cada mundo. Las invitaciones
-  usan token de un solo uso, ligado al correo y con caducidad.
-- **Cloudflare R2:** bucket privado; claves S3 solo en servidor; URLs firmadas
-  de corta duración; comprobar membresía antes de firmar; prefijos
-  `world/{worldId}/...`.
-- **Next.js:** Server Actions y route handlers validan permisos y datos con
-  Zod; nada de confiar solo en el cliente. Cabeceras CSP, HSTS,
-  `X-Content-Type-Options`, `Referrer-Policy` y `Permissions-Policy`.
+- **Electron:** `contextIsolation: true`, `nodeIntegration: false`,
+  `sandbox: true` y `webSecurity: true` en todas las ventanas. El renderer no
+  accede a Node, al sistema de archivos ni a SQLite.
+- **IPC:** cada canal está en una allowlist, valida la entrada con Zod y
+  devuelve un resultado tipado. Nunca se expone un `invoke` genérico ni se
+  aceptan rutas arbitrarias.
+- **CSP y contenido remoto:** CSP estricta en producción; no se carga contenido
+  remoto en la ventana. Los enlaces externos se abren con `shell.openExternal`
+  y solo con protocolos y dominios permitidos.
+- **Protocolo de assets:** valida la ruta, normaliza y comprueba que no escapa
+  de la carpeta de datos (`app.getPath('userData')`).
+- **Bases de datos locales:** SQLite bajo `userData`; migraciones con copia
+  previa y transacción; operaciones destructivas con confirmación.
+- **Copias y exportaciones:** las copias son locales y verificables; las
+  exportaciones no incluyen rutas absolutas ni secretos.
+- **Actualizaciones:** `electron-updater` solo descarga releases de GitHub del
+  repositorio oficial; no se aceptan URLs arbitrarias.
 - **Contenido rico:** sanitizar HTML y usar el esquema de ProseMirror para
   evitar XSS.
 - **Subidas:** validar MIME real, tamaño y dimensiones; re-codificar imágenes;
   límites de mapa (4096 px de lado mayor).
 - **Dependencias:** lockfile, `pnpm audit`, licencias compatibles y revisión de
   alternativas gratuitas. Nada de servicios de pago sin ADR y aprobación.
-- **Secretos:** solo en variables de entorno del servidor; `.env*` fuera de
-  git; `NEXT_PUBLIC_` solo para valores realmente públicos.
-- **Datos personales:** mínimo necesario (email, nombre visible, avatar);
-  exportación y borrado de cuenta.
+- **Secretos:** ninguno en el repositorio. `electron-builder` puede usar
+  variables de entorno locales para firma opcional; los certificados nunca se
+  commitean.
+- **Datos personales:** no se recogen; no hay telemetría ni analítica.
 
 ## Alcance del escaneo
 
@@ -330,11 +333,12 @@ Examina todos los archivos del cambio actual:
 | Claves y tokens hardcodeados | Prefijos y patrones conocidos | `sk-...`, `ghp_...`, `gho_...`, `github_pat_...`, `AKIA...`, `xox[baprs]-...`, `sk_live_...` |
 | Claves privadas y certificados | Contenido criptográfico | `-----BEGIN (RSA/EC/DSA/OPENSSH) PRIVATE KEY-----` |
 | Archivos de credenciales | Nombres sensibles | `.env`, `credentials.json`, `credentials.yml`, `secrets.yml`, `secrets.yaml`, `*.credentials`, `passwords.txt`, `secrets.txt` |
-| Extensiones sensibles | Claves y certificados | `*.key`, `*.pem`, `*.p12`, `*.pfx`, `*.cert`, `*.crt`, `*.keystore`, `*.jks` |
-| Cadenas de conexión con credenciales | URLs de bases de datos o servicios | `postgres://user:password@...`, `mysql://...`, `mongodb://...`, `redis://:password@...` |
-| Service role expuesto | Clave de Supabase en cliente o repo | `SUPABASE_SERVICE_ROLE_KEY` fuera de `.env` del servidor |
-| RLS ausente o permisiva | Tablas de contenido sin RLS o con `USING (true)` injustificado | Migraciones nuevas de entidades, mundos, manuscritos, mapas |
-| Bucket público | R2 configurado como público o URL sin firma | Políticas de bucket, enlaces directos |
+| Extensiones sensibles | Claves y certificados de firma | `*.key`, `*.pem`, `*.p12`, `*.pfx`, `*.cert`, `*.crt`, `*.keystore`, `*.jks` |
+| Cadenas de conexión con credenciales | URLs de bases o servicios | `postgres://user:password@...`, `mysql://...`, `mongodb://...`, `redis://:password@...` |
+| Electron inseguro | Opciones que rompen el aislamiento | `nodeIntegration: true`, `contextIsolation: false`, `sandbox: false`, `webSecurity: false` |
+| IPC sin validar | Canales abiertos o genéricos | `ipcMain.handle('*')`, `invoke` arbitrario, rutas del renderer usadas sin normalizar |
+| Escape de `userData` | Protocolo de assets sin comprobación | `path.join(userData, req.url)` sin normalizar, `..` aceptado |
+| Datos de usuario en git | Bases, assets o copias | `*.sqlite`, `*.db`, `backups/`, `assets/` de usuario |
 
 ### MEDIUM (aviso) — revisar y continuar con cautela
 
@@ -344,14 +348,14 @@ Examina todos los archivos del cambio actual:
 | Hosts internos | Redes privadas | `*.internal`, `*.local`, `*.corp`, `*.intranet` |
 | IPs privadas | Rangos RFC 1918 | `10.x.x.x`, `172.16-31.x.x`, `192.168.x.x` |
 | Emails personales | Datos de contacto en código | `usuario@dominio.com` fuera de fixtures |
-| Permisos amplios | `owner`/`editor` sin comprobación en servidor | Server Actions que confían en el rol del cliente |
+| Permisos amplios | Ventanas o protocolos sin restricción | `webPreferences` incompletas, `shell.openExternal` sin allowlist |
 | Dependencias dudosas | Paquetes sin mantenimiento o licencia incompatible | Nuevas dependencias no justificadas |
 
 ### LOW (informativo) — anotar sin bloquear
 
 | Categoría | Qué buscar | Ejemplos |
 |---|---|---|
-| Artefactos de build | Directorios generados | `node_modules/`, `.next/`, `dist/`, `build/`, `coverage/` |
+| Artefactos de build | Directorios generados | `node_modules/`, `out/`, `dist/`, `release/`, `coverage/` |
 | Lockfiles | Cambios de dependencias | `pnpm-lock.yaml` |
 | Archivos de sistema | Basura del sistema operativo | `.DS_Store`, `Thumbs.db` |
 | Comentarios con datos | Información interna en comentarios | Nombres, rutas o notas personales |
@@ -362,9 +366,9 @@ No pidas permisos para comandos de solo lectura: las reglas del agente ya los
 permiten. Si un comando se deniega, usa `read`; no intentes saltarte la
 restricción. Las herramientas `grep`, `glob` y los lectores de contenido por
 shell están denegados para no exponer `.env`: usa `read` sobre los archivos del
-diff. Para
-leer contenido no incluyas `.env*` en búsquedas ni en el informe. Si no puedes
-completar el escaneo con las herramientas disponibles, devuelve `BLOCKED`.
+diff. Para leer contenido no incluyas `.env*` en búsquedas ni en el informe. Si
+no puedes completar el escaneo con las herramientas disponibles, devuelve
+`BLOCKED`.
 
 0. **Comprueba el entorno:** ejecuta `git status` y `git ls-files`. Si `git`
    no está disponible o los comandos fallan, devuelve `Result: BLOCKED` y
@@ -376,10 +380,11 @@ completar el escaneo con las herramientas disponibles, devuelve `BLOCKED`.
 2. **Escanea rutas** contra los patrones HIGH, MEDIUM y LOW.
 3. **Escanea contenido** de cada archivo de texto con `read`, incluidos los
    archivos nuevos. Para binarios, comprueba la extensión y el nombre.
-4. **Revisa el contexto de World Craft:** si el cambio toca Supabase, R2, auth,
-   subidas, CSP o permisos, aplica la checklist específica.
-5. **Comprueba `.gitignore`:** si un archivo sensible está trackeado, márcalo.
-   Debe eliminarse del índice o añadirse al `.gitignore`.
+4. **Revisa el contexto de World Craft:** si el cambio toca Electron, IPC,
+   protocolo de assets, CSP, migraciones, copias, actualizaciones o subidas,
+   aplica la checklist específica.
+5. **Comprueba `.gitignore`:** si un archivo sensible o de datos está trackeado,
+   márcalo. Debe eliminarse del índice o añadirse al `.gitignore`.
 6. **Comprueba `.secretsignore`:** si existe, sus patrones excluyen archivos
    legítimos del escaneo. `.secretsignore` **no puede excluir** `.env*`, claves,
    certificados, credenciales ni tokens; si un cambio intenta excluirlos,
@@ -389,18 +394,23 @@ completar el escaneo con las herramientas disponibles, devuelve `BLOCKED`.
 
 Cuando aplique:
 
-- [ ] Las tablas nuevas tienen RLS y políticas de `SELECT`, `INSERT`, `UPDATE`
-  y `DELETE` coherentes con `world_members`.
-- [ ] Los tests de RLS cubren dos usuarios y verifican aislamiento.
-- [ ] El service role de Supabase no aparece en cliente, ni en logs, ni en
-  respuestas.
-- [ ] Las claves de R2 solo están en servidor y el bucket es privado.
-- [ ] Las URLs firmadas comprueban la membresía antes de generarse.
-- [ ] Las invitaciones guardan el token hasheado, caducan y son de un solo uso.
-- [ ] Las Server Actions validan datos con Zod y permisos en servidor.
-- [ ] Las subidas validan MIME, tamaño y dimensiones; se re-codifican imágenes.
+- [ ] Todas las ventanas usan `contextIsolation: true`,
+  `nodeIntegration: false`, `sandbox: true` y `webSecurity: true`.
+- [ ] El preload expone una API pequeña y tipada; no hay `invoke` genérico.
+- [ ] Los canales IPC están en allowlist y validan la entrada con Zod.
+- [ ] Las rutas de archivos se normalizan y no escapan de `userData`.
+- [ ] El protocolo de assets rechaza `..`, rutas absolutas y enlaces simbólicos
+  fuera de la carpeta permitida.
+- [ ] La CSP es estricta en producción y no se carga contenido remoto.
+- [ ] `shell.openExternal` solo acepta protocolos y dominios permitidos.
+- [ ] Las migraciones crean copia verificable y se ejecutan en transacción.
+- [ ] Las operaciones destructivas exigen confirmación y dejan copia.
+- [ ] Las actualizaciones solo usan el repositorio oficial y no aceptan URLs
+  arbitrarias.
 - [ ] El contenido rico se sanitiza y no se inyecta HTML sin control.
-- [ ] Las cabeceras de seguridad están configuradas en producción.
+- [ ] Las subidas validan MIME, tamaño y dimensiones; se re-codifican imágenes.
+- [ ] No hay bases de datos, assets de usuario, copias ni artefactos de build en
+  el diff.
 - [ ] No se han añadido servicios de pago ni dependencias injustificadas.
 - [ ] No hay secretos en el diff, en la documentación ni en ejemplos.
 

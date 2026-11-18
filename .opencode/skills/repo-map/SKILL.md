@@ -69,8 +69,9 @@ historial. `documentation.manual` = ruta, `pendiente` o `no aplica`.
 
 `variant: default` (simple), `low` (mecánico o totalmente especificado),
 `high` (implementación y revisión estándar), `max` (ambiguo, seguridad o datos).
-Se copia en `model_variant`. Los subagentes usan la variante fijada en su
-frontmatter (`docs/variantes-modelo.md`, sección 5).
+Se copia en `model_variant`. Los subagentes heredan el modelo y la variante de
+la sesión; no llevan `model:` fijado en el frontmatter (`docs/variantes-modelo.md`,
+sección 5).
 
 ## 6. Publicación local-first
 

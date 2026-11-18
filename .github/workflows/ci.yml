@@ -10,18 +10,14 @@ on:
 permissions:
   contents: read
 
-# Sin telemetría de Next.js en CI: ni datos de uso ni peticiones de red extra.
-env:
-  NEXT_TELEMETRY_DISABLED: '1'
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Los jobs lint, typecheck, test y build son los required status checks de
-  # `protect-dev` y `protect-main` (ADR 0016). No renombrar sus ids ni su
-  # `name` sin actualizar scripts/set-branch-protection.ps1 y los rulesets.
+  # Los jobs lint, typecheck y test son los required status checks de
+  # `protect-dev` y `protect-main`. No renombrar sus ids ni su `name` sin
+  # actualizar scripts/set-branch-protection.ps1 y los rulesets.
   lint:
     name: lint
     runs-on: ubuntu-latest
@@ -52,39 +48,9 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
       - run: pnpm test
-      # Comprueba que el journal y los snapshots de Drizzle Kit están
-      # coherentes. No abre conexión: funciona sin credenciales.
-      - run: pnpm db:check
 
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - run: pnpm build
-
-  # No es required: un fallo del navegador o del runner no debe bloquear la PR.
-  e2e:
-    name: e2e
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
-      - name: Guardar el informe de Playwright
-        if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
+  # No es required: un fallo de la acción de secretos no debe bloquear una PR
+  # que no toca credenciales. Se revisa en la puerta de seguridad.
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
@@ -102,8 +68,6 @@ jobs:
 
   # No es required: una vulnerabilidad nueva en una dependencia no debe
   # bloquear una PR que no la toca. Se revisa en la puerta de seguridad.
-  # Se auditan también las dependencias de desarrollo: una crítica en el
-  # tooling (por ejemplo, en Vitest) también es un riesgo del repositorio.
   audit:
     name: audit
     runs-on: ubuntu-latest

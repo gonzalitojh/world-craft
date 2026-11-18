@@ -6,7 +6,8 @@
   // y en cada paso de cada subagente. Ese prefijo se lee de caché a
   // 0.003 $/M en lugar de 0.15 $/M siempre que la ventana no se enfríe. Estos
   // valores mantienen la caché caliente mientras se trabaja sin pagar el error
-  // de diseño de releer el proceso entero en cada turno (ver ADR 0015).
+  // de diseño de releer el proceso entero en cada turno (ver
+  // docs/variantes-modelo.md y .opencode/repo-map.md).
   "warming": {
     "duration": "30 minutes",
   },

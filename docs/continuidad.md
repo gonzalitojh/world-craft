@@ -1,280 +1,175 @@
-# Continuidad y disponibilidad
+# Continuidad y recuperación
 
-> **Estado:** vigente desde el 17/11/2026 (issue
-> [#41](https://github.com/gonzalitojh/world-craft/issues/41), M0-11).
-> **Ámbito:** healthcheck real, monitorización, keep-alive, pausa y reactivación
-> de Supabase, y copia semanal de infraestructura.
-> **Decisiones:** [ADR 0013](adr/0013-free-tier-continuity.md) (continuidad de
-> free tiers) y [ADR 0009](adr/0009-testing-pwa-backups.md) §9.3 (backups).
-> **Runbook de base de datos:** [`base-de-datos/operacion.md`](base-de-datos/operacion.md).
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
+> **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
+> preservación en actualizaciones y desinstalación.
+> **Decisiones:** ADR 0012. La estructura de datos está en
+> [`persistencia.md`](persistencia.md).
 
-Este documento explica cómo se mantiene vivo un proyecto de Supabase Free sin
-pagar y qué se hace cuando se pausa. No contiene credenciales, correos reales ni
-URLs privadas: los valores concretos viven en el panel de Supabase, en Vercel y
-en la configuración de GitHub.
+## 1. Objetivo
 
-## 1. Qué protege la continuidad
+World Craft debe poder recuperarse de un fallo sin perder los datos del
+usuario. La continuidad es **local**: no depende de la nube, de una cuenta ni
+de un servicio externo. Las copias viven en el equipo del usuario y, si este
+quiere, en una unidad externa.
 
-Supabase Free **pausa** un proyecto tras una semana sin actividad. La pausa no
-borra los datos: el proyecto conserva su contenido y Supabase mantiene una
-ventana de restauración de **un año**. Lo que se rompe es la aplicación: la base
-deja de aceptar conexiones hasta que alguien la reactiva a mano.
+## 2. Escenarios y respuesta
 
-La estrategia tiene tres capas:
+| Escenario | Detección | Respuesta | Datos que se conservan |
+|---|---|---|---|
+| Cierre inesperado | Al arrancar | SQLite recupera el WAL; `integrity_check` | Todos |
+| Corrupción de la base | `integrity_check` falla | Modo seguro + restaurar copia | Copia elegida |
+| Migración fallida | Error en transacción | Rollback + copia pre-migración + modo seguro | Base anterior |
+| Actualización de la app | Primera ejecución | Comprobación de esquema + copia + migración | Todos |
+| Reinstalación | Instalador | No toca `userData` | Todos |
+| Desinstalación | Desinstalador | Conserva `userData` y avisa | Todos |
+| Borrado accidental de un mundo | Papelera | Restaurar desde papelera | Mundo y assets |
+| Borrado definitivo | Confirmación | Copia recuperable previa | Copia |
+| Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio | Hasta la última escritura |
+| Archivo de asset perdido | Al abrir | Aviso y placeholder; se conserva la ficha | Metadatos |
+| Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar | Todos |
 
-| Capa | Qué hace | Dónde vive |
-|---|---|---|
-| Healthcheck real | Consulta Supabase de verdad y devuelve 200 o 503 | `src/lib/health.ts` y `/api/health` |
-| Monitor externo | Avisa por correo si el healthcheck deja de responder | UptimeRobot Free (monitor principal) |
-| Keep-alive de respaldo | Llama al healthcheck cada seis horas desde GitHub Actions | `.github/workflows/keepalive.yml` |
+## 3. Copias
 
-La copia semanal de infraestructura es independiente y se explica en §6.
+### 3.1 Automáticas
 
-## 2. Contrato de `/api/health`
+- **Diaria:** al cerrar la app o en el primer arranque del día.
+- **Semanal:** se conserva la última diaria de la semana.
+- **Mensual:** se conserva la última semanal del mes.
+- **Pre-migración:** antes de aplicar migraciones.
+- **Pre-restauración:** antes de reemplazar la base.
+- **Antes de operaciones destructivas:** borrar un mundo, vaciar la papelera o
+  eliminar todos los datos.
 
-El endpoint no se limita a comprobar que Next.js responde: ejecuta `select 1`
-contra la base con `DATABASE_URL`, la misma cadena del runtime. **No usa**
-`SUPABASE_SERVICE_ROLE_KEY` ni ninguna clave de servicio.
+Retención por defecto: 7 diarias, 4 semanales y 12 mensuales. Las copias
+pre-migración, pre-restauración y manuales no se rotan automáticamente.
 
-| HTTP | Cuerpo | Significado |
-|---|---|---|
-| `200` | `{"status":"ok","database":"available","timestamp":"…"}` | Supabase aceptó la consulta en menos de cinco segundos. |
-| `503` | `{"status":"degraded","database":"paused","timestamp":"…"}` | No se pudo abrir la conexión: DNS, timeout, rechazo o *tenant* ausente. Es el síntoma habitual de un proyecto pausado, aunque una caída de red produce lo mismo. |
-| `503` | `{"status":"degraded","database":"error","timestamp":"…"}` | No se pudo completar la comprobación: configuración ausente o inválida, credenciales o permisos, base inexistente u otro fallo. |
+### 3.2 Manuales
 
-Propiedades del endpoint:
+El usuario puede crear una copia completa (base + assets) desde Ajustes →
+Copias. Puede elegir destino, incluida una unidad externa o una carpeta de red
+de confianza. La app no sube la copia a Internet.
 
-- **Sin caché:** `Cache-Control: no-store` y renderizado dinámico.
-- **Con límite:** cinco segundos; una comprobación colgada no bloquea al monitor.
-- **Sin detalles:** el cuerpo nunca incluye el error original, el host, el rol,
-  el SQL ni la cadena de conexión. Los detalles se consultan en los logs del
-  servidor, donde tampoco deben aparecer credenciales.
-- **Barato:** `select 1` no toca tablas ni depende de RLS.
-- **Sin límite propio:** el endpoint es anónimo y cada petición consulta la base.
-  El timeout acota el coste y los monitores consultan cada 30–60 minutos, pero si
-  aparece abuso se limita en el borde (Vercel o Cloudflare). Queda como deuda
-  aceptada hasta que exista esa configuración.
-- **Público:** solo revela disponibilidad y hora; la página `/health` añade el
-  commit y el detalle de la comprobación. No hay datos de usuarios ni contenido.
+### 3.3 Verificación
 
-La página `/health` usa la misma comprobación y muestra el estado con icono y
-texto (no solo color): operativo/degradado y disponible/sin respuesta/error.
+Cada copia incluye un `manifest.json` con:
 
-## 3. Monitor principal: UptimeRobot Free
-
-El monitor se crea en la cuenta del propietario; el repositorio no puede
-configurarlo. Pasos reproducibles:
-
-1. Crear una cuenta gratuita en UptimeRobot y entrar en **Add New Monitor**.
-2. Tipo **HTTP(s)**, nombre `World Craft producción`, URL
-   `https://<dominio-de-producción>/api/health` (por ejemplo, el subdominio
-   `*.vercel.app` del ADR 0006).
-3. Intervalo **30–60 minutos**. El plan Free permite cinco minutos; no hace falta
-   bajar de 30 para evitar ruido y correos innecesarios.
-4. Confirmar que el monitor considera sano un **HTTP 200**. UptimeRobot ya marca
-   como caída cualquier `4xx`/`5xx`, y el endpoint devuelve `503` cuando Supabase
-   no responde.
-5. En **Alert Contacts**, añadir el correo que recibirá los avisos y activar las
-   notificaciones de caída y recuperación. Enviar un **Test Notification** y
-   comprobar que llega (incluida la carpeta de spam).
-6. Opcional: crear una **Maintenance Window** para las ventanas de despliegue o
-   de restauración y evitar falsos positivos.
-7. Anotar en el task file de la issue la fecha de alta, el intervalo, el correo
-   configurado (sin escribirlo en el repositorio) y el resultado del aviso de
-   prueba.
-
-Comprobación manual del endpoint:
-
-```bash
-curl -i https://<dominio-de-producción>/api/health
+```json
+{
+  "format": 1,
+  "appVersion": "0.1.0",
+  "schemaVersion": 3,
+  "createdAt": "2026-11-18T10:00:00.000Z",
+  "sqliteSha256": "abc1234",
+  "sizeBytes": 0,
+  "includesAssets": false
+}
 ```
 
-Debe devolver `200` con `"database":"available"`. Con Supabase pausado devuelve
-`503` y `"database":"paused"`.
+Antes de dar una copia por válida, la app la abre en solo lectura y ejecuta
+`PRAGMA integrity_check`. Si falla, la marca como no válida y no la ofrece para
+restaurar.
 
-### 3.1 Prueba de siete días
+## 4. Restauración
 
-La pausa solo se demuestra con tiempo: no se puede simular en una sesión.
+1. Ajustes → Copias → elegir copia.
+2. La app muestra fecha, versión de esquema y si incluye assets.
+3. Confirmación explícita: «Se reemplazará la base actual. Se guardará una copia
+   de seguridad antes de continuar.»
+4. Se crea `backups/pre-restore/`.
+5. Se cierra la conexión y se sustituye la base de forma atómica.
+6. Se reabre, se comprueba integridad y se aplican migraciones pendientes.
+7. Si algo falla, se restaura la base anterior y se muestra un error con código
+   estable.
+8. Se muestra un informe: versión restaurada, migraciones aplicadas, assets
+   ausentes y referencias huérfanas.
 
-1. Con el monitor activo y el healthcheck en verde, dejar pasar **siete días
-   completos** sin abrir la aplicación.
-2. Revisar en UptimeRobot que no hay caídas y que las comprobaciones siguen
-   llegando.
-3. Abrir `/api/health` y comprobar que sigue devolviendo `200` y
-   `"database":"available"`.
-4. En el panel de Supabase, confirmar que el proyecto sigue activo (no aparece
-   como pausado).
-5. Anotar fecha de inicio, fecha de fin y resultado en el task file.
+La restauración nunca se ejecuta en segundo plano ni sin confirmación.
 
-Si el proyecto se pausa durante la prueba, el monitor avisará: sigue el runbook
-de §5 y revisa si el intervalo o la actividad del healthcheck son suficientes.
+## 5. Modo seguro
 
-## 4. Keep-alive de respaldo: GitHub Actions
+La app arranca en modo seguro cuando:
 
-`.github/workflows/keepalive.yml` llama al healthcheck cada seis horas y también
-puede lanzarse a mano desde **Actions → Keep-alive → Run workflow**.
+- `PRAGMA integrity_check` falla.
+- Una migración no puede aplicarse.
+- La versión de esquema es superior a la que entiende la app.
+- La carpeta de datos no es escribible.
 
-Configuración única en GitHub (Settings → Secrets and variables → Actions →
-Variables):
+En modo seguro:
 
-| Nombre | Tipo | Valor |
+- No se escribe en la base ni en los assets.
+- Se muestra el diagnóstico y las acciones disponibles.
+- Se puede **exportar** lo que se pueda leer.
+- Se puede **restaurar** una copia.
+- Se puede **abrir la carpeta de datos** y los logs.
+- No se ejecutan actualizaciones automáticas.
+
+## 6. Papelera y borrados
+
+- Borrar una entidad, mapa, manuscrito o escena la mueve a papelera
+  (`deleted_at`).
+- Restaurar la devuelve a su sitio; si su padre ya no existe, se ofrece
+  reubicarla.
+- Vaciar la papelera exige confirmación, crea una copia y purga los registros y
+  assets no referenciados.
+- Borrar un mundo mueve su carpeta de assets a cuarentena y conserva una copia
+  de la base; la purga definitiva es una acción separada.
+
+## 7. Actualizaciones y desinstalación
+
+### 7.1 Actualización
+
+1. `electron-updater` descarga la nueva versión en segundo plano.
+2. El usuario decide cuándo reiniciar.
+3. Al arrancar, la app compara la versión de esquema.
+4. Si hay migraciones, crea copia y las aplica.
+5. Si falla, vuelve a la base anterior y arranca en modo seguro.
+6. Los assets y las copias no se tocan.
+
+La actualización se puede desactivar en Ajustes. Nunca se instala sin
+consentimiento.
+
+### 7.2 Reinstalación
+
+El instalador detecta una instalación previa, actualiza los binarios y
+conserva `userData`. Si el usuario elige otra carpeta de instalación, los datos
+siguen en la misma ruta de `userData`.
+
+### 7.3 Desinstalación
+
+El desinstalador elimina binarios y accesos directos. **No borra**
+`%APPDATA%\World Craft`. Al terminar, muestra la ruta de los datos y recuerda
+que puede eliminarlos manualmente si lo desea.
+
+## 8. Pruebas de continuidad
+
+| Prueba | Cuándo | Evidencia |
 |---|---|---|
-| `HEALTHCHECK_URL` | Variable de repositorio | URL completa del healthcheck de producción, con `https://`. |
+| Instalar → usar → actualizar | Cada release | Datos y assets intactos |
+| Instalar → usar → desinstalar | Cada release | `userData` intacto |
+| Migración con datos | Cada migración | Copia + preservación |
+| Restauración | Cada release | Informe de restauración |
+| Corrupción simulada | Hito M5 | Modo seguro + restauración |
+| Disco lleno | Hito M5 | Aviso y modo lectura |
+| Corte de energía | Hito M5 | WAL recupera la base |
 
-- Si la variable falta, el workflow **no falla**: emite un aviso y termina. El
-  monitor principal sigue siendo UptimeRobot.
-- Si la URL no empieza por `https://`, el workflow falla a propósito para no
-  enviar la comprobación en claro.
-- Si el endpoint no devuelve `200`, el workflow falla y deja un resumen con el
-  código recibido.
-- **Límite de GitHub:** los workflows programados se desactivan tras 60 días sin
-  actividad en un repositorio público. Cualquier push los reactiva. Por eso este
-  cron es un respaldo y no el monitor principal.
-- Los workflows programados se ejecutan desde la rama por defecto (`main`). Hasta
-  que el propietario promueva `dev` a `main`, el cron usa la versión de `main`;
-  para probar la versión nueva antes, se lanza a mano desde la rama. La misma
-  regla se aplica a la copia semanal de §6.
+Las pruebas se ejecutan en una máquina virtual o en una carpeta temporal; nunca
+sobre los datos reales del desarrollador.
 
-## 5. Runbook: pausa y reactivación de Supabase
+## 9. Diagnóstico y soporte
 
-### 5.1 Síntomas
+- Ajustes → Ayuda → «Exportar diagnóstico» genera un ZIP con versión, sistema,
+  estado de la base, configuración no sensible y últimas líneas de log.
+- El usuario revisa el ZIP antes de compartirlo.
+- No se envía nada automáticamente.
+- Los informes de error usan códigos estables y no incluyen contenido del
+  usuario.
 
-- `/api/health` devuelve `503` con `"database":"paused"`.
-- UptimeRobot envía un correo de caída.
-- El keep-alive de GitHub falla con un código distinto de `200`.
-- La aplicación muestra errores de conexión al cargar datos.
+## 10. Documentos relacionados
 
-Antes de restaurar, confirma en el panel de Supabase que el proyecto aparece
-como **Paused**. Un `paused` del healthcheck también puede ser una caída de red,
-un DNS o una credencial caducada; restaurar no arregla esos casos.
-
-### 5.2 Reactivación
-
-1. Entrar en el panel de Supabase con la cuenta del propietario y abrir el
-   proyecto.
-2. Pulsar **Restore project** (o **Resume**) y esperar a que termine. Suele tardar
-   unos minutos.
-3. **Revisar las claves tras restaurar.** La pausa conserva los datos, pero
-   conviene comprobar en **Project Settings → API** y **Database** que
-   `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, la contraseña de la base y
-   las cadenas `DATABASE_URL`/`DIRECT_URL` siguen siendo las mismas. Si Supabase
-   las ha rotado, o si hay cualquier duda de exposición, genera claves nuevas y
-   actualízalas **solo** en Vercel y en `.env.local`. Nunca las pegues en issues,
-   logs, capturas ni documentación.
-4. Comprobar la conexión desde local:
-
-   ```bash
-   pnpm db:ping
-   pnpm db:verify
-   ```
-
-   `db:ping` valida la conexión, el rol `authenticated` y `auth.uid()`;
-   `db:verify` confirma migraciones, RLS y privilegios.
-5. Comprobar el despliegue:
-
-   ```bash
-   curl -i https://<dominio-de-producción>/api/health
-   ```
-
-   Debe volver a `200` y `"database":"available"`.
-6. En UptimeRobot, confirmar que el monitor vuelve a verde. Si se abrió una
-   ventana de mantenimiento, cerrarla.
-7. Repasar los correos de aviso: UptimeRobot manda caída y recuperación; GitHub
-   deja el resumen del workflow. Comprobar que no hay avisos duplicados ni
-   antiguos sin resolver.
-8. Anotar en el task file o en el registro de incidencias: causa, hora de pausa,
-   hora de restauración, claves revisadas (sin valores) y resultado de
-   `db:ping`, `db:verify` y `/api/health`.
-
-### 5.3 Datos y ventana de restauración
-
-- La pausa **no borra** los datos del proyecto.
-- Supabase mantiene una **ventana de restauración de un año**. Pasada esa
-  ventana, el proyecto y sus datos pueden perderse de forma definitiva.
-- La copia semanal (§6) y la exportación de mundo (M5) son la red de seguridad
-  independiente del proveedor.
-- Si el proyecto se recrea en lugar de restaurarse, hay que aplicar migraciones
-  (`pnpm db:migrate`), seed (`pnpm db:seed`) y verificar (`pnpm db:verify`); los
-  datos solo vuelven desde una copia.
-
-## 6. Copia semanal de infraestructura
-
-`.github/workflows/backup.yml` se ejecuta los domingos a las 03:00 UTC y también
-a mano. El detalle completo —restauración probada, copia en R2 y política de
-claves— se cierra en M5-06 (issue [#33](https://github.com/gonzalitojh/world-craft/issues/33)).
-
-Qué hace:
-
-1. Comprueba que existen los secretos. Si falta alguno, avisa en el resumen y
-   **no genera ninguna copia** (no simula un éxito).
-2. Ejecuta `pg_dump` con el mismo criterio que el runbook:
-   `--schema=public --no-owner --no-privileges --format=custom`.
-3. Verifica la copia con `pg_restore --list`.
-4. La cifra con GPG simétrico AES-256 y borra el volcado en claro.
-5. Guarda el archivo `.gpg` y su `sha256` como artefacto durante **90 días**.
-6. Los workflows programados se ejecutan desde la rama por defecto (`main`); hasta
-   que se promueva `dev`, la copia semanal usa la versión de `main`. Para probar
-   cambios de la rama, lanza el workflow a mano.
-
-**El artefacto es descargable por cualquiera con acceso de lectura al
-repositorio.** Como el repositorio es público, el cifrado AES-256 es la única
-barrera: usa una `BACKUP_PASSPHRASE` larga y única, guárdala en el gestor de
-contraseñas y no la reutilices. El volcado contiene datos personales (por
-ejemplo, correos de la allowlist y de invitaciones), así que el artefacto se
-trata como material sensible. M5-06 valorará mover la copia al bucket privado de
-R2.
-
-Configuración única en GitHub (Settings → Secrets and variables → Actions →
-Secrets):
-
-| Nombre | Contenido |
-|---|---|
-| `SUPABASE_DB_URL` | Cadena del pooler de sesión (`DIRECT_URL`, puerto 5432), con `sslmode=require`. |
-| `BACKUP_PASSPHRASE` | Frase larga y aleatoria para cifrar la copia; se guarda también en el gestor de contraseñas del propietario. |
-
-Restauración de una copia:
-
-```bash
-gpg --decrypt world-craft-<fecha>.dump.gpg > world-craft-<fecha>.dump
-pg_restore --no-owner --no-privileges --dbname "$DIRECT_URL" world-craft-<fecha>.dump
-```
-
-Antes de restaurar, lee [`base-de-datos/operacion.md`](base-de-datos/operacion.md)
-§9.1 y ejecuta `pnpm db:verify` y `pnpm test:db` después. Los artefactos caducan a
-los 90 días y no sustituyen a la exportación de un mundo completo.
-
-## 7. Alertas esperadas
-
-| Origen | Cuándo avisa | Canal |
-|---|---|---|
-| UptimeRobot | El healthcheck no devuelve `200` durante el intervalo configurado, y cuando se recupera. | Correo del propietario. |
-| GitHub Actions (keep-alive) | El healthcheck no devuelve `200` o la URL no es `https://`. | Correo de GitHub y resumen del workflow. |
-| GitHub Actions (backup) | Falla `pg_dump`, la verificación o el cifrado. | Correo de GitHub y resumen del workflow. |
-| Supabase | Pausa inminente o cuota cerca del límite, si el proyecto tiene avisos activos. | Correo del propietario. |
-
-Un aviso de caída no se silencia: se confirma el estado en Supabase y se sigue
-el runbook. Los falsos positivos por despliegue se cubren con una ventana de
-mantenimiento, no desactivando el monitor.
-
-## 8. Límites y revisión
-
-- **Coste:** UptimeRobot Free, Supabase Free, Vercel Hobby y GitHub Actions en
-  repositorio público; 0 €/mes.
-- **UptimeRobot Free:** 50 monitores y comprobaciones cada cinco minutos; aquí se
-  usa uno cada 30–60 minutos.
-- **GitHub Actions:** minutos ilimitados en repositorio público; el keep-alive
-  son cuatro llamadas al día y el backup una ejecución semanal.
-- **Artefactos:** 90 días de retención. La copia en R2 es opcional y se decide en
-  M5-06.
-- **Revisión mensual:** estado del monitor, última copia, uso de Supabase y
-  correos de aviso. Si una cuota supera el 70 %, se documenta y se decide entre
-  optimizar o migrar (ADR 0013).
-
-## 9. Enlaces
-
-- [ADR 0013](adr/0013-free-tier-continuity.md): continuidad de free tiers.
-- [ADR 0009](adr/0009-testing-pwa-backups.md): testing, PWA y backups.
-- [`base-de-datos/operacion.md`](base-de-datos/operacion.md): migraciones,
-  copias, restauración y runbook de base de datos.
-- [`almacenamiento.md`](almacenamiento.md): R2, lifecycle y credenciales.
-- `.github/workflows/keepalive.yml` y `.github/workflows/backup.yml`.
+- [Persistencia](persistencia.md)
+- [Migraciones](base-de-datos/migraciones.md)
+- [Plan de pruebas](calidad/plan-de-pruebas.md)
+- [Manual de usuario](manual-de-usuario.md)
+- [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md)
+- [ADR 0012](adr/0012-backup-restore-recovery.md)
