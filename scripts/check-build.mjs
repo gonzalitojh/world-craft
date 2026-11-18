@@ -199,7 +199,7 @@ async function checkDrizzleMigrations() {
   }
 }
 
-/** Comprueba que el módulo nativo y Drizzle no se han empaquetado. */
+/** Comprueba que los módulos nativos y Drizzle no se han empaquetado. */
 function checkExternalizedDependencies(mainBundle) {
   if (mainBundle === null) {
     return;
@@ -211,6 +211,41 @@ function checkExternalizedDependencies(mainBundle) {
 
   if (!/require\(["']drizzle-orm\/better-sqlite3["']\)/.test(mainBundle)) {
     fail('drizzle-orm no está externalizado en out/main/index.cjs.');
+  }
+}
+
+/**
+ * Comprueba que sharp es una dependencia de ejecución y no viaja empaquetado.
+ *
+ * `src/main/assets/image.ts` importa sharp, pero hoy ese módulo no es
+ * alcanzable desde el entrypoint (la importación se expone con las fichas, en
+ * M1), así que el bundle puede no mencionarlo. Lo que nunca debe ocurrir es que
+ * su código y sus binarios acaben dentro del bundle: eso se detecta por las
+ * rutas internas del paquete y por el cargador de libvips.
+ */
+async function checkSharpNotBundled(mainBundle) {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+
+  if (
+    typeof packageJson.dependencies?.sharp !== 'string' ||
+    packageJson.dependencies.sharp.length === 0
+  ) {
+    fail('sharp no está declarado como dependencia de ejecución.');
+  }
+
+  if (mainBundle === null) {
+    return;
+  }
+
+  for (const marker of [
+    'node_modules/sharp',
+    'node_modules\\\\sharp',
+    'sharp/lib/constructor',
+    'libvips-cpp',
+  ]) {
+    if (mainBundle.includes(marker)) {
+      fail('sharp está empaquetado dentro de out/main/index.cjs.');
+    }
   }
 }
 
@@ -228,6 +263,7 @@ for (const artifact of REQUIRED_ARTIFACTS) {
 
 await checkDrizzleMigrations();
 checkExternalizedDependencies(mainBundle);
+await checkSharpNotBundled(mainBundle);
 
 if (html !== null) {
   checkContentSecurityPolicy(html);

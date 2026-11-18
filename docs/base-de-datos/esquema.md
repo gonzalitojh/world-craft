@@ -2,8 +2,9 @@
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio). La migración
 > `0000_init` y las tablas `schema_migrations` y `app_settings` están
-> implementadas en M0-04 (#64). Las tablas de dominio y FTS5 llegan en M1 con
-> sus propias migraciones; hasta entonces figuran como previstas.
+> implementadas en M0-04 (#64); la tabla `assets` está implementada en
+> `0001_assets` (M0-06, #66). Las tablas de dominio y FTS5 llegan en M1 con sus
+> propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -27,15 +28,15 @@
 
 ## 2. Diagrama
 
-Modelo objetivo (las tablas de contenido llegan en M1; implementadas hoy solo
-`app_settings` y `schema_migrations`):
+Modelo objetivo (las tablas de contenido llegan en M1; implementadas hoy
+`schema_migrations`, `app_settings` y `assets`):
 
 ```text
 worlds
   ├─< entity_types
   ├─< entities >─< relations >─ relation_types
   │      ├─< entity_tags >─ tags
-  │      └─< assets
+  │      └─< assets                 (referencia desde entidades en M1)
   ├─< maps >─< map_entity_links
   ├─< manuscripts >─< books >─< chapters >─< scenes >─< scene_versions
   ├─< game_tables >─< game_table_entries
@@ -44,6 +45,7 @@ worlds
 
 game_content_packs >─ game_tables
 app_settings
+assets                      (implementada en 0001; FK a worlds en M1)
 schema_migrations
 search_documents >─ search_fts (FTS5)
 ```
@@ -67,9 +69,9 @@ CREATE TABLE `schema_migrations` (
 ```
 
 La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
-guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, no 0 ni el
-prefijo de la etiqueta. El runner contrasta ese valor con
-`schema_migrations` y entra en modo seguro si no coinciden.
+guarda el **número de migraciones aplicadas**: con `0000_init` vale 1 y con
+`0001_assets`, 2; no es el prefijo de la etiqueta. El runner contrasta ese valor
+con `schema_migrations` y entra en modo seguro si no coinciden.
 
 ### 3.1 `schema_migrations`
 
@@ -89,8 +91,9 @@ prefijo de la etiqueta. El runner contrasta ese valor con
 
 ## 4. Mundos y contenido
 
-**Previstas para M1.** Las tablas de esta sección describen el modelo objetivo;
-ninguna existe todavía en `0000_init`.
+**Previstas para M1**, salvo `assets`, que ya existe en `0001_assets` (M0-06,
+#66). Las demás tablas de esta sección describen el modelo objetivo; ninguna
+existe todavía en `0000_init`.
 
 ### 4.1 `worlds`
 
@@ -217,21 +220,54 @@ Regla: `source_id <> target_id` con `CHECK`.
 
 ### 4.7 `assets`
 
+**Implementada en `0001_assets` (M0-06, #66).** SQL real:
+
+```sql
+CREATE TABLE `assets` (
+  `id` text PRIMARY KEY NOT NULL,
+  `world_id` text NOT NULL,
+  `kind` text NOT NULL,
+  `relative_path` text NOT NULL,
+  `mime` text NOT NULL,
+  `size` integer NOT NULL,
+  `width` integer,
+  `height` integer,
+  `alt` text,
+  `hash` text NOT NULL,
+  `created_at` integer NOT NULL,
+  CONSTRAINT "assets_kind_check" CHECK("assets"."kind" in ('image', 'map', 'document', 'other')),
+  CONSTRAINT "assets_size_check" CHECK("assets"."size" >= 0),
+  CONSTRAINT "assets_hash_check" CHECK(length("assets"."hash") = 64 AND "assets"."hash" NOT GLOB '*[^0-9a-f]*')
+);
+```
+
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | TEXT | PK | UUIDv7. |
-| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo. |
-| `kind` | TEXT | NOT NULL | `image`, `map`, `document`, `other`. |
-| `relative_path` | TEXT | NOT NULL | Ruta relativa a `assets/`. |
-| `mime` | TEXT | NOT NULL | MIME real validado. |
-| `size` | INTEGER | NOT NULL | Bytes. |
+| `world_id` | TEXT | NOT NULL | Mundo; **sin FK en M0**, se añade en M1. |
+| `kind` | TEXT | NOT NULL, CHECK | `image`, `map`, `document`, `other`. En M0 solo se inserta `image`. |
+| `relative_path` | TEXT | NOT NULL | Ruta relativa a `assets/`; en M0 `worlds/<uuidv7>/<uuidv7>.webp`. |
+| `mime` | TEXT | NOT NULL | MIME real; en M0 siempre `image/webp`. |
+| `size` | INTEGER | NOT NULL, CHECK >= 0 | Bytes del WebP servido. |
 | `width` | INTEGER | NULL | Ancho en píxeles. |
 | `height` | INTEGER | NULL | Alto en píxeles. |
-| `alt` | TEXT | NULL | Texto alternativo. |
-| `hash` | TEXT | NOT NULL | SHA-256. |
-| `created_at` | INTEGER | NOT NULL | Creación. |
+| `alt` | TEXT | NULL | Texto alternativo (máximo 500 caracteres). |
+| `hash` | TEXT | NOT NULL, CHECK hexadecimal de 64 | SHA-256 del WebP publicado. |
+| `created_at` | INTEGER | NOT NULL | Creación en milisegundos UTC. |
 
 Índices: `assets_world_idx (world_id)`, `assets_hash_idx (hash)`.
+
+Reglas:
+
+- La ruta relativa se valida en el servicio y solo admite
+  `worlds/<uuidv7>/<uuidv7>.webp` o `…/<uuidv7>.thumb.webp`; la miniatura no
+  tiene fila propia y se deriva del archivo principal.
+- `hash` cubre el archivo servido, no el original; por eso el índice sirve para
+  verificar y para una futura deduplicación, que en M0 no se aplica.
+- **FK diferida.** `worlds` no existe en `0000`/`0001`; la migración de M1
+  reconstruirá `assets` (tabla nueva, copia, `DROP` y `RENAME`) para añadir
+  `world_id → worlds(id) ON DELETE RESTRICT`, dejando en cuarentena las filas
+  sin mundo antes de activar la restricción. No se edita `0001_assets`.
 
 ### 4.8 `maps`
 
@@ -441,4 +477,6 @@ Cualquier cambio de tabla, columna, índice o trigger requiere:
 - [Continuidad](../continuidad.md)
 - [Arquitectura](../arquitectura.md)
 - [ADR 0002](../adr/0002-sqlite-better-sqlite3-drizzle-fts5.md)
+- [ADR 0005](../adr/0005-local-assets-custom-protocol.md)
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
+- [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)

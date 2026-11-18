@@ -43,7 +43,7 @@ function expectSafeMode(
 }
 
 describe('arranque de la base de datos', () => {
-  it('crea la base con pragmas, esquema inicial y una sola migración', async () => {
+  it('crea la base con pragmas, esquema inicial y las migraciones aplicadas', async () => {
     const test = await createTestDatabase();
 
     try {
@@ -61,9 +61,9 @@ describe('arranque de la base de datos', () => {
         expect(database.pragma('synchronous', { simple: true })).toBe(1);
         expect(database.pragma('foreign_keys', { simple: true })).toBe(1);
         expect(database.pragma('busy_timeout', { simple: true })).toBe(5000);
-        // 0000_init aplicada => user_version 1 (número de migraciones, no el
-        // prefijo de la etiqueta).
-        expect(database.pragma('user_version', { simple: true })).toBe(1);
+        // 0000_init + 0001_assets => user_version 2 (número de migraciones, no
+        // el prefijo de la etiqueta).
+        expect(database.pragma('user_version', { simple: true })).toBe(2);
 
         const tables = (
           database
@@ -72,11 +72,15 @@ describe('arranque de la base de datos', () => {
         ).map((row) => row.name);
 
         expect(tables).toEqual(
-          expect.arrayContaining(['schema_migrations', 'app_settings']),
+          expect.arrayContaining([
+            'schema_migrations',
+            'app_settings',
+            'assets',
+          ]),
         );
 
         const migration = database
-          .prepare('SELECT id, checksum FROM schema_migrations')
+          .prepare('SELECT id, checksum FROM schema_migrations ORDER BY id')
           .get() as { id: string; checksum: string };
 
         expect(migration.id).toBe('0000_init');
@@ -87,8 +91,8 @@ describe('arranque de la base de datos', () => {
         closeDatabase(database);
       }
 
-      expect(result.schemaVersion).toBe(1);
-      expect(result.appliedMigrations).toBe(1);
+      expect(result.schemaVersion).toBe(2);
+      expect(result.appliedMigrations).toBe(2);
       expect(result.newDatabase).toBe(true);
       expect(result.backup).toBeNull();
       expect(await readdir(test.paths.preMigrationBackupsDir)).toEqual([]);
@@ -133,7 +137,7 @@ describe('arranque de la base de datos', () => {
         expect(second.newDatabase).toBe(false);
         expect(second.appliedMigrations).toBe(0);
         expect(second.backup).toBeNull();
-        expect(second.schemaVersion).toBe(1);
+        expect(second.schemaVersion).toBe(2);
         expect(
           second.client.sqlite.pragma('journal_mode', { simple: true }),
         ).toBe('wal');
@@ -159,7 +163,7 @@ describe('arranque de la base de datos', () => {
       closeDatabase(first.client.sqlite);
 
       const database = openDatabase({ file: test.paths.databaseFile });
-      database.pragma('user_version = 2');
+      database.pragma('user_version = 3');
       closeDatabase(database);
 
       const result = expectSafeMode(
@@ -170,7 +174,7 @@ describe('arranque de la base de datos', () => {
         'DB_VERSION_AHEAD',
       );
 
-      expect(result.schemaVersion).toBe(2);
+      expect(result.schemaVersion).toBe(3);
     } finally {
       await test.cleanup();
     }

@@ -67,3 +67,8 @@ Thumbs.db
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Carpetas de datos si alguien ejecuta la app con userData en la raíz del repo
+# (pruebas manuales o scripts): nunca se versionan.
+/assets/
+/backups/

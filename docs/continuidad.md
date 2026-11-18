@@ -29,7 +29,7 @@ quiere, en una unidad externa.
 | Borrado accidental de un mundo | Papelera | Restaurar desde papelera (previsto, M1) | Mundo y assets |
 | Borrado definitivo | Confirmación | Copia recuperable previa (previsto) | Copia |
 | Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
-| Archivo de asset perdido | Al abrir | Aviso y placeholder; se conserva la ficha (previsto, #66) | Metadatos |
+| Archivo de asset perdido | Al abrir | El protocolo devuelve 404 y lo registra; aviso y placeholder en M1 (M0-06) | Metadatos |
 | Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar (M0-04) | Todos |
 
 ## 3. Copias

@@ -18,6 +18,21 @@ export const DATABASE_FILE_NAME = 'world-craft.sqlite';
 /** Nombre del log JSONL de arranque. */
 export const STARTUP_LOG_FILE_NAME = 'startup.log';
 
+/** Nombre del log JSONL del servicio de assets. */
+export const ASSETS_LOG_FILE_NAME = 'assets.log';
+
+/** Carpeta de assets con rutas relativas a ella. */
+export const ASSETS_DIR_NAME = 'assets';
+
+/** Subcarpeta de assets de los mundos. */
+export const ASSETS_WORLDS_DIR_NAME = 'worlds';
+
+/** Subcarpeta de escrituras temporales de assets. */
+export const ASSETS_TEMP_DIR_NAME = '.tmp';
+
+/** Subcarpeta de copias de huérfanos purgados. */
+export const ORPHAN_BACKUPS_DIR_NAME = 'orphans';
+
 /** Rutas derivadas de la carpeta de datos del usuario. */
 export interface DataPaths {
   readonly userDataDir: string;
@@ -27,6 +42,11 @@ export interface DataPaths {
   readonly startupLogFile: string;
   readonly backupsDir: string;
   readonly preMigrationBackupsDir: string;
+  readonly assetsDir: string;
+  readonly assetsWorldsDir: string;
+  readonly assetsTempDir: string;
+  readonly assetsLogFile: string;
+  readonly orphanBackupsDir: string;
 }
 
 /** Calcula y valida todas las rutas de datos a partir de `userData`. */
@@ -45,16 +65,26 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const logsDir = resolve(root, 'logs');
   const backupsDir = resolve(root, 'backups');
   const preMigrationBackupsDir = resolve(backupsDir, 'pre-migration');
+  const assetsDir = resolve(root, ASSETS_DIR_NAME);
+  const assetsWorldsDir = resolve(assetsDir, ASSETS_WORLDS_DIR_NAME);
+  const assetsTempDir = resolve(assetsDir, ASSETS_TEMP_DIR_NAME);
+  const orphanBackupsDir = resolve(backupsDir, ORPHAN_BACKUPS_DIR_NAME);
   const databaseFile = resolve(dataDir, DATABASE_FILE_NAME);
   const startupLogFile = resolve(logsDir, STARTUP_LOG_FILE_NAME);
+  const assetsLogFile = resolve(logsDir, ASSETS_LOG_FILE_NAME);
 
   for (const candidate of [
     dataDir,
     logsDir,
     backupsDir,
     preMigrationBackupsDir,
+    assetsDir,
+    assetsWorldsDir,
+    assetsTempDir,
+    orphanBackupsDir,
     databaseFile,
     startupLogFile,
+    assetsLogFile,
   ]) {
     assertInside(root, candidate);
   }
@@ -67,6 +97,11 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     startupLogFile,
     backupsDir,
     preMigrationBackupsDir,
+    assetsDir,
+    assetsWorldsDir,
+    assetsTempDir,
+    assetsLogFile,
+    orphanBackupsDir,
   };
 }
 
@@ -76,6 +111,10 @@ export function ensureDataDirectories(paths: DataPaths): void {
     mkdirSync(paths.dataDir, { recursive: true });
     mkdirSync(paths.logsDir, { recursive: true });
     mkdirSync(paths.preMigrationBackupsDir, { recursive: true });
+    mkdirSync(paths.assetsDir, { recursive: true });
+    mkdirSync(paths.assetsWorldsDir, { recursive: true });
+    mkdirSync(paths.assetsTempDir, { recursive: true });
+    mkdirSync(paths.orphanBackupsDir, { recursive: true });
   } catch (error) {
     throw new DatabaseError('DB_OPEN_FAILED', { cause: error });
   }

@@ -31,6 +31,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0014](0014-repository-structure-tooling.md) | Estructura del repositorio y tooling | Aceptado | D-033, D-038 |
 | [0015](0015-optional-code-signing-smartscreen.md) | Firma de código opcional y SmartScreen | Aceptado | D-034 |
 | [0016](0016-sqlite-migrations-safe-mode.md) | SQLite, migraciones propias y modo seguro | Aceptado | D-040 |
+| [0017](0017-assets-service-sharp-orphan-purge.md) | Servicio de assets locales, sharp, miniatura y purga recuperable (#66) | Aceptado | D-022 |
 
 ## 3. Relación con otros documentos
 
@@ -69,3 +70,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 |---|---|
 | 2026-11-18 | Serie de escritorio 0001–0015; se retiran los ADRs web 0001–0020. |
 | 2026-11-18 | Se añade el ADR 0016 (persistencia local, migraciones y modo seguro, #64). |
+| 2026-11-19 | Se añade el ADR 0017 (servicio de assets locales, sharp y purga recuperable, #66). |

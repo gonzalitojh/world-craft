@@ -71,6 +71,30 @@ primera versión estable.
   tema, prohíben colores literales fuera de la paleta, exigen
   `prefers-reduced-motion` y evitan `overflow-x: hidden`; el repositorio pasa a
   103 pruebas unitarias.
+- Servicio de assets locales (#66): importación de imágenes validada por
+  contenido (PNG, JPEG, WebP, GIF y AVIF; SVG rechazado), límites de 25 MB,
+  8192 px por lado y 24 Mpx, orientación EXIF, re-codificación a WebP y
+  miniatura de 320 px, con escritura atómica en `assets/.tmp/` y metadatos en
+  SQLite. Sin interfaz ni IPC todavía: la subida y la galería llegan con M1.
+- Protocolo `wc-asset://` (#66): `asset/<id>` y `thumb/<id>` con gramática
+  cerrada, ruta resuelta desde SQLite, rechazo de traversal, rutas absolutas,
+  UNC, NUL, symlinks y junctions, MIME `image/webp` y cabeceras `nosniff`,
+  `Content-Length`, caché privada inmutable y CSP de respuesta. No se registra
+  en modo seguro.
+- Migración `0001_assets` (#66): tabla `assets` con `CHECK` de `kind`, tamaño y
+  hash hexadecimal e índices por mundo y hash, rollback de referencia y
+  `user_version` 2. La clave foránea a `worlds` se difiere a M1.
+- Purga de huérfanos recuperable (#66): plan de solo lectura, confirmación
+  `purge-orphans`, copia verificada con SHA-256 y manifiesto en
+  `backups/orphans/` antes de borrar, sin tocar archivos referenciados ni
+  enlaces.
+- `sharp@^0.35.5` externalizado y verificado en Node y Electron (#66), con las
+  licencias de sharp y libvips en `THIRD-PARTY-NOTICES.md`. #68 debe
+  desempaquetarlo del asar e incluir los textos completos.
+- Pruebas de assets (#66): unitarias de URL, rutas, formatos, importación,
+  huérfanos, protocolo, log y mutex, e integración de importación, protocolo,
+  repositorio, purga y migración sobre SQLite real. El total pasa a 176
+  unitarias en verde (4 omitidas) y 40 de integración en verde (1 omitida).
 
 ### Cambiado
 

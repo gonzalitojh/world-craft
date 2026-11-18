@@ -11,12 +11,14 @@ una operación**. No sustituye al plan ni a los ADRs: el plan define el alcance 
 los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
 En la fase actual el repositorio contiene el **scaffold de escritorio** (#62), el
-**IPC tipado** (#63), la **persistencia local** (#64) y el **sistema de diseño con
-shell de escritorio** (#65): ventana Electron segura, preload nominativo,
-renderer React con tokens, componentes base y navegación, un único canal IPC
-(`shell:openExternal`) y una base SQLite con migraciones, comprobación de
-integridad y modo seguro. Los assets llegan con #66. Las secciones distinguen lo
-implementado de lo previsto.
+**IPC tipado** (#63), la **persistencia local** (#64), el **sistema de diseño con
+shell de escritorio** (#65) y el **servicio de assets locales con
+`wc-asset://`** (#66): ventana Electron segura, preload nominativo, renderer
+React con tokens, componentes base y navegación, un único canal IPC
+(`shell:openExternal`), una base SQLite con migraciones, comprobación de
+integridad y modo seguro, y un servicio de imágenes con protocolo propio,
+miniaturas y purga recuperable. La subida y la galería visibles llegan en M1.
+Las secciones distinguen lo implementado de lo previsto.
 
 ## 1. Vista general
 
@@ -40,12 +42,12 @@ implementado de lo previsto.
 | SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 disponible en el binario, esquema en M1 | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5, #68) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
-| Assets locales y protocolo propio | Previsto (#66) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
+| Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; sin IPC ni UI en M0 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base y shell (#65); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: 103 unitarias y 18 de integración (#62–#65); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Pruebas y calidad | Parcial: 176 unitarias en verde (4 omitidas) y 40 de integración en verde (1 omitida) (#62–#66); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Parcial: copia pre-migración y modo seguro (#64); restauración, retención y UI previstas (M0-07) | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, db:check y build (#62–#64); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
@@ -58,13 +60,15 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, guards de seguridad, IPC con handlers tipados y persistencia local (SQLite, migraciones, copia previa y modo seguro); backups de usuario, updates y protocolo de assets llegarán con sus issues. | Node, Electron, disco. |
+| **Main** | Ventana, ciclo de vida, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro) y servicio de assets con protocolo `wc-asset://`; backups de usuario y actualizaciones llegarán con sus issues. | Node, Electron, disco. |
 | **Preload** | Puente mínimo y tipado entre renderer y main: solo `appInfo` y funciones nominativas. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`) y aviso de modo seguro (`safe-mode-*.ts`); assets, backups de usuario y updates llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`), aviso de modo seguro (`safe-mode-*.ts`) y protocolo de assets (`assets/`); backups de usuario y updates llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/main/assets/` | Servicio de assets: importación, procesamiento con sharp, rutas, protocolo `wc-asset://`, repositorio de metadatos, huérfanos, purga y log. Sin Electron salvo la composición. | Node, sharp, Drizzle |
+| `src/main/logging/` | Escritura JSONL con rotación compartida por el log de arranque y el de assets. | Node |
 | `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
@@ -80,8 +84,8 @@ Electron separa tres procesos con permisos distintos:
 | `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error y contrato de la API del preload. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, logger y modo seguro) y del sistema de diseño (tokens y contraste). | `src/` |
-| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas. | `src/` |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste) y del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log). | `src/` |
+| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets. | `src/` |
 | `tests/e2e/` | Playwright Electron. Previsto (#70). | `src/` |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
@@ -182,10 +186,10 @@ Reglas de dependencia:
 - **Arranque.** Integridad antes de WAL, copia online si la base existía y hay
   migraciones pendientes, lote transaccional y comprobación posterior. Si algo
   falla, se cierra la conexión y se entra en modo seguro sin escritura.
-- **Build.** `better-sqlite3` y `drizzle-orm` se externalizan; `drizzle/` se
-  copia a `out/main/drizzle`. `pnpm verify:build` valida las migraciones
-  copiadas y la externalización. #68 debe desempaquetar el módulo nativo del
-  asar.
+- **Build.** `better-sqlite3` y `drizzle-orm` se externalizan (y `sharp` desde
+  #66, sección 2.5); `drizzle/` se copia a `out/main/drizzle`. `pnpm verify:build`
+  valida las migraciones copiadas y la externalización. #68 debe desempaquetar
+  los módulos nativos del asar.
 
 ### 2.4 Estado implementado del sistema de diseño (#65)
 
@@ -216,12 +220,51 @@ Reglas de dependencia:
   cada tema, calcula contraste WCAG y comprueba la disciplina de colores. La
   matriz visual, las capturas, axe y el E2E quedan para #70 y la revisión local.
 
+### 2.5 Estado implementado de los assets (#66)
+
+- **Servicio puro.** `src/main/assets/` no importa Electron: `import-asset.ts`,
+  `image.ts`, `paths.ts`, `store.ts`, `orphans.ts`, `errors.ts`, `logger.ts` y
+  `mutex.ts`. `composition.ts` envuelve `protocol`, resuelve `userData` y usa la
+  conexión compartida; `protocol.ts` contiene el registro y el handler.
+- **Importación.** Validación por magic bytes (PNG, JPEG, WebP, GIF y AVIF; SVG
+  rechazado), límites de 25 MB, 8192 px por lado y 24 Mpx, orientación EXIF,
+  sRGB, WebP calidad 90 y miniatura de 320 px calidad 80 sin metadatos. El
+  SHA-256 se calcula sobre el WebP publicado. Se escribe en
+  `assets/.tmp/<assetId>/` y se publica con `rename`; la fila se inserta después
+  y, si falla, los archivos se borran. Sin deduplicación en M0.
+- **Metadatos.** `src/main/db/schema/assets.ts` y la migración `0001_assets`
+  definen la tabla `assets` con `CHECK` de `kind`, `size` y `hash` hexadecimal e
+  índices por mundo y hash. `world_id` no tiene FK hasta M1, cuando se
+  reconstruirá la tabla con `ON DELETE RESTRICT`.
+- **Protocolo.** `wc-asset://asset/<uuidv7>` y `wc-asset://thumb/<uuidv7>` con
+  gramática cerrada; la ruta relativa sale de SQLite, se exige coincidencia de
+  ID y mundo y se valida contra `worlds/<uuid>/<uuid>.webp`. Se rechazan `..`,
+  rutas absolutas, UNC, NUL, symlinks y junctions con `lstat`/`realpath`. Se
+  sirve solo `image/webp` con `nosniff`, `Content-Length`, caché privada
+  inmutable y CSP `default-src 'none'`; los errores son 400/403/404/413/415/500.
+  El esquema se registra como `standard`, `secure` y `stream` con
+  `bypassCSP:false` antes de `app.whenReady`; el handler solo se instala si la
+  base arranca en `ready` y no existe en modo seguro.
+- **Huérfanos.** `planOrphanCleanup` clasifica sin escribir y sin seguir enlaces;
+  `purgeOrphans` exige el token `purge-orphans`, recalcula bajo mutex, revalida
+  antes de copiar y de borrar, copia a `backups/orphans/<timestamp>/assets/`,
+  verifica SHA-256, escribe manifiesto con `recovery` y solo entonces borra.
+- **Dependencia.** `sharp@^0.35.5` se externaliza con `@img/*` en
+  `electron.vite.config.ts`, se verifica en Node y Electron con
+  `pnpm verify:native` y sus licencias están en `THIRD-PARTY-NOTICES.md`. #68
+  debe desempaquetar sharp del asar e incluir los textos completos.
+- **Sin IPC ni UI.** No hay canal nuevo: la subida y la galería llegan con las
+  fichas (M1). Los residuales de seguridad (TOCTOU, raíces no validadas antes de
+  crear, `backups/orphans` sin comprobar y symlinks de archivo omitidos en
+  Windows) están en el [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md).
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64)
 
 ```text
 app.setName(APP_NAME) → app.getPath('userData')
+  → registerLocalAssetScheme()            (antes de whenReady)
   → initializePersistence()
     → rutas, carpetas y log de arranque
     → abrir SQLite sin WAL → integrity_check
@@ -230,12 +273,13 @@ app.setName(APP_NAME) → app.getPath('userData')
     → WAL + synchronous = NORMAL
     → migraciones en una transacción
     → integrity_check posterior
-    → ready: registrar IPC y crear la ventana
+    → ready: registrar protocolo de assets, IPC y crear la ventana
     → safe-mode: diálogo nativo (abrir copias, continuar o salir)
 ```
 
-La ventana no se crea hasta que el arranque termina. Si el usuario elige salir,
-no se registra IPC ni se abre ninguna vía de escritura.
+La ventana no se crea hasta que el arranque termina. Solo en estado `ready` se
+registra el handler de `wc-asset://` y el IPC; en modo seguro no hay ninguna vía
+de lectura ni de escritura.
 
 ### 3.2 IPC
 
@@ -251,8 +295,42 @@ Llamada IPC (implementado, #63)
     → preload: comprueba la forma del resultado → renderer
 ```
 
-Los flujos de dominio siguientes son el **objetivo** una vez existan las tablas
-de M1 y las issues de cada módulo; todavía no tienen canales ni consultas.
+### 3.3 Assets (implementado, #66)
+
+```text
+Carga de imagen
+  renderer → <img src="wc-asset://asset/<assetId>">
+    → main: protocol.handle
+      → parseAssetUrl (asset|thumb + UUIDv7)
+      → SELECT de la fila por id (SQLite)
+      → coincidencia id y mundo → ruta relativa desde la base
+      → lista blanca worlds/<uuid>/<uuid>.webp → lstat/realpath
+      → Response 200 image/webp con nosniff, Content-Length, caché y CSP
+    → 400/403/404/413/415/500 con cuerpo genérico y log sin rutas
+
+Importación (servicio, sin IPC en M0)
+  importAsset({ worldId, kind: 'image', source })
+    → límite 25 MB → magic bytes → límites 8192 px / 24 Mpx
+    → EXIF + sRGB + WebP 90 + miniatura 320 px
+    → assets/.tmp/<assetId>/ → rename a worlds/<worldId>/
+    → INSERT en assets → compensación si falla
+
+Purga (servicio, sin IPC en M0)
+  purgeOrphans({ confirmation: 'purge-orphans' })
+    → plan de solo lectura → revalidar → copia en backups/orphans/
+    → SHA-256 + manifiesto → borrar solo entonces
+```
+
+Cada canal nuevo se declara en `src/shared/contracts/channels.ts`, añade su
+esquema Zod y su handler en `src/main/ipc/` y su función nominativa en el
+contrato del preload. Los errores nunca cruzan IPC como excepciones crudas: se
+convierten en `{ ok: false, error: { code } }`. La importación y la purga por
+IPC (`assets:import`, `assets:list` y `assets:purgeOrphans`) se definirán en M1.
+
+### 3.4 Flujos de dominio previstos
+
+Los flujos siguientes son el **objetivo** una vez existan las tablas de M1 y las
+issues de cada módulo; todavía no tienen canales ni consultas.
 
 ```text
 Lectura
@@ -266,10 +344,6 @@ Mutación
     → preload → main: Zod → transacción SQLite → activity_log
     → invalida caché de UI y refresca la vista
 
-Asset
-  renderer → <img src="wc-asset://asset/<assetId>">
-    → main: protocol.handle → valida id y ruta → sirve archivo de userData/assets
-
 Exportación
   renderer → window.worldCraft.backup.exportWorld(worldId)
     → main: consulta → ZIP temporal → dialog.save → IpcResult
@@ -280,15 +354,11 @@ Actualización
     → userData no se toca
 ```
 
-Cada canal nuevo se declara en `src/shared/contracts/channels.ts`, añade su
-esquema Zod y su handler en `src/main/ipc/` y su función nominativa en el
-contrato del preload. Los errores nunca cruzan IPC como excepciones crudas: se
-convierten en `{ ok: false, error: { code } }`.
-
 ## 4. Persistencia y datos
 
-La persistencia local está implementada desde M0-04 (#64). Los assets (#66) y
-las copias automáticas con restauración (M0-07) todavía no existen.
+La persistencia local está implementada desde M0-04 (#64) y el servicio de
+assets desde M0-06 (#66). Las copias automáticas con restauración (M0-07) todavía
+no existen.
 
 - **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`, con una única
   conexión de escritura en el proceso principal.
@@ -297,15 +367,16 @@ las copias automáticas con restauración (M0-07) todavía no existen.
 - **Drizzle ORM** para el esquema y las consultas tipadas. Drizzle Kit solo
   genera y revisa migraciones; el runner propio las aplica.
 - **Migraciones** en `drizzle/`: `0000_init` crea `schema_migrations` y
-  `app_settings`. `PRAGMA user_version` guarda el número de migraciones
-  aplicadas.
+  `app_settings`; `0001_assets` crea `assets`. `PRAGMA user_version` guarda el
+  número de migraciones aplicadas (hoy 2).
 - **Copia previa** en `%APPDATA%\World Craft\backups\pre-migration\<timestamp>\`
   con manifiesto, SHA-256 e integridad. La rotación diaria/semanal/mensual y la
   restauración guiada llegan con M0-07.
 - **FTS5** está disponible en el binario; la tabla `search_fts` y sus triggers
   llegan con las tablas de dominio de M1.
-- **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\` (previsto,
-  #66).
+- **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\<assetId>.webp`
+  con miniatura `.thumb.webp`, `.tmp/` para escrituras y `backups/orphans/` para
+  la purga recuperable (implementado, #66).
 - **Exportación** de mundo en ZIP con `manifest.json`, `data.json` y `assets/`
   (prevista, M1).
 
@@ -323,8 +394,7 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   `invoke` genérico.
 - **CSP estricta.** Implementada: producción sin `unsafe-eval`, `unsafe-inline`
   ni orígenes remotos, inyectada antes de los scripts; desarrollo solo permite
-  inline y loopback para Vite. `img-src` ya reserva `wc-asset:`, aunque el
-  protocolo llega con #66.
+  inline y loopback para Vite. `img-src` admite `wc-asset:` desde #66.
 - **Navegación y ventanas.** Implementado: `will-navigate`, `will-redirect`,
   `will-frame-navigate`, `setWindowOpenHandler` y `will-attach-webview` deniegan
   cualquier salto o ventana nueva. `setWindowOpenHandler` abre los destinos
@@ -357,8 +427,16 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   instancias podrían competir por migrar y una acabar en modo seguro; SQLite
   serializa y la transacción revierte, así que no hay corrupción. Debe cerrarse
   antes de M1 y preferiblemente antes de #68.
-- **Assets y rutas.** Previsto (#66): normalización, comprobación de prefijo y
-  rechazo de `..`, rutas absolutas y enlaces simbólicos.
+- **Assets y rutas.** Implementado (#66): gramática cerrada de `wc-asset://`, la
+  ruta relativa sale de SQLite, coincidencia de ID y mundo, lista blanca
+  `worlds/<uuid>/<uuid>.webp`, rechazo de `..`, rutas absolutas, UNC, NUL,
+  symlinks y junctions con `lstat`/`realpath`, MIME único y cabeceras seguras.
+  Importación por magic bytes con límites y re-codificación; purga con token,
+  copia verificada y manifiesto. Residuales aceptados en el
+  [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md): TOCTOU de escritura
+  temporal y de lectura, raíces creadas antes de validar contención,
+  `backups/orphans` sin inspeccionar y symlinks de archivo sin cubrir en Windows
+  sin modo desarrollador.
 - **Importación.** Previsto: ZIP/JSON validados con Zod, límites de tamaño y de
   número de archivos, transacción y carpeta temporal.
 - **Contenido rico.** Previsto (M3): JSON de ProseMirror; HTML saneado solo al
@@ -372,14 +450,17 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 103 pruebas unitarias y 18 de integración:
-  scaffold (ventana, navegación, CSP e identidad), contrato IPC, router IPC, API
-  del preload, enlaces externos, journal, checksum, rutas, logger, modo seguro y
-  tokens y contraste del sistema de diseño, más arranque, migraciones, copia,
-  corrupción, versión adelantada, base ajena, preservación y rollback de
-  referencia. `pnpm build` y `pnpm verify:build` validan los artefactos;
-  `pnpm verify:native` comprueba el módulo nativo en Node y Electron. `test:e2e`
-  (Playwright Electron) sigue previsto para #70.
+- **Pruebas.** `pnpm test` ejecuta 176 pruebas unitarias en verde (4 omitidas por
+  symlinks en Windows sin modo desarrollador) y 40 de integración en verde (1
+  omitida): scaffold (ventana, navegación, CSP e identidad), contrato IPC, router
+  IPC, API del preload, enlaces externos, journal, checksum, rutas, UUIDv7,
+  logger, modo seguro, tokens y contraste, y servicio de assets (URL, rutas,
+  formatos, importación, huérfanos, protocolo y log), más arranque, migraciones,
+  copia, corrupción, versión adelantada, base ajena, preservación, rollback de
+  referencia e importación, protocolo, repositorio y purga con SQLite real.
+  `pnpm build` y `pnpm verify:build` validan los artefactos; `pnpm verify:native`
+  comprueba better-sqlite3 y sharp en Node y Electron. `test:e2e` (Playwright
+  Electron) sigue previsto para #70.
 - **CI.** GitHub Actions en `ubuntu-latest`: jobs `lint` (con `format:check`),
   `typecheck`, `test`, `build` (con `db:check` y `verify:build`), `gitleaks` y
   `audit`. Los tres primeros son required; `build` todavía no lo es hasta #69, y
@@ -388,8 +469,8 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 - **Instalador.** Previsto (#68): `electron-builder` con NSIS por usuario;
   `pnpm dist` generará el instalador y `pnpm dist:dir` una carpeta desempaquetada
   para pruebas. Hoy no existen esos scripts. #68 también debe desempaquetar
-  `better-sqlite3` del asar y empaquetar las dependencias de producción y
-  `drizzle/`.
+  `better-sqlite3` y `sharp` del asar, empaquetar las dependencias de producción,
+  `THIRD-PARTY-NOTICES.md` y `drizzle/`.
 - **Release.** Previsto: tag `vX.Y.Z`, workflow que compila, firma si hay
   certificado y publica en GitHub Releases con `latest.yml`.
 - **Actualización.** Previsto (M5): `electron-updater` contra GitHub Releases;
@@ -432,6 +513,7 @@ decisiones está en [`docs/registro-decisiones.md`](registro-decisiones.md).
 - [Modelo de datos](base-de-datos/esquema.md)
 - [Migraciones](base-de-datos/migraciones.md)
 - [ADR 0016: SQLite, migraciones y modo seguro](adr/0016-sqlite-migrations-safe-mode.md)
+- [ADR 0017: Servicio de assets y purga recuperable](adr/0017-assets-service-sharp-orphan-purge.md)
 - [Continuidad y copias](continuidad.md)
 - [Plan de pruebas](calidad/plan-de-pruebas.md)
 - [Sistema de diseño](diseno/sistema-de-diseno.md)

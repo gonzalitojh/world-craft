@@ -7,7 +7,7 @@
 - **Decisiones del registro:** D-022
 - **Decisores:** usuario / agentes
 - **Supersede:** ADR 0004 y ADR 0020 de la etapa web (Cloudflare R2)
-- **Relacionados:** ADR 0002, ADR 0004, ADR 0012
+- **Relacionados:** ADR 0002, ADR 0004, ADR 0012, ADR 0017
 
 ## Contexto
 
@@ -30,6 +30,11 @@ equipo del usuario. El renderer no puede recibir rutas absolutas ni usar
    miniatura.
 5. Los archivos huérfanos se listan y se purgan solo con confirmación.
 6. La exportación copia los assets con rutas relativas y checksums.
+
+> **Implementación:** el «cómo» de esta decisión (sharp, tabla `assets`, límites,
+> miniatura derivada y purga recuperable) se documenta en el
+> [ADR 0017](0017-assets-service-sharp-orphan-purge.md), que no cambia lo aquí
+> decidido. La importación y la galería visibles llegan en M1.
 
 ## Alternativas consideradas
 

@@ -37,8 +37,10 @@
   `PRAGMA user_version` guarda el **número de migraciones aplicadas**. El runner
   contrasta ambos valores.
 
-Todo esto está implementado en M0-04 (#64) y cubierto por las pruebas. Las
-tablas de dominio llegan en M1.
+Todo esto está implementado en M0-04 (#64) y cubierto por las pruebas. La
+migración `0001_assets` (M0-06, #66) es la primera migración de dominio: crea la
+tabla `assets` y su rollback de referencia. El resto de tablas de dominio llega
+en M1 con migraciones `0002` y siguientes.
 
 ## 3. Flujo de una migración
 
@@ -142,22 +144,20 @@ copias llegan con M0-07.
 ```text
 drizzle/
   0000_init.sql
-  0001_worlds_and_entities.sql
-  0002_assets_and_maps.sql
-  0003_writing.sql
-  0004_game.sql
-  0005_search.sql
+  0001_assets.sql
   meta/
     _journal.json
   rollback/
-    0001_worlds_and_entities.down.sql
+    0000_init.down.sql
+    0001_assets.down.sql
 ```
 
 - Cuatro dígitos, secuencia sin huecos y etiqueta en `snake_case` e inglés.
 - Una migración por cambio coherente; no mezclar dominios no relacionados.
 - El journal y las instantáneas de `drizzle/meta/` se versionan.
-- `0000_init` existe y crea solo las tablas del sistema. `0001_worlds_and_entities`
-  y las siguientes son previstas para M1.
+- `0000_init` crea solo las tablas del sistema y `0001_assets` la tabla
+  `assets`. Las siguientes (`0002` en adelante) son previstas para M1 y no se
+  reservan nombres de antemano.
 
 ## 5. Pruebas
 
@@ -165,12 +165,13 @@ drizzle/
 |---|---|---|
 | `journal` | Journal válido, secuencia sin huecos, etiquetas sin traversal y checksum normalizado. | Implementada (unitaria) |
 | `migrations` | Una base vacía llega a la última versión sin errores y es idempotente al reabrir. | Implementada (integración) |
+| `upgrade-0001` | Una base en `0000` migra a `0001_assets` conservando `app_settings` y creando `assets`, con `user_version` 2. | Implementada (integración) |
 | `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo. | Implementada (integración) |
 | `backup` | Copia previa con manifiesto, tamaño, SHA-256 e integridad; fallo de copia no migra. | Implementada (integración) |
 | `integrity` | `PRAGMA integrity_check` detecta corrupción y el arranque no escribe. | Implementada (integración) |
 | `foreign-db` | Una base con tablas propias sin `schema_migrations` se rechaza. | Implementada (integración) |
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
-| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal. | Implementada (integración) |
+| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0001_assets` deja `user_version` 1 y `0000_init` la deja en 0. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
 
 Las pruebas usan archivos temporales en `os.tmpdir()`, nunca la base del
@@ -206,16 +207,18 @@ instantáneas antes del build.
 
 ## 8. Empaquetado y CI
 
-- `better-sqlite3` y `drizzle-orm` se externalizan del bundle de `main`.
+- `better-sqlite3`, `drizzle-orm` y `sharp` (con `@img/*`) se externalizan del
+  bundle de `main`.
 - `drizzle/` se copia a `out/main/drizzle` en cada build; el runner lo lee desde
   `__dirname/drizzle` en desarrollo y en la versión instalada.
-- `pnpm verify:build` comprueba que existen el journal y `0000_init.sql`, que la
+- `pnpm verify:build` comprueba que existen el journal y las migraciones, que la
   secuencia es válida y que las dependencias nativas no se han empaquetado.
 - La CI ejecuta `pnpm db:check` antes de `pnpm build`.
-- #68 debe desempaquetar `better-sqlite3` del asar y garantizar que las
-  dependencias de producción y las migraciones viajan en el paquete.
-- `pnpm verify:native` comprueba el módulo nativo en Node y Electron; hoy se
-  ejecuta a mano y debe añadirse a la CI antes de #68.
+- #68 debe desempaquetar `better-sqlite3` y `sharp` del asar y garantizar que las
+  dependencias de producción, `THIRD-PARTY-NOTICES.md` y las migraciones viajan
+  en el paquete.
+- `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y Electron; hoy
+  se ejecuta a mano y debe añadirse a la CI antes de #68.
 
 ## 9. Qué no se hace
 
@@ -237,3 +240,4 @@ instantáneas antes del build.
 - [ADR 0002](../adr/0002-sqlite-better-sqlite3-drizzle-fts5.md)
 - [ADR 0012](../adr/0012-backup-restore-recovery.md)
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
+- [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
