@@ -1,6 +1,5 @@
 # Secretos y configuración local: nunca se versionan.
 .env*
-!.env.example
 *.key
 *.pem
 *.p12
@@ -32,17 +31,16 @@ id_dsa*
 service-account*.json
 *.p8
 
-# Node, Next.js y herramientas de desarrollo.
+# Node y tooling de escritorio.
 node_modules/
-.next/
 out/
 build/
 dist/
+release/
 coverage/
 playwright-report/
 test-results/
 .turbo/
-.vercel/
 *.tsbuildinfo
 .local/
 npm-debug.log*
@@ -53,3 +51,13 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Datos locales de desarrollo: la base y los assets del usuario viven en
+# `app.getPath('userData')`, nunca en el repositorio. Estas reglas evitan
+# commitear copias accidentales.
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

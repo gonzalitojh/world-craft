@@ -18,7 +18,7 @@ Issue: #
 - [ ] Typecheck
 - [ ] Lint
 - [ ] Tests unitarios
-- [ ] Build
+- [ ] Build (cuando exista)
 - [ ] E2E del flujo crítico (si aplica)
 
 <!-- Detalla comandos y resultados. -->
@@ -32,14 +32,17 @@ Issue: #
 
 ## Checklist de UI (solo si aplica)
 
-- [ ] Responsive comprobado a ~360, ~768 y ~1280 px, sin scroll horizontal de página.
+- [ ] Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página.
 - [ ] Los dos temas (Claro y Oscuro) comprobados, con contraste AA.
 - [ ] Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y `prefers-reduced-motion`.
 
-## Seguridad y dependencias
+## Datos y seguridad Electron (solo si aplica)
 
+- [ ] Migración probada con copia previa y datos existentes intactos.
+- [ ] Operaciones destructivas con confirmación y copia recuperable.
+- [ ] `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` y `webSecurity: true`.
+- [ ] Canales IPC en allowlist y validados con Zod.
 - [ ] Sin secretos, credenciales ni datos personales.
-- [ ] RLS y permisos revisados (si aplica).
 - [ ] Dependencias justificadas y sin servicios de pago.
 
 ## Base

@@ -2,13 +2,15 @@
  * Borra los artefactos de desarrollo y de build.
  *
  * Se usa `node:fs/promises` para que funcione igual en Windows, macOS y Linux
- * sin depender de `rimraf` ni de comandos del sistema.
+ * sin depender de `rimraf` ni de comandos del sistema. Nunca toca la carpeta de
+ * datos del usuario (`app.getPath('userData')`).
  */
 import { rm } from 'node:fs/promises';
 
 const targets = [
-  '.next',
+  'out',
   'dist',
+  'release',
   'coverage',
   'playwright-report',
   'test-results',

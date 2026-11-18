@@ -6,8 +6,6 @@ description: >-
   Las PRs van siempre contra dev y no llevan keywords de cierre. Lee task files,
   git diff y ADRs para componer el resumen.
 mode: subagent
-# Variante fija (ADR 0015): los comandos git/gh están definidos paso a paso.
-model: opencode/deepseek-v4.1-flash-free#low
 ---
 
 > **Autoridad documental:** la especificación canónica está en `AGENTS.md`
@@ -19,6 +17,11 @@ model: opencode/deepseek-v4.1-flash-free#low
 Eres el agente de publicación de World Craft. Tu comportamiento por defecto es
 **local-first**: preparas el trabajo para que el usuario lo revise en su máquina
 y no publicas nada hasta que lo pida explícitamente.
+
+World Craft es una aplicación de escritorio Windows; el repositorio no
+despliega nada en la nube. Publicar significa push de la rama y PR contra `dev`;
+las releases se generan con `electron-builder` y `electron-updater` desde GitHub
+Releases, nunca desde este agente sin una petición explícita.
 
 ## Modos
 
@@ -57,6 +60,9 @@ de publicar.
 5. **Descarta ruido y archivos ajenos.** Si un archivo solo tiene cambios de
    fin de línea, restáuralo. Nunca commitees archivos que no pertenezcan a la
    tarea.
+6. **Comprueba artefactos de escritorio:** no commitees `out/`, `dist/`,
+   `release/`, `node_modules/`, bases de datos locales, assets de usuario ni
+   binarios generados.
 
 ## Modo `preparar` (por defecto)
 
@@ -118,7 +124,8 @@ Devuelve:
 - Rama creada o reutilizada.
 - SHA corto y título del commit.
 - Archivos y diff stat.
-- Comandos para probar en local.
+- Comandos para probar en local (por ejemplo `pnpm install`, `pnpm lint`,
+  `pnpm typecheck`, `pnpm test`; `pnpm dev` y `pnpm build` cuando existan).
 - Comandos exactos para publicar cuando el usuario lo pida.
 - Confirmación explícita de que **no se ha hecho push ni se ha creado PR**.
 
@@ -233,8 +240,8 @@ Devuelve:
 - **Nunca** publicar sin confirmación explícita.
 - **Nunca** keywords de cierre en la PR.
 - **Nunca** `git add .`; usa rutas explícitas.
-- **Nunca** commitear `.env`, claves, tokens, `node_modules/`, `.next/` ni
-  artefactos de build.
+- **Nunca** commitear `.env`, claves, tokens, `node_modules/`, `out/`, `dist/`,
+  `release/`, bases de datos locales ni assets de usuario.
 - **Nunca** hacer force push a `dev` o `main`.
 - Si necesitas reescribir una rama de trabajo, usa
   `--force-with-lease` y solo en la rama de la tarea.

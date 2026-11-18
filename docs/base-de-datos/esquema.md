@@ -1,450 +1,410 @@
 # Esquema de base de datos
 
-> **Estado:** vigente desde el 15/11/2026 (issue
-> [#9](https://github.com/gonzalitojh/world-craft/issues/9), M0-08).
-> **Ámbito:** modelo de datos, integridad, búsqueda y aislamiento por mundo.
-> **Fuente de verdad del código:** `src/lib/db/schema/` (tipos y diff) y
-> `drizzle/*.sql` (estado aplicado). Este documento describe el resultado, no
-> sustituye a las migraciones.
-> **Decisión asociada:** [ADR 0019](../adr/0019-database-schema-migrations-and-rls.md).
-> **Actualización:** 17/11/2026 (issue
-> [#40](https://github.com/gonzalitojh/world-craft/issues/40), M0-10): migración
-> `0007` con la guarda `guard_asset_insert` y claves de almacenamiento reales.
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
+> **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
+> **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
+> integridad. Las migraciones se documentan en
+> [`migraciones.md`](migraciones.md).
 
-## 1. Cómo se mantiene
+## 1. Convenciones
 
-| Pieza | Ruta | Responsabilidad |
-|---|---|---|
-| Esquema tipado | `src/lib/db/schema/*.ts` | Una tabla por archivo de dominio; sin `server-only` para que Drizzle Kit lo lea. |
-| Migraciones | `drizzle/0000`–`0007` | Cadena lineal única; la `0001` la genera Drizzle Kit y el resto es SQL revisado. |
-| Journal | `drizzle/meta/_journal.json` | Orden y comprobación de deriva (`pnpm db:check`). |
-| Rollback | `drizzle/rollback/*.down.sql` | SQL de reversión documentado; **no** lo aplica ninguna herramienta. |
-| Seed | `src/lib/db/seed/system-catalog.json` | Catálogo del sistema idempotente. |
-| Verificación | `scripts/db/verify.mjs` | Comprueba tablas, enums, RLS, grants y conteos del seed. |
+- Nombres de tablas y columnas en `snake_case` y en inglés.
+- Claves primarias `id TEXT` con UUIDv7 generado en el proceso principal.
+- Fechas en milisegundos UTC con `INTEGER` (`created_at`, `updated_at`).
+- Booleanos como `INTEGER` 0/1 con `CHECK (col IN (0,1))`.
+- JSON como `TEXT` validado con Zod en la aplicación; SQLite no impone el
+  esquema interno.
+- Borrado lógico con `deleted_at INTEGER NULL` en contenido; la papelera
+  conserva el registro y los assets hasta la purga.
+- `world_id` obligatorio en todo el contenido de un mundo, directo o derivado
+  mediante claves foráneas.
+- `ON DELETE CASCADE` en hijas de contenido; `RESTRICT` en referencias que no
+  deben quedar huérfanas.
+- Triggers de `updated_at` en las tablas que lo necesitan.
 
-Reglas que no se negocian:
+## 2. Diagrama
 
-- Una migración aplicada **no se edita**: se corrige con otra migración.
-- `drizzle-kit push` está **prohibido**: no versiona, no es reversible y puede
-  borrar políticas, triggers y funciones que el esquema Drizzle no modela.
-- Las políticas, triggers, funciones y privilegios se escriben en SQL explícito,
-  no con el DSL de RLS de Drizzle.
+```text
+worlds
+  ├─< entity_types
+  ├─< entities >─< relations >─ relation_types
+  │      ├─< entity_tags >─ tags
+  │      └─< assets
+  ├─< maps >─< map_entity_links
+  ├─< manuscripts >─< books >─< chapters >─< scenes >─< scene_versions
+  ├─< game_tables >─< game_table_entries
+  ├─< game_sessions
+  └─< activity_log
 
-## 2. Convenciones
-
-- **Identificadores:** `uuid` con `gen_random_uuid()`, salvo
-  `activity_log.id` (`bigint generated always as identity`).
-- **Fechas:** `timestamptz` en UTC. `created_at`/`updated_at` con `default now()`
-  y trigger `set_updated_at` donde existe `updated_at`.
-- **Borrado lógico:** `deleted_at` en `entities`, `maps` y `scenes`. El resto se
-  borra en cascada con su padre.
-- **Posiciones:** `numeric(12,3)` con huecos (1000, 2000, 1500…) para reordenar
-  sin reescribir filas vecinas.
-- **Texto plano duplicado:** `entities.description_text` y
-  `scenes.content_text`, para FTS, exportación y conteo de palabras.
-- **JSONB:** contenido rico (`description`, `content`), atributos variables
-  (`attributes`, `fields`, `metadata`), documentos de mapa (`document`, `style`,
-  `bounds`) y ajustes (`settings`). Solo se indexa lo que se consulta.
-- **Slugs:** minúsculas, dígitos y guiones, únicos por mundo y solo entre filas
-  no borradas.
-- **Enums en inglés:** las etiquetas de interfaz viven en `src/messages/`.
-
-## 3. Diagrama entidad-relación
-
-Solo se dibujan las relaciones que condicionan el acceso o la integridad; las
-claves hacia `profiles` se omiten para no tapar la estructura.
-
-```mermaid
-erDiagram
-  profiles ||--o{ worlds : "owner_id"
-  profiles ||--o{ world_members : "user_id"
-  worlds ||--o{ world_members : "world_id"
-  worlds ||--o{ world_invitations : "world_id"
-  worlds ||--o{ entity_types : "world_id (null = sistema)"
-  worlds ||--o{ relation_types : "world_id (null = sistema)"
-  worlds ||--o{ entities : "world_id"
-  entity_types ||--o{ entities : "type_id"
-  entities ||--o{ relations : "source_id / target_id"
-  relation_types ||--o{ relations : "type_id"
-  worlds ||--o{ tags : "world_id"
-  entities ||--o{ entity_tags : "entity_id"
-  tags ||--o{ entity_tags : "tag_id"
-  worlds ||--o{ assets : "world_id"
-  worlds ||--o{ maps : "world_id"
-  maps ||--o{ map_entity_links : "map_id"
-  entities ||--o{ map_entity_links : "entity_id"
-  worlds ||--o{ manuscripts : "world_id"
-  manuscripts ||--o{ books : "manuscript_id"
-  books ||--o{ chapters : "book_id"
-  chapters ||--o{ scenes : "chapter_id"
-  scenes ||--o{ scene_versions : "scene_id"
-  worlds ||--o{ game_content_packs : "world_id (null = sistema)"
-  game_content_packs ||--o{ game_tables : "pack_id"
-  game_tables ||--o{ game_table_entries : "table_id"
-  worlds ||--o{ game_sessions : "world_id"
-  worlds ||--o{ activity_log : "world_id"
+game_content_packs >─ game_tables
+app_settings
+schema_migrations
+search_documents >─ search_fts (FTS5)
 ```
 
-## 4. Enums
+## 3. Tablas del sistema
 
-| Enum | Valores | Se usa en |
+### 3.1 `schema_migrations`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | Identificador de la migración (`0001_init`). |
+| `applied_at` | INTEGER | NOT NULL | Momento de aplicación en UTC. |
+| `checksum` | TEXT | NOT NULL | SHA-256 del SQL aplicado. |
+
+### 3.2 `app_settings`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `key` | TEXT | PK | Clave de ajuste (`theme`, `locale`, `window`, `backup`). |
+| `value` | TEXT | NOT NULL | JSON validado por la app. |
+| `updated_at` | INTEGER | NOT NULL | Última actualización. |
+
+## 4. Mundos y contenido
+
+### 4.1 `worlds`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `name` | TEXT | NOT NULL | Nombre visible. |
+| `slug` | TEXT | NOT NULL, UNIQUE | Identificador estable. |
+| `summary` | TEXT | NULL | Sinopsis breve. |
+| `description` | TEXT | NULL | JSON ProseMirror. |
+| `cover_asset_id` | TEXT | FK `assets(id)`, NULL | Portada. |
+| `genres` | TEXT | NOT NULL DEFAULT `'[]'` | JSON de géneros. |
+| `status` | TEXT | NOT NULL DEFAULT `'active'` | `active`, `archived`. |
+| `settings` | TEXT | NOT NULL DEFAULT `'{}'` | Preferencias del mundo. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
+| `updated_at` | INTEGER | NOT NULL | Actualización. |
+| `archived_at` | INTEGER | NULL | Archivo. |
+| `deleted_at` | INTEGER | NULL | Papelera. |
+
+Índices: `worlds_slug_uq (slug)`, `worlds_status_idx (status, deleted_at)`.
+
+### 4.2 `entity_types`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | FK `worlds(id)`, NULL | `NULL` = tipo del sistema. |
+| `key` | TEXT | NOT NULL | Clave estable (`character`, `place`). |
+| `name` | TEXT | NOT NULL | Nombre visible. |
+| `icon` | TEXT | NOT NULL | Nombre de icono Lucide. |
+| `color` | TEXT | NOT NULL | Token de color validado. |
+| `fields` | TEXT | NOT NULL DEFAULT `'[]'` | JSON de campos personalizados. |
+| `is_system` | INTEGER | NOT NULL DEFAULT 0 | 1 si es del sistema. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
+| `updated_at` | INTEGER | NOT NULL | Actualización. |
+
+Índices: `entity_types_world_key_uq (world_id, key)`,
+`entity_types_system_key_uq (key) WHERE world_id IS NULL`.
+
+### 4.3 `entities`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo. |
+| `type_id` | TEXT | NOT NULL, FK `entity_types(id)` | Tipo. |
+| `name` | TEXT | NOT NULL | Nombre. |
+| `slug` | TEXT | NOT NULL | Identificador estable por mundo. |
+| `aliases` | TEXT | NOT NULL DEFAULT `'[]'` | JSON de alias. |
+| `summary` | TEXT | NULL | Resumen corto. |
+| `description` | TEXT | NULL | JSON ProseMirror. |
+| `description_text` | TEXT | NULL | Texto plano para búsqueda. |
+| `image_asset_id` | TEXT | FK `assets(id)`, NULL | Imagen principal. |
+| `attributes` | TEXT | NOT NULL DEFAULT `'{}'` | Campos personalizados. |
+| `status` | TEXT | NOT NULL DEFAULT `'active'` | `active`, `draft`, `archived`. |
+| `is_favorite` | INTEGER | NOT NULL DEFAULT 0 | Favorito. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
+| `updated_at` | INTEGER | NOT NULL | Actualización. |
+| `deleted_at` | INTEGER | NULL | Papelera. |
+
+Índices: `entities_world_slug_uq (world_id, slug)`,
+`entities_world_type_idx (world_id, type_id, deleted_at)`,
+`entities_name_idx (world_id, name)`,
+`entities_favorite_idx (world_id, is_favorite)`.
+
+### 4.4 `relation_types`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | FK `worlds(id)`, NULL | `NULL` = tipo del sistema. |
+| `key` | TEXT | NOT NULL | Clave estable. |
+| `name` | TEXT | NOT NULL | Nombre directo. |
+| `inverse_name` | TEXT | NOT NULL | Nombre inverso. |
+| `color` | TEXT | NOT NULL | Token de color. |
+| `is_system` | INTEGER | NOT NULL DEFAULT 0 | Tipo del sistema. |
+
+Índices: `relation_types_world_key_uq (world_id, key)`,
+`relation_types_system_key_uq (key) WHERE world_id IS NULL`.
+
+### 4.5 `relations`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo. |
+| `source_id` | TEXT | NOT NULL, FK `entities(id)` | Origen. |
+| `target_id` | TEXT | NOT NULL, FK `entities(id)` | Destino. |
+| `type_id` | TEXT | NOT NULL, FK `relation_types(id)` | Tipo. |
+| `label` | TEXT | NULL | Etiqueta directa. |
+| `inverse_label` | TEXT | NULL | Etiqueta inversa. |
+| `notes` | TEXT | NULL | Notas. |
+| `strength` | INTEGER | NOT NULL DEFAULT 1, CHECK 1–5 | Intensidad. |
+| `metadata` | TEXT | NOT NULL DEFAULT `'{}'` | Datos extra. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
+| `updated_at` | INTEGER | NOT NULL | Actualización. |
+
+Índices: `relations_world_source_idx (world_id, source_id)`,
+`relations_world_target_idx (world_id, target_id)`,
+`relations_type_idx (type_id)`, `relations_unique (world_id, source_id, target_id, type_id)`.
+
+Regla: `source_id <> target_id` con `CHECK`.
+
+### 4.6 `tags` y `entity_tags`
+
+`tags`:
+
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `world_role` | `owner`, `editor`, `viewer` | `world_members.role` y las funciones de rol. |
-| `invitation_role` | `editor`, `viewer` | `world_invitations.role`; el `owner` no se invita, se transfiere. |
-| `theme_preference` | `light`, `dark`, `system` | `profiles.theme`. |
-| `world_status` | `draft`, `active`, `archived` | `worlds.status` (provisional). |
-| `content_status` | `draft`, `in_progress`, `done`, `archived` | `entities`, `manuscripts`, `chapters`, `scenes` (provisional). |
-| `manuscript_kind` | `novel`, `novella`, `short`, `saga` | `manuscripts.kind`. |
-| `game_table_category` | `container`, `subgenre`, `trigger`, `trope`, `custom` | `game_tables.category`. |
+| `id` | TEXT | PK |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
+| `name` | TEXT | NOT NULL |
+| `color` | TEXT | NOT NULL |
+| `created_at` | INTEGER | NOT NULL |
 
-Los valores de estado son **provisionales**: se validarán en las issues de
-producto. Cambiarlos exige una migración que añada el valor al enum (PostgreSQL
-no permite quitar valores sin recrear el tipo).
+Índice: `tags_world_name_uq (world_id, name)`.
 
-## 5. Diccionario de tablas
+`entity_tags`:
 
-Notación: `PK` clave primaria, `FK` clave foránea, `UQ` única, `CHK` restricción
-de comprobación. Todas las tablas viven en `public`.
-
-### 5.1 Acceso y núcleo
-
-| Tabla | Columnas y restricciones | Índices |
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `profiles` | `id uuid PK` → `auth.users(id)` `on delete cascade` (FK declarada en `0002`); `display_name text not null default ''`; `avatar_url text`; `theme theme_preference not null default 'system'`; `locale text not null default 'es'` con `CHK locale in ('es','en','it')`; `settings jsonb not null default '{}'`; `created_at`, `updated_at`. | `profiles_updated_at_idx`. |
-| `allowed_emails` | `email text PK` con `CHK email = lower(email)` y `CHK position('@' in email) > 1`; `invited_by uuid` → `profiles` `on delete set null`; `note text`; `created_at`. | Solo la PK. |
-| `worlds` | `id uuid PK`; `owner_id uuid not null` → `profiles` `on delete restrict`; `name text not null` con `CHK 1..160`; `slug text not null` con `CHK` de formato; `summary text not null default ''`; `description jsonb not null default '{}'`; `cover_asset_id uuid` → `assets` `on delete set null` (FK en `0002`); `genres text[] not null default '{}'`; `status world_status not null default 'draft'`; `settings jsonb not null default '{}'`; `archived_at timestamptz`; timestamps. | `worlds_owner_id_slug_key` UQ; `worlds_owner_id_idx`; `worlds_owner_id_updated_at_idx`. |
-| `world_members` | `world_id uuid` → `worlds` `on delete cascade`; `user_id uuid` → `profiles` `on delete cascade`; `role world_role not null`; `created_at`, `updated_at`; `PK (world_id, user_id)`. | `world_members_one_owner_key` UQ parcial `where role = 'owner'`; `world_members_user_id_idx`. |
-| `world_invitations` | `id uuid PK`; `world_id uuid` → `worlds` `on delete cascade`; `email text not null` con `CHK` en minúsculas; `role invitation_role not null`; `token_hash text not null` con `CHK` de 64 hex; `expires_at timestamptz not null` con `CHK expires_at > created_at`; `accepted_at timestamptz`; `created_by uuid` → `profiles` `on delete set null`; `created_at`. | `world_invitations_token_hash_key` UQ; UQ parcial `(world_id, email) where accepted_at is null`; `world_id_idx`; `email_idx`; `(world_id, expires_at)`. |
+| `entity_id` | TEXT | PK, FK `entities(id)` ON DELETE CASCADE |
+| `tag_id` | TEXT | PK, FK `tags(id)` ON DELETE CASCADE |
 
-Notas:
+### 4.7 `assets`
 
-- `worlds.owner_id` usa `on delete restrict`: borrar un perfil con mundos exige
-  transferirlos o borrarlos antes.
-- `world_members_one_owner_key` hace imposible tener dos `owner` en el mismo
-  mundo a nivel de índice; los triggers añaden la comprobación contra
-  `worlds.owner_id`.
-- `token_hash` guarda un SHA-256: la invitación no se puede aceptar con el valor
-  almacenado.
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo. |
+| `kind` | TEXT | NOT NULL | `image`, `map`, `document`, `other`. |
+| `relative_path` | TEXT | NOT NULL | Ruta relativa a `assets/`. |
+| `mime` | TEXT | NOT NULL | MIME real validado. |
+| `size` | INTEGER | NOT NULL | Bytes. |
+| `width` | INTEGER | NULL | Ancho en píxeles. |
+| `height` | INTEGER | NULL | Alto en píxeles. |
+| `alt` | TEXT | NULL | Texto alternativo. |
+| `hash` | TEXT | NOT NULL | SHA-256. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
 
-### 5.2 Taxonomías, fichas y relaciones
+Índices: `assets_world_idx (world_id)`, `assets_hash_idx (hash)`.
 
-| Tabla | Columnas y restricciones | Índices |
+### 4.8 `maps`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo. |
+| `name` | TEXT | NOT NULL | Nombre. |
+| `description` | TEXT | NULL | Descripción. |
+| `document` | TEXT | NOT NULL DEFAULT `'{}'` | JSON de capas y GeoJSON. |
+| `style` | TEXT | NOT NULL DEFAULT `'{}'` | Estilo del mapa. |
+| `bounds` | TEXT | NULL | JSON de límites. |
+| `thumbnail_asset_id` | TEXT | FK `assets(id)`, NULL | Miniatura. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
+| `updated_at` | INTEGER | NOT NULL | Actualización. |
+| `deleted_at` | INTEGER | NULL | Papelera. |
+
+Índice: `maps_world_idx (world_id, deleted_at)`.
+
+### 4.9 `map_entity_links`
+
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `entity_types` | `id uuid PK`; `world_id uuid` → `worlds` `on delete cascade` (**`null` = sistema**); `key text not null`; `name text not null`; `icon text`; `color text`; `fields jsonb not null default '[]'`; `is_system boolean not null default false`; timestamps. `CHK is_system = (world_id is null)`. | UQ parcial `(key) where world_id is null`; UQ parcial `(world_id, key) where world_id is not null`; `world_id_idx`. |
-| `relation_types` | Igual que `entity_types` más `inverse_name text not null` (no tiene `fields`). | Mismas unicidades y `world_id_idx`. |
-| `entities` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `type_id` → `entity_types` `on delete restrict`; `name text not null` con `CHK 1..200`; `slug text not null` con `CHK` de formato; `aliases text[] not null default '{}'`; `summary text not null default ''`; `description jsonb not null default '{}'`; `description_text text not null default ''`; `image_asset_id uuid` → `assets` `on delete set null`; `attributes jsonb not null default '{}'`; `status content_status not null default 'draft'`; `is_favorite boolean not null default false`; `search_vector tsvector generated always as (…) stored`; timestamps; `deleted_at`. | UQ parcial `(world_id, slug) where deleted_at is null`; `world_id_idx`; `(world_id, type_id)`; `(world_id, updated_at desc)`; GIN `search_vector`; GIN trigram `name`; GIN trigram `app.immutable_array_to_string(aliases, ' ')`. |
-| `relations` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `source_id`, `target_id` → `entities` `on delete cascade`; `type_id` → `relation_types` `on delete restrict`; `label text`; `inverse_label text`; `notes text`; `strength smallint not null default 3` con `CHK 1..5`; `metadata jsonb not null default '{}'`; timestamps. `CHK source_id <> target_id`. | UQ `(world_id, source_id, target_id, type_id)`; `world_id_idx`; `source_id_idx`; `target_id_idx`; `type_id_idx`. |
-| `tags` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `name text not null`; `slug text not null` con `CHK` de formato; `color text`; timestamps. | UQ `(world_id, slug)`; `world_id_idx`. |
-| `entity_tags` | `entity_id` → `entities` `on delete cascade`; `tag_id` → `tags` `on delete cascade`; `created_at`; `PK (entity_id, tag_id)`. | `entity_tags_tag_id_idx` (consultas inversas). |
+| `map_id` | TEXT | PK, FK `maps(id)` ON DELETE CASCADE |
+| `entity_id` | TEXT | PK, FK `entities(id)` ON DELETE CASCADE |
+| `feature_id` | TEXT | NOT NULL |
+| `label` | TEXT | NULL |
 
-Notas:
+Índice: `map_entity_links_entity_idx (entity_id)`.
 
-- `entity_types` y `relation_types` con `world_id null` son el catálogo del
-  sistema: lo crea el seed y **ningún cliente** puede escribirlo (las políticas
-  exigen `world_id is not null`).
-- `entities.type_id` usa `on delete restrict`: un tipo con fichas no se borra.
-- El índice trigram de `aliases` es sobre la expresión, así que PostgreSQL lo
-  usa con la misma expresión en la consulta.
+### 4.10 `manuscripts`, `books`, `chapters`, `scenes`, `scene_versions`
 
-### 5.3 Assets
+`manuscripts`:
 
-| Tabla | Columnas y restricciones | Índices |
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `assets` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `uploader_id uuid` → `profiles` `on delete set null`; `bucket text not null`; `path text not null`; `mime text not null`; `size bigint not null` con `CHK size >= 0`; `width int`; `height int`; `alt text not null default ''`; `created_at`. `CHK path like 'world/' || world_id::text || '/%'`. | UQ `(world_id, path)`; `world_id_idx`; `(world_id, created_at desc)`. |
+| `id` | TEXT | PK |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
+| `title` | TEXT | NOT NULL |
+| `kind` | TEXT | NOT NULL (`novel`, `short`, `other`) |
+| `synopsis` | TEXT | NULL |
+| `status` | TEXT | NOT NULL DEFAULT `'draft'` |
+| `target_words` | INTEGER | NULL |
+| `settings` | TEXT | NOT NULL DEFAULT `'{}'` |
+| `created_at`, `updated_at` | INTEGER | NOT NULL |
+| `deleted_at` | INTEGER | NULL |
 
-El binario no vive aquí: `bucket` + `path` apuntan a Cloudflare R2 (M0-10) y el
-bucket es privado. `mime` es siempre `image/webp`, `path` sigue el patrón
-`world/{worldId}/{assetId}.webp` y el trigger `guard_asset_insert` de la
-migración `0007` impide que `authenticated` falsifique `bucket`, `mime`, `size`,
-`width`, `height` o `path`. El formato de clave y el contrato de almacenamiento se
-describen en la sección 9.
+`books`: `id` PK, `manuscript_id` FK, `title`, `position REAL`, timestamps.
 
-### 5.4 Mapas
+`chapters`: `id` PK, `book_id` FK, `title`, `position REAL`, `summary`, `status`, timestamps.
 
-| Tabla | Columnas y restricciones | Índices |
+`scenes`:
+
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `maps` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `name text not null`; `description text not null default ''`; `document jsonb not null default '{"type":"FeatureCollection","features":[]}'`; `style jsonb not null default '{}'`; `bounds jsonb`; `thumbnail_asset_id uuid` → `assets` `on delete set null`; `deleted_at`; timestamps. | `world_id_idx`; `(world_id, updated_at desc)`; parcial `(world_id) where deleted_at is null`. |
-| `map_entity_links` | `map_id` → `maps` `on delete cascade`; `entity_id` → `entities` `on delete cascade`; `feature_id text not null`; `label text`; `created_at`; `PK (map_id, entity_id, feature_id)`. | `entity_id_idx`; `(map_id, feature_id)`. |
+| `id` | TEXT | PK |
+| `chapter_id` | TEXT | NOT NULL, FK `chapters(id)` |
+| `title` | TEXT | NOT NULL |
+| `position` | REAL | NOT NULL |
+| `content` | TEXT | NOT NULL DEFAULT `'{}'` (JSON ProseMirror) |
+| `content_text` | TEXT | NULL |
+| `word_count` | INTEGER | NOT NULL DEFAULT 0 |
+| `status` | TEXT | NOT NULL DEFAULT `'draft'` |
+| `pov_entity_id` | TEXT | FK `entities(id)`, NULL |
+| `location_entity_id` | TEXT | FK `entities(id)`, NULL |
+| `story_date` | TEXT | NULL |
+| `notes` | TEXT | NULL |
+| `created_at`, `updated_at` | INTEGER | NOT NULL |
+| `deleted_at` | INTEGER | NULL |
 
-El documento de mapa es GeoJSON (`FeatureCollection`), editable con MapLibre y
-Terra Draw (ADR 0006). No se indexa su contenido: se lee entero.
+`scene_versions`: `id` PK, `scene_id` FK, `content`, `content_text`,
+`word_count`, `label`, `created_at`.
 
-### 5.5 Manuscritos
+Índices: `scenes_chapter_position_idx (chapter_id, position)`,
+`scenes_deleted_idx (deleted_at)`, `scene_versions_scene_idx (scene_id, created_at)`.
 
-| Tabla | Columnas y restricciones | Índices |
+### 4.11 Juego
+
+`game_content_packs`:
+
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `manuscripts` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `title text not null`; `kind manuscript_kind not null`; `synopsis text not null default ''`; `status content_status not null default 'draft'`; `target_words int` con `CHK > 0 o null`; `settings jsonb not null default '{}'`; timestamps. | `world_id_idx`; `(world_id, updated_at desc)`. |
-| `books` | `id uuid PK`; `manuscript_id` → `manuscripts` `on delete cascade`; `title text not null`; `position numeric(12,3) not null default 1000`; timestamps. | `manuscript_id_idx`; `(manuscript_id, position)`. |
-| `chapters` | `id uuid PK`; `book_id` → `books` `on delete cascade`; `title text not null`; `position numeric(12,3) not null default 1000`; `summary text not null default ''`; `status content_status not null default 'draft'`; timestamps. | `book_id_idx`; `(book_id, position)`. |
-| `scenes` | `id uuid PK`; `chapter_id` → `chapters` `on delete cascade`; `title text not null`; `position numeric(12,3) not null default 1000`; `content jsonb not null default '{}'`; `content_text text not null default ''`; `word_count int not null default 0` con `CHK >= 0`; `status content_status not null default 'draft'`; `pov_entity_id uuid` → `entities` `on delete set null`; `location_entity_id uuid` → `entities` `on delete set null`; `story_date text`; `notes text`; `deleted_at`; timestamps. | `chapter_id_idx`; `(chapter_id, position)`; parcial `(chapter_id) where deleted_at is null`. |
-| `scene_versions` | `id uuid PK`; `scene_id` → `scenes` `on delete cascade`; `content jsonb not null default '{}'`; `content_text text not null default ''`; `word_count int not null default 0` con `CHK >= 0`; `label text`; `created_by uuid` → `profiles` `on delete set null`; `created_at`. | `(scene_id, created_at desc)`. |
+| `id` | TEXT | PK |
+| `name` | TEXT | NOT NULL |
+| `version` | TEXT | NOT NULL |
+| `description` | TEXT | NULL |
+| `author` | TEXT | NULL |
+| `license` | TEXT | NOT NULL |
+| `metadata` | TEXT | NOT NULL DEFAULT `'{}'` |
+| `created_at` | INTEGER | NOT NULL |
 
-`story_date` es texto a propósito: una fecha ficticia («Tercera Era, año 42») no
-cabe en `timestamptz`.
+`game_tables`:
 
-### 5.6 Juego creativo
-
-| Tabla | Columnas y restricciones | Índices |
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `game_content_packs` | `id uuid PK`; `world_id uuid` → `worlds` `on delete cascade` (**`null` = sistema**); `name text not null`; `version text not null default '1'`; `description text not null default ''`; `author text`; `license text`; `metadata jsonb not null default '{}'`; `created_by uuid` → `profiles` `on delete set null`; `created_at`. | UQ parcial `(name) where world_id is null`; UQ parcial `(world_id, name) where world_id is not null`; `world_id_idx`. |
-| `game_tables` | `id uuid PK`; `world_id uuid` (**`null` = sistema**); `pack_id uuid` → `game_content_packs` `on delete cascade`; `key text not null`; `name text not null`; `category game_table_category not null`; `description text not null default ''`; `is_system boolean not null default false`; `is_editable boolean not null default true`; `version text not null default '1'`; `created_by uuid` → `profiles` `on delete set null`; timestamps. `CHK is_system = (world_id is null)`. | UQ parcial `(key) where world_id is null`; UQ parcial `(world_id, key) where world_id is not null`; `world_id_idx`; `pack_id_idx`. |
-| `game_table_entries` | `id uuid PK`; `table_id` → `game_tables` `on delete cascade`; `text text not null`; `weight int not null default 1` con `CHK >= 0`; `tags text[] not null default '{}'`; `metadata jsonb not null default '{}'`; `created_at`. | `table_id_idx`. |
-| `game_sessions` | `id uuid PK`; `world_id` → `worlds` `on delete cascade`; `user_id` → `profiles` `on delete cascade`; `seed text not null`; `results jsonb not null default '{}'`; `notes text`; `created_at`. | `(world_id, user_id)`; `user_id_idx`. |
+| `id` | TEXT | PK |
+| `world_id` | TEXT | FK `worlds(id)`, NULL |
+| `pack_id` | TEXT | FK `game_content_packs(id)`, NULL |
+| `key` | TEXT | NOT NULL |
+| `name` | TEXT | NOT NULL |
+| `category` | TEXT | NOT NULL |
+| `description` | TEXT | NULL |
+| `is_system` | INTEGER | NOT NULL DEFAULT 0 |
+| `is_editable` | INTEGER | NOT NULL DEFAULT 1 |
+| `version` | INTEGER | NOT NULL DEFAULT 1 |
 
-`is_editable = false` marca contenido del sistema que el cliente no puede
-ampliar; el trigger `assert_game_entry_world` lo bloquea aunque llegue una
-sentencia directa.
+Índice: `game_tables_world_key_uq (world_id, key)`,
+`game_tables_pack_idx (pack_id)`.
 
-### 5.7 Actividad
+`game_table_entries`: `id` PK, `table_id` FK, `text`, `weight` REAL DEFAULT 1,
+`tags` TEXT DEFAULT `'[]'`, `metadata` TEXT DEFAULT `'{}'`.
 
-| Tabla | Columnas y restricciones | Índices |
+`game_sessions`: `id` PK, `world_id` FK, `seed` TEXT, `results` TEXT,
+`notes` TEXT, `created_at`.
+
+### 4.12 `activity_log`
+
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `activity_log` | `id bigint PK generated always as identity`; `world_id` → `worlds` `on delete cascade`; `user_id uuid` → `profiles` `on delete set null`; `action text not null` con `CHK 1..120`; `entity_type text`; `entity_id uuid` (referencia genérica, sin FK); `diff jsonb`; `created_at`. | `(world_id, created_at desc)`; `(entity_type, entity_id)`; `world_id_idx`. |
+| `id` | TEXT | PK |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
+| `action` | TEXT | NOT NULL |
+| `entity_type` | TEXT | NOT NULL |
+| `entity_id` | TEXT | NULL |
+| `diff` | TEXT | NOT NULL DEFAULT `'{}'` |
+| `created_at` | INTEGER | NOT NULL |
 
-`entity_id` no tiene FK a propósito: el registro guarda cualquier tipo de fila,
-también las que ya se borraron. La secuencia se llama `activity_log_id_seq` y su
-`usage` se concede explícitamente en `0006_grants`.
+Índice: `activity_log_world_created_idx (world_id, created_at DESC)`.
 
-## 6. Búsqueda: FTS y trigram
+### 4.13 `search_documents` y `search_fts`
 
-`entities.search_vector` es una columna generada y almacenada, con
-`to_tsvector('spanish', …)` y pesos:
+`search_documents`:
 
-| Campo | Peso |
-|---|---|
-| `name` | `A` |
-| `summary`, `aliases` | `B` |
-| `description_text` | `C` |
-
-Se consulta con `search_vector @@ websearch_to_tsquery('spanish', $1)` y se
-ordena con `ts_rank`. El índice GIN `entities_search_vector_idx` la cubre.
-
-Para errores de tecleado y nombres propios se añade `pg_trgm`, instalado en el
-esquema `extensions` (la convención de Supabase) y referenciado como
-`extensions.gin_trgm_ops`:
-
-- `entities_name_trgm_idx` sobre `name`.
-- `entities_aliases_trgm_idx` sobre `app.immutable_array_to_string(aliases, ' ')`.
-
-`array_to_string` es `STABLE` y PostgreSQL no la admite en columnas generadas ni
-en índices funcionales. El envoltorio `app.immutable_array_to_string(text[], text)`
-(creado en `0000_extensions_and_schemas.sql`) fija la misma operación como
-`IMMUTABLE` para `text[]` y se usa tanto en `search_vector` como en el índice
-trigram.
-
-La búsqueda de etiquetas y de manuscritos llegará con sus issues de producto; no
-se indexa nada que no se consulte todavía.
-
-## 7. Funciones y triggers
-
-### 7.1 Esquema `app`
-
-No se expone en la Data API: **nunca** debe añadirse a *Exposed schemas*. Todas
-las funciones de políticas y triggers son `security definer` con
-`set search_path = ''` y nombres cualificados. La única excepción es el helper
-`app.immutable_array_to_string`, que es `IMMUTABLE` y no `security definer`
-(lo necesita la columna generada) y también fija `search_path = ''`. El `usage`
-del esquema se concede al crearlo en `0000`; el `execute` de cada función y el
-`usage` del esquema para `service_role` se conceden uno a uno en `0006_grants`.
-
-| Función | Devuelve | Uso |
+| Columna | Tipo | Restricciones |
 |---|---|---|
-| `app.world_role(uuid)` | `world_role` | Rol del usuario actual en el mundo; `null` si no es miembro. |
-| `app.is_world_member(uuid)` | `boolean` | `world_role(...) is not null`. |
-| `app.can_edit_world(uuid)` | `boolean` | Rol `owner` o `editor`. |
-| `app.is_world_owner(uuid)` | `boolean` | Rol `owner`. |
-| `app.shares_world_with(uuid)` | `boolean` | Perfiles de compañeros de mundo visibles. |
-| `app.entity_world_id(uuid)` | `uuid` | Mundo de una entidad. |
-| `app.tag_world_id(uuid)` | `uuid` | Mundo de una etiqueta. |
-| `app.map_world_id(uuid)` | `uuid` | Mundo de un mapa. |
-| `app.manuscript_world_id(uuid)` | `uuid` | Mundo de un manuscrito. |
-| `app.book_world_id(uuid)` | `uuid` | Mundo de un libro. |
-| `app.chapter_world_id(uuid)` | `uuid` | Mundo de un capítulo. |
-| `app.scene_world_id(uuid)` | `uuid` | Mundo de una escena. |
-| `app.game_table_world_id(uuid)` | `uuid` | Mundo de una tabla de juego; `null` si es global. |
-| `app.transfer_world_ownership(uuid, uuid)` | `void` | Transferencia atómica de propiedad. |
-| `app.guard_asset_insert()` | `trigger` | Exige `app.asset_write = 'on'` y `app.asset_bucket`; valida MIME, tamaño, dimensiones y ruta canónica al insertar assets. |
+| `id` | TEXT | PK |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
+| `kind` | TEXT | NOT NULL (`entity`, `map`, `scene`, `game`) |
+| `ref_id` | TEXT | NOT NULL |
+| `title` | TEXT | NOT NULL |
+| `body` | TEXT | NOT NULL DEFAULT `''` |
+| `updated_at` | INTEGER | NOT NULL |
 
-`app.transfer_world_ownership` exige sesión (`auth.uid()` no nulo), que quien
-llama sea el `owner` vigente y que el nuevo propietario ya sea miembro. Bloquea la
-fila de `worlds` con `for update`, cambia `worlds.owner_id`, degrada al antiguo
-owner a `editor`, promueve al nuevo y registra la acción en `activity_log`.
+Índice único: `search_documents_ref_uq (kind, ref_id)`.
 
-### 7.2 Triggers
+`search_fts` es una tabla virtual FTS5:
 
-| Trigger | Tabla | Efecto |
-|---|---|---|
-| `set_updated_at` | `profiles`, `worlds`, `world_members`, `entity_types`, `relation_types`, `tags`, `entities`, `relations`, `maps`, `manuscripts`, `books`, `chapters`, `scenes`, `game_tables` | Actualiza `updated_at` en cada `update`. |
-| `on_world_created` (`after insert`) | `worlds` | Crea la membresía `owner` del creador. |
-| `protect_world_owner` | `world_members` (`before update/delete`) | Impide eliminar o degradar al owner canónico sin transferir. |
-| `assert_owner_membership` | `world_members` (`before insert/update`) | Solo el `worlds.owner_id` vigente puede tener rol `owner`. |
-| `prevent_world_id_change` | Tablas con `world_id` directo | Impide mover una fila a otro mundo. |
-| `assert_entity_type_world` | `entities` | El tipo es del sistema o del mismo mundo. |
-| `assert_relation_worlds` | `relations` | Origen, destino y tipo del mismo mundo (tipo de sistema permitido). |
-| `assert_entity_tag_world` | `entity_tags` | Etiqueta y entidad del mismo mundo. |
-| `assert_map_link_world` | `map_entity_links` | Mapa y entidad del mismo mundo. |
-| `assert_scene_entities_world` | `scenes` | POV y lugar del mundo del manuscrito. |
-| `assert_game_entry_world` | `game_table_entries` | Bloquea escribir en tablas con `is_editable = false` desde el cliente. |
-| `guard_asset_insert` (`before insert`) | `assets` | Con rol `authenticated`, exige el contexto `app.asset_write`/`app.asset_bucket` y valida `image/webp`, tamaño 1..10485760, lados 16..4096 y ruta `world/{uuid}/{uuid}.webp`. |
+```sql
+CREATE VIRTUAL TABLE search_fts USING fts5(
+  title,
+  body,
+  content='search_documents',
+  content_rowid='rowid',
+  tokenize='unicode61 remove_diacritics 2'
+);
+```
 
-`on_world_created` es lo que hace que un `insert` en `worlds` deje el mundo
-accesible de inmediato. Por eso `worlds_select_member` acepta además
-`owner_id = auth.uid()`: `insert … returning` evalúa la política antes de que el
-trigger confirme la membresía.
+Triggers `search_documents_ai`, `search_documents_ad` y `search_documents_au`
+mantienen el índice. La reconstrucción completa se hace con
+`INSERT INTO search_fts(search_fts) VALUES('rebuild')` desde Ajustes → Datos.
 
-### 7.3 Claves foráneas que no declara Drizzle
+## 5. Reglas de integridad
 
-En `0002_functions_and_triggers.sql`, porque el esquema `auth` no se modela y el
-ciclo `worlds` ↔ `assets` crearía un ciclo de módulos:
+1. Un mundo no se borra físicamente si tiene contenido activo; primero se
+   archiva o se mueve a papelera.
+2. Un asset referenciado por una entidad, mapa o escena no se purga hasta que
+   la referencia desaparece.
+3. `entity_types` y `relation_types` del sistema (`world_id IS NULL`) no se
+   editan ni se borran desde la app; se pueden duplicar por mundo.
+4. Las relaciones no admiten origen igual a destino.
+5. Las posiciones (`position`) son `REAL` para insertar entre elementos sin
+   reescribir toda la lista.
+6. Los textos ricos se guardan como JSON de ProseMirror; `content_text` y
+   `description_text` son la versión plana para búsqueda y exportación.
+7. Los borrados lógicos no eliminan assets ni versiones; la purga es explícita.
+8. Los triggers de `updated_at` se aplican en la aplicación y en SQLite para
+   evitar filas con fecha vieja.
 
-- `profiles.id` → `auth.users(id)` `on delete cascade`.
-- `worlds.cover_asset_id` → `assets(id)` `on delete set null`.
+## 6. Índices y rendimiento
 
-## 8. Aislamiento: RLS y privilegios
+- Toda consulta de lista filtra por `world_id` y `deleted_at`.
+- Búsqueda por nombre con índice; búsqueda de texto completo con FTS5.
+- Grafos: se cargan por lotes y se filtran por tipo; no se hace `SELECT *` de
+  todas las relaciones de un mundo grande.
+- Escenas: se cargan por capítulo y se paginan; el editor no carga el manuscrito
+  completo.
+- Analítica ligera con `EXPLAIN QUERY PLAN` en las consultas de lista y
+  búsqueda antes de cerrar una issue de M1.
 
-### 8.1 Reglas generales
+## 7. Cambios de esquema
 
-- RLS activa en las **24 tablas**, sin excepción.
-- Todas las políticas son `to authenticated` y usan `(select auth.uid())` para
-  que PostgreSQL evalúe el claim una vez por consulta.
-- Sin sesión no se ve nada: `auth.uid()` nulo no satisface ninguna condición.
-- `anon` no tiene `usage` sobre `public` ni privilegios de tabla, secuencia o
-  función; tampoco puede ejecutar nada de `app`.
-- Escritura denegada por `with check` o por falta de privilegio: error `42501`.
-  Lectura denegada por `using`: cero filas.
+Cualquier cambio de tabla, columna, índice o trigger requiere:
 
-### 8.2 Matriz de políticas
+1. Una migración nueva en `drizzle/` (nunca editar una aplicada).
+2. Actualizar este documento y [`migraciones.md`](migraciones.md).
+3. Una prueba de preservación de datos.
+4. Revisión de seguridad si afecta a rutas, assets o importación.
+5. Actualizar el manual si el cambio es visible.
 
-**M** miembro (cualquier rol), **E** editor u owner, **O** owner, **P** propietario
-de la fila, **S** fila de sistema legible por cualquier usuario autenticado,
-**C** compañero de mundo, **—** sin política.
+## 8. Documentos relacionados
 
-| Tabla | SELECT | INSERT | UPDATE | DELETE |
-|---|---|---|---|---|
-| `profiles` | P o C | P | P | — |
-| `allowed_emails` | — | — | — | — |
-| `worlds` | M | `owner_id = auth.uid()` | O | — |
-| `world_members` | M | O | O | O + trigger |
-| `world_invitations` | O | O | O | O |
-| `entity_types` | S o M | E (solo mundo) | E (solo mundo) | E (solo mundo) |
-| `relation_types` | S o M | E (solo mundo) | E (solo mundo) | E (solo mundo) |
-| `entities` | M; borradas solo E | E | E | E (borrado lógico) |
-| `relations` | M | E | E | E |
-| `tags` | M | E | E | E |
-| `entity_tags` | M vía entidad | E vía entidad | — | E vía entidad |
-| `assets` | M | E + `uploader_id` + prefijo | E (solo `alt`) | E |
-| `maps` | M; borrados solo E | E | E | E (borrado lógico) |
-| `map_entity_links` | M vía mapa | E vía mapa | E vía mapa | E vía mapa |
-| `manuscripts` | M | E | E | E |
-| `books` | M vía manuscrito | E vía manuscrito | E vía manuscrito | E vía manuscrito |
-| `chapters` | M vía libro | E vía libro | E vía libro | E vía libro |
-| `scenes` | M vía capítulo; borradas solo E | E vía capítulo | E vía capítulo | E vía capítulo |
-| `scene_versions` | E | E + `created_by` | — | — |
-| `game_content_packs` | S o M | E (solo mundo) | E (solo mundo) | E (solo mundo) |
-| `game_tables` | S o M | E (mundo y editable) | E (mundo y editable) | E (mundo y editable) |
-| `game_table_entries` | S o M vía tabla | E vía tabla | E vía tabla | E vía tabla |
-| `game_sessions` | P + M | P + M | — | P + M |
-| `activity_log` | E | E + `user_id = auth.uid()` | - | - |
-
-Decisiones que no se deducen de la tabla:
-
-- **`allowed_emails`:** RLS activa, cero políticas y cero privilegios. Nadie con
-  `authenticated` puede enumerarla; solo la conexión privilegiada del servidor.
-- **`profiles`:** un usuario ve su perfil y el de sus compañeros de mundo.
-  `settings` no debe contener datos sensibles: lo comparten los miembros.
-- **`worlds`:** sin `DELETE` para `authenticated`. Borrar un mundo exige
-  exportación y backup previos (M5); se archiva con `archived_at`.
-- **`assets`:** el cliente solo actualiza `alt`. `bucket`, `path`, `mime`, `size`,
-  `width` y `height` los fija el servidor al subir; la guarda `guard_asset_insert`
-  de la `0007` lo impone aunque llegue un `insert` directo (M0-10).
-- **`scene_versions` y `activity_log`:** append-only. No hay `UPDATE` ni
-  `DELETE` para clientes.
-- **`game_sessions`:** privacidad dentro del mundo; ni el `owner` ve las tiradas
-  de otros. La pertenencia al mundo se comprueba también al leer y borrar para
-  que un miembro expulsado no conserve acceso a sus tiradas antiguas.
-- **`entity_tags`:** sin `UPDATE`; la relación N:M se crea y se borra.
-
-### 8.3 Grants por tabla y columna
-
-`0006_grants.sql` parte de **cero**: revoca todo a `anon` y `authenticated`,
-revoca los privilegios por defecto de las tablas, secuencias y funciones futuras
-y vuelve a conceder lo mínimo. Una tabla nueva nace cerrada.
-
-Como en PostgreSQL 15+ `PUBLIC` conserva `USAGE` sobre el esquema `public`, la
-migración lo revoca también a `PUBLIC` y concede el uso explícitamente a
-`authenticated`, `service_role` y `authenticator` (el rol de conexión de
-PostgREST). `anon` queda fuera y no puede ni resolver los nombres del esquema.
-
-| Tabla | Privilegios de `authenticated` |
-|---|---|
-| `profiles` | `select`, `insert`, `update` |
-| `allowed_emails` | — |
-| `worlds` | `select`, `insert`, `update (name, slug, summary, description, cover_asset_id, genres, status, settings, archived_at, updated_at)` |
-| `world_members`, `world_invitations`, `entity_types`, `relation_types`, `entities`, `relations`, `tags`, `maps`, `map_entity_links`, `manuscripts`, `books`, `chapters`, `scenes`, `game_content_packs`, `game_tables`, `game_table_entries` | `select`, `insert`, `update`, `delete` |
-| `entity_tags` | `select`, `insert`, `delete` |
-| `assets` | `select`, `insert`, `delete`, `update (alt)` |
-| `scene_versions`, `activity_log` | `select`, `insert` |
-| `game_sessions` | `select`, `insert`, `delete` |
-
-Además: `usage` y `execute` sobre las funciones expuestas de `app`, `usage` sobre
-`activity_log_id_seq` y `notify pgrst, 'reload schema'` al final para que
-PostgREST refresque su caché.
-
-El privilegio de columna es la segunda mitad del control: la RLS decide **qué
-filas** y el `grant` decide **qué columnas**. Así `worlds.owner_id` y
-`assets.path` no se pueden reescribir desde el cliente aunque una política lo
-permitiera.
-
-## 9. Assets, claves y contrato de almacenamiento
-
-- **Clave publicada:** `world/{worldId}/{assetId}.webp`. `buildWorldAssetKey` la
-  construye y el `check` de la tabla y el trigger `guard_asset_insert` imponen el
-  prefijo; `assertWorldAssetKey` rechaza `..`, barras invertidas, rutas
-  absolutas, dobles barras, UUID inválidos, extensiones no permitidas y claves
-  de otro mundo.
-- **Miniatura:** `world/{worldId}/{thumbnailUuid}.webp`, con
-  `thumbnailUuid = UUIDv5(namespace, assetId)`. No ocupa fila en `assets`: se
-  deriva del asset y se borra con él.
-- **Temporal de subida:** `tmp/{worldId}/{assetId}.upload`. El navegador escribe
-  ahí con un `PUT` firmado y `finalizeUpload` lo procesa; el lifecycle de R2
-  purga lo abandonado ([ADR 0020](../adr/0020-direct-signed-upload-to-r2.md)).
-- **Contrato:** `StorageAdapter` en `src/lib/storage/types.ts` con `upload`,
-  `getSignedUrl`, `delete` y `list`, más `download` opcional para recuperar el
-  temporal. Implementación R2 y adaptador local con driver por entorno
-  ([ADR 0004](../adr/0004-cloudflare-r2-storage-adapter.md)).
-- **URLs firmadas:** caducidad máxima de una hora
-  (`MAX_SIGNED_URL_EXPIRY_SECONDS`), validada por `assertValidExpiry`; el bucket
-  es privado y nunca se devuelve una URL pública. La subida caduca en 10 minutos
-  y la descarga dura 5 minutos por defecto.
-- **Límites:** archivo de 10 MiB, entrada de 25 MP y 8192 px, mínimo de 16 px,
-  WebP publicado de 4096 px y `alt` de 500 caracteres en el servicio.
-- **Errores:** `StorageError` con códigos estables `not_found`, `invalid_key`,
-  `invalid_expiry`, `too_large` y `unavailable`. La interfaz traduce el código;
-  nunca se propaga la respuesta del proveedor.
-
-## 10. Cómo se comprueba
-
-| Comprobación | Comando | Qué cubre |
-|---|---|---|
-| Deriva del esquema | `pnpm db:check` | Journal y snapshots de Drizzle Kit; no abre conexión. |
-| Modelo aplicado | `pnpm db:verify` | Journal vs. `drizzle.__drizzle_migrations`, 24 tablas, 7 enums, `pg_trgm`, FTS, RLS, políticas, grants, guarda de assets y conteos del seed. |
-| Contrato del esquema | `pnpm test` | `tests/unit/db/schema-coverage.test.ts` exige las 24 tablas, RLS y política en todas salvo `allowed_emails`, cero privilegios a `anon`, `search_path` vacío en las funciones `security definer` y los tres índices GIN de `entities`. |
-| Aislamiento real | `pnpm test:db` | Cuatro identidades (owner, editor, viewer y ajeno), aislamiento entre mundos, triggers y privilegios. |
-
-## 11. Deuda conocida
-
-- Los valores de `world_status` y `content_status` son provisionales.
-- La purga programada de la papelera y la limpieza de assets huérfanos llegan con
-  M5; mientras tanto, el lifecycle de R2 limpia `tmp/` y `_smoke/`.
-- `assets.alt` está limitado a 500 caracteres en el servicio, pero no tiene
-  `CHECK` en base de datos; añadirlo exige una migración futura.
-- La guarda `guard_asset_insert` cubre `INSERT`; un `UPDATE` de columnas
-  sensibles está acotado por los `grant` de columna (solo `alt`), no por un
-  trigger equivalente.
-- La búsqueda de etiquetas y manuscritos y el índice GIN de `entities.attributes`
-  se añaden cuando exista una consulta real.
-- `game_tables` y `game_content_packs` del sistema están modelados y sembrables,
-  pero el catálogo inicial de juego llega con M4-04 (issue
-  [#44](https://github.com/gonzalitojh/world-craft/issues/44)).
-- El router de conexiones (`DATABASE_URL` en el runtime, `DIRECT_URL` en el
-  tooling) se activará de verdad con M1; hoy solo lo usan scripts y pruebas.
+- [Persistencia](../persistencia.md)
+- [Migraciones](migraciones.md)
+- [Continuidad](../continuidad.md)
+- [Arquitectura](../arquitectura.md)
+- [ADR 0002](../adr/0002-sqlite-better-sqlite3-drizzle-fts5.md)

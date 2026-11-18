@@ -1,13 +1,12 @@
-.next/
 out/
 build/
 dist/
+release/
 coverage/
 node_modules/
 playwright-report/
 test-results/
 pnpm-lock.yaml
-next-env.d.ts
 .env*
 
 # Migraciones y snapshots de Drizzle Kit: SQL generado y ficheros auxiliares

@@ -1,48 +1,53 @@
 # Plan de desarrollo de World Craft
 
-> **Estado:** plan aprobado por el usuario (issue #1); publicación mediante PR a `dev`
-> **Fecha:** 12 de noviembre de 2026
-> **Ámbito:** planificación, arquitectura y desglose de tareas. Este documento **no implementa** nada.
-> **Decisiones:** cerradas el 12/11/2026; ver [`docs/registro-decisiones.md`](registro-decisiones.md).
-> **Precios y límites:** consultados el 11/11/2026 y revisados el 12/11/2026. Los planes gratuitos cambian; antes de lanzar hay que revisarlos y registrar el resultado en un ADR.
+> **Estado:** plan aprobado por el usuario el 18/11/2026 para el pivote a
+> aplicación de escritorio.
+> **Ámbito:** producto, arquitectura, datos, calidad y desglose de tareas. Este
+> documento **no implementa** nada por sí mismo.
+> **Decisiones:** cerradas el 18/11/2026; ver
+> [`docs/registro-decisiones.md`](registro-decisiones.md) y
+> [`docs/adr/`](adr/README.md).
+> **Cambio de etapa:** el plan web anterior (Next.js + Supabase + Vercel + R2)
+> queda sustituido. El detalle de lo eliminado y de las cuentas que hay que
+> cerrar está en [`docs/cambio-a-escritorio.md`](cambio-a-escritorio.md).
 
 ---
 
 ## 0. Resumen ejecutivo
 
-World Craft será una aplicación web personal para **crear mundos de ficción y escribir novelas o relatos** en un mismo lugar. La inspiración es [vvd.world](https://vvd.world/), pero el alcance se adapta a un uso personal: varios mundos, fichas de todo tipo de elementos, relaciones navegables en grafo, mapas vectoriales, un editor de escritura con herramientas para diálogos y un generador de ideas con dados y tablas.
+World Craft será una **aplicación de escritorio instalable para Windows** con la
+que una persona podrá crear mundos de ficción, organizar fichas y relaciones,
+dibujar mapas, escribir novelas y usar herramientas de inspiración. Todo el
+contenido se guarda **en el propio equipo**, sin cuentas, sin servidores y sin
+suscripciones.
 
 La propuesta técnica es:
 
-| Capa | Decisión propuesta |
+| Capa | Decisión |
 |---|---|
-| Framework | **Next.js (App Router) + React + TypeScript** |
-| UI | **Tailwind CSS + shadcn/ui + Radix + Lucide + Motion** |
-| Base de datos | **PostgreSQL gestionado en Supabase (plan Free)** |
-| ORM y validación | **Drizzle ORM + Zod** |
-| Autenticación | **Supabase Auth** con lista de correos permitidos e invitaciones |
-| Archivos | **Cloudflare R2** (10 GB gratis) detrás de una interfaz de almacenamiento |
-| Hosting | **Vercel Hobby** (uso personal, no comercial) |
+| Shell de escritorio | **Electron + Vite + React + TypeScript estricto** |
+| UI | **Tailwind CSS 4 + shadcn/ui + Radix + Lucide + Motion** |
+| Persistencia | **SQLite local con better-sqlite3 + Drizzle ORM** |
+| Búsqueda | **SQLite FTS5** |
+| Archivos | **Sistema de archivos local** bajo `app.getPath('userData')` |
 | Mapas | **MapLibre GL JS + Terra Draw + GeoJSON** |
 | Grafo | **React Flow (`@xyflow/react`) + ELK.js** |
 | Editor | **Tiptap 3 (núcleo MIT) + extensiones propias** |
-| Pruebas | **Vitest + Testing Library + Playwright + axe-core** |
-| PWA | **Serwist + IndexedDB** para borradores y uso móvil |
+| Instalador | **electron-builder + NSIS** |
+| Actualizaciones | **electron-updater + GitHub Releases** |
+| Pruebas | **Vitest + Testing Library + Playwright Electron + axe-core** |
+| Distribución | **GitHub Releases**; sin tienda ni servicio de pago |
 
-El coste objetivo es **0 €/mes** usando únicamente planes gratuitos. La única excepción opcional sería un dominio propio (unos 10-15 €/año), que no es necesario para el MVP: se puede usar el subdominio `*.vercel.app`.
+El coste objetivo es **0 €/mes**. La aplicación no depende de ningún servicio en
+la nube: GitHub solo aloja el código y las releases, y la comprobación de
+actualizaciones es opcional. La firma de código de Windows queda como mejora
+opcional y requiere decisión y ADR porque no es gratuita.
 
-El desarrollo se organiza en **seis fases** (M0 a M5) y **44 issues** enlazadas con etiquetas y hitos. Antes de implementar nada se revisan y adaptan los agentes de IA y las reglas del proyecto (issues M0-01 y M0-02), porque los actuales están heredados de otra aplicación y contienen referencias, scripts y flujos que no existen aquí.
-
-**Decisiones cerradas el 12/11/2026.** El detalle y las consecuencias están en [`docs/registro-decisiones.md`](registro-decisiones.md). En resumen:
-
-1. **Stack:** Supabase Free + Vercel Hobby, con archivos en **Cloudflare R2 Free** y keep-alive/backups para la pausa de Supabase.
-2. **Temas:** dos modos, Claro y Oscuro.
-3. **Mapas:** fondo raster opcional y georreferenciado para calcar, sin renunciar al mapa vectorial.
-4. **Acceso:** allowlist para entrar en la app; roles `owner`/`editor`/`viewer` por mundo; cualquier usuario autorizado puede crear sus propios mundos.
-5. **Idioma:** español en el MVP, con textos centralizados y estructura preparada para inglés e italiano.
-6. **Dominio:** subdominio de Vercel en el MVP.
-7. **Publicación:** revisión local primero; PR a `dev` cuando el usuario apruebe.
-8. **Juego:** contenido inicial ampliable desde la app mediante tablas y packs, sin tocar código.
+El desarrollo se organiza en **seis fases** (M0 a M5) y un backlog. El punto de
+partida es la limpieza del repositorio web y la creación de una base de
+escritorio verificable: ventana segura, base de datos local, migraciones,
+copias, IPC tipado, sistema de diseño, instalador y CI. Solo después se añade
+producto.
 
 ---
 
@@ -50,71 +55,93 @@ El desarrollo se organiza en **seis fases** (M0 a M5) y **44 issues** enlazadas 
 
 ### 1.1 Problema y propuesta de valor
 
-Una persona que escribe ficción suele repartir su trabajo entre documentos, hojas de cálculo, carpetas de imágenes, herramientas de mapas y notas sueltas. World Craft unifica:
+Una persona que escribe ficción suele repartir su trabajo entre documentos,
+hojas de cálculo, carpetas de imágenes, herramientas de mapas y notas sueltas.
+World Craft unifica:
 
-- **La enciclopedia del mundo:** fichas tipadas, relaciones, etiquetas y búsqueda.
+- **La enciclopedia del mundo:** fichas tipadas, relaciones, etiquetas, imágenes
+  y búsqueda.
 - **La geografía:** mapas vectoriales con marcadores vinculados a fichas.
-- **La escritura:** manuscritos estructurados en libros, capítulos y escenas, con herramientas específicas para novela.
-- **La inspiración:** tiradas de dados y tablas que proponen contenedores, subgéneros, detonantes y tópicos literarios.
+- **La escritura:** manuscritos estructurados en libros, capítulos y escenas,
+  con herramientas específicas para novela.
+- **La inspiración:** tiradas de dados y tablas que proponen contenedores,
+  subgéneros, detonantes y tópicos literarios.
 
-La propuesta no es competir con vvd.world en comunidad, wiki pública o colaboración en tiempo real. Es una herramienta **personal, privada, rápida y sin coste**, con datos portables y una experiencia cuidada.
+La propuesta no es competir con herramientas colaborativas o wikis públicas. Es
+una herramienta **personal, privada, rápida, offline y sin coste**, con datos
+portables y una experiencia cuidada.
 
 ### 1.2 Usuarios
 
 | Usuario | Necesidad principal |
 |---|---|
-| Autor/propietario (usuario principal) | Crear varios mundos, escribir novelas y consultar su propio material sin fricción. |
-| Amigo invitado | Acceder a un mundo concreto para leerlo o, si se le concede permiso, editarlo. También puede crear y gestionar sus propios mundos. |
-| Futuro lector | Consultar una vista de lectura o una wiki pública (backlog, no MVP). |
+| Autor (usuario único) | Crear varios mundos, escribir novelas y consultar su propio material sin fricción ni conexión. |
 
-No hay registro público, ni perfiles públicos, ni interacción entre usuarios, ni comunidad.
+No hay registro, ni perfiles, ni invitaciones, ni permisos por mundo, ni
+colaboración. El equipo es la unidad de confianza: quien usa la sesión de
+Windows puede abrir la aplicación y sus datos.
 
 ### 1.3 Principios de producto
 
-1. **Privado por defecto.** Todo requiere sesión; no hay contenido público salvo que se decida explícitamente en el futuro.
-2. **Local primero en la experiencia.** Autoguardado, borradores en el navegador y recuperación ante fallos de red.
-3. **Datos portables.** Exportar e importar un mundo completo en un formato abierto (JSON + archivos) en cualquier momento.
-4. **Rápido y silencioso.** Sin animaciones innecesarias, sin recargas completas y sin dependencias de servicios de pago.
-5. **Responsive de verdad.** Móvil, tablet y escritorio; el mapa se puede consultar en móvil y editar cómodamente en escritorio.
-6. **Accesible.** WCAG AA, navegación por teclado, foco visible y respeto a `prefers-reduced-motion`.
-7. **Estética editorial.** Papel, tinta, cartografía y tipografía con carácter; no un dashboard genérico.
-8. **Gratuito y sostenible.** Cada dependencia y servicio debe justificar su coste y su límite gratuito.
+1. **Local por defecto.** Los datos viven en el equipo. No hay nube obligatoria.
+2. **Offline de verdad.** La aplicación arranca, lee y escribe sin Internet.
+3. **Los datos nunca se pierden.** Actualizar o reinstalar no toca la carpeta de
+   datos; las migraciones y operaciones destructivas dejan copia.
+4. **Datos portables.** Exportar e importar un mundo completo en JSON + assets.
+5. **Rápido y silencioso.** Sin recargas, sin esperas de red y sin telemetría.
+6. **Accesible.** WCAG AA, teclado, foco visible y movimiento reducido.
+7. **Estética editorial.** Papel, tinta, cartografía y tipografía con carácter.
+8. **Gratuito y sostenible.** Dependencias y servicios justificados; 0 €/mes.
 
 ### 1.4 Alcance del MVP
 
 El MVP debe permitir, como mínimo:
 
-- Iniciar sesión con una cuenta propia y acceder a un espacio privado.
+- Instalar la aplicación en Windows con un instalador y conservar los datos al
+  actualizar o reinstalar.
 - Crear varios mundos con portada, descripción y estado.
-- Crear fichas de distintos tipos (personajes, lugares, ciudades, naciones, culturas, razas, organizaciones, religiones, magia, objetos, criaturas, idiomas, eventos, etc.) con campos personalizados, imágenes, etiquetas y texto enriquecido.
+- Crear fichas de distintos tipos (personajes, lugares, ciudades, naciones,
+  culturas, razas, organizaciones, religiones, magia, objetos, criaturas,
+  idiomas, eventos, etc.) con campos personalizados, imágenes, etiquetas y texto
+  enriquecido.
 - Relacionar fichas entre sí y navegar las relaciones en una vista de grafo.
-- Crear mapas vectoriales con capas, formas, líneas, puntos, etiquetas y marcadores vinculados a fichas; exportar el mapa en SVG/PNG.
-- Escribir una novela estructurada en libros, capítulos y escenas, con autoguardado, modo diálogo, modo concentración, objetivos y estadísticas.
+- Crear mapas vectoriales con capas, formas, líneas, puntos, etiquetas y
+  marcadores vinculados a fichas; exportar el mapa en SVG/PNG.
+- Escribir una novela estructurada en libros, capítulos y escenas, con
+  autoguardado, modo diálogo, modo concentración, objetivos y estadísticas.
 - Exportar el manuscrito a DOCX, PDF, EPUB y Markdown; importar DOCX/Markdown.
-- Tirar dados y generar propuestas con tablas de contenedores, subgéneros, detonantes y tópicos literarios, guardando las sesiones.
+- Tirar dados y generar propuestas con tablas de contenedores, subgéneros,
+  detonantes y tópicos literarios, guardando las sesiones.
 - Buscar globalmente y navegar con una paleta de comandos.
-- Usar la app en móvil, tablet y escritorio, en los dos temas, con una PWA instalable.
-- Exportar/importar mundos y disponer de copias de seguridad.
+- Usar la app en los dos temas, con accesibilidad AA.
+- Exportar/importar mundos, crear copias de seguridad y restaurarlas.
 
-### 1.5 Fuera de alcance (inicial)
+### 1.5 Fuera de alcance
 
-- Colaboración en tiempo real y edición simultánea.
+- Versión web, PWA, aplicación móvil o tablet.
+- Cuentas, autenticación, allowlist, roles por mundo, invitaciones o
+  colaboración en tiempo real.
 - Wiki pública, comunidad, comentarios de lectores o perfiles públicos.
-- Aplicación de escritorio nativa (se valorará Tauri/Electron en el futuro).
-- Generación de contenido con IA de pago (se deja como mejora opcional futura).
+- Sincronización en la nube o backup remoto obligatorio.
+- Servidores, bases de datos gestionadas, Docker o despliegues cloud.
 - Pagos, suscripciones o marketplace.
 - API pública para terceros.
-- Calendarios fantásticos completos y líneas temporales avanzadas (se cubren con campos de fecha/atributos; la vista de timeline queda en backlog).
-- Aplicaciones móviles nativas en App Store/Google Play.
+- Calendarios fantásticos completos y líneas temporales avanzadas (backlog).
+- Firma de código obligatoria en el MVP (mejora opcional con ADR).
+- Aplicaciones para macOS o Linux en el MVP (el código no se cerrará a ello,
+  pero no se prueba ni se distribuye).
 
 ### 1.6 Referencia: vvd.world
 
-vvd.world ofrece organización de mundos, mapas interactivos, visualización de conexiones, wiki personalizable y colaboración en tiempo real. World Craft toma la **organización por fichas**, los **mapas interactivos** y la **visualización de conexiones**, pero:
+vvd.world ofrece organización de mundos, mapas interactivos, visualización de
+conexiones, wiki personalizable y colaboración en tiempo real. World Craft toma
+la **organización por fichas**, los **mapas interactivos** y la **visualización
+de conexiones**, pero:
 
 - Elimina la capa social y de comunidad.
 - Sustituye la wiki pública por una experiencia privada de consulta.
 - Añade un editor de novela más profundo y un generador de ideas con dados.
-- Prioriza el coste cero y la portabilidad de datos.
+- Prioriza el coste cero, el funcionamiento offline y la portabilidad de datos.
 
 No se copiará su diseño, textos, ilustraciones ni estructura de datos.
 
@@ -127,89 +154,105 @@ No se copiará su diseño, textos, ilustraciones ni estructura de datos.
 #### 2.1.1 Mundos
 
 - Listar, crear, editar, archivar, duplicar, exportar e importar mundos.
-- Campos: nombre, slug, resumen, descripción, portada, género(s), estado (borrador/en desarrollo/en pausa/completado), idioma, fecha de creación y actualización.
-- Aislamiento estricto entre mundos: ningún dato de un mundo debe aparecer en otro.
+- Campos: nombre, slug, resumen, descripción, portada, géneros, estado
+  (borrador/en desarrollo/en pausa/completado), idioma, fechas de creación y
+  actualización.
+- Aislamiento estricto entre mundos en la interfaz y en las consultas.
 - Dashboard del mundo con accesos rápidos, actividad reciente y progreso.
 
 #### 2.1.2 Entidades y fichas
 
-- Tipos del sistema: personaje, lugar, ciudad, nación, cultura, raza/especie, organización/facción, religión, deidad, sistema de magia, objeto/artefacto, criatura, idioma, evento, conflicto, tecnología, flora/fauna y concepto.
+- Tipos del sistema: personaje, lugar, ciudad, nación, cultura, raza/especie,
+  organización/facción, religión, deidad, sistema de magia, objeto/artefacto,
+  criatura, idioma, evento, conflicto, tecnología, flora/fauna y concepto.
 - Tipos personalizados por mundo, con icono, color y plantilla de campos.
-- Campos: nombre, alias, resumen, descripción enriquecida, imagen principal, galería, etiquetas, atributos clave-valor tipados, estado, favorito y fechas.
+- Campos: nombre, alias, resumen, descripción enriquecida, imagen principal,
+  galería, etiquetas, atributos clave-valor tipados, estado, favorito y fechas.
 - Autoguardado y creación rápida desde cualquier pantalla.
-- Enlaces internos entre fichas (`@personaje`) y backlinks.
+- Enlaces internos entre fichas y backlinks.
 - Historial de cambios por ficha (al menos versiones de descripción).
 - Papelera con restauración.
 
 #### 2.1.3 Relaciones y grafo
 
-- Relaciones tipadas y dirigidas (o bidireccionales) entre entidades: familiar, miembro de, ubicado en, aliado, enemigo, pertenece a, causó, participó en, etc.
+- Relaciones tipadas y dirigidas (o bidireccionales) entre entidades: familiar,
+  miembro de, ubicado en, aliado, enemigo, pertenece a, causó, participó en,
+  etc.
 - Etiqueta directa e inversa, notas, fuerza/importancia y metadatos.
-- Vista de grafo interactiva: zoom, paneo, selección, búsqueda, filtros por tipo/relación, foco en un nodo, expansión de vecinos, diseño automático y posiciones manuales guardadas.
+- Vista de grafo interactiva: zoom, paneo, selección, búsqueda, filtros por
+  tipo/relación, foco en un nodo, expansión de vecinos, diseño automático y
+  posiciones manuales guardadas.
 - Exportar el grafo a PNG/SVG.
 - Acciones rápidas desde el grafo: abrir ficha, crear relación, ocultar tipos.
 
 #### 2.1.4 Mapas
 
 - Varios mapas por mundo (mundo, región, ciudad, interior).
-- Editor vectorial: capas (terreno, agua, costas, rutas, regiones, puntos, etiquetas, iconos), polígonos, líneas, puntos, texto, estilos, orden Z, bloquear/ocultar capa.
-- Opcional: imagen raster de fondo georreferenciada para calcar o completar un mapa dibujado a mano.
-- Herramientas: seleccionar, mover, editar vértices, dibujar, borrar, deshacer/rehacer, duplicar, alinear, snap, medir distancias, escala y leyenda.
+- Editor vectorial: capas (terreno, agua, costas, rutas, regiones, puntos,
+  etiquetas, iconos), polígonos, líneas, puntos, texto, estilos, orden Z,
+  bloquear/ocultar capa.
+- Imagen raster de fondo opcional y georreferenciada para calcar.
+- Herramientas: seleccionar, mover, editar vértices, dibujar, borrar,
+  deshacer/rehacer, duplicar, alinear, snap, medir distancias, escala y leyenda.
 - Marcadores vinculados a entidades, con popup y enlace a la ficha.
-- Pan/zoom fluido, atajos de teclado y gestos táctiles.
-- Exportar SVG (vectorial, sin pérdida), PNG (alta resolución) y GeoJSON; importar GeoJSON.
-- Vista de solo lectura para consulta y posible enlace compartido privado.
+- Pan/zoom fluido, atajos de teclado y rueda/arrastre de ratón.
+- Exportar SVG (vectorial, sin pérdida), PNG (alta resolución) y GeoJSON;
+  importar GeoJSON.
+- Vista de solo lectura para consulta.
 
 #### 2.1.5 Escritura
 
-- Biblioteca de obras: novela, novella, relato, saga; estado y objetivo de palabras.
+- Biblioteca de obras: novela, novella, relato, saga; estado y objetivo de
+  palabras.
 - Estructura: obra → partes/libros → capítulos → escenas.
-- Editor de texto enriquecido con títulos, negrita, cursiva, citas, separadores de escena, listas y notas.
-- **Modo diálogo:** detectar y formatear diálogos con raya, asignar hablante, autocompletar nombres de personajes y resaltar interlocutores.
-- **Modo concentración:** ocultar el resto de la interfaz; **modo máquina de escribir** (la línea actual permanece centrada).
-- Objetivos diarios/semanales, contador de palabras, estadísticas de sesión y racha.
+- Editor de texto enriquecido con títulos, negrita, cursiva, citas, separadores
+  de escena, listas y notas.
+- **Modo diálogo:** detectar y formatear diálogos con raya, asignar hablante,
+  autocompletar nombres de personajes y resaltar interlocutores.
+- **Modo concentración:** ocultar el resto de la interfaz; **modo máquina de
+  escribir** (la línea actual permanece centrada).
+- Objetivos diarios/semanales, contador de palabras, estadísticas de sesión y
+  racha.
 - Buscar y reemplazar; corrector ortográfico nativo y diccionario personal.
 - Notas de escena, POV, lugar, fecha de la historia y estado.
-- Autoguardado con buffer local y resolución de conflictos.
+- Autoguardado local con recuperación tras cierre inesperado.
 - Historial de versiones por escena y restauración.
-- Exportar a DOCX, PDF, EPUB y Markdown con formato de manuscrito; importar DOCX y Markdown.
+- Exportar a DOCX, PDF, EPUB y Markdown con formato de manuscrito; importar DOCX
+  y Markdown.
 - Modo lectura/impresión.
 
 #### 2.1.6 Juego de inspiración
 
-- Tirada de dados con notación estándar (`1d20`, `2d6+1`, etc.) y resultados reproducibles mediante semilla.
-- Tablas de contenido: **contenedores**, **subgéneros**, **detonantes** y **tópicos literarios**, con pesos, etiquetas y variantes.
-- Flujo "inspiración": combinar una tirada de cada categoría, bloquear/rerolear resultados y guardar la combinación como semilla de historia.
-- Historial de sesiones y posibilidad de vincular una semilla a un mundo/proyecto.
+- Tirada de dados con notación estándar (`1d20`, `2d6+1`, etc.) y resultados
+  reproducibles mediante semilla.
+- Tablas de contenido: **contenedores**, **subgéneros**, **detonantes** y
+  **tópicos literarios**, con pesos, etiquetas y variantes.
+- Flujo «inspiración»: combinar una tirada de cada categoría, bloquear/rerolear
+  resultados y guardar la combinación como semilla de historia.
+- Historial de sesiones y posibilidad de vincular una semilla a un mundo.
 - Tablas personalizadas por el usuario y edición de contenido.
 - Contenido inicial en español, con tono y nivel de edad configurables.
 
 #### 2.1.7 Búsqueda y navegación
 
 - Búsqueda global en mundos, fichas, relaciones, mapas, manuscritos y escenas.
-- Búsqueda difusa (trigram) y por prefijo; filtros por mundo, tipo, etiqueta y estado.
-- Paleta de comandos (`Ctrl/Cmd + K`) para navegar, crear y ejecutar acciones.
+- Búsqueda por prefijo y difusa con FTS5; filtros por mundo, tipo, etiqueta y
+  estado.
+- Paleta de comandos (`Ctrl + K`) para navegar, crear y ejecutar acciones.
 - Recientes y favoritos.
 - Resultados con resaltado y navegación por teclado.
 
-#### 2.1.8 Cuenta y acceso
+#### 2.1.8 Ajustes y datos
 
-- Inicio de sesión con email/contraseña y enlace mágico.
-- Registro cerrado: solo correos previamente autorizados.
-- La allowlist da acceso a la **aplicación**, no a los mundos de otras personas.
-- Cualquier usuario autorizado puede crear sus propios mundos y será su propietario.
-- Invitación de amigos a un mundo con rol **lector** o **editor**; la pertenencia al mundo es independiente del acceso a la app.
-- Cierre de sesión, recuperación de contraseña y gestión de sesiones.
-- Perfil básico: nombre visible, avatar, tema (claro/oscuro) y preferencias.
-
-#### 2.1.9 Ajustes y datos
-
-- Tema (claro/oscuro), densidad, tamaño de fuente del editor, idioma de la interfaz (español en MVP), atajos.
+- Tema (claro/oscuro), densidad, tamaño de fuente del editor, idioma de la
+  interfaz (español en MVP), atajos.
 - Exportar un mundo completo (JSON + assets) e importarlo.
-- Exportar la cuenta y eliminar la cuenta con confirmación.
+- Exportar todos los datos y eliminarlos con confirmación.
 - Gestión de almacenamiento y borrado de assets huérfanos.
+- Abrir la carpeta de datos y la carpeta de copias desde la aplicación.
+- Comprobar actualizaciones manualmente y configurar la comprobación automática.
 
-#### 2.1.10 Ayuda y documentación
+#### 2.1.9 Ayuda y documentación
 
 - Manual de usuario en `docs/manual-de-usuario.md`, enlazado desde la app.
 - Onboarding breve para el primer mundo.
@@ -220,16 +263,18 @@ No se copiará su diseño, textos, ilustraciones ni estructura de datos.
 
 | Requisito | Criterio |
 |---|---|
-| Responsividad | Sin scroll horizontal de página a 360, 768 y 1280 px; contenido largo sin desbordar; mapa usable en móvil. |
-| Temas | Dos modos (Claro y Oscuro) con contraste WCAG AA mínimo 4.5:1 en texto normal. |
-| Accesibilidad | Navegación completa por teclado, foco visible, etiquetas ARIA, `prefers-reduced-motion`, axe sin errores críticos. |
-| Rendimiento | LCP < 2,5 s en 4G; INP < 200 ms; CLS < 0,1; mapa de 500 elementos a 60 fps en portátil medio; grafo de 200 nodos < 2 s. |
-| Privacidad | Sin contenido público; RLS en todas las tablas; sin telemetría invasiva; datos exportables y eliminables. |
-| Seguridad | Contraseñas gestionadas por Supabase; sesiones en cookies HttpOnly/SameSite; CSP; validación de subidas; sin secretos en cliente. |
-| Disponibilidad | Best effort con free tiers; recuperación documentada; sin SLA. |
-| Portabilidad | Exportación JSON/GeoJSON/Markdown; migraciones SQL versionadas; sin dependencias propietarias en el modelo de datos. |
+| Plataforma | Windows 10/11 x64; instalable con NSIS; sin dependencia de navegador. |
+| Ventana | Mínimo 1024×700; sin scroll horizontal de página a 1024, 1280 y 1600 px; tamaño y posición recordados. |
+| Datos | SQLite local con WAL; assets en el sistema de archivos; actualizar/reinstalar no borra datos. |
+| Offline | Arranque, lectura y escritura sin Internet; actualizaciones opcionales. |
+| Temas | Dos modos (Claro y Oscuro) con contraste WCAG AA mínimo 4.5:1. |
+| Accesibilidad | Teclado, foco visible, etiquetas ARIA, `prefers-reduced-motion`, axe sin errores críticos. |
+| Rendimiento | Arranque < 3 s en un equipo medio; mapa de 500 elementos a 60 fps; grafo de 200 nodos < 2 s; búsqueda < 150 ms en 10.000 fichas. |
+| Privacidad | Sin telemetría, sin cuentas, sin subida de datos; exportación y borrado local. |
+| Seguridad | Contexto aislado, sandbox, IPC validado, CSP, sin contenido remoto, assets con protocolo seguro. |
+| Portabilidad | Exportación JSON + assets, GeoJSON, Markdown; SQLite estándar; migraciones versionadas. |
 | Mantenibilidad | TypeScript estricto, lint/format, tests, ADRs, módulos por dominio, dependencias justificadas. |
-| Coste | 0 €/mes en servicios; dominio propio opcional. |
+| Coste | 0 €/mes en servicios; firma de código opcional con ADR. |
 | Idioma | Interfaz y contenido inicial en español; textos centralizados para i18n futura. |
 
 ---
@@ -239,49 +284,56 @@ No se copiará su diseño, textos, ilustraciones ni estructura de datos.
 ### 3.1 Vista general
 
 ```text
-┌──────────────────────────────────────────────────────────────────┐
-│ Navegador (React 19 + Next.js App Router)                        │
-│  ├─ RSC: dashboard, fichas, listas, ajustes                      │
-│  ├─ Client: editor Tiptap, mapa MapLibre, grafo React Flow       │
-│  ├─ IndexedDB: borradores y recuperación offline                 │
-│  └─ PWA: shell cacheada + instalación                            │
-└───────────────┬──────────────────────────────────────────────────┘
-                │ HTTPS (cookies de sesión)
-┌───────────────▼──────────────────────────────────────────────────┐
-│ Vercel Hobby                                                     │
-│  ├─ Next.js: Server Components + Server Actions + Route Handlers  │
-│  ├─ Middleware: refresco de sesión y protección de rutas          │
-│  ├─ Exportaciones: DOCX/PDF/EPUB/Markdown                        │
-│  └─ Procesado de imágenes (sharp) y URLs firmadas                 │
-└───────┬───────────────────────────────┬──────────────────────────┘
-        │                               │
-┌───────▼───────────────┐      ┌────────▼─────────────────────────┐
-│ Supabase              │      │ Cloudflare R2                    │
-│  ├─ PostgreSQL         │      │  ├─ avatares                     │
-│  ├─ Auth (email)       │      │  ├─ portadas y fichas            │
-│  ├─ RLS                │      │  ├─ mapas (raster/exportes)      │
-│  └─ Búsqueda FTS       │      │  └─ assets de manuscritos        │
-└───────────────────────┘      └──────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│ Proceso principal de Electron                                     │
+│  ├─ Ventana segura (contextIsolation, sandbox, sin Node en renderer)│
+│  ├─ SQLite (better-sqlite3) + Drizzle + migraciones + FTS5         │
+│  ├─ Assets locales + protocolo wc-asset:// validado                │
+│  ├─ Copias de seguridad, exportación/importación y restauración    │
+│  ├─ Instalador/actualizador (electron-updater + GitHub Releases)   │
+│  └─ IPC tipado y validado con Zod                                  │
+└───────────────────────────────┬────────────────────────────────────┘
+                                │ preload + contextBridge
+┌───────────────────────────────▼────────────────────────────────────┐
+│ Renderer (React 19 + Vite + TypeScript)                            │
+│  ├─ Shell de escritorio, navegación y paleta de comandos           │
+│  ├─ Fichas, relaciones, grafo (React Flow + ELK)                   │
+│  ├─ Mapas (MapLibre + Terra Draw)                                  │
+│  ├─ Editor (Tiptap) y exportadores                                 │
+│  └─ Juego, ajustes y ayuda                                         │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-**Flujo de una petición típica:** el middleware refresca la sesión de Supabase; el Server Component valida la membresía del mundo y consulta con Drizzle; el cliente recibe datos ya filtrados. Las mutaciones pasan por Server Actions con validación Zod, comprobación de permisos y `revalidatePath`. Las vistas pesadas (mapa, grafo, editor) se cargan solo en cliente con `dynamic(..., { ssr: false })` y guardan por route handlers con control de versión.
+**Flujo típico:** el renderer llama a `window.worldCraft.<dominio>.<acción>`; el
+preload envía un mensaje IPC con canal allowlisted; el proceso principal valida
+la entrada con Zod, ejecuta la operación en SQLite o en el sistema de archivos y
+devuelve un resultado tipado (`{ ok, data }` o `{ ok, error }`). El renderer
+nunca ve rutas absolutas, handles de base de datos ni errores internos.
 
 ### 3.2 Decisiones y alternativas
 
-Las puntuaciones son orientativas (1-5) y ponderan el contexto: uso personal, coste cero, calidad, rapidez de desarrollo, mantenibilidad y encaje con las funciones interactivas.
+Las puntuaciones son orientativas (1-5) y ponderan el contexto: uso personal,
+coste cero, calidad, rapidez de desarrollo, mantenibilidad y encaje con las
+funciones interactivas.
 
-#### D1. Framework: Next.js App Router
+#### D1. Shell de escritorio: Electron
 
-| Criterio | Next.js | SvelteKit | Remix/React Router | Astro | Nuxt |
-|---|---:|---:|---:|---:|---:|
-| Ecosistema para editor/grafo/mapas | 5 | 3 | 4 | 2 | 3 |
-| Full-stack y Server Actions | 5 | 4 | 4 | 2 | 4 |
-| Despliegue gratuito y DX | 5 | 4 | 3 | 4 | 3 |
-| Curva de aprendizaje y documentación | 4 | 3 | 3 | 4 | 3 |
-| Rendimiento para app interactiva | 4 | 5 | 4 | 3 | 4 |
-| **Total** | **23** | **19** | **18** | **15** | **17** |
+| Criterio | Electron | Tauri 2 | .NET/WPF | Avalonia |
+|---|---:|---:|---:|---:|
+| Ecosistema React para editor/grafo/mapas | 5 | 4 | 1 | 1 |
+| Madurez y documentación | 5 | 3 | 5 | 4 |
+| Facilidad de instalación en Windows | 5 | 4 | 4 | 4 |
+| Tamaño de instalación | 2 | 5 | 4 | 4 |
+| Seguridad y aislamiento | 3 | 4 | 4 | 4 |
+| **Total** | **20** | **20** | **18** | **17** |
 
-**Decisión:** Next.js con App Router. El ecosistema React es decisivo para Tiptap, React Flow, MapLibre, dnd-kit y shadcn/ui. Los Server Components reducen JavaScript en pantallas de lectura y las Server Actions simplifican las mutaciones. Riesgo: complejidad de RSC y acoplamiento a Vercel; se mitiga usando APIs estándar, SQL portable y evitando servicios propietarios de Vercel.
+**Decisión:** Electron + Vite + React + TypeScript. El ecosistema React es
+decisivo para Tiptap, React Flow, MapLibre, dnd-kit y shadcn/ui. Electron tiene
+el instalador, la actualización y el soporte de SQLite nativo más maduros para
+Windows. El coste es un instalador más grande (~100 MB); se mitiga con
+`asar`, compresión y sin dependencias innecesarias. Tauri se reevalúa si el
+tamaño o el consumo de memoria se vuelven un problema, pero cambiaría el runtime
+y el acceso a SQLite.
 
 #### D2. UI: Tailwind CSS + shadcn/ui
 
@@ -294,90 +346,96 @@ Las puntuaciones son orientativas (1-5) y ponderan el contexto: uso personal, co
 | Velocidad de desarrollo | 5 | 4 | 4 | 4 | 2 |
 | **Total** | **25** | **16** | **17** | **19** | **17** |
 
-**Decisión:** Tailwind CSS 4 + shadcn/ui (Radix) + Lucide + Motion. shadcn/ui no es una dependencia monolítica: los componentes se copian al repositorio y se adaptan. Esto encaja con una estética editorial propia y con los dos temas (claro/oscuro). Se evita un kit que imponga su look.
+**Decisión:** Tailwind CSS 4 + shadcn/ui (Radix) + Lucide + Motion. shadcn/ui no
+es una dependencia monolítica: los componentes se copian al repositorio y se
+adaptan. Encaja con una estética editorial propia y con los dos temas.
 
-#### D3. Base de datos: Supabase Postgres
+#### D3. Persistencia: SQLite + better-sqlite3
 
-| Criterio | Supabase | Neon | Turso | Cloudflare D1 | PocketBase | Firebase |
+| Criterio | SQLite + better-sqlite3 | node:sqlite | libSQL | JSON/lowdb | IndexedDB | PGlite |
 |---|---:|---:|---:|---:|---:|---:|
-| Modelo relacional y consultas | 5 | 5 | 3 | 3 | 4 | 2 |
-| Auth + Storage integrados | 5 | 4 | 1 | 2 | 4 | 4 |
-| RLS y seguridad por fila | 5 | 2 | 1 | 1 | 3 | 3 |
-| Límites gratuitos | 4 | 5 | 5 | 5 | 5 | 3 |
-| Madurez y documentación | 5 | 4 | 3 | 3 | 3 | 5 |
-| **Total** | **24** | **20** | **13** | **14** | **19** | **17** |
+| Modelo relacional y consultas | 5 | 4 | 5 | 1 | 2 | 5 |
+| Búsqueda FTS5 | 5 | 4 | 5 | 1 | 1 | 4 |
+| Madurez y herramientas | 5 | 3 | 4 | 3 | 4 | 3 |
+| Integración con Electron | 5 | 4 | 3 | 5 | 3 | 4 |
+| Copias y portabilidad | 5 | 4 | 4 | 5 | 2 | 3 |
+| **Total** | **25** | **19** | **21** | **15** | **12** | **19** |
 
-*El almacenamiento se evalúa por separado en D6 y finalmente se resuelve con Cloudflare R2; la fila "Auth + Storage integrados" solo valora la comodidad de tener Auth en el mismo panel.*
-
-**Decisión:** Supabase Free (PostgreSQL 15+) para base de datos, Auth y RLS. Los archivos van a **Cloudflare R2 Free** (10 GB, egreso gratis), no a Supabase Storage, para evitar el límite de 1 GB. Los 500 MB de base de datos son suficientes para texto y metadatos. Riesgos: el proyecto se pausa tras una semana de baja actividad, no hay backups automáticos en Free y los datos deben poder recuperarse. Mitigaciones: healthcheck/monitor keep-alive, backup semanal con `pg_dump`, exportación de mundos y procedimiento de reactivación; si se superan los límites, migrar a Neon Free + R2 es una ruta documentada.
-
-**Alternativa seria:** Neon Free + Better Auth + R2. Tiene más almacenamiento de base de datos (1 GB), no pausa y ofrece branching, pero requiere montar auth y storage por separado. Se descarta para el MVP por complejidad; se reevalúa si Supabase se queda corto.
+**Decisión:** SQLite con `better-sqlite3` y Drizzle ORM. SQLite es un formato
+abierto, un único archivo, transaccional y con FTS5 integrado. `better-sqlite3`
+es síncrono, rápido y maduro en Electron; las operaciones se ejecutan en el
+proceso principal y las exportaciones largas en un utility process. `node:sqlite`
+es una alternativa nativa interesante, pero su API y su empaquetado con
+Electron aún son menos predecibles. Se descarta JSON para el modelo principal
+por integridad referencial, consultas y búsqueda.
 
 #### D4. ORM y validación: Drizzle + Zod
 
 | Criterio | Drizzle | Prisma |
 |---|---:|---:|
-| Tipo de SQL y control de migraciones | 5 | 4 |
-| Ligeros/cold start en serverless | 5 | 3 |
-| Facilidad con Postgres/Supabase | 5 | 4 |
-| Madurez y herramientas | 4 | 5 |
-| Curva de aprendizaje | 4 | 4 |
+| SQLite y control de migraciones | 5 | 4 |
+| Tipos precisos sin motor | 5 | 4 |
+| Ligeros y empaquetado con Electron | 5 | 2 |
+| Facilidad de consultas relacionales | 4 | 5 |
+| Madurez | 4 | 5 |
 | **Total** | **23** | **20** |
 
-**Decisión:** Drizzle ORM + `postgres` (driver) + Zod. Drizzle es SQL-first, genera tipos precisos y funciona bien con el pooler de Supabase. Prisma es más maduro, pero su motor y su flujo de migraciones con shadow database añaden peso y fricción en serverless. Zod se comparte entre formularios, Server Actions y contratos de route handlers.
+**Decisión:** Drizzle ORM + Zod. Drizzle genera SQL comprensible, tipos precisos
+y migraciones versionadas sin un motor externo; encaja con SQLite y con el
+empaquetado de Electron. Zod se comparte entre formularios, IPC, importación y
+validación de datos.
 
-#### D5. Autenticación: Supabase Auth con allowlist
+#### D5. Instalador y actualizaciones
 
-| Criterio | Supabase Auth | Better Auth | Auth.js | Clerk |
+| Criterio | electron-builder + NSIS | Squirrel.Windows | MSIX | WiX |
 |---|---:|---:|---:|---:|
-| Integración con la BD/RLS | 5 | 4 | 2 | 1 |
-| Autogestión y coste | 5 | 5 | 5 | 2 |
-| Funciones listas (magic link, recovery) | 5 | 4 | 3 | 5 |
-| Control del flujo y UI | 4 | 5 | 5 | 3 |
-| **Total** | **19** | **18** | **15** | **11** |
+| Instalador por usuario sin admin | 5 | 5 | 3 | 2 |
+| Actualización automática | 5 | 5 | 3 | 2 |
+| Control del proceso y del formato | 5 | 4 | 3 | 4 |
+| Madurez con Electron | 5 | 4 | 3 | 1 |
+| Coste | 5 | 5 | 4 | 5 |
+| **Total** | **25** | **23** | **16** | **14** |
 
-**Decisión:** Supabase Auth con `@supabase/ssr`, email/contraseña como método principal y enlace mágico como secundario. El registro público estará cerrado: solo se permite entrar a correos de una tabla `allowed_emails` gestionada por el propietario. La allowlist da acceso a la **aplicación**, no a los mundos de otras personas: cualquier usuario autorizado puede crear sus propios mundos y las invitaciones a un mundo se hacen desde la app con un token, un rol y caducidad. RLS refuerza los permisos a nivel de base de datos.
+**Decisión:** `electron-builder` con target **NSIS** por usuario, instalación en
+`%LOCALAPPDATA%\Programs\World Craft`, sin privilegios de administrador, con
+opción de cambiar la carpeta. `electron-updater` con GitHub Releases y
+`latest.yml`. La actualización descarga en segundo plano y se instala al
+reiniciar, siempre con consentimiento; nunca toca `userData`. Se descarta MSIX
+por complejidad de firma y de sideloading, y Squirrel por menor control del
+instalador.
 
-**Correo:** el SMTP integrado de Supabase tiene límites bajos y no quita su marca en Free. Para un uso personal es suficiente, pero se puede configurar **Resend Free** (3.000 emails/mes, 100/día) como SMTP personalizado.
+#### D6. Archivos: sistema de archivos local
 
-#### D6. Archivos: Cloudflare R2 con abstracción
+**Decisión:** los assets viven en `%APPDATA%\World Craft\assets\` con una
+estructura por mundo y asset (`worlds/<worldId>/<assetId>.<ext>`). La base de
+datos guarda la ruta relativa, el MIME, el tamaño y el hash; nunca rutas
+absolutas. El renderer los carga con el protocolo `wc-asset://asset/<assetId>`,
+registrado en el proceso principal, que valida la ruta y sirve solo archivos
+dentro de la carpeta de datos. Se descarta `file://` por seguridad y por
+portabilidad. Las imágenes se re-codifican a WebP con `sharp` y se generan
+miniaturas.
 
-**Decisión:** Cloudflare R2 Free (10 GB, 1M operaciones Class A, 10M Class B, egreso gratis) para portadas, imágenes de fichas, fondos de mapas y exportes. Se descarta Supabase Storage para producción por su límite de 1 GB. Todo acceso pasa por una interfaz `StorageAdapter` (`upload`, `getSignedUrl`, `delete`, `list`) con implementación R2 y adaptador local para desarrollo y tests. El bucket es privado; el servidor comprueba la membresía del mundo antes de firmar una URL.
-
-Medidas: compresión a WebP en cliente/servidor, límite de dimensiones (4096 px de lado mayor en fondos de mapa), miniaturas generadas, validación de MIME y tamaño, nombres con UUID, prefijos `world/{worldId}/...`, borrado de huérfanos, CORS restringido y reglas de ciclo de vida.
-
-#### D7. Hosting: Vercel Hobby
-
-| Criterio | Vercel Hobby | Cloudflare Pages/Workers | Netlify Free | Render Free | VPS propio |
-|---|---:|---:|---:|---:|---:|
-| Soporte de Next.js | 5 | 3 | 4 | 4 | 4 |
-| Despliegues de vista previa | 5 | 4 | 4 | 2 | 2 |
-| Límites para uso personal | 4 | 5 | 4 | 3 | 5 |
-| Coste | 5 | 5 | 5 | 4 | 2 |
-| Simplicidad operativa | 5 | 3 | 4 | 3 | 1 |
-| **Total** | **24** | **20** | **21** | **16** | **14** |
-
-**Decisión:** Vercel Hobby. Es la vía con menos fricción para Next.js: despliegues por PR, funciones de hasta 300 s y dominio gratuito `*.vercel.app`. Es para uso personal no comercial, que encaja con el proyecto. Si Vercel cambiara sus condiciones o se necesitara más control, la alternativa es Cloudflare Workers/Pages con OpenNext, o un VPS.
-
-**Límites relevantes verificados:** 100 despliegues/día, 45 min de build, funciones de 300 s máximo, 2 GB/1 vCPU, 100 cron jobs. El ancho de banda y las invocaciones se monitorizarán; para un uso personal no deberían ser un problema.
-
-#### D8. Mapas: MapLibre GL JS + Terra Draw
+#### D7. Mapas: MapLibre GL JS + Terra Draw
 
 | Criterio | MapLibre + Terra Draw | SVG propio | Fabric.js | tldraw | Leaflet + Geoman |
 |---|---:|---:|---:|---:|---:|
 | Datos vectoriales nativos | 5 | 5 | 4 | 4 | 4 |
 | Herramientas de dibujo listas | 5 | 1 | 4 | 4 | 4 |
 | Rendimiento con muchos elementos | 5 | 2 | 3 | 4 | 4 |
-| Gestos móviles y pan/zoom | 5 | 2 | 3 | 5 | 4 |
+| Pan/zoom de ratón | 5 | 3 | 4 | 5 | 4 |
 | Exportación SVG sin pérdida | 4 | 5 | 4 | 4 | 3 |
 | Libertad de licencia/coste | 5 | 5 | 5 | 3 | 5 |
-| **Total** | **29** | **20** | **23** | **24** | **24** |
+| **Total** | **29** | **21** | **24** | **24** | **24** |
 
-**Decisión:** MapLibre GL JS + Terra Draw, con datos en **GeoJSON**. Terra Draw aporta modos de dibujo (punto, línea, polígono, rectángulo, círculo, freehand, selección y edición de vértices) y adaptador oficial para MapLibre. MapLibre renderiza vectorialmente con WebGL, soporta capas, estilos, etiquetas, imágenes de fondo georreferenciadas y gestos táctiles. La exportación SVG se implementa con un serializador propio sobre las capas GeoJSON (y PNG con el canvas de MapLibre). Riesgo: la exportación SVG y el estilo de mapas fantásticos requieren trabajo; se valida en un **spike** (M2-01) antes de comprometer el editor completo. Si el spike falla, el plan B es un editor SVG propio con `d3-zoom` y `perfect-freehand`.
+**Decisión:** MapLibre GL JS + Terra Draw, con datos en **GeoJSON**. Terra Draw
+aporta modos de dibujo (punto, línea, polígono, rectángulo, círculo, freehand,
+selección y edición de vértices) y adaptador oficial para MapLibre. La
+exportación SVG se implementa con un serializador propio sobre las capas
+GeoJSON; PNG con el canvas de MapLibre. Riesgo: el estilo de mapas fantásticos y
+la exportación SVG requieren trabajo; se valida en un **spike** antes de
+comprometer el editor completo.
 
-**Modelo:** cada mapa guarda un documento JSON con capas y un `FeatureCollection` GeoJSON; las coordenadas usan un sistema local (lng/lat sobre un mundo ficticio) y cada feature puede tener `entityId` para vincularse a una ficha. El fondo raster opcional es una imagen con `coordinates` (bbox) en una capa de tipo `image`. La vista (centro, zoom, bearing) se guarda por usuario.
-
-#### D9. Grafo: React Flow + ELK.js
+#### D8. Grafo: React Flow + ELK.js
 
 | Criterio | React Flow | Cytoscape.js | Sigma.js | D3 |
 |---|---:|---:|---:|---:|
@@ -388,662 +446,535 @@ Medidas: compresión a WebP en cliente/servidor, límite de dimensiones (4096 px
 | Licencia/coste | 5 | 5 | 5 | 5 |
 | **Total** | **23** | **18** | **16** | **17** |
 
-**Decisión:** React Flow 12 + ELK.js para layout automático. Los nodos son componentes React (avatar, tipo, color, acciones), lo que permite una experiencia coherente con el resto de la app. Para mundos personales, cientos de nodos son manejables; si se superan ~1.000, se añaden filtros, agrupación y carga bajo demanda, y se evalúa Sigma.js como visor de solo lectura.
+**Decisión:** React Flow 12 + ELK.js para layout automático. Los nodos son
+componentes React (avatar, tipo, color, acciones). Para mundos personales,
+cientos de nodos son manejables; si se superan ~1.000, se añaden filtros,
+agrupación y carga bajo demanda.
 
-#### D10. Editor: Tiptap 3 + extensiones propias
+#### D9. Editor: Tiptap 3 + extensiones propias
 
 | Criterio | Tiptap | Lexical | Slate | CodeMirror/Markdown |
 |---|---:|---:|---:|---:|
 | Madurez y ecosistema | 5 | 4 | 3 | 5 |
 | Extensiones y personalización | 5 | 4 | 4 | 4 |
-| Integración React/Next | 5 | 4 | 3 | 4 |
+| Integración React | 5 | 4 | 3 | 4 |
 | Editor de novela (diálogos, estructura) | 5 | 3 | 4 | 3 |
 | Coste de licencia | 4 | 5 | 5 | 5 |
 | **Total** | **24** | **20** | **19** | **21** |
 
-**Decisión:** Tiptap 3 (núcleo MIT) sobre ProseMirror. Se implementan extensiones propias para modo diálogo, menciones a personajes, separadores de escena y contadores. Las extensiones Pro (comentarios, historial, colaboración) **no se contratan**: el historial se implementa con snapshots propios y la colaboración queda fuera del MVP. El contenido se guarda como JSON de ProseMirror + texto plano para búsqueda/exportación.
+**Decisión:** Tiptap 3 (núcleo MIT) sobre ProseMirror. Se implementan
+extensiones propias para modo diálogo, menciones a personajes, separadores de
+escena y contadores. Las extensiones Pro (comentarios, historial, colaboración)
+**no se contratan**: el historial se implementa con snapshots propios y la
+colaboración queda fuera del MVP. El contenido se guarda como JSON de
+ProseMirror + texto plano para búsqueda/exportación.
 
-**Exportación:** `docx` para DOCX; `@react-pdf/renderer` o impresión con CSS para PDF; EPUB con `jszip` + XHTML (o `epub-gen`); Markdown con `prosemirror-markdown`. La importación DOCX usará `mammoth` y la de Markdown el parser de ProseMirror.
+#### D10. Estado, formularios y contratos
 
-#### D11. Estado, formularios y contratos
-
-- **Server Components** para lectura; **Server Actions** para mutaciones.
-- **Zod** como única fuente de validación en servidor y cliente.
+- **Zustand** para estado de UI de editor/mapa/grafo (selección, herramientas,
+  paneles).
+- **TanStack Query** solo si una vista necesita caché/optimistic updates; no se
+  usa por defecto.
 - **React Hook Form** para formularios complejos.
-- **Zustand** para estado de UI de editor/mapa/grafo (selección, herramientas, paneles).
-- **TanStack Query** solo si una vista cliente necesita caché/optimistic updates; no se usa por defecto.
-- **Route handlers** para autosave, subidas firmadas, exportaciones y descargas.
+- **Zod** como única fuente de validación en renderer, IPC e importación.
+- **IPC tipado** para todas las mutaciones y consultas; no hay acceso directo a
+  la base de datos desde el renderer.
 
-#### D12. Pruebas y calidad
+#### D11. Pruebas y calidad
 
-- **Vitest** para dominio, utilidades y componentes.
-- **Testing Library** para componentes.
-- **Playwright** para E2E, responsive y capturas por tema.
+- **Vitest** para dominio, utilidades, esquema, migraciones, búsqueda y
+  exportadores.
+- **Testing Library** para componentes del renderer.
+- **Playwright Electron** para E2E, ventana, temas y accesibilidad.
 - **axe-core** para accesibilidad.
-- **MSW** para aislar red en tests.
-- **Lighthouse CI** con presupuestos de rendimiento.
+- **Pruebas de preservación de datos** en cada migración y en el instalador.
 - **gitleaks** y `pnpm audit` en CI.
 
-#### D13. PWA y offline
+#### D12. Copias y recuperación
 
-**Serwist** (sucesor de next-pwa) para service worker, manifest e instalación. **Dexie/IndexedDB** para:
-- Borradores del editor con autoguardado local.
-- Cambios pendientes de sincronizar.
-- Caché de fichas consultadas recientemente para lectura offline.
+- Copia automática diaria de la base de datos y de los assets críticos.
+- Rotación de copias (por ejemplo, 7 diarias, 4 semanales y 12 mensuales).
+- Copia previa obligatoria a cada migración.
+- Verificación de integridad (`PRAGMA integrity_check`) al arrancar y tras una
+  restauración.
+- Restauración desde la app con confirmación y copia de seguridad de la base
+  actual antes de reemplazarla.
+- Exportación de mundo completo en ZIP (JSON + assets) como copia de usuario.
 
-La sincronización es "last-write-wins" con detección de conflicto por versión; no hay colaboración en tiempo real. En móvil, el mapa y el grafo se consultan en modo lectura; la edición completa se prioriza en escritorio.
-
-#### D14. Observabilidad y backups
-
-- **Sentry Free** (5.000 errores/mes) para errores de cliente/servidor, opcional pero recomendado.
-- **Vercel Analytics/Speed Insights** o métricas propias mínimas.
-- **GitHub Actions** semanal: `pg_dump` cifrado + artefacto de 90 días y, opcionalmente, copia a R2.
-- **UptimeRobot Free** para keep-alive y disponibilidad; workflow de backup como complemento.
-- **Registro de actividad** en la base de datos para cambios importantes (quién, qué, cuándo).
-
-#### D15. Temas y sistema de diseño
+#### D13. Temas y sistema de diseño
 
 Se adoptan **dos modos**: Claro y Oscuro. Ambos usan variables CSS:
 
 - Tema claro: `--paper` como superficie principal y `--ink` como texto.
 - Tema oscuro: `--ink` como superficie y `--paper` como texto.
 
-Tokens adicionales: `--surface`, `--surface-raised`, `--border`, `--muted`, `--accent`, `--accent-strong`, `--success`, `--warning`, `--danger`, `--focus`. Cada tipo de entidad tiene un color accesible en ambos modos. Los colores hardcodeados deben justificarse con un comentario y comprobarse en los dos temas.
+Tokens adicionales: `--surface`, `--surface-raised`, `--border`, `--muted`,
+`--accent`, `--accent-strong`, `--success`, `--warning`, `--danger`, `--focus`.
+Cada tipo de entidad tiene un color accesible en ambos modos. Los colores
+hardcodeados deben justificarse con un comentario y comprobarse en los dos
+temas.
 
-**Dirección visual:** "taller de cartógrafo". Tipografía de display **Fraunces** (serif con carácter), texto de interfaz **Inter** y monoespaciada **JetBrains Mono** para datos. Paleta base papel/tinta con acentos tierra, musgo y ocre; textura de papel sutil mediante SVG, sin gradientes morados genéricos. Ilustraciones y texturas con licencia libre o propias.
+**Dirección visual:** «taller de cartógrafo». Tipografía de display **Fraunces**
+(serif con carácter), texto de interfaz **Inter** y monoespaciada **JetBrains
+Mono** para datos. Paleta base papel/tinta con acentos tierra, musgo y ocre;
+textura de papel sutil mediante SVG, sin gradientes morados genéricos.
 
-#### D16. Idioma
+#### D14. Idioma
 
-Interfaz en español en el MVP. Todos los textos en `src/messages/es.ts`, con claves tipadas y acceso mediante `getMessages`/`LocaleProvider`; fechas y números con `Intl` y `locale`. La estructura queda preparada para añadir `en.ts` e `it.ts` y, más adelante, `next-intl` sin refactorizar componentes. Los identificadores de código y la base de datos van en inglés; los comentarios y la documentación, en español.
+Interfaz en español en el MVP. Todos los textos en un catálogo tipado (por
+ejemplo, `src/messages/es.ts`), con acceso mediante un proveedor de idioma y
+formatos `Intl`. La estructura queda preparada para añadir `en.ts` e `it.ts` sin
+refactorizar componentes. Los identificadores de código y de base de datos van
+en inglés; los comentarios y la documentación, en español.
 
-#### D17. Estructura del repositorio
+#### D15. Estructura del repositorio
 
-Aplicación única (no monorepo), organizada por dominios:
+Aplicación única (no monorepo), organizada por procesos y dominios:
 
 ```text
 src/
-  app/
-    (auth)/login, recuperar...
-    (app)/w/[worldId]/
-      overview, entities, graph, maps, writing, game, settings
-    api/
-  modules/
-    worlds/ entities/ relations/ maps/ graph/ writing/ game/ search/ auth/
-  components/
-    ui/ layout/ editors/ maps/ graph/
-  lib/
-    db/ supabase/ storage/ validation/ utils/
-  styles/
-  messages/
+  main/           Proceso principal: ventana, SQLite, assets, backups, updates, IPC
+  preload/        Puente tipado y allowlist de canales
+  renderer/       React + Vite: shell, pantallas y componentes
+    components/   ui/, shell/, editors/, maps/, graph/
+    modules/      worlds/, entities/, relations/, maps/, graph/, writing/, game/, search/
+    messages/     Catálogo tipado y proveedor de i18n
+    styles/       Tokens, base y movimiento
+  shared/         Tipos y contratos compartidos (sin Node ni React)
 tests/
-  unit/ e2e/
+  unit/           Vitest (dominio, esquema, IPC, utilidades)
+  integration/    SQLite temporal + migraciones + backups
+  e2e/            Playwright Electron
 docs/
-  adr/ manual-de-usuario.md plan-desarrollo.md
-scripts/
+  adr/ plan-desarrollo.md persistencia.md ...
 ```
 
-Cada módulo expone su esquema Drizzle, sus Server Actions y sus componentes. No se crean carpetas `utils` gigantes ni lógica de negocio en componentes de presentación.
+Cada módulo expone su esquema Drizzle, sus casos de uso y sus componentes. No se
+crean carpetas `utils` gigantes ni lógica de negocio en componentes de
+presentación.
 
 ### 3.3 Modelo de datos
 
-El modelo es relacional y multi-mundo. Todas las tablas de contenido llevan `world_id` (directo o a través de una relación padre) para aplicar RLS y facilitar el borrado/exportación de un mundo.
+El modelo es relacional y local. Todas las tablas de contenido llevan
+`world_id` directo o derivado para facilitar el borrado, la exportación y la
+búsqueda por mundo.
 
 ```text
-profiles (auth.users)
-  └─< world_members >─ worlds
-                         ├─< entities >─< relations
-                         │      ├─ entity_types
-                         │      ├─ tags / entity_tags
-                         │      └─ assets
-                         ├─< maps >─< map_entity_links
-                         ├─< manuscripts >─< books >─< chapters >─< scenes >─< scene_versions
-                         ├─< game_tables >─< game_table_entries
-                         ├─< game_sessions
-                         └─< activity_log
+worlds
+  ├─< entity_types
+  ├─< entities >─< relations
+  │      ├─ entity_tags >─ tags
+  │      └─ assets
+  ├─< maps >─< map_entity_links
+  ├─< manuscripts >─< books >─< chapters >─< scenes >─< scene_versions
+  ├─< game_tables >─< game_table_entries
+  ├─< game_sessions
+  └─< activity_log
+game_content_packs >─ game_tables
+app_settings
+search_documents / search_fts (FTS5)
 ```
 
 Tablas principales:
 
 | Tabla | Campos clave |
 |---|---|
-| `profiles` | `id` (uuid, = auth.users), `display_name`, `avatar_url`, `theme`, `locale`, `settings` jsonb |
-| `allowed_emails` | `email` (pk), `invited_by`, `created_at`, `note` |
-| `worlds` | `id`, `owner_id`, `name`, `slug`, `summary`, `description` jsonb, `cover_asset_id`, `genres` text[], `status`, `settings` jsonb, `archived_at`, timestamps |
-| `world_members` | `world_id`, `user_id`, `role` (owner/editor/viewer), `created_at`; PK compuesta |
-| `world_invitations` | `id`, `world_id`, `email`, `role`, `token_hash`, `expires_at`, `accepted_at` |
-| `entity_types` | `id`, `world_id` (null = sistema), `key`, `name`, `icon`, `color`, `fields` jsonb, `is_system` |
-| `entities` | `id`, `world_id`, `type_id`, `name`, `slug`, `aliases` text[], `summary`, `description` jsonb, `description_text`, `image_asset_id`, `attributes` jsonb, `status`, `is_favorite`, `search_vector` tsvector, timestamps, `deleted_at` |
+| `app_settings` | `key` (pk), `value` json, `updated_at` |
+| `worlds` | `id`, `name`, `slug`, `summary`, `description` json, `cover_asset_id`, `genres` json, `status`, `settings` json, `archived_at`, timestamps, `deleted_at` |
+| `entity_types` | `id`, `world_id` (null = sistema), `key`, `name`, `icon`, `color`, `fields` json, `is_system` |
+| `entities` | `id`, `world_id`, `type_id`, `name`, `slug`, `aliases` json, `summary`, `description` json, `description_text`, `image_asset_id`, `attributes` json, `status`, `is_favorite`, timestamps, `deleted_at` |
 | `relation_types` | `id`, `world_id` (null = sistema), `key`, `name`, `inverse_name`, `color` |
-| `relations` | `id`, `world_id`, `source_id`, `target_id`, `type_id`, `label`, `inverse_label`, `notes`, `strength`, `metadata` jsonb, timestamps |
+| `relations` | `id`, `world_id`, `source_id`, `target_id`, `type_id`, `label`, `inverse_label`, `notes`, `strength`, `metadata` json, timestamps |
 | `tags` / `entity_tags` | etiquetas por mundo con color; relación N:M con entidades |
-| `assets` | `id`, `world_id`, `uploader_id`, `bucket` (R2), `path`, `mime`, `size`, `width`, `height`, `alt`, `created_at` |
-| `maps` | `id`, `world_id`, `name`, `description`, `document` jsonb (capas + GeoJSON), `style` jsonb, `bounds` jsonb, `thumbnail_asset_id`, `deleted_at`, timestamps |
-| `map_entity_links` | `map_id`, `entity_id`, `feature_id`, `label`; índice para consultas inversas |
-| `manuscripts` | `id`, `world_id`, `title`, `kind` (novel/novella/short/saga), `synopsis`, `status`, `target_words`, `settings` jsonb |
+| `assets` | `id`, `world_id`, `kind`, `relative_path`, `mime`, `size`, `width`, `height`, `alt`, `hash`, `created_at` |
+| `maps` | `id`, `world_id`, `name`, `description`, `document` json (capas + GeoJSON), `style` json, `bounds` json, `thumbnail_asset_id`, timestamps, `deleted_at` |
+| `map_entity_links` | `map_id`, `entity_id`, `feature_id`, `label`; índice inverso |
+| `manuscripts` | `id`, `world_id`, `title`, `kind`, `synopsis`, `status`, `target_words`, `settings` json, timestamps, `deleted_at` |
 | `books` | `id`, `manuscript_id`, `title`, `position` |
 | `chapters` | `id`, `book_id`, `title`, `position`, `summary`, `status` |
-| `scenes` | `id`, `chapter_id`, `title`, `position`, `content` jsonb, `content_text`, `word_count`, `status`, `pov_entity_id`, `location_entity_id`, `story_date`, `notes` |
-| `scene_versions` | `id`, `scene_id`, `content`, `content_text`, `word_count`, `label`, `created_by`, `created_at` |
-| `game_tables` | `id`, `world_id` (null = global), `pack_id` (null = tabla suelta), `key`, `name`, `category` (container/subgenre/trigger/trope/custom), `description`, `is_system`, `is_editable`, `version`, `created_by` |
-| `game_table_entries` | `id`, `table_id`, `text`, `weight`, `tags` text[], `metadata` jsonb |
-| `game_content_packs` | `id`, `world_id` (null = global), `name`, `version`, `description`, `author`, `license`, `metadata` jsonb, `created_by`, `created_at` |
-| `game_sessions` | `id`, `world_id`, `user_id`, `seed`, `results` jsonb, `notes`, `created_at` |
-| `activity_log` | `id`, `world_id`, `user_id`, `action`, `entity_type`, `entity_id`, `diff` jsonb, `created_at` |
+| `scenes` | `id`, `chapter_id`, `title`, `position`, `content` json, `content_text`, `word_count`, `status`, `pov_entity_id`, `location_entity_id`, `story_date`, `notes`, timestamps, `deleted_at` |
+| `scene_versions` | `id`, `scene_id`, `content` json, `content_text`, `word_count`, `label`, `created_at` |
+| `game_tables` | `id`, `world_id` (null = global), `pack_id` (null = tabla suelta), `key`, `name`, `category`, `description`, `is_system`, `is_editable`, `version` |
+| `game_table_entries` | `id`, `table_id`, `text`, `weight`, `tags` json, `metadata` json |
+| `game_content_packs` | `id`, `name`, `version`, `description`, `author`, `license`, `metadata` json, `created_at` |
+| `game_sessions` | `id`, `world_id`, `seed`, `results` json, `notes`, `created_at` |
+| `activity_log` | `id`, `world_id`, `action`, `entity_type`, `entity_id`, `diff` json, `created_at` |
+| `search_documents` | `id`, `world_id`, `kind`, `ref_id`, `title`, `body`, `updated_at` |
+| `search_fts` | Tabla virtual FTS5 sobre `title` y `body`, sincronizada por triggers |
 
 **Decisiones de modelado:**
 
-- **JSONB para contenido rico y atributos variables.** Permite campos personalizados sin migraciones por cada tipo, manteniendo índices GIN donde se consulta.
-- **Texto plano duplicado** en `entities.description_text` y `scenes.content_text` para búsqueda full-text, exportación y estadísticas.
-- **`position` decimal o entero con huecos** para reordenar sin reescribir filas.
-- **Borrado lógico** (`deleted_at`) en entidades, mapas y escenas para papelera; purga programada.
-- **Búsqueda:** `tsvector` generado con configuración `spanish` + índice GIN; `pg_trgm` para búsqueda difusa por nombre/alias.
-- **Timestamps** en UTC (`timestamptz`); la interfaz muestra la zona local.
-- **Migraciones** con Drizzle Kit, versionadas y revisables; nunca se edita una migración ya aplicada en producción.
+- **JSON para contenido rico y atributos variables.** Permite campos
+  personalizados sin migraciones por cada tipo; se valida con Zod.
+- **Texto plano duplicado** en `entities.description_text` y
+  `scenes.content_text` para búsqueda, exportación y estadísticas.
+- **`position` real** para reordenar sin reescribir filas.
+- **Borrado lógico** (`deleted_at`) en entidades, mapas, manuscritos y escenas;
+  purga explícita desde la papelera.
+- **Búsqueda:** FTS5 con tokenizador `unicode61` y prefijos; los documentos se
+  reconstruyen desde la aplicación y triggers.
+- **Timestamps** en milisegundos UTC; la interfaz muestra la zona local.
+- **Migraciones** con Drizzle Kit, versionadas y revisables; nunca se edita una
+  migración aplicada.
 
-### 3.4 Seguridad y privacidad
+El diccionario completo, los índices y las reglas de integridad están en
+[`docs/base-de-datos/esquema.md`](base-de-datos/esquema.md). La operación y las
+migraciones, en [`docs/base-de-datos/migraciones.md`](base-de-datos/migraciones.md)
+y [`docs/persistencia.md`](persistencia.md).
 
-**Modelo de acceso:**
+### 3.4 Datos en disco
 
-1. La **allowlist** (`allowed_emails`) concede acceso a la aplicación. No concede acceso a los mundos de otras personas.
-2. Todo el contenido vive en un mundo. `world_members` define el rol dentro de ese mundo: `owner` (todo, incluida la gestión de miembros), `editor` (contenido) y `viewer` (solo lectura).
-3. Cualquier usuario autorizado puede crear sus propios mundos; el creador es el `owner`.
-4. RLS en todas las tablas de contenido: `exists (select 1 from world_members ...)` con el rol adecuado. El `owner` no puede perderse ni eliminarse a sí mismo sin transferir antes la propiedad.
-5. Las Server Actions vuelven a comprobar el permiso; RLS es la última línea, no la única.
-6. El registro está cerrado por allowlist. Las invitaciones a un mundo se aceptan con un token de un solo uso, ligado al correo y con caducidad.
-7. El service role de Supabase solo se usa en el servidor para tareas administrativas (invitar usuarios, backups) y nunca se expone al cliente.
-8. R2 con bucket privado: el servidor comprueba la membresía y genera URLs firmadas de corta duración; las claves S3 solo viven en el servidor.
-9. Cabeceras: CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS en producción.
-10. Subidas: validar MIME real, tamaño, dimensiones y re-codificar imágenes para eliminar metadatos y payloads.
-11. Dependencias: lockfile, `pnpm audit`, Dependabot/Renovate y revisión de licencias.
-12. Secretos: solo en variables de entorno de Vercel/Supabase/Cloudflare; `.env*` fuera de git; gitleaks en CI.
-13. Datos personales: mínimo necesario (email, nombre visible, avatar). Exportación y borrado de cuenta. Sin analítica de terceros por defecto.
-14. Rate limiting en login, invitaciones y subidas (por IP/usuario) mediante middleware o Upstash Redis Free si hiciera falta; para el MVP, límites básicos en Supabase y validación de tamaño.
-15. Registro de actividad para acciones destructivas y cambios importantes.
+```text
+%APPDATA%\World Craft\            (app.getPath('userData'))
+  ├─ data\
+  │   └─ world-craft.sqlite       Base de datos principal
+  │   └─ world-craft.sqlite-wal   WAL (se consolida al cerrar)
+  ├─ assets\
+  │   └─ worlds\<worldId>\<assetId>.<ext>
+  ├─ backups\
+  │   ├─ daily\ weekly\ monthly\
+  │   └─ pre-migration\
+  ├─ exports\
+  ├─ logs\
+  └─ config.json                 Ventana, tema, idioma y preferencias
+```
 
-**Amenazas principales y mitigación:** acceso a mundos ajenos (RLS + tests), escalado de rol (comprobación en servidor), XSS en contenido rico (sanitizar HTML y usar el esquema de ProseMirror), SSRF en importaciones (no aceptar URLs remotas arbitrarias), fuga de secretos (gitleaks), abuso de subidas (límites y re-codificación), pérdida de datos (autosave + versiones + backups).
+- La carpeta de instalación (`%LOCALAPPDATA%\Programs\World Craft`) contiene
+  solo binarios y recursos. Actualizar o desinstalar no toca `userData`.
+- `config.json` guarda solo preferencias; los datos de producto están en SQLite.
+- Los logs son locales, rotativos y sin contenido del usuario por defecto.
+- La app permite abrir las carpetas de datos, copias y logs desde Ajustes.
 
-### 3.5 Rendimiento
+### 3.5 Seguridad y privacidad
 
-- Server Components y streaming para las pantallas de lectura.
-- Carga diferida de editor, mapa y grafo (`dynamic` + `ssr: false`).
-- Imágenes con `next/image`, WebP/AVIF, `sizes` correctos y placeholder.
-- Virtualización de listas largas (`@tanstack/react-virtual`) y de tablas.
-- Índices: `world_id`, `type_id`, `updated_at`, `search_vector`, `pg_trgm` en nombres.
-- Paginación por cursor en listas y búsqueda.
-- Mapas: límite de features por capa, simplificación de geometrías y `maxzoom`/`minzoom`; no renderizar capas ocultas.
-- Grafo: filtros por tipo, expansión de vecinos, layout en Web Worker (ELK) y límite de nodos visibles.
-- Editor: debounce de autosave (2-3 s), diff de contenido, no serializar todo el manuscrito en cada tecla.
-- Presupuesto de JavaScript por ruta; análisis de bundle en CI.
+**Modelo de confianza:** un único usuario en un equipo Windows. No hay
+autenticación de aplicación; la seguridad se centra en aislar el renderer,
+validar IPC, proteger rutas y no ejecutar contenido no confiable.
 
-### 3.6 Responsividad y accesibilidad
+1. **Proceso principal confiable; renderer no confiable.** `contextIsolation`,
+   `sandbox`, `nodeIntegration: false`, `webSecurity: true`.
+2. **Preload mínimo.** Solo expone funciones concretas; nunca `ipcRenderer`,
+   `require` ni rutas absolutas.
+3. **IPC allowlisted + Zod.** Cada canal tiene esquema de entrada y salida;
+   errores internos se convierten en códigos estables.
+4. **CSP estricta.** Sin `unsafe-eval`; estilos y scripts desde el bundle local;
+   `img-src 'self' wc-asset: data:`.
+5. **Sin contenido remoto.** `will-navigate` y `setWindowOpenHandler` bloquean
+   navegación; los enlaces externos se abren con `shell.openExternal` solo para
+   `https:`.
+6. **Assets.** Protocolo propio, normalización de rutas, comprobación de que el
+   destino está dentro de `assets/`, MIME y tamaño validados.
+7. **Importación.** ZIP/JSON validados con Zod, límites de tamaño y de número de
+   archivos, sin rutas absolutas ni `..`; se importa en una transacción y se
+   copia a una carpeta temporal antes de publicar.
+8. **Contenido rico.** Se guarda como JSON de ProseMirror y se sanea al
+   exportar a HTML; nunca se inyecta HTML arbitrario.
+9. **Dependencias.** Lockfile, `pnpm audit`, licencias compatibles y revisión
+   de alternativas gratuitas.
+10. **Secretos.** No hay claves de servicios en la aplicación. Si en el futuro
+    se firma el instalador, el certificado vive fuera del repositorio y en
+    GitHub Secrets.
+11. **Privacidad.** Sin telemetría, sin cuentas, sin subida de datos. Las
+    actualizaciones consultan GitHub Releases y no envían contenido.
+12. **Datos.** La carpeta `userData` hereda los permisos del usuario de Windows;
+    la app no la comparte por red ni la expone.
 
-**Puntos de ruptura de referencia:** 360 px (móvil), 768 px (tablet), 1280 px (escritorio). Se prueban también 320 px y 1920 px.
+**Amenazas principales y mitigación:** XSS en el renderer (CSP + sanitización +
+sin HTML arbitrario), escalado a Node (sandbox + preload mínimo), path traversal
+en assets/importación (normalización + comprobación de prefijo), corrupción de
+datos (WAL + transacciones + copias + integridad), pérdida por actualización
+(instalador no toca userData + prueba de preservación), suplantación de
+actualización (HTTPS + GitHub Releases + verificación de firma cuando exista).
 
-- Navegación: rail lateral en escritorio, barra inferior en móvil, drawers para paneles.
-- Editor: una columna en móvil, panel de escena opcional; modo concentración a pantalla completa.
-- Mapa: controles táctiles grandes, toolbar inferior, panel de capas en drawer; en móvil se prioriza consulta y edición básica.
-- Grafo: gestos de pan/zoom, botones de encuadre, panel de filtros en drawer.
-- Tablas: scroll horizontal solo dentro de su contenedor, nunca en la página.
-- Textos largos: `overflow-wrap: break-word`, `min-width: 0` en hijos de flex/grid, sin truncar contenido esencial.
-- Accesibilidad: HTML semántico, landmarks, foco visible, atajos documentados, contraste AA, `aria-live` para autoguardado, formularios con etiquetas y errores asociados, `prefers-reduced-motion`.
+### 3.6 Rendimiento
 
-### 3.7 Infraestructura gratuita: límites y costes
+- Arranque: ventana visible antes de cargar datos; splash mínimo solo si la
+  migración o la comprobación de integridad tarda.
+- SQLite con WAL, `synchronous=NORMAL`, `busy_timeout` y consultas indexadas.
+- Paginación por cursor en listas y búsqueda; virtualización de listas largas.
+- Carga diferida de editor, mapa y grafo; no se montan hasta que se abren.
+- Imágenes WebP con miniaturas; no se cargan originales en listas.
+- Mapas: límite de features por capa, simplificación y capas ocultas no
+  renderizadas.
+- Grafo: filtros por tipo, expansión de vecinos, layout en Web Worker y límite
+  de nodos visibles.
+- Editor: debounce de autoguardado (1-2 s), diff de contenido y no serializar
+  todo el manuscrito en cada tecla.
+- Exportaciones y copias largas en un utility process para no bloquear la UI.
 
-| Servicio | Plan | Límites clave (11/11/2026) | Uso previsto | Riesgo |
-|---|---|---|---|---|
-| Vercel | Hobby | 100 despliegues/día, 300 s/función, 2 GB/1 vCPU, 45 min build | App y API | Cambio de condiciones o picos de banda |
-| Supabase | Free | 500 MB BD, 5 GB egreso, 50k MAU, 2 proyectos, pausa tras 1 semana de baja actividad, sin backups | BD, Auth, RLS | Pausa, pérdida de datos |
-| Cloudflare R2 | Free | 10 GB, 1M Class A, 10M Class B, egreso gratis | Almacenamiento principal de assets | Requiere configuración S3 y claves server-side |
-| GitHub | Free | Repo público: Actions ilimitado; 2.000 min/mes en privado | CI, backups | Límite de minutos si el repo pasa a privado |
-| Resend (opcional) | Free | 3.000 emails/mes, 100/día | SMTP de Auth | Límite diario |
-| Sentry (opcional) | Free | 5.000 errores/mes | Errores | Retención corta |
-| UptimeRobot | Free | 50 monitores, 5 min | Keep-alive y disponibilidad | Falsos positivos |
-| Dominio | — | 10-15 €/año | Opcional | No es gratis |
+### 3.7 Ventana y accesibilidad
 
-**Estrategia de coste cero:** usar el subdominio de Vercel; mantener el repo público (si no hay secretos) para Actions ilimitado; usar R2 para todos los archivos; comprimir imágenes; limitar el tamaño de los mapas; exportar y archivar assets antiguos; revisar el uso mensual en Supabase, R2 y Vercel.
+**Tamaños de referencia:** 1024×700 (mínimo), 1280×800 y 1600×900. Se prueba
+también 1920×1080.
 
-**Riesgo de pausa de Supabase:** el proyecto se pausa tras una semana de baja actividad. Mitigación:
-- Un endpoint ligero `/api/health` hace una consulta real a Supabase y se monitoriza con **UptimeRobot Free** cada 30-60 minutos (o un workflow equivalente). Eso genera actividad suficiente y avisa si el proyecto deja de responder.
-- Un workflow semanal de backup con `pg_dump` complementa la monitorización y guarda una copia cifrada.
-- Si aun así se pausa, se restaura desde el panel de Supabase. Los datos y la configuración se conservan; Supabase ofrece una ventana de restauración de un año. El procedimiento queda documentado en el runbook.
-- Si la pausa o los límites resultan un problema recurrente, migrar a Neon Free (sin pausa) + R2. La capa de datos y el storage están abstraídos para facilitarlo.
+- Navegación: rail lateral en ventanas anchas y rail colapsado a iconos en
+  ventanas estrechas; paneles redimensionables donde aporte valor.
+- Editor: una columna central con panel de escena opcional; modo concentración
+  a pantalla completa.
+- Mapa: toolbar, panel de capas y panel de propiedades; controles de ratón y
+  atajos.
+- Grafo: botones de encuadre, panel de filtros y zoom con rueda.
+- Tablas: scroll horizontal solo dentro de su contenedor.
+- Textos largos: `overflow-wrap: break-word`, `min-width: 0` en hijos de
+  flex/grid, sin truncar contenido esencial.
+- Accesibilidad: HTML semántico, landmarks, foco visible, atajos documentados,
+  contraste AA, `aria-live` para autoguardado, formularios con etiquetas y
+  errores asociados, `prefers-reduced-motion`.
 
-**Backups:**
-- Exportación de mundo completo desde la app (JSON + assets) como copia principal del usuario.
-- `pg_dump` semanal cifrado con GitHub Actions, guardado como artefacto (90 días) y, opcionalmente, en R2.
-- Copia/exportación periódica de los assets de R2 o capacidad de reconstruirlos desde la exportación del mundo.
-- Prueba de restauración documentada y ejecutada al menos una vez antes del lanzamiento.
-- Las migraciones y el seed están en el repo; los assets se pueden re-subir desde la exportación.
+### 3.8 Distribución y actualizaciones
 
-**Entornos:**
-- **Local:** Supabase CLI + Docker (o un proyecto Supabase de desarrollo), `.env.local`.
-- **Preview:** despliegue automático de cada PR en Vercel; usa un proyecto Supabase de desarrollo o una rama de base de datos.
-- **Producción:** Vercel Production + Supabase Free; solo se promociona desde `main` (el usuario promueve `dev` → `main`).
+- **Repositorio:** GitHub público, licencia MIT, ramas `main` y `dev`.
+- **Releases:** GitHub Releases con el instalador NSIS, `latest.yml` y los
+  artefactos de bloqueo de versión.
+- **Actualizaciones:** `electron-updater` consulta la release estable; descarga
+  en segundo plano; el usuario decide cuándo reiniciar. Se puede desactivar.
+- **Canales:** `latest` (estable) y, si hace falta, `beta` mediante pre-releases.
+- **Firma:** el MVP se distribuye sin firmar. Windows SmartScreen puede mostrar
+  un aviso; se documenta en el manual. La firma requiere certificado de pago y
+  aprobación explícita (ADR 0015).
+- **Datos:** el instalador actualiza binarios y recursos; nunca borra
+  `userData`. La primera ejecución tras una actualización migra la base con
+  copia previa.
+
+### 3.9 Costes y dependencia externa
+
+| Servicio | Plan | Uso | Riesgo |
+|---|---|---|---|
+| GitHub | Free | Código, issues y Releases | Límites de almacenamiento de releases; suficiente para uso personal |
+| GitHub Actions | Free en repo público | CI y builds de release | Minutos y runners; se controla con caché y jobs acotados |
+| Windows | — | Sistema operativo del usuario | Requisito de plataforma |
+| Firma de código | Opcional de pago | Evitar avisos de SmartScreen | No es gratuita; no bloquea el MVP |
+
+No hay Supabase, Vercel, Cloudflare R2, UptimeRobot, Sentry, Resend ni dominio.
+Las cuentas que hubiera que cerrar están en
+[`docs/cambio-a-escritorio.md`](cambio-a-escritorio.md).
+
+**Estrategia de coste cero:** repo público, GitHub Releases, SQLite y assets
+locales, actualizaciones directas desde GitHub. La firma de código queda fuera
+del MVP.
 
 ---
 
 ## 4. Proceso de desarrollo
 
-### 4.1 Auditoría de los agentes heredados
+### 4.1 Agentes
 
-Los agentes actuales vienen de otro proyecto y contienen referencias que aquí no existen: `scripts/gh-issue.sh`, `tasks/`, `.github/workflows/issues-done-on-dev.yml`, ADR-029, issues #44/#81/#128/#145 y una URL de otro repositorio. También asumen que el publisher sube cambios y abre PRs automáticamente.
+Se mantiene el equipo de ocho agentes, adaptado al contexto de escritorio:
 
-| Agente | ¿Se mantiene? | Cambios propuestos |
-|---|---|---|
-| `sdd-master` | Sí | Reescribir sus referencias al proyecto; eliminar el modo autónomo de CI; adaptar labels, task files y flujo; terminar en revisión local por defecto. |
-| `publisher` | Sí, pero **local-first** | No hacer push ni PR por defecto. Preparar rama/commit local, mostrar diff y comandos. Solo publicar con confirmación explícita del usuario. Quitar URLs, workflows y scripts del proyecto anterior. |
-| `task-architect` | Sí | Añadir restricciones de World Craft: free tiers, responsividad, 2 temas, datos portables, ADRs. |
-| `tdd-ddd-architect` | Sí | Enfoque pragmático: TDD en dominio y lógica crítica; no forzar DDD en CRUDs simples. |
-| `qa-reviewer` | Sí | Añadir checklist de 360/768/1280 px, 2 temas, axe, Playwright y comprobación del manual. |
-| `security-champion` | Sí | Añadir RLS, políticas de R2 y URLs firmadas, auth, CSP, subidas, dependencias y secretos. |
-| `documentation-sync` | Sí | ADRs + manual de usuario + changelog; verificar que cada issue visible actualiza el manual. |
-| **`ui-ux-designer`** (nuevo) | Sí | Diseño de tokens, componentes, especificaciones responsive, accesibilidad y revisión visual. Es el hueco más claro del equipo actual. |
-| `content-curator` (opcional) | Valorar | Curaduría de tablas del juego, plantillas de entidades y textos de ejemplo. Puede ser un skill antes que un agente. |
+| Agente | Cambio principal |
+|---|---|
+| `sdd-master` | Sigue siendo el punto de entrada; orquesta el flujo y la publicación local-first. |
+| `publisher` | Sin cambios de fondo: rama, commit y diff locales; push/PR solo con confirmación. |
+| `task-architect` | Planifica con Electron, SQLite, IPC, backups, instalador y offline; sin Supabase ni responsive web. |
+| `tdd-ddd-architect` | Implementa con TDD pragmático; seguridad Electron, datos locales y migraciones. |
+| `qa-reviewer` | Comprueba ventana 1024/1280/1600, dos temas, a11y, offline, preservación de datos y manual. |
+| `security-champion` | Revisa IPC, sandbox, CSP, path traversal, importación, dependencias y secretos. |
+| `documentation-sync` | ADRs, manual, changelog, arquitectura y coherencia documental. |
+| `ui-ux-designer` | Diseño de escritorio, tokens, temas, accesibilidad y estados; sin móvil. |
 
-No se propone eliminar ningún agente, pero sí **recortar** el `sdd-master` y el `publisher` para que no arrastren complejidad de un proyecto que ya no existe. El flujo debe ser comprensible y ejecutable en local antes de añadir CI.
+Los subagentes **no fijan modelo**: heredan el modelo de la sesión. La variante
+recomendada sigue existiendo como label y guía, pero se selecciona en la sesión.
+El detalle está en [`docs/variantes-modelo.md`](variantes-modelo.md).
 
-### 4.2 Cambios propuestos en `AGENTS.md`
+### 4.2 Cambios en `AGENTS.md`
 
-Se mantienen las reglas valiosas (PRs contra `dev`, responsividad, manual actualizado, dos temas) y se adaptan al contexto:
+Las reglas obligatorias se han reescrito para el contexto de escritorio. Las
+principales diferencias con la etapa web son:
 
-1. **PRs siempre contra `dev`**, nunca contra `main`; el usuario promueve `dev` a `main`.
-2. **Responsividad obligatoria** con los tres anchos y la comprobación `scrollWidth <= innerWidth`.
-3. **Manual de usuario siempre actualizado** en `docs/manual-de-usuario.md` para cualquier cambio visible.
-4. **Dos modos de tema** (claro y oscuro) con variables y overrides agrupados; verificar ambos.
-5. **Publisher local-first:** no subir ni abrir PR sin confirmación explícita.
-6. **Solo servicios gratuitos**; cualquier excepción requiere aprobación y ADR.
-7. **Datos portables y privados:** exportación/borrado y sin contenido público por defecto.
-8. **Issue-first:** toda funcionalidad nace de una issue con criterios de aceptación.
-9. **Definition of Done** con typecheck, lint, tests, E2E crítico, accesibilidad, responsive, manual y ADR.
-10. **Dependencias justificadas:** tamaño, licencia, mantenimiento y alternativa.
-11. **Español en la interfaz**, identificadores en inglés, textos centralizados.
-12. **Sin secretos en el repo** y con gitleaks en CI.
-13. **Migraciones reversibles y revisadas**; no editar migraciones aplicadas.
-14. **Prohibido `overflow-x: hidden` en `body`/`html`** como parche.
-15. **Accesibilidad AA** y respeto a `prefers-reduced-motion`.
-16. **Acceso y roles:** allowlist para entrar en la app; `owner`/`editor`/`viewer` por mundo; cualquier usuario autorizado puede crear sus propios mundos.
-17. **Internacionalización:** textos centralizados y claves tipadas; español en el MVP, preparado para inglés e italiano.
+- Se elimina la responsividad web, los anchos 360/768 y la PWA.
+- Se eliminan Supabase, RLS, auth, allowlist, roles e invitaciones.
+- Se añaden preservación de datos, seguridad Electron, offline y ventana de
+  escritorio.
+- Se mantienen PRs contra `dev`, manual, dos temas, accesibilidad, i18n,
+  publicación local-first, dependencias justificadas y migraciones reversibles.
+- La firma de código se trata como excepción opcional de pago con ADR.
 
-### 4.3 Flujo SDD adaptado
+### 4.3 Flujo SDD
 
 ```text
-Issue (label ai + status: todo)
+Issue (label ai + status: todo + variant: *)
   → adopción: task file en tasks/task-issue-N.json
   → plan (task-architect)
   → implementación (tdd-ddd-architect)
-  → QA (qa-reviewer): criterios, responsive, temas, a11y
-  → seguridad (security-champion)
-  → documentación (documentation-sync): ADR + manual
+  → QA (qa-reviewer): criterios, ventana, temas, a11y, datos
+  → seguridad (security-champion): IPC, sandbox, rutas, secretos
+  → documentación (documentation-sync): ADR + manual + changelog
   → publisher en modo local: rama + commit + diff, SIN push
   → el usuario prueba en local
   → publicación explícita: push + PR a dev (sin keyword de cierre)
-  → merge a dev → issue cerrada por workflow o manualmente
-  → el usuario promueve dev a main cuando toca
+  → merge a dev → issue cerrada con status: done
+  → el usuario promueve dev a main cuando la versión es estable
 ```
 
-**Task file** (`tasks/task-issue-N.json`): título, descripción, issue, estado, criterios de aceptación, Definition of Done, plan, resultados de QA/seguridad, ADR y bloque `pr` solo cuando se publique. Se versiona en el repo.
+**Task file** (`tasks/task-issue-N.json`): título, descripción, issue, estado,
+criterios de aceptación, Definition of Done, plan, resultados de QA/seguridad,
+ADR y bloque `pr` solo cuando se publique. Se versiona en el repo.
 
-**Estados:** `created` → `planned` → `implemented` → `validated` → `security-cleared` → `documented` → `review` → `published`. `blocked` cuando falte una decisión.
+**Estados:** `created` → `planned` → `implemented` → `validated` →
+`security-cleared` → `documented` → `review` → `published`. `blocked` cuando
+falte una decisión.
 
-**Labels de estado:** `status: todo`, `status: in-progress`, `status: needs-review`, `status: blocked`, `status: done`.
+**Labels de estado:** `status: todo`, `status: in-progress`,
+`status: needs-review`, `status: blocked`, `status: done`.
 
 ### 4.4 Git, ramas y PRs
 
 - `main`: versión estable; solo el usuario promueve desde `dev`.
 - `dev`: integración; aquí se fusionan las PRs.
-- Ramas de trabajo: `feature/issue-N-slug`, `fix/issue-N-slug`, `docs/issue-N-slug`, `chore/issue-N-slug`.
-- Commits convencionales: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `style:`, `content:`.
-- PR pequeña, con resumen, issue relacionada, cambios, pruebas y capturas si hay UI. Sin keywords de cierre (`Closes #N`) porque el merge va a `dev`.
+- Ramas de trabajo: `feature/issue-N-slug`, `fix/issue-N-slug`,
+  `docs/issue-N-slug`, `chore/issue-N-slug`.
+- Commits convencionales: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`,
+  `test:`, `style:`, `content:`.
+- PR pequeña, con resumen, issue relacionada, cambios, pruebas y capturas si hay
+  UI. Sin keywords de cierre.
 - Revisión: CI verde + QA + seguridad. El publisher no publica sin confirmación.
-- `dev` se crea desde `main` al bootstrap del repositorio (issue M0-04).
 
 ### 4.5 Etiquetas e hitos
 
-**Tipos:** `type: feature`, `type: bug`, `type: chore`, `type: docs`, `type: design`, `type: testing`, `type: refactor`, `type: content`.
+**Tipos:** `type: feature`, `type: bug`, `type: chore`, `type: docs`,
+`type: design`, `type: testing`, `type: refactor`, `type: content`.
 
-**Áreas:** `area: agents`, `area: architecture`, `area: infra`, `area: data`, `area: auth`, `area: worlds`, `area: entities`, `area: graph`, `area: maps`, `area: writing`, `area: game`, `area: search`, `area: ui`, `area: docs`, `area: security`, `area: qa`.
+**Áreas:** `area: agents`, `area: architecture`, `area: infra`, `area: desktop`,
+`area: persistence`, `area: packaging`, `area: data`, `area: worlds`,
+`area: entities`, `area: graph`, `area: maps`, `area: writing`, `area: game`,
+`area: search`, `area: ui`, `area: docs`, `area: security`, `area: qa`.
 
-**Estado:** `status: todo`, `status: in-progress`, `status: needs-review`, `status: blocked`, `status: done`.
+**Estado:** `status: todo`, `status: in-progress`, `status: needs-review`,
+`status: blocked`, `status: done`.
 
-**Prioridad:** `priority: p0` (bloqueante), `priority: p1` (alta), `priority: p2` (media), `priority: p3` (baja).
+**Prioridad:** `priority: p0` (bloqueante), `priority: p1` (alta),
+`priority: p2` (media), `priority: p3` (baja).
 
 **Tamaño:** `size: s`, `size: m`, `size: l`, `size: xl`.
 
-**Otros:** `ai` (lista para agentes), `needs-decision` (requiere decisión del usuario), `future` (backlog).
+**Otros:** `ai` (lista para agentes), `needs-decision` (requiere decisión del
+usuario), `future` (backlog).
 
-**Hitos:** `M0 · Proceso y fundaciones`, `M1 · Núcleo de datos y acceso`, `M2 · Mapas y grafo`, `M3 · Escritura`, `M4 · Juego creativo`, `M5 · Calidad y lanzamiento`, `Backlog`.
+**Hitos:** `M0 · Fundaciones de escritorio`, `M1 · Núcleo local`,
+`M2 · Mapas y grafo`, `M3 · Escritura`, `M4 · Juego creativo`,
+`M5 · Calidad y distribución`, `Backlog`.
 
-### 4.6 Definition of Ready / Done
+### 4.6 Fases y catálogo de issues
 
-**Ready:** issue con contexto, alcance, criterios de aceptación, dependencias, labels y decisión técnica si aplica.
+El catálogo detallado vive en GitHub: 41 issues (#61–#101), organizadas en
+los hitos M0–M5 y Backlog. El inventario con títulos y números está en
+[`cambio-a-escritorio.md`](cambio-a-escritorio.md#53-issues-creadas). Resumen:
 
-**Done:**
-- [ ] Criterios de aceptación cumplidos.
-- [ ] Typecheck, lint, unit tests y build en verde.
-- [ ] E2E del flujo crítico (si aplica).
-- [ ] Responsive 360/768/1280 sin scroll horizontal.
-- [ ] Dos temas comprobados y contraste AA.
-- [ ] Accesibilidad (teclado, foco, axe) sin errores críticos.
-- [ ] Manual actualizado si el cambio es visible.
-- [ ] ADR si hay una decisión arquitectónica.
-- [ ] Seguridad revisada (secretos, RLS, permisos, subidas).
-- [ ] Datos exportables/recuperables si se añade un modelo nuevo.
-- [ ] Sin servicios de pago ni dependencias injustificadas.
-- [ ] Task file actualizado y PR revisada.
-
-### 4.7 Estrategia de pruebas
-
-| Nivel | Herramienta | Qué cubre |
+| Fase | Objetivo | Issues principales |
 |---|---|---|
-| Unidad | Vitest | Dados, relaciones, permisos, conteo de palabras, exportadores, validadores |
-| Componentes | Testing Library | Formularios, fichas, tablas, diálogos, estados vacíos |
-| Integración | Vitest + Supabase local | Server Actions, RLS, migraciones, búsqueda |
-| E2E | Playwright | Login, CRUD de mundo/entidad, relaciones, grafo, mapa, escritura, exportación, juego |
-| Accesibilidad | axe-core | Páginas y componentes críticos |
-| Visual/responsive | Playwright | Capturas en 360/768/1280 y 2 temas |
-| Rendimiento | Lighthouse CI | Presupuestos de LCP/CLS/INP y bundle |
-| Seguridad | gitleaks, audit, tests RLS | Secretos, dependencias, aislamiento entre usuarios |
+| **M0** | Base técnica y proceso | Pivote documental, scaffold Electron, SQLite/Drizzle, IPC, sistema de diseño, assets, backups, CI, instalador. |
+| **M1** | Núcleo local | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes, papelera y versiones. |
+| **M2** | Mapas y grafo | Spike MapLibre/Terra Draw, editor de mapas, marcadores, grafo. |
+| **M3** | Escritura | Editor Tiptap, diálogos y enfoque, exportación/importación. |
+| **M4** | Juego | Dados y tablas, contenido inicial, tablas personalizadas y packs. |
+| **M5** | Calidad y distribución | Auditoría a11y/temas/rendimiento, release y auto-update, manual, pruebas de datos, beta 1.0. |
+| **Backlog** | Futuro | Calendarios, IA opcional, macOS/Linux y firma de código. |
 
-Los tests E2E corren contra un usuario de prueba y un mundo semilla. Los tests de RLS crean dos usuarios y verifican que ninguno puede leer ni escribir datos del otro.
-
-### 4.8 Documentación
-
-- `docs/plan-desarrollo.md`: este documento.
-- `docs/registro-decisiones.md`: registro append-only de decisiones de producto y arquitectura.
-- `docs/adr/`: decisiones arquitectónicas (contexto, decisión, consecuencias).
-- `docs/manual-de-usuario.md`: manual funcional para cualquier usuario.
-- `docs/arquitectura.md`: mapa de módulos y flujos (se puede generar a partir de los ADRs).
-- `README.md`: arranque local, variables de entorno, scripts y despliegue.
-- `CONTRIBUTING.md`: flujo, commits, ramas y calidad.
-- Changelog por versión.
+Cada issue incluye contexto, alcance, dependencias, criterios de aceptación,
+labels, hito y variante recomendada. Las dependencias se reflejan en el cuerpo.
 
 ---
 
-## 5. Roadmap
+## 5. Migración desde la etapa web
 
-### 5.1 Fases y estimación
+### 5.1 Qué se conserva
 
-Las estimaciones son relativas y suponen trabajo a tiempo parcial con ayuda de agentes. No son fechas comprometidas.
+- El repositorio, la licencia MIT, las ramas `main`/`dev`, el flujo SDD, los
+  agentes y la publicación local-first.
+- La estética editorial, los dos temas y la accesibilidad AA.
+- El alcance de producto: mundos, fichas, relaciones, mapas, grafo, escritura y
+  juego.
+- Los datos de ejemplo y el catálogo de tipos, adaptados a SQLite.
+- La disciplina de pruebas, ADRs y documentación.
 
-| Fase | Objetivo | Issues | Esfuerzo orientativo | Resultado demostrable |
-|---|---|---|---:|---|
-| **M0 · Proceso y fundaciones** | Adaptar agentes/reglas, decidir arquitectura y dejar el esqueleto técnico | 13 | 15-19 sesiones | App desplegada en preview con login básico y diseño |
-| **M1 · Núcleo de datos y acceso** | Mundos, fichas, relaciones, búsqueda, miembros y permisos | 7 | 24-32 sesiones | Se puede crear un mundo completo, compartirlo y navegarlo |
-| **M2 · Mapas y grafo** | Visualizar el mundo y su geografía | 4 | 20-28 sesiones | Grafo interactivo + editor de mapas vectorial |
-| **M3 · Escritura** | Escribir, versionar y exportar novelas | 4 | 24-32 sesiones | Manuscrito completo exportable a DOCX/PDF/EPUB |
-| **M4 · Juego creativo** | Inspiración con dados, tablas y contenido ampliable | 4 | 12-16 sesiones | Generador de semillas de historia y packs editables |
-| **M5 · Calidad y lanzamiento** | Manual, responsive, a11y, PWA, seguridad, backups y producción | 7 | 14-18 sesiones | Versión privada lista para uso real |
+### 5.2 Qué se elimina
 
-**Total:** 44 issues, ~109-145 sesiones. El **MVP utilizable** (M0-M3) se puede alcanzar en unas 14-20 semanas a tiempo parcial; el producto pulido completo, en 7-10 meses. Las fases M2 y M3 pueden solaparse parcialmente si se trabaja en paralelo, pero M1 es prerrequisito de ambas.
+- Next.js, React Server Components, Server Actions y route handlers.
+- Supabase (Postgres, Auth, RLS, allowlist, invitaciones), Vercel y Cloudflare
+  R2, junto con sus secretos. UptimeRobot se retira; Sentry y Resend se habían
+  previsto pero no se configuraron.
+- PWA, service worker, IndexedDB, manifest y requisitos móviles/responsive.
+- El código web de `src/app`, `src/components`, `src/lib`, `src/messages`,
+  `src/styles`, `drizzle/` PostgreSQL, scripts de base de datos y storage, tests
+  web y configuración de Next/Vercel/Playwright web.
+- Los ADRs y documentos específicos de la etapa web, que quedan en el historial
+  de git y se sustituyen por la serie de escritorio.
 
-### 5.2 Dependencias principales
+### 5.3 Qué se crea
 
-```text
-M0-01/02 (agentes y reglas)
-  ├─ M0-03 (ADRs) ─ M0-08 (Supabase + datos) ─ M0-11 (keep-alive + continuidad)
-  │                  └─ M0-10 (R2 + storage)
-  ├─ M0-13 (variantes y permisos)
-  └─ M0-04 (repo) ─ M0-05 (entorno/CI) ─ M0-06 (scaffold) ─ M0-07 (diseño) ─ M0-12 (i18n)
-        └─ M1-01 (auth + allowlist) ─ M1-02 (mundos propios) ─ M1-07 (miembros/roles)
-              └─ M1-03 (entidades) ─ M1-04 (relaciones)
-                    ├─ M1-05 (búsqueda) ─ M1-06 (ajustes)
-                    ├─ M2-01 (spike mapas) ─ M2-02 (editor) ─ M2-03 (marcadores)
-                    ├─ M2-04 (grafo)
-                    ├─ M3-01 (editor) ─ M3-02 (diálogos) ─ M3-03 (export) ─ M3-04 (versiones)
-                    └─ M4-01 (dados) ─ M4-02 (contenido) ─ M4-03 (tablas) ─ M4-04 (packs)
-                          └─ M5-01..07 (calidad y lanzamiento)
-```
+- Documentación de escritorio: plan, arquitectura, persistencia, esquema,
+  migraciones, continuidad, calidad, manual y ADRs.
+- Un baseline de tooling (TypeScript, ESLint, Vitest, Prettier) sin Next.
+- El catálogo de issues y los hitos nuevos.
+- `docs/cambio-a-escritorio.md` con la lista de archivos eliminados, issues
+  borradas, labels/hitos cambiados y cuentas a cerrar.
 
-### 5.3 Issues
+### 5.4 Cuentas externas a cerrar
 
-La tabla siguiente es el contrato de planificación. Cada fila se convierte en una issue de GitHub con su contexto, alcance, criterios de aceptación y dependencias. Los códigos (`M0-01`, etc.) se incluyen en el cuerpo de cada issue para mantener la trazabilidad con este documento.
+El usuario cerrará manualmente, cuando confirme que no hay datos que conservar:
 
-#### M0 · Proceso y fundaciones
+- Supabase (proyecto de desarrollo y cualquier proyecto asociado).
+- Vercel (proyecto y equipo).
+- Cloudflare R2 (bucket, tokens y lifecycle).
+- UptimeRobot (monitor).
+- Sentry y Resend solo si se llegó a crear alguna cuenta; no estaban
+  configurados en el repositorio.
+- GitHub Actions secrets/variables de la etapa web (`SUPABASE_*`, `R2_*`,
+  `HEALTHCHECK_URL`, `BACKUP_PASSPHRASE`, etc.).
+- Cualquier `.env.local` o credencial local.
 
-| Código | Título | Tipo | Área | Prioridad | Tamaño | Depende de |
-|---|---|---|---|---|---|---|
-| M0-01 | Auditar y adaptar los agentes de IA al proyecto | chore | agents | p0 | L | — |
-| M0-02 | Revisar `AGENTS.md` y el flujo SDD | docs | agents | p0 | M | M0-01 |
-| M0-03 | Crear los ADRs fundacionales | docs | architecture | p0 | M | M0-01, M0-02 |
-| M0-04 | Configurar repositorio, ramas, etiquetas y plantillas | chore | infra | p0 | M | — |
-| M0-05 | Configurar entorno de desarrollo y CI base | chore | infra | p0 | M | M0-04 |
-| M0-06 | Scaffold de Next.js, TypeScript y Tailwind | chore | infra | p0 | M | M0-04, M0-05 |
-| M0-07 | Sistema de diseño, temas y shell responsive | design | ui | p1 | L | M0-06 |
-| M0-08 | Configurar Supabase y el modelo de datos inicial | chore | infra/data | p0 | L | M0-03, M0-06 |
-| M0-09 | Documentación base del proyecto | docs | docs | p1 | S | M0-04 |
-| M0-10 | Configurar Cloudflare R2 y el adaptador de almacenamiento | chore | infra | p0 | M | M0-03, M0-06 |
-| M0-11 | Keep-alive y continuidad de Supabase | chore | infra | p0 | S | M0-04, M0-08 |
-| M0-12 | Fundaciones de internacionalización | chore | ui | p1 | M | M0-06, M0-07 |
-| M0-13 | Política de variantes de modelo y autonomía de permisos de los agentes | chore | agents/security | p1 | L | M0-02 |
-
-#### M1 · Núcleo de datos y acceso
-
-| Código | Título | Tipo | Área | Prioridad | Tamaño | Depende de |
-|---|---|---|---|---|---|---|
-| M1-01 | Autenticación, allowlist y acceso a la app | feature | auth | p0 | L | M0-08 |
-| M1-02 | CRUD de mundos propios y dashboard | feature | worlds | p0 | L | M0-07, M0-08, M1-01 |
-| M1-03 | Entidades, fichas, plantillas y mundo de ejemplo | feature | entities | p0 | XL | M0-07, M0-08, M0-10, M1-02, M1-07 |
-| M1-04 | Relaciones tipadas y backlinks | feature | entities | p0 | L | M1-03 |
-| M1-05 | Búsqueda global y paleta de comandos | feature | search | p1 | L | M1-03, M1-04 |
-| M1-06 | Ajustes de cuenta, preferencias y datos | feature | auth | p1 | M | M1-01 |
-| M1-07 | Miembros, roles e invitaciones por mundo | feature | worlds | p0 | L | M1-01, M1-02 |
-
-#### M2 · Mapas y grafo
-
-| Código | Título | Tipo | Área | Prioridad | Tamaño | Depende de |
-|---|---|---|---|---|---|---|
-| M2-01 | Spike: validar MapLibre GL + Terra Draw y la exportación SVG | chore | maps | p1 | M | M0-06, M0-07 |
-| M2-02 | Editor de mapas vectorial | feature | maps | p0 | XL | M1-02, M2-01 |
-| M2-03 | Marcadores y vínculos mapa-entidad | feature | maps | p1 | L | M2-02, M1-03 |
-| M2-04 | Vista de grafo interactiva | feature | graph | p0 | L | M1-04 |
-
-#### M3 · Escritura
-
-| Código | Título | Tipo | Área | Prioridad | Tamaño | Depende de |
-|---|---|---|---|---|---|---|
-| M3-01 | Editor de manuscritos y autoguardado | feature | writing | p0 | XL | M1-02, M0-07 |
-| M3-02 | Herramientas de escritura y diálogos | feature | writing | p0 | L | M3-01 |
-| M3-03 | Exportación e importación de manuscritos | feature | writing | p1 | L | M3-01 |
-| M3-04 | Historial de versiones y papelera | feature | data | p1 | M | M3-01 |
-
-#### M4 · Juego creativo
-
-| Código | Título | Tipo | Área | Prioridad | Tamaño | Depende de |
-|---|---|---|---|---|---|---|
-| M4-01 | Motor de dados y tablas de inspiración | feature | game | p1 | L | M1-02 |
-| M4-02 | Contenido inicial: contenedores, subgéneros, detonantes y tópicos | content | game | p1 | L | M4-01 |
-| M4-03 | Tablas personalizadas y sesiones de inspiración | feature | game | p2 | M | M4-01 |
-| M4-04 | Packs de contenido y ampliación del juego desde la app | feature | game | p2 | L | M4-01, M4-03 |
-
-#### M5 · Calidad y lanzamiento
-
-| Código | Título | Tipo | Área | Prioridad | Tamaño | Depende de |
-|---|---|---|---|---|---|---|
-| M5-01 | Manual de usuario y ayuda in-app | docs | docs | p0 | L | M1-02, M2-02, M3-01, M4-01 |
-| M5-02 | Auditoría responsive y de accesibilidad | testing | qa | p0 | L | M0-07, M1-02, M2-02, M3-01 |
-| M5-03 | Rendimiento y optimización | testing | qa | p1 | M | M2-02, M3-01 |
-| M5-04 | PWA y experiencia móvil | feature | ui | p1 | L | M0-07, M3-01 |
-| M5-05 | Revisión de seguridad y privacidad | chore | security | p0 | M | M1-01 a M4-04 |
-| M5-06 | Backups, exportación/importación y recuperación | chore | infra | p0 | M | M0-08, M0-10, M0-11, M1-02 |
-| M5-07 | Despliegue a producción, beta privada y lanzamiento | chore | infra | p0 | M | Todas |
-
-#### Backlog (no se implementa en el MVP)
-
-| Código | Título | Tipo | Área | Prioridad | Tamaño |
-|---|---|---|---|---|---|
-| B-01 | Colaboración en tiempo real | feature | entities | p3 | XL |
-| B-02 | Wiki pública y enlaces de lectura compartidos | feature | infra | p3 | L |
-| B-03 | Aplicación de escritorio con Tauri | feature | infra | p3 | XL |
-| B-04 | Inspiración asistida por IA (opcional y con coste) | feature | game | p3 | L |
-| B-05 | Internacionalización de la interfaz | feature | ui | p3 | M |
-
-### 5.4 Hitos de valor
-
-1. **"Mi mundo" (M1):** crear un mundo propio, 20 fichas y relaciones, compartirlo con un amigo con rol de lectura o edición y navegarlo. Es la base que hace útil la app.
-2. **"Cartógrafo" (M2):** ver el grafo y dibujar un mapa con marcadores vinculados. Es el diferenciador visual.
-3. **"Escritor" (M3):** escribir una novela con capítulos/escenas y exportarla. Es el segundo pilar del producto.
-4. **"Inspiración" (M4):** generar semillas de historia con dados y tablas, y ampliar el contenido desde la propia app con tablas y packs. Es el módulo lúdico.
-5. **"Listo" (M5):** manual, móvil, PWA, seguridad, backups y producción. Es la versión que se puede usar a diario.
-
-Cada hito debe terminar con una demo funcional y una actualización del manual.
+El detalle y las comprobaciones están en
+[`docs/cambio-a-escritorio.md`](cambio-a-escritorio.md).
 
 ---
 
-## 6. Riesgos
+## 6. Riesgos y mitigaciones
 
-| Riesgo | Prob. | Impacto | Mitigación |
-|---|---|---|---|
-| Alcance demasiado amplio (mundos + mapas + novela + juego) | Alta | Alto | Fases con MVP; cada fase entrega valor; recortar funciones no esenciales; no abrir nuevas líneas hasta cerrar M1. |
-| El editor de mapas es más complejo de lo previsto | Alta | Alto | Spike M2-01 antes de comprometer; alcance MVP de herramientas; plan B con SVG propio; exportación validada pronto. |
-| Pérdida de datos de escritura | Media | Muy alto | Autosave local + servidor, versiones, backups, exportación; probar recuperación antes de usar la app en serio. |
-| Límites o pausa de los free tiers | Media | Alto | R2 para assets (10 GB), keep-alive de Supabase, backup semanal, monitorización de uso y ruta de migración a Neon/R2; exportación de datos. |
-| RLS mal configurada y fuga entre usuarios | Media | Muy alto | Tests automáticos de RLS con dos usuarios; revisión de seguridad; no confiar solo en el cliente. |
-| Rendimiento del mapa/grafo en móvil | Media | Medio | Límites de features, simplificación, filtros, modo lectura en móvil, WebGL. |
-| Complejidad de RSC/Server Actions | Media | Medio | Formación gradual, patrones claros, evitar over-engineering, tests de integración. |
-| Dependencia de Vercel/Supabase | Baja | Medio | SQL estándar, StorageAdapter, exportación, ADR de migración. |
-| Licencias de extensiones Pro (Tiptap) | Baja | Medio | Usar solo núcleo MIT; implementar historial/comentarios propios; revisar licencias de fuentes. |
-| Correos de Auth no llegan | Media | Medio | Email/contraseña como método principal; Resend Free como SMTP; documentar. |
-| Falta de tiempo/constancia | Media | Alto | Issues pequeñas, hitos semanales, Definition of Done, automatización de calidad. |
-| Estética "genérica" o poco usable | Media | Medio | Agente ui-ux-designer, sistema de diseño, pruebas con usuario, 2 temas y responsive desde el inicio. |
-
----
-
-## 7. Decisiones cerradas
-
-Las ocho decisiones se cerraron el **12/11/2026**. El registro completo, con contexto y consecuencias, está en [`docs/registro-decisiones.md`](registro-decisiones.md).
-
-| # | Tema | Decisión |
+| Riesgo | Impacto | Mitigación |
 |---|---|---|
-| 1 | Stack | Supabase Free + Vercel Hobby, con archivos en Cloudflare R2 Free y keep-alive/backups para Supabase. |
-| 2 | Temas | Dos modos: Claro y Oscuro. |
-| 3 | Mapas | Fondo raster opcional y georreferenciado; el mapa sigue siendo vectorial por defecto. |
-| 4 | Acceso | Allowlist para la app; roles `owner`/`editor`/`viewer` por mundo; cada usuario autorizado puede crear sus propios mundos. |
-| 5 | Idioma | Español en el MVP, con textos centralizados y preparación para inglés e italiano. |
-| 6 | Dominio | Subdominio de Vercel en el MVP; dominio propio, opción futura. |
-| 7 | Publicación | Revisión local primero; PR a `dev` cuando el usuario apruebe. |
-| 8 | Juego | Contenido inicial de fantasía, ciencia ficción, terror y contemporáneo; ampliable desde la app con tablas y packs. |
-
-No quedan decisiones abiertas que bloqueen el inicio del desarrollo. Las dudas de implementación se resolverán en ADRs y en las issues correspondientes.
-
----
-
-## 8. Criterios de éxito
-
-El proyecto se considerará exitoso cuando:
-
-- Se puedan crear y mantener varios mundos sin pérdida de datos.
-- Crear un mundo con 20 fichas y sus relaciones lleve menos de 10 minutos y sea comprensible sin manual.
-- El grafo de 200 nodos cargue en menos de 2 segundos y sea navegable en escritorio y móvil.
-- Un mapa con 500 elementos se pueda dibujar, guardar y exportar a SVG sin pérdida de calidad.
-- Se puedan escribir 2.000 palabras sin conexión sin perder nada y exportarlas a DOCX.
-- Las pantallas principales funcionen a 360, 768 y 1280 px, en los dos temas, sin scroll horizontal.
-- Un test de RLS demuestre que un usuario no puede acceder a datos de otro y que un `viewer` no puede editar.
-- Un usuario autorizado pueda crear su propio mundo y compartir otro con un amigo sin mezclar datos.
-- La restauración de una copia de seguridad se haya probado con éxito.
-- El coste mensual de infraestructura sea 0 € (sin dominio propio).
-- El manual de usuario cubra todas las funciones visibles.
+| Pérdida de datos al actualizar o migrar | Muy alto | `userData` fuera de la instalación, copia previa, transacción, prueba de preservación y restauración. |
+| Corrupción de SQLite | Alto | WAL, integridad al arrancar, copias rotativas y restauración guiada. |
+| Instalador sin firma y SmartScreen | Medio | Documentar el aviso, publicar checksums y valorar firma con ADR. |
+| Tamaño y consumo de Electron | Medio | `asar`, sin dependencias innecesarias, carga diferida y medición. |
+| Complejidad de mapas/exportación SVG | Medio | Spike temprano y plan B con editor SVG propio. |
+| Migración de datos web (si hubiera) | Bajo | La etapa web no llegó a producto; no hay datos reales que migrar. |
+| Dependencia de GitHub Releases | Bajo | Los datos y la app funcionan sin actualizaciones; el instalador se conserva. |
+| Fuga de datos por logs o exportaciones | Medio | Logs sin contenido, exportaciones locales, borrado seguro y revisión de seguridad. |
+| Accesibilidad insuficiente | Medio | axe, teclado, temas y revisión en cada issue de UI. |
+| Deuda de documentación | Medio | `documentation-sync` y manual obligatorio en cambios visibles. |
 
 ---
 
-## Anexo A. Glosario
+## 7. Criterios de éxito del pivote
 
-- **Mundo:** contenedor de nivel superior con fichas, mapas, manuscritos y contenido de juego.
-- **Entidad/ficha:** cualquier elemento del mundo (personaje, lugar, cultura...).
-- **Relación:** vínculo tipado entre dos entidades.
-- **Grafo:** visualización de entidades y relaciones.
-- **GeoJSON:** formato abierto de datos geográficos vectoriales.
-- **Manuscrito:** obra de escritura, compuesta por libros, capítulos y escenas.
-- **Semilla:** combinación guardada de resultados de dados/tablas.
-- **RLS:** Row Level Security de PostgreSQL; permisos por fila.
-- **ADR:** Architecture Decision Record.
-- **Free tier:** plan gratuito de un servicio.
-
-## Anexo B. Referencias
-
-Consultadas el 11/11/2026:
-
-- vvd.world — https://vvd.world/
-- Next.js — https://nextjs.org/docs
-- Supabase Pricing — https://supabase.com/pricing
-- Supabase: pausa de proyectos Free — https://supabase.com/docs/guides/platform/free-project-pausing
-- Supabase Auth/RLS — https://supabase.com/docs
-- Vercel Limits — https://vercel.com/docs/limits
-- Cloudflare R2 Pricing — https://developers.cloudflare.com/r2/pricing/
-- Cloudflare R2 S3 API — https://developers.cloudflare.com/r2/api/s3/
-- Neon Pricing — https://neon.com/pricing
-- MapLibre GL JS — https://maplibre.org/maplibre-gl-js/docs/
-- Terra Draw — https://github.com/JamesLMilner/terra-draw
-- React Flow — https://reactflow.dev/
-- Tiptap — https://tiptap.dev/docs/editor/getting-started/overview
-- Drizzle ORM — https://orm.drizzle.team/
-- Playwright — https://playwright.dev/
-- Serwist — https://serwist.pages.dev/
-
-## Anexo C. Convención de estados de una issue
-
-```text
-status: todo → status: in-progress → status: needs-review → status: done
-                      ↓
-                status: blocked
-```
-
-- `todo`: lista para adoptar.
-- `in-progress`: en implementación.
-- `needs-review`: PR creada o cambio local pendiente de revisión.
-- `blocked`: falta una decisión o hay un fallo repetido.
-- `done`: fusionada en `dev` y verificada.
+- [ ] No queda código, configuración ni documentación que presente World Craft
+      como web, PWA o app con Supabase/Vercel/R2.
+- [ ] El repositorio tiene un baseline de tooling que pasa lint, typecheck y
+      tests sin Next.
+- [ ] Existe un plan, una arquitectura, un modelo de datos y una serie de ADRs
+      coherentes con Electron + SQLite.
+- [ ] Los agentes y `AGENTS.md` no exigen responsive web, auth ni RLS, y no
+      fuerzan un modelo gratuito.
+- [ ] El catálogo de issues y los hitos reflejan las fases de escritorio.
+- [ ] `docs/cambio-a-escritorio.md` permite cerrar todas las cuentas externas sin
+      olvidar secretos.
+- [ ] El cambio queda en una rama y un commit locales, sin push ni PR, para
+      revisión del usuario.
 
 ---
 
-## Anexo D. Correspondencia con las issues de GitHub
+## 8. Documentos relacionados
 
-Creadas el 11/11/2026 y actualizadas el 14/11/2026. La issue #1 es la planificación original; las **44 issues** siguientes implementan el plan (38 originales + 6 nuevas: 5 por las decisiones cerradas y 1 de proceso).
-
-| Código | Issue | Título | Hito |
-|---|---|---|---|
-| M0-01 | [#2](https://github.com/gonzalitojh/world-craft/issues/2) | Auditar y adaptar los agentes de IA al proyecto | M0 |
-| M0-02 | [#3](https://github.com/gonzalitojh/world-craft/issues/3) | Revisar AGENTS.md y el flujo SDD | M0 |
-| M0-03 | [#4](https://github.com/gonzalitojh/world-craft/issues/4) | Crear los ADRs fundacionales | M0 |
-| M0-04 | [#5](https://github.com/gonzalitojh/world-craft/issues/5) | Configurar repositorio, ramas, etiquetas y plantillas | M0 |
-| M0-05 | [#6](https://github.com/gonzalitojh/world-craft/issues/6) | Configurar entorno de desarrollo y CI base | M0 |
-| M0-06 | [#7](https://github.com/gonzalitojh/world-craft/issues/7) | Scaffold de Next.js, TypeScript y Tailwind | M0 |
-| M0-07 | [#8](https://github.com/gonzalitojh/world-craft/issues/8) | Sistema de diseño, temas y shell responsive | M0 |
-| M0-08 | [#9](https://github.com/gonzalitojh/world-craft/issues/9) | Configurar Supabase y el modelo de datos inicial | M0 |
-| M0-09 | [#10](https://github.com/gonzalitojh/world-craft/issues/10) | Documentación base del proyecto | M0 |
-| M0-10 | [#40](https://github.com/gonzalitojh/world-craft/issues/40) | Configurar Cloudflare R2 y el adaptador de almacenamiento | M0 |
-| M0-11 | [#41](https://github.com/gonzalitojh/world-craft/issues/41) | Keep-alive y continuidad de Supabase | M0 |
-| M0-12 | [#42](https://github.com/gonzalitojh/world-craft/issues/42) | Fundaciones de internacionalización | M0 |
-| M0-13 | [#48](https://github.com/gonzalitojh/world-craft/issues/48) | Política de variantes de modelo y autonomía de permisos de los agentes | M0 |
-| M1-01 | [#11](https://github.com/gonzalitojh/world-craft/issues/11) | Autenticación, allowlist y acceso a la app | M1 |
-| M1-02 | [#12](https://github.com/gonzalitojh/world-craft/issues/12) | CRUD de mundos propios y dashboard | M1 |
-| M1-03 | [#13](https://github.com/gonzalitojh/world-craft/issues/13) | Entidades, fichas, plantillas y mundo de ejemplo | M1 |
-| M1-04 | [#14](https://github.com/gonzalitojh/world-craft/issues/14) | Relaciones tipadas y backlinks | M1 |
-| M1-05 | [#15](https://github.com/gonzalitojh/world-craft/issues/15) | Búsqueda global y paleta de comandos | M1 |
-| M1-06 | [#16](https://github.com/gonzalitojh/world-craft/issues/16) | Ajustes de cuenta, preferencias y datos | M1 |
-| M1-07 | [#43](https://github.com/gonzalitojh/world-craft/issues/43) | Miembros, roles e invitaciones por mundo | M1 |
-| M2-01 | [#17](https://github.com/gonzalitojh/world-craft/issues/17) | Spike: validar MapLibre GL + Terra Draw y la exportación SVG | M2 |
-| M2-02 | [#18](https://github.com/gonzalitojh/world-craft/issues/18) | Editor de mapas vectorial | M2 |
-| M2-03 | [#19](https://github.com/gonzalitojh/world-craft/issues/19) | Marcadores y vínculos mapa-entidad | M2 |
-| M2-04 | [#20](https://github.com/gonzalitojh/world-craft/issues/20) | Vista de grafo interactiva | M2 |
-| M3-01 | [#21](https://github.com/gonzalitojh/world-craft/issues/21) | Editor de manuscritos y autoguardado | M3 |
-| M3-02 | [#22](https://github.com/gonzalitojh/world-craft/issues/22) | Herramientas de escritura y diálogos | M3 |
-| M3-03 | [#23](https://github.com/gonzalitojh/world-craft/issues/23) | Exportación e importación de manuscritos | M3 |
-| M3-04 | [#24](https://github.com/gonzalitojh/world-craft/issues/24) | Historial de versiones y papelera | M3 |
-| M4-01 | [#25](https://github.com/gonzalitojh/world-craft/issues/25) | Motor de dados y tablas de inspiración | M4 |
-| M4-02 | [#26](https://github.com/gonzalitojh/world-craft/issues/26) | Contenido inicial: contenedores, subgéneros, detonantes y tópicos | M4 |
-| M4-03 | [#27](https://github.com/gonzalitojh/world-craft/issues/27) | Tablas personalizadas y sesiones de inspiración | M4 |
-| M4-04 | [#44](https://github.com/gonzalitojh/world-craft/issues/44) | Packs de contenido y ampliación del juego desde la app | M4 |
-| M5-01 | [#28](https://github.com/gonzalitojh/world-craft/issues/28) | Manual de usuario y ayuda in-app | M5 |
-| M5-02 | [#29](https://github.com/gonzalitojh/world-craft/issues/29) | Auditoría responsive y de accesibilidad | M5 |
-| M5-03 | [#30](https://github.com/gonzalitojh/world-craft/issues/30) | Rendimiento y optimización | M5 |
-| M5-04 | [#31](https://github.com/gonzalitojh/world-craft/issues/31) | PWA y experiencia móvil | M5 |
-| M5-05 | [#32](https://github.com/gonzalitojh/world-craft/issues/32) | Revisión de seguridad y privacidad | M5 |
-| M5-06 | [#33](https://github.com/gonzalitojh/world-craft/issues/33) | Backups, exportación/importación y recuperación | M5 |
-| M5-07 | [#34](https://github.com/gonzalitojh/world-craft/issues/34) | Despliegue a producción, beta privada y lanzamiento | M5 |
-| B-01 | [#35](https://github.com/gonzalitojh/world-craft/issues/35) | Colaboración en tiempo real | Backlog |
-| B-02 | [#36](https://github.com/gonzalitojh/world-craft/issues/36) | Wiki pública y enlaces de lectura compartidos | Backlog |
-| B-03 | [#37](https://github.com/gonzalitojh/world-craft/issues/37) | Aplicación de escritorio con Tauri | Backlog |
-| B-04 | [#38](https://github.com/gonzalitojh/world-craft/issues/38) | Inspiración asistida por IA (opcional y con coste) | Backlog |
-| B-05 | [#39](https://github.com/gonzalitojh/world-craft/issues/39) | Internacionalización de la interfaz | Backlog |
-
-*Fin del plan.*
+- [Arquitectura](arquitectura.md)
+- [Persistencia](persistencia.md)
+- [Esquema de base de datos](base-de-datos/esquema.md)
+- [Migraciones](base-de-datos/migraciones.md)
+- [Continuidad y copias](continuidad.md)
+- [Plan de pruebas](calidad/plan-de-pruebas.md)
+- [Sistema de diseño](diseno/sistema-de-diseno.md)
+- [Internacionalización](internacionalizacion.md)
+- [Manual de usuario](manual-de-usuario.md)
+- [Registro de decisiones](registro-decisiones.md)
+- [ADRs](adr/README.md)
+- [Proceso SDD](proceso-sdd.md)
+- [Cambio a escritorio](cambio-a-escritorio.md)

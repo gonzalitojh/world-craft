@@ -6,8 +6,8 @@
     Gestiona por nombre los rulesets `protect-dev` y `protect-main` mediante
     GitHub CLI. Las reglas son: prohibir borrado, prohibir force push, exigir
     Pull Request con 0 aprobaciones y resolución de hilos, y exigir los
-    required status checks indicados (por defecto `lint`, `typecheck`, `test`
-    y `build`, los jobs de la CI de la issue #6).
+    required status checks indicados (por defecto `lint`, `typecheck` y `test`,
+    los jobs required de la CI de escritorio).
 
     - `protect-dev`: sin bypass.
     - `protect-main`: bypass del propietario del repositorio para promover
@@ -34,13 +34,13 @@
     .\scripts\set-branch-protection.ps1 -DryRun
 
 .EXAMPLE
-    .\scripts\set-branch-protection.ps1 -RequiredChecks lint,typecheck,test,build
+    .\scripts\set-branch-protection.ps1 -RequiredChecks lint,typecheck,test
 #>
 [CmdletBinding()]
 param(
     [switch]$DryRun,
     [string]$Repo,
-    [string[]]$RequiredChecks = @('lint', 'typecheck', 'test', 'build')
+    [string[]]$RequiredChecks = @('lint', 'typecheck', 'test')
 )
 
 $ErrorActionPreference = 'Stop'

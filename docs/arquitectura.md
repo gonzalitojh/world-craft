@@ -1,206 +1,203 @@
 # Arquitectura de World Craft
 
-> **Estado:** vigente desde el 16/11/2026 (issue
-> [#10](https://github.com/gonzalitojh/world-craft/issues/10), M0-09).
-> **Ámbito:** mapa de módulos, capas y flujos principales del repositorio.
+> **Estado:** vigente desde el 18/11/2026, tras el pivote a aplicación de
+> escritorio. Sustituye por completo la arquitectura web anterior.
+> **Ámbito:** procesos, módulos, flujos, datos y límites de confianza.
 > **Fuentes:** [`docs/plan-desarrollo.md`](plan-desarrollo.md) §3,
 > [`docs/adr/`](adr/README.md) y el código de `src/`.
 
 Este documento explica **cómo está organizada la aplicación** y **por dónde pasa
-una petición**. No sustituye al plan ni a los ADRs: el plan define el alcance y
+una operación**. No sustituye al plan ni a los ADRs: el plan define el alcance y
 los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
-En la fase actual (M0) el repositorio tiene el esqueleto técnico, el sistema de
-diseño y el modelo de datos; **todavía no hay producto**: no existe autenticación
-ni pantallas que usen la base de datos. Las secciones marcan qué está
-implementado y qué llega en fases posteriores.
+En la fase actual el repositorio contiene el **baseline de tooling y la
+documentación del pivote**. Todavía no hay ventana Electron ni base de datos
+ejecutable: eso llega con las primeras issues de M0. Las secciones distinguen lo
+previsto de lo implementado.
 
 ## 1. Vista general
 
 ```text
-Navegador
-  Next.js App Router (React 19 + TypeScript)
-  Componentes de servidor por defecto; cliente solo donde hay estado
-        │ HTTPS
-        ▼
-Vercel Hobby
-  Server Components · Server Actions · Route Handlers
-  Validación de entorno (Zod) · Exportadores · URLs firmadas
-        │                          │
-        ▼                          ▼
-Supabase (PostgreSQL + RLS)   Cloudflare R2 (implementado, M0-10)
-  Drizzle ORM · migraciones     assets privados tras StorageAdapter
+┌──────────────────────────────────────────────────────────────────┐
+│ Proceso principal de Electron                                     │
+│  ventana · SQLite · assets · backups · export/import · updates    │
+│  IPC allowlisted + Zod · protocolo wc-asset:// · logs locales     │
+└───────────────────────────────┬──────────────────────────────────┘
+                                │ contextBridge (API tipada)
+┌───────────────────────────────▼──────────────────────────────────┐
+│ Renderer (React + Vite + TypeScript)                              │
+│  shell · fichas · grafo · mapas · editor · juego · ajustes        │
+│  Zustand · React Hook Form · Tailwind + shadcn/ui                 │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 | Pieza | Estado | Dónde se decide |
 |---|---|---|
-| Next.js 16 App Router, React 19 y TypeScript estricto | Implementado (M0-06) | [ADR 0001](adr/0001-nextjs-app-router.md) |
-| Supabase Postgres, Drizzle y Zod | Esquema implementado (M0-08); sin proyecto real en uso | [ADR 0002](adr/0002-supabase-postgres-drizzle-zod.md), [ADR 0019](adr/0019-database-schema-migrations-and-rls.md) |
-| Supabase Auth, allowlist e invitaciones | Previsto (M1-01) | [ADR 0003](adr/0003-supabase-auth-allowlist-invitations.md) |
-| Cloudflare R2 tras `StorageAdapter` | Implementado (M0-10): adaptadores R2 y local, pipeline sharp y guarda 0007; bucket pendiente de crear | [ADR 0004](adr/0004-cloudflare-r2-storage-adapter.md), [ADR 0020](adr/0020-direct-signed-upload-to-r2.md) |
-| Vercel Hobby | Configurado | [ADR 0005](adr/0005-vercel-hobby.md) |
-| Tailwind 4 CSS-first, dos temas y shell | Implementado (M0-07) | [ADR 0010](adr/0010-two-themes-design-system.md), [ADR 0018](adr/0018-design-system-tokens-and-shell.md) |
-| Textos centralizados y base de i18n | Implementado (M0-12): locale por petición, catálogo tipado y formatos `Intl`; traducciones completas en B-05 | [ADR 0012](adr/0012-i18n-centralized-roadmap.md), [guía](internacionalizacion.md) |
+| Electron + Vite + React + TypeScript | Previsto (M0) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
+| SQLite + better-sqlite3 + Drizzle + FTS5 | Previsto (M0) | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md) |
+| Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
+| Seguridad Electron e IPC tipado | Previsto (M0) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
+| Assets locales y protocolo propio | Previsto (M0) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
+| Dos temas y sistema de diseño | Previsto (M0) | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
+| Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
+| MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
+| i18n centralizada | Previsto (M0) | [ADR 0009](adr/0009-centralized-i18n.md) |
+| Pruebas y calidad | Previsto (M0/M5) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
+| Copias, restauración y recuperación | Previsto (M0/M5) | [ADR 0012](adr/0012-backup-restore-recovery.md) |
+| CI y releases | Previsto (M0/M5) | [ADR 0013](adr/0013-ci-releases.md) |
+| Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
+| Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
 
-## 2. Capas y directorios
+## 2. Procesos y directorios
 
-El código se organiza por **responsabilidad**, no por pantalla. La regla es que
-la presentación no contiene reglas de negocio: los componentes pintan y delegan.
+Electron separa tres procesos con permisos distintos:
+
+| Proceso | Responsabilidad | Puede acceder a |
+|---|---|---|
+| **Main** | Ventana, ciclo de vida, SQLite, sistema de archivos, backups, updates, protocolo de assets y handlers IPC. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main. | API de Electron limitada. |
+| **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/app/` | Rutas del App Router, layouts, metadatos y route handlers. | Todo lo demás |
-| `src/components/` | Presentación reutilizable: `ui/` base, `shell/` navegación, `theme/`, `i18n/` (proveedor de idioma) y `design-system/`. | `lib/`, `messages/`, otros componentes |
-| `src/modules/` | Lógica de dominio por área (fichas, mapas, manuscritos, juego…). Hoy solo el README: se llena en M1–M4. | `lib/`, tipos de dominio |
-| `src/lib/` | Utilidades puras y acceso a infraestructura: `db/`, `env/`, `i18n/`, `storage/`, helpers. | Nada de React como componente; `i18n/server.ts` usa `cache()` de React. |
-| `src/messages/` | Contrato tipado (`translator.ts`), catálogo español (`es.ts`) y registro por idioma (`index.ts`). | — |
-| `src/styles/` | Tokens de diseño: `palette.css` (única fuente de colores), `scales.css` y `semantic.css`. | — |
-| `tests/` | `unit/` (Vitest + Testing Library), `db/` (integración y RLS) y `e2e/` (Playwright + axe). | Código de `src/` |
-| `scripts/` | Utilidades de mantenimiento: `clean.mjs` y `db/` (ping, seed, reset, verify). | Código de `src/lib/db` |
-| `drizzle/` | Migraciones, journal, snapshots y rollbacks documentados. | — |
+| `src/main/` | Composición del proceso principal, ventana, base de datos, assets, backups, updates e IPC. | `src/shared/`, Node, Electron |
+| `src/preload/` | `contextBridge` y API tipada; sin lógica de negocio. | `src/shared/`, Electron |
+| `src/renderer/` | UI React, módulos de dominio de presentación y estado. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | `ui/` base, `shell/`, `editors/`, `maps/`, `graph/`. | Módulos del renderer, shared |
+| `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. | API tipada, shared |
+| `src/renderer/messages/` | Catálogo tipado y proveedor de i18n. | — |
+| `src/renderer/styles/` | Tokens, base y movimiento. | — |
+| `src/shared/` | Tipos, contratos IPC, esquemas Zod y utilidades puras sin Node ni React. | — |
+| `tests/` | `unit/`, `integration/` y `e2e/`. | `src/` |
+| `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
 Reglas de dependencia:
 
-1. **`src/app` compone; `src/modules` decide; `src/lib` resuelve.** Un
-   componente nunca valida reglas de dominio ni habla con la base de datos.
-2. **`src/lib/db` solo se importa desde servidor, scripts y tests.** Las claves
-   privilegiadas nunca llegan al cliente.
-3. **Los textos visibles viven en `src/messages/`.** No se escriben cadenas de
-   interfaz en componentes (regla 16 de `AGENTS.md`). El servidor los lee con
-   `getI18n()` y el cliente con `useI18n()`; un `'use client'` solo puede
-   importar **tipos** de `@/messages/translator`.
-4. **Los tokens viven en `src/styles/tokens/`.** Los componentes usan utilidades
-   semánticas, nunca la paleta cruda ni variantes `dark:`.
+1. **Main decide y persiste; renderer presenta y compone.** El renderer no
+   importa `src/main/` ni módulos de Node.
+2. **Shared no depende de nadie.** Contiene contratos y esquemas que ambos lados
+   pueden importar.
+3. **Preload no contiene reglas de negocio.** Solo traduce llamadas a canales
+   IPC concretos.
+4. **Los textos visibles viven en `src/renderer/messages/`.** No se escriben
+   cadenas de interfaz en componentes.
+5. **Los tokens viven en `src/renderer/styles/`.** Los componentes usan
+   utilidades semánticas, nunca la paleta cruda ni variantes `dark:`.
+6. **La lógica de negocio no vive en componentes.** Vive en casos de uso del
+   renderer o en el main, según si necesita disco.
 
-## 3. Flujo de una petición
-
-El flujo previsto cuando exista producto (M1 en adelante) es:
+## 3. Flujo de una operación
 
 ```text
-Petición
-  → sesión de Supabase refrescada en middleware (M1-01)
-  → Server Component: valida membresía del mundo y consulta con Drizzle
-  → respuesta HTML ya filtrada por RLS y por la comprobación de permisos
+Lectura
+  renderer → window.worldCraft.entities.list({ worldId })
+    → preload: ipcRenderer.invoke('entities:list', payload)
+    → main: Zod → consulta Drizzle/SQLite → Result<T>
+    → renderer: pinta datos o error tipado
+
 Mutación
-  → Server Action: Zod → permiso de membresía/rol → escritura → revalidatePath
-Vista pesada (mapa, grafo, editor)
-  → componente cliente cargado con dynamic(..., { ssr: false })
-  → guarda por route handler con control de versión
+  renderer → window.worldCraft.entities.create(input)
+    → preload → main: Zod → transacción SQLite → activity_log
+    → invalida caché de UI y refresca la vista
+
+Asset
+  renderer → <img src="wc-asset://asset/<assetId>">
+    → main: protocol.handle → valida id y ruta → sirve archivo de userData/assets
+
+Exportación
+  renderer → window.worldCraft.backup.exportWorld(worldId)
+    → main: consulta → ZIP temporal → dialog.save → Result
+
+Actualización
+  main: electron-updater consulta GitHub Releases (opcional)
+    → descarga → aviso al usuario → instala al reiniciar
+    → userData no se toca
 ```
 
-Hoy solo existe la parte de infraestructura:
+El contrato de IPC se define en `src/shared/` y se implementa en
+`src/main/ipc/`. Cada canal tiene un esquema Zod de entrada y un tipo de salida.
+Los errores nunca cruzan IPC como excepciones crudas: se convierten en
+`{ ok: false, error: { code, message } }`.
 
-- **Validación de entorno.** `src/lib/env/` separa el esquema público
-  (`NEXT_PUBLIC_*`) del de servidor. `src/lib/env/server.ts` está marcado con
-  `server-only`: importarlo desde un componente cliente rompe la compilación.
-  `src/lib/db/env.ts` valida `DATABASE_URL` y `DIRECT_URL` de forma perezosa y
-  estricta.
-- **Acceso a datos.** `src/lib/db/` contiene el esquema Drizzle por dominio, la
-  conexión privilegiada y la sesión de usuario. Las políticas RLS viven en las
-  migraciones de `drizzle/`, no en el código de la aplicación.
-- **Almacenamiento.** `src/lib/storage/` define el contrato `StorageAdapter`, el
-  driver por entorno, los adaptadores R2 y local, la validación de claves y la
-  miniatura UUIDv5. `src/lib/assets/` contiene límites, política de rol, pipeline
-  sharp y el servicio `requestUpload`/`finalizeUpload`/`getDownloadUrl`/
-  `deleteAsset`/`listAssets`. La subida directa firmada a `tmp/` y la
-  finalización en servidor están en el [ADR 0020](adr/0020-direct-signed-upload-to-r2.md);
-  el detalle operativo, en [`docs/almacenamiento.md`](almacenamiento.md).
-- **Presentación.** El shell (`topbar`, rail, barra inferior, migajas) y los
-  componentes base están en `src/components/`; `/design-system` los documenta en
-  vivo.
-- **Internacionalización.** `src/lib/i18n/` resuelve el locale por petición
-  (cookie `wc-locale` > `Accept-Language` > `es`; `profiles.locale` llegará con
-  M1-06), expone formatos `Intl` y una Server Action para cambiar de idioma. El
-  detalle está en [`docs/internacionalizacion.md`](internacionalizacion.md).
+## 4. Persistencia y datos
 
-Resolución del idioma y dependencia servidor/cliente:
+- **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`.
+- **WAL** para lecturas concurrentes y escrituras rápidas; `foreign_keys=ON`,
+  `busy_timeout=5000`, `synchronous=NORMAL`.
+- **Drizzle ORM** para esquema, consultas y migraciones versionadas.
+- **FTS5** para búsqueda global, sincronizada con `search_documents` y triggers.
+- **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\`.
+- **Copias** en `%APPDATA%\World Craft\backups\` con rotación diaria/semanal/
+  mensual y copia previa a migraciones.
+- **Exportación** de mundo en ZIP con `manifest.json`, `data.json` y `assets/`.
 
-```text
-Petición
-  → src/lib/i18n/server.ts: getLocale() lee cookie wc-locale y Accept-Language
-      (profiles.locale llegará con M1-06) y resolveLocale() valida contra availableLocales
-  → getMessages(locale) + createTranslator() + createFormatters(locale)
-  → layout raíz: <html lang>, generateMetadata y <LocaleProvider locale messages …>
-  → componentes de servidor: getI18n() (memoizado con cache() por petición)
-  → componentes cliente: useI18n() / useMessages() / useLocale()
-      setLocale() → Server Action src/lib/i18n/actions.ts → cookie HttpOnly + revalidatePath
-```
-
-`src/messages/index.ts` y `src/lib/i18n/server.ts` están marcados con
-`server-only`. Un `'use client'` solo puede importar **tipos** de
-`@/messages/translator` y las utilidades puras de `src/lib/i18n/format.ts` y
-`src/lib/i18n/locale.ts`; el catálogo le llega serializado desde el proveedor.
-
-## 4. Rutas actuales
-
-| Ruta | Tipo | Qué hace hoy |
-|---|---|---|
-| `/` | Server Component | Portada con el estado de la fase y los pilares del producto. |
-| `/design-system` | Server + cliente | Página viva del sistema de diseño: tokens, componentes, accesibilidad y capturas. |
-| `/login` | Server Component | Placeholder de acceso: aviso y botón deshabilitado, sin formulario (M1-01). |
-| `/health` | Server Component | Estado del despliegue y de Supabase: disponibilidad, commit y hora. |
-| `/api/health` | Route Handler | JSON `{ "status": "ok" \| "degraded", "database": "available" \| "paused" \| "error", "timestamp": "…" }` sin caché; `select 1` real con timeout de 5 s. |
-| `/api/storage/local/[...key]` | Route Handler | Adaptador local firmado con HMAC; solo desarrollo y pruebas, 404 en producción. |
-| `/api/storage/self-check` | Route Handler | Diagnóstico de almacenamiento con token; existe en desarrollo y preview, 404 en producción real. |
-
-No hay `middleware.ts` todavía: la protección de rutas y el refresco de sesión
-llegan con la autenticación (M1-01). Mientras tanto, ninguna ruta expone datos
-privados porque no hay datos ni sesión. Las dos rutas de almacenamiento no se
-enlazan desde ninguna pantalla: son infraestructura para M1-03.
+El detalle está en [`docs/persistencia.md`](persistencia.md),
+[`docs/base-de-datos/esquema.md`](base-de-datos/esquema.md) y
+[`docs/base-de-datos/migraciones.md`](base-de-datos/migraciones.md).
 
 ## 5. Seguridad y límites de confianza
 
-- **Aislamiento en la base de datos.** RLS activa en las 24 tablas, sin
-  privilegios para `anon` y con permisos por tabla y columna: una tabla nueva
-  nace cerrada. El detalle está en
-  [`docs/base-de-datos/esquema.md`](base-de-datos/esquema.md).
-- **Doble comprobación.** RLS es la última línea: las Server Actions vuelven a
-  comprobar la membresía y el rol cuando existan (M1).
-- **Service role solo en servidor.** La clave privilegiada no se expone al
-  cliente ni se registra. `src/lib/env/` impide que las variables de servidor
-  acaben en el bundle público.
-- **Bucket privado.** Las URLs de R2 son firmadas y de corta duración; las
-  claves viven solo en el servidor. Producción exige R2 y nunca cae al
-  almacenamiento local ([ADR 0004](adr/0004-cloudflare-r2-storage-adapter.md)).
-- **Secretos.** `.env.example` está versionado sin valores reales; `.env*` queda
-  fuera de git y la CI ejecuta `gitleaks`.
-- **Dependencias.** Coste objetivo 0 €/mes y auditoría en la CI
-  ([ADR 0013](adr/0013-free-tier-continuity.md)).
+- **Renderer no confiable.** `contextIsolation`, `sandbox`, `nodeIntegration:
+  false`, `webSecurity: true`.
+- **Preload mínimo.** Solo funciones concretas; nunca `ipcRenderer` ni
+  `require`.
+- **IPC allowlisted.** Validación Zod, canales explícitos y errores tipados.
+- **CSP estricta.** Sin contenido remoto, sin `unsafe-eval`, assets solo desde
+  `wc-asset:`.
+- **Navegación bloqueada.** `will-navigate` y `setWindowOpenHandler` deniegan
+  ventanas nuevas; los enlaces externos se abren con `shell.openExternal` solo
+  para HTTPS.
+- **Assets y rutas.** Normalización, comprobación de prefijo y rechazo de `..`,
+  rutas absolutas y enlaces simbólicos.
+- **Importación.** ZIP/JSON validados con Zod, límites de tamaño y de número de
+  archivos, transacción y carpeta temporal.
+- **Contenido rico.** JSON de ProseMirror; HTML saneado solo al exportar.
+- **Secretos.** No hay claves de servicios en la app. Los certificados de firma,
+  si existen, viven fuera del repositorio.
+- **Privacidad.** Sin telemetría, cuentas ni subida de datos.
 
-## 6. Calidad y despliegue
+El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
+[`SECURITY.md`](../SECURITY.md).
 
-- **Pruebas.** `pnpm test` (unidad y componentes), `pnpm test:db` (RLS e
-  integración contra el Supabase de desarrollo) y `pnpm test:e2e` (rutas,
-  responsive, temas y axe). `pnpm db:check` valida las migraciones sin
-  credenciales y `pnpm storage:smoke` comprueba R2 cuando hay credenciales.
-- **CI.** GitHub Actions ejecuta `lint`, `typecheck`, `test` y `build` como
-  required checks; `e2e`, `gitleaks` y `audit` se ejecutan sin bloquear
-  ([ADR 0017](adr/0017-nextjs-scaffold-and-env-contract.md)).
-- **Despliegue.** Vercel Hobby con framework Next.js fijado en `vercel.json`.
-  Cada rama y PR genera una preview; `dev` integra y `main` solo recibe
-  versiones estables que promueve el propietario.
+## 6. Calidad, CI y distribución
+
+- **Pruebas.** `pnpm test` (Vitest unitario), `pnpm test:integration` (SQLite
+  temporal, migraciones, backups) y `pnpm test:e2e` (Playwright Electron).
+- **CI.** GitHub Actions en `windows-latest`: lint, format, typecheck, test,
+  integration y build. gitleaks y audit no bloquean.
+- **Instalador.** `electron-builder` con NSIS por usuario; `pnpm dist` genera el
+  instalador y `pnpm dist:dir` una carpeta desempaquetada para pruebas.
+- **Release.** Tag `vX.Y.Z`, workflow que compila, firma si hay certificado y
+  publica en GitHub Releases con `latest.yml`.
+- **Actualización.** `electron-updater` contra GitHub Releases; descarga en
+  segundo plano y reinicio consentido.
+- **Datos.** El instalador no toca `userData`; la app migra con copia previa.
+
+El detalle está en el [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md),
+[ADR 0013](adr/0013-ci-releases.md) y
+[`docs/calidad/plan-de-pruebas.md`](calidad/plan-de-pruebas.md).
 
 ## 7. Evolución por fases
 
 | Fase | Qué añade a la arquitectura |
 |---|---|
-| **M0** | Proceso, entorno, CI, scaffold, diseño, modelo de datos y documentación base. |
-| **M1** | Auth y allowlist, mundos, fichas, relaciones, búsqueda, ajustes y miembros. |
-| **M2** | Mapas vectoriales (MapLibre + Terra Draw) y grafo (React Flow + ELK). |
-| **M3** | Editor de manuscritos (Tiptap), exportadores y versiones. |
-| **M4** | Dados, tablas de inspiración y packs de contenido ampliables. |
-| **M5** | PWA, rendimiento, auditoría responsive y a11y, seguridad, backups y producción. |
+| **M0** | Baseline, ventana segura, SQLite/Drizzle, IPC, diseño, assets, backups, CI e instalador. |
+| **M1** | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes y papelera. |
+| **M2** | Mapas vectoriales y grafo. |
+| **M3** | Editor de manuscritos, herramientas de escritura y exportadores. |
+| **M4** | Dados, tablas de inspiración y packs de contenido. |
+| **M5** | Auditoría de a11y/temas/rendimiento, release, auto-update, manual y beta 1.0. |
 
-Cada fase puede añadir módulos en `src/modules/` y rutas en `src/app/`, pero no
+Cada fase puede añadir módulos en `src/renderer/modules/` y canales IPC, pero no
 cambia las reglas de dependencia de la sección 2.
 
 ## 8. Cómo se mantiene
 
-Este documento se actualiza cuando cambian **módulos, dependencias o flujos**
-(regla 3 de `AGENTS.md` y `docs/proceso-sdd.md`). Si el cambio fija una decisión
-arquitectónica, se crea o supersede un ADR y se enlaza desde la tabla de la
-sección 1. El registro histórico de decisiones está en
-[`docs/registro-decisiones.md`](registro-decisiones.md).
+Este documento se actualiza cuando cambian **procesos, módulos, dependencias o
+flujos**. Si el cambio fija una decisión arquitectónica, se crea o supersede un
+ADR y se enlaza desde la tabla de la sección 1. El registro histórico de
+decisiones está en [`docs/registro-decisiones.md`](registro-decisiones.md).
 
 ## 9. Enlaces
 
@@ -208,8 +205,11 @@ sección 1. El registro histórico de decisiones está en
 - [Registro de decisiones](registro-decisiones.md)
 - [Índice de ADRs](adr/README.md)
 - [Proceso SDD](proceso-sdd.md)
+- [Persistencia](persistencia.md)
 - [Modelo de datos](base-de-datos/esquema.md)
-- [Operación de la base de datos](base-de-datos/operacion.md)
-- [Almacenamiento](almacenamiento.md)
+- [Migraciones](base-de-datos/migraciones.md)
+- [Continuidad y copias](continuidad.md)
+- [Plan de pruebas](calidad/plan-de-pruebas.md)
 - [Sistema de diseño](diseno/sistema-de-diseno.md)
 - [Manual de usuario](manual-de-usuario.md)
+- [Cambio a escritorio](cambio-a-escritorio.md)

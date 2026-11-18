@@ -3,7 +3,7 @@
     Sincroniza la taxonomía canónica de etiquetas de World Craft con GitHub.
 
 .DESCRIPTION
-    Crea o actualiza las 44 etiquetas del proyecto mediante
+    Crea o actualiza las 46 etiquetas del proyecto mediante
     `gh label create --force`. Es idempotente: se puede ejecutar varias veces.
     No borra etiquetas extra; al final las lista para revisarlas a mano.
 
@@ -51,9 +51,11 @@ $labels = @(
     @{ Name = 'size: xl'; Color = 'f9d0c4'; Description = 'Epica; dividir si es posible' },
     @{ Name = 'area: agents'; Color = '6f42c1'; Description = 'Agentes de IA y flujo SDD' },
     @{ Name = 'area: architecture'; Color = '0052cc'; Description = 'Arquitectura y ADRs' },
-    @{ Name = 'area: infra'; Color = '1d76db'; Description = 'Infraestructura, CI, despliegue y backups' },
-    @{ Name = 'area: data'; Color = '006b75'; Description = 'Base de datos, modelo y migraciones' },
-    @{ Name = 'area: auth'; Color = 'b60205'; Description = 'Autenticacion, permisos y cuentas' },
+    @{ Name = 'area: infra'; Color = '1d76db'; Description = 'CI, releases, actualizaciones y mantenimiento' },
+    @{ Name = 'area: desktop'; Color = '0052cc'; Description = 'Proceso principal, preload, IPC y ventana Electron' },
+    @{ Name = 'area: persistence'; Color = '006b75'; Description = 'SQLite local, assets, copias y recuperacion' },
+    @{ Name = 'area: packaging'; Color = '1b7c83'; Description = 'Instalador NSIS, firma, actualizaciones y distribucion' },
+    @{ Name = 'area: data'; Color = '0b6e4f'; Description = 'Modelo de datos local y migraciones' },
     @{ Name = 'area: worlds'; Color = '0e8a16'; Description = 'Mundos y dashboard' },
     @{ Name = 'area: entities'; Color = '2b8a3e'; Description = 'Entidades, fichas y relaciones' },
     @{ Name = 'area: graph'; Color = '5319e7'; Description = 'Vista de grafo' },
@@ -62,7 +64,7 @@ $labels = @(
     @{ Name = 'area: game'; Color = 'a2eeef'; Description = 'Dados, tablas e inspiracion' },
     @{ Name = 'area: search'; Color = '0075ca'; Description = 'Busqueda y paleta de comandos' },
     @{ Name = 'area: docs'; Color = '6e7781'; Description = 'Documentacion y manual' },
-    @{ Name = 'area: ui'; Color = 'c5def5'; Description = 'Interfaz, diseno y responsive' },
+    @{ Name = 'area: ui'; Color = 'c5def5'; Description = 'Interfaz de escritorio, diseno y temas' },
     @{ Name = 'area: security'; Color = 'd93f0b'; Description = 'Seguridad y privacidad' },
     @{ Name = 'area: qa'; Color = 'bfd4f2'; Description = 'Calidad, pruebas y rendimiento' },
     @{ Name = 'variant: default'; Color = 'ededed'; Description = 'Variante de modelo recomendada: default (sin variante explicita)' },

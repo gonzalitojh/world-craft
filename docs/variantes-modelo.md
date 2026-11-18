@@ -1,11 +1,10 @@
 # Variantes de modelo en World Craft
 
-> **Estado:** vigente desde el 14/11/2026 (issue
-> [#48](https://github.com/gonzalitojh/world-craft/issues/48), M0-13);
-> ampliado con la variante fija por subagente (ADR 0015, tarea local
-> `optimizacion-coste-cache`).
+> **Estado:** vigente desde el 18/11/2026, tras el pivote a aplicación de
+> escritorio. Sustituye la política anterior de modelo y variante fijos por
+> subagente.
 > **Ámbito:** recomendación de variante por issue, uso de `default`, `low`,
-> `high` y `max`, variante fija por subagente y automatización futura.
+> `high` y `max`, herencia del modelo de sesión y caché de contexto.
 > **Jerarquía documental:** mandan [`AGENTS.md`](../AGENTS.md) y
 > [`docs/proceso-sdd.md`](proceso-sdd.md). Este documento desarrolla la
 > política sin contradecirlos.
@@ -16,12 +15,6 @@ En OpenCode, una variante es una opción con nombre dentro de un modelo. Se
 selecciona con `proveedor/modelo#variante`, por ejemplo
 `opencode/deepseek-v4.1-flash-free#high`. Las variantes suelen ajustar el
 esfuerzo de razonamiento o el presupuesto de tokens; no son modelos distintos.
-
-El modelo actual de los subagentes es `opencode/deepseek-v4.1-flash-free`, el
-modelo gratuito del proveedor OpenCode. Expone las variantes `low`, `high` y
-`max`. La etiqueta `default` no fija ninguna variante: usa el comportamiento por
-defecto del modelo. El proveedor y el modelo se revisan al cambiar de catálogo;
-la fuente de verdad operativa es el frontmatter de cada agente (sección 5).
 
 | Variante | Etiqueta de issue | Uso general |
 |---|---|---|
@@ -45,28 +38,29 @@ en una tarea cuyo diff correcto ya está claro. La regla es:
 > repetida.
 
 No se usa `max` por costumbre ni como valor por defecto. Tampoco se usa `low`
-en tareas de seguridad, datos o permisos solo para ahorrar tokens.
+en tareas de seguridad, datos, migraciones o permisos locales solo para ahorrar
+tokens.
 
-Con el modelo gratuito actual el coste directo por token es 0. La política se
-mantiene porque las variantes siguen afectando a esfuerzo, latencia y límites de
-uso, y porque el día que se adopte un modelo de pago las mismas reglas evitan
-que el coste se dispare.
+El usuario paga su suscripción de OpenCode y puede usar cualquier modelo
+disponible en su plan, incluido el gratuito. La política de variantes no
+obliga a un proveedor ni a un modelo concretos: solo recomienda esfuerzo por
+tarea.
 
 ## 3. Tabla de decisión
 
 | Variante | Cuándo usarla | Ejemplos en World Craft | Señales para no usarla |
 |---|---|---|---|
-| `default` | Tareas simples que no requieren razonamiento profundo y no son ambiguas. | Consultar issues, listar labels, revisar un enlace, un cambio de texto puntual. | Hay diseño, permisos, migraciones o varios módulos implicados. |
-| `low` | Trabajo mecánico, repetitivo o totalmente especificado. | Aplicar labels, actualizar una checklist, renombrar, formatear, cambiar una plantilla, corregir una errata. | Hay que decidir arquitectura, permisos o comportamiento. |
-| `high` | Implementación estándar, pruebas, QA, documentación con dependencias y revisión de cambios acotados. | CRUD, componentes de UI, tests, ADRs, documentación de proceso, refactors pequeños. | La decisión es ambigua, transversal o puede afectar a seguridad/datos. |
-| `max` | Problemas ambiguos, transversales o con alto coste de error. | Modelo de datos inicial, RLS, auth, permisos por mundo, editor de mapas, migraciones, auditoría de seguridad, refactor grande. | El diff correcto es obvio o la tarea es mecánica. |
+| `default` | Tareas simples que no requieren razonamiento profundo y no son ambiguas. | Consultar issues, listar labels, revisar un enlace, un cambio de texto puntual. | Hay diseño, IPC, migraciones o varios módulos implicados. |
+| `low` | Trabajo mecánico, repetitivo o totalmente especificado. | Aplicar labels, actualizar una checklist, renombrar, formatear, cambiar una plantilla, corregir una errata. | Hay que decidir arquitectura, seguridad o comportamiento. |
+| `high` | Implementación estándar, pruebas, QA, documentación con dependencias y revisión de cambios acotados. | CRUD local, componentes de UI, tests, ADRs, documentación de proceso, refactors pequeños. | La decisión es ambigua, transversal o puede afectar a datos/seguridad. |
+| `max` | Problemas ambiguos, transversales o con alto coste de error. | Modelo de datos inicial, migraciones, cifrado o backups, editor de mapas, auditoría de seguridad, refactor grande. | El diff correcto es obvio o la tarea es mecánica. |
 
 ### Factores de decisión
 
 1. **Ambigüedad:** si hay que descubrir el problema o comparar alternativas,
    sube la variante.
-2. **Radio de impacto:** si un error afecta a datos, seguridad, permisos,
-   publicación o varios módulos, sube la variante.
+2. **Radio de impacto:** si un error afecta a datos, seguridad, migraciones,
+   distribución o varios módulos, sube la variante.
 3. **Novedad:** si el patrón ya existe en el repositorio, baja la variante; si
    hay que diseñarlo desde cero, súbela.
 4. **Verificabilidad:** si la tarea se comprueba con un test o una checklist
@@ -91,79 +85,52 @@ que el coste se dispare.
 3. El task file copia la recomendación en el campo `model_variant`.
 4. `sdd-master` comprueba el label al adoptar la issue y recuerda al usuario la
    variante que debe seleccionar en OpenCode.
-5. Cada subagente declara una variante fija en el frontmatter con
-   `model: <proveedor>/<modelo>#<variante>`; ya no hereda la variante de la
-   sesión. La tabla está en la sección 5.0.
-6. Al cerrar la tarea, el task file conserva `model_variant` y, si el usuario
+5. Al cerrar la tarea, el task file conserva `model_variant` y, si el usuario
    usó otra variante, la decisión queda en `validation.notes`.
 
 La variante recomendada es una guía, no una puerta: no bloquea la adopción ni
 la implementación. Lo que sí es obligatorio es que la issue tenga un label
 `variant: *` y que la recomendación esté justificada.
 
-## 5. Variante fija por subagente
+## 5. Modelo de los agentes
 
-Desde ADR 0015 cada subagente fija su modelo y variante en el frontmatter. El
-motivo es que un subagente arranca con contexto limpio y heredaba la variante de
-la sesión: una tarea `low` podía terminar pagando `max` en QA o documentación
-sin que nadie lo eligiera. Fijarla por agente hace el coste predecible.
+Los ocho agentes del equipo **no declaran `model:` en su frontmatter**. Esto
+tiene tres consecuencias:
 
-| Agente | Variante fija | Motivo |
-|---|---|---|
-| `task-architect` | `high` | Planifica y compara alternativas; se revisa con el usuario antes de implementar. |
-| `tdd-ddd-architect` | `high` | Es la implementación: donde más importa la calidad. |
-| `ui-ux-designer` | `high` | El diseño exige criterio y conocimiento del sistema visual. |
-| `qa-reviewer` | `low` | Comprueba una checklist explícita; los bloqueantes los decide el agente maestro. |
-| `security-champion` | `high` | Puerta de seguridad: mantiene esfuerzo alto aunque no herede `max`. |
-| `documentation-sync` | `low` | Redactar, enlazar y comprobar JSON es trabajo mecánico. |
-| `publisher` | `low` | Los comandos git y `gh` están definidos paso a paso. |
+1. **Herencia.** Cada subagente usa el modelo y la variante de la sesión. El
+   usuario decide con qué modelo trabaja (suscripción de OpenCode, modelo
+   gratuito u otro proveedor configurado) sin editar agentes.
+2. **Sin modelo forzado.** Ya no se fija `opencode/deepseek-v4.1-flash-free` ni
+   ninguna variante por agente. Un cambio de catálogo o de plan no obliga a
+   tocar siete archivos.
+3. **Sin variante suelta.** OpenCode no admite una variante sin modelo en el
+   frontmatter; declarar solo `variant:` no es válido. Por eso la variante se
+   elige en la sesión y se recomienda en la issue, no en el agente.
 
-`#none` (sin razonamiento) no se usa en ninguna puerta de calidad. Si una
-variante fija produce un FAIL que se repite dos veces, se sube un nivel y se
-anota en el task file, igual que con la variante de la issue.
+Si en el futuro OpenCode permite fijar solo la variante, se valorará en un ADR.
+Mientras tanto, la fuente de verdad del modelo es la configuración del usuario,
+no el repositorio.
 
-Los siete agentes fijan el modelo `opencode/deepseek-v4.1-flash-free` con la
-variante de la tabla. El modelo `<proveedor>/<modelo>` se revisa al cambiar de
-modelo de sesión: no se deduce del catálogo, se deja escrito en el agente.
+### Caché de contexto y coste real de una sesión
 
-## 5.1 Automatización
+El coste de una sesión no depende solo de la variante. La mayor parte del gasto
+es el prefijo estable (system prompt, `AGENTS.md`, `opencode.jsonc`, agentes)
+que se reenvía en cada turno y en cada paso de cada subagente. Con el modelo
+gratuito el coste directo es 0, pero la caché sigue afectando a latencia y a
+límites de uso. Con un modelo de pago, la diferencia entre procesar y leer de
+caché puede ser de decenas de veces. Reglas operativas:
 
-### Lo que OpenCode permite hoy
-
-- La configuración raíz (`model`) conserva proveedor y modelo, pero no la
-  variante.
-- Los agentes y comandos pueden fijar `model: proveedor/modelo#variante`.
-- La API `POST /api/session/{sessionID}/model` acepta un `variant` y cambia el
-  modelo de los turnos siguientes.
-- Un plugin puede escuchar eventos o la admisión de un prompt y llamar a
-  `session.switchModel` con la variante leída de un label.
-
-### Por qué no se implementa ahora
-
-Un plugin que lea el label y cambie la variante de la sesión es técnicamente
-posible, pero:
-
-- necesitaría resolver el número de issue y consultar sus labels (por ejemplo,
-  con `gh` o la API de GitHub);
-- sobrescribiría la variante que el usuario haya seleccionado manualmente;
-- añadiría una dependencia y un punto de fallo al arranque de cada sesión;
-- mezclaría una decisión de proceso con una automatización que aún no se ha
-  medido.
-
-Por eso esta issue deja la automatización como **spike futuro**. Si el paso
-manual sigue costando, se abrirá una issue específica con una prueba de
-concepto desactivable por configuración y con una regla clara de precedencia:
-la selección explícita del usuario debe poder ganar.
-
-### Alternativa nativa
-
-El frontmatter admite `model: <proveedor>/<modelo>#<variante>`, que fija
-también el modelo y no solo la variante. Es la mecánica que usa la sección 5:
-el usuario aceptó que los subagentes dejen de heredar la variante de la sesión.
+1. No cambiar de modelo ni de variante a mitad de sesión.
+2. No editar `AGENTS.md` ni `.opencode/agents/*` mientras se trabaja con ellos.
+3. Mantener un prefijo estable: no reordenar las instrucciones entre turnos.
+4. `warming` mantiene la caché caliente 30 minutos tras la última petición.
+5. Con `OPENCODE_LOG_LEVEL=DEBUG`, el log del servidor muestra `input` y
+   `cache.read` por llamada; si el mismo prefijo aparece como `input` en
+   llamadas consecutivas, la caché está fallando.
 
 ## 6. Medición y revisión
 
-No hay histórico de tokens por tarea en el repositorio. La primera tabla es una
+No hay histórico de tokens por tarea en el repositorio. La tabla es una
 heurística y se revisará con datos reales:
 
 1. Durante las próximas 10 tareas, anotar en el task file la variante usada y,
@@ -181,32 +148,13 @@ La API de sesiones expone estadísticas en
 sesión. La medición es opcional: la política no depende de que exista una
 herramienta concreta.
 
-### Caché de contexto y coste real de una sesión
-
-El coste de una sesión no depende solo de la variante. La mayor parte del gasto
-es el prefijo estable (system prompt, `AGENTS.md`, `opencode.jsonc`, agentes)
-que se reenvía en cada turno y en cada paso de cada subagente. Con el modelo
-gratuito actual el coste directo es 0, pero la caché sigue afectando a latencia
-y a límites de uso. Con un modelo de pago, DeepSeek cobraba 0,15 $/M si el
-prefijo se procesaba y 0,003 $/M si se leía de caché: una diferencia de 50 veces.
-Reglas operativas (ADR 0015):
-
-1. No cambiar de modelo ni de variante a mitad de sesión.
-2. No editar `AGENTS.md` ni `.opencode/agents/*` mientras se trabaja con ellos.
-3. Mantener un prefijo estable: no reordenar las instrucciones entre turnos.
-4. `warming` mantiene la caché caliente 30 minutos tras la última petición.
-5. Con `OPENCODE_LOG_LEVEL=DEBUG`, el log del servidor muestra `input` y
-   `cache.read` por llamada; si el mismo prefijo aparece como `input` en
-   llamadas consecutivas, la caché está fallando.
-
 ## 7. Mantenimiento
 
-- Si cambian los labels, la tabla, el campo `model_variant`, el proveedor, el
-  modelo o la variante fija por subagente, actualizar este documento, el
-  frontmatter de los agentes, [`docs/registro-decisiones.md`](registro-decisiones.md),
+- Si cambian los labels, la tabla o el campo `model_variant`, actualizar este
+  documento, [`docs/registro-decisiones.md`](registro-decisiones.md),
   [`docs/proceso-sdd.md`](proceso-sdd.md) y [`AGENTS.md`](../AGENTS.md) en la
   misma tarea.
-- Si se implementa el plugin de automatización, documentar aquí su precedencia,
-  su configuración y cómo desactivarlo.
-- Si el modelo gratuito deja de estar disponible, revisar las variantes y las
-  recomendaciones antes de cambiar de modelo.
+- Si OpenCode cambia la forma de fijar variantes o modelos por agente,
+  documentar aquí la nueva mecánica y su precedencia antes de aplicarla.
+- Si el usuario cambia de proveedor o de plan, no se toca el repositorio: la
+  elección vive en la configuración local de OpenCode.

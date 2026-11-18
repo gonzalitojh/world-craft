@@ -5,72 +5,46 @@ formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el
 versionado [Semantic Versioning](https://semver.org/lang/es/). La interfaz está
 en español; los identificadores y las ramas, en inglés.
 
-Todavía **no hay ninguna versión publicada**: la aplicación está en fase M0. Los
-cambios se acumulan en «Sin publicar» hasta la primera versión estable.
+Todavía **no hay ninguna versión publicada**: la aplicación está en la fase de
+fundaciones de escritorio. Los cambios se acumulan en «Sin publicar» hasta la
+primera versión estable.
 
 ## [Sin publicar]
 
 ### Añadido
 
-- Base de internacionalización (issue
-  [#42](https://github.com/gonzalitojh/world-craft/issues/42)): contrato tipado
-  de mensajes, catálogo único sin stubs, resolución del idioma por petición
-  (`profiles.locale` > cookie `wc-locale` > `Accept-Language` > `es`),
-  `LocaleProvider` para servidor y cliente, formatos con `Intl`, Server Action
-  `setLocale` con cookie HttpOnly y guía en
-  [`docs/internacionalizacion.md`](docs/internacionalizacion.md). Incluye
-  auditoría estática contra textos hardcodeados e imports del catálogo en
-  componentes cliente.
-- Healthcheck real y continuidad de Supabase (issue
-  [#41](https://github.com/gonzalitojh/world-craft/issues/41)): `/api/health`
-  consulta la base, distingue disponible de pausado y devuelve 200/503; la página
-  `/health` muestra el estado, y se añaden keep-alive de respaldo, copia semanal
-  cifrada y runbook de pausa y reactivación.
-- Documentación base del proyecto (issue
-  [#10](https://github.com/gonzalitojh/world-craft/issues/10)): mapa de
-  arquitectura, esqueleto del manual de usuario, este changelog y enlaces cruzados
-  desde el README y CONTRIBUTING.
-- Modelo de datos en PostgreSQL con Drizzle, 24 tablas, siete migraciones con
-  rollback, RLS por mundo y seed idempotente del catálogo del sistema (issue
-  [#9](https://github.com/gonzalitojh/world-craft/issues/9)).
-- Sistema de diseño con tokens, dos temas, shell responsive, componentes base y
-  página viva `/design-system` (issue
-  [#8](https://github.com/gonzalitojh/world-craft/issues/8)).
-- Scaffold de Next.js 16 con App Router, React 19, TypeScript estricto, Tailwind
-  CSS 4 y contrato de entorno validado con Zod (issue
-  [#7](https://github.com/gonzalitojh/world-craft/issues/7)).
-- Entorno reproducible con Node 22, pnpm, ESLint, Prettier, Vitest, Playwright y
-  CI en GitHub Actions (issue
-  [#6](https://github.com/gonzalitojh/world-craft/issues/6)).
-- Repositorio con licencia MIT, protección de ramas, plantillas de issue y PR,
-  etiquetas, hitos y Dependabot (issue
-  [#5](https://github.com/gonzalitojh/world-craft/issues/5)).
-- ADRs fundacionales 0001–0013 y su índice (issue
-  [#4](https://github.com/gonzalitojh/world-craft/issues/4)).
-- Proceso SDD con puertas, estados, task files y publicación local-first (issue
-  [#3](https://github.com/gonzalitojh/world-craft/issues/3)).
-- Agentes de IA adaptados al proyecto y política de variantes de modelo (issues
-  [#2](https://github.com/gonzalitojh/world-craft/issues/2) y
-  [#48](https://github.com/gonzalitojh/world-craft/issues/48)).
+- Documentación del pivote a escritorio: plan, arquitectura Electron, modelo
+  SQLite, migraciones, copias y recuperación, continuidad, sistema de diseño,
+  internacionalización, plan de pruebas y ADRs 0001–0015.
+- Inventario del pivote en [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md):
+  archivos eliminados y cuentas externas que hay que cerrar.
+- Tooling mínimo de calidad para el repositorio de escritorio: TypeScript
+  estricto, ESLint, Prettier, Vitest, CI y Dependabot.
+- Catálogo de GitHub de escritorio: 46 etiquetas, 7 hitos y 41 issues
+  (#61–#101) con contexto, alcance, dependencias, criterios y variante.
 
 ### Cambiado
 
-- El layout raíz resuelve el idioma de la petición y pasa a ser dinámico; el
-  shell y los componentes base leen los textos con `useI18n`/`getI18n`, y la
-  hora de `/health` se presenta con `Intl` en UTC dentro de `<time dateTime>`
-  (issue [#42](https://github.com/gonzalitojh/world-craft/issues/42)).
-- `/health` y `/api/health` dejan de ser una comprobación superficial: informan
-  de la disponibilidad de Supabase y publican un contrato JSON nuevo con
-  `status`, `database` y `timestamp` (issue
-  [#41](https://github.com/gonzalitojh/world-craft/issues/41)).
-- El repositorio deja de ser un esqueleto heredado y pasa a tener reglas,
-  proceso, entorno, diseño y modelo de datos propios (fase M0).
+- World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
+  persistencia local. El renderer no accede a Node; la base de datos es SQLite y
+  los assets viven en `app.getPath('userData')`.
+- El proceso SDD, las etiquetas, los hitos y las variantes de modelo se adaptan
+  al trabajo de escritorio; los subagentes heredan el modelo de la sesión.
+- La Definition of Done sustituye el responsive web por la ventana de escritorio
+  a 1024, 1280 y 1600 px, y añade preservación de datos y seguridad Electron.
+
+### Eliminado
+
+- La aplicación Next.js, Supabase, Vercel y Cloudflare R2, junto con su esquema
+  PostgreSQL, migraciones, pruebas, scripts y configuración.
+- Los ADRs de la etapa web, las capturas de referencia y los task files de las
+  issues antiguas.
 
 ### Seguridad
 
-- RLS activa en todas las tablas de contenido, `anon` sin privilegios y
-  privilegios por tabla y columna.
 - Escaneo de secretos con `gitleaks` y auditoría de dependencias en la CI.
+- Reglas de aislamiento de Electron, allowlist IPC y validación con Zod en la
+  documentación y en el proceso de revisión.
 
 ## Cómo se escribe una entrada
 
@@ -83,7 +57,6 @@ cambios se acumulan en «Sin publicar» hasta la primera versión estable.
 - **Solo cambios relevantes.** Los refactors internos sin efecto visible no
   necesitan entrada.
 - **Misma tarea.** La entrada se escribe en la PR que introduce el cambio; el
-  publisher comprueba que existe antes de publicar. La casilla correspondiente
-  está en `.github/pull_request_template.md`.
+  publisher comprueba que existe antes de publicar.
 - **Versiones.** Mientras no exista una versión publicada, el proyecto no fija
   número: se usará `0.y.z` durante el desarrollo y `1.0.0` con el primer uso real.

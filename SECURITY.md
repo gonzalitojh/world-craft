@@ -1,7 +1,8 @@
 # Política de seguridad
 
-World Craft es una aplicación personal en construcción. Esta política explica
-cómo reportar un problema de seguridad y qué alcance tiene.
+World Craft es una aplicación de escritorio Windows, monousuario y local, en
+construcción. Esta política explica cómo reportar un problema de seguridad y qué
+alcance tiene.
 
 ## Versiones soportadas
 
@@ -26,17 +27,18 @@ antes de que el problema esté resuelto.
 
 Se revisan, entre otros:
 
-- La aplicación y sus Server Actions.
-- Autenticación, allowlist, membresía y roles por mundo, y RLS. El modelo
-  aplicado se documenta en
-  [`docs/base-de-datos/esquema.md`](docs/base-de-datos/esquema.md): RLS activa en
-  las 24 tablas, `anon` sin privilegios y la allowlist solo accesible desde el
-  servidor.
-- El bucket privado de Cloudflare R2 y las URLs firmadas.
-- La gestión de secretos y variables de entorno, incluidas las cadenas de
-  conexión a PostgreSQL (`DATABASE_URL`, `DIRECT_URL`) y
-  `SUPABASE_SERVICE_ROLE_KEY`.
+- El aislamiento de Electron: `contextIsolation`, `nodeIntegration`, `sandbox`
+  y `webSecurity`.
+- La allowlist de canales IPC y la validación de entrada con Zod.
+- La CSP, la carga de contenido remoto y la apertura de enlaces externos.
+- El protocolo de assets: validación de rutas y escape de `userData`.
+- Las migraciones de SQLite, las copias de seguridad, la restauración y el modo
+  seguro.
+- La preservación de datos al actualizar, reinstalar o desinstalar.
+- El actualizador: origen de las releases y verificación de integridad.
+- La sanitización de contenido rico y la validación de subidas.
 - Las dependencias y su cadena de suministro.
+- Los secretos usados en el desarrollo o en la firma opcional de código.
 
 Quedan fuera de alcance los ataques de denegación de servicio, la ingeniería
 social, el spam y los problemas que dependan de servicios de terceros y ya estén
@@ -51,7 +53,7 @@ una decisión sobre el caso.
 
 ## Secretos
 
-La regla 12 de [`AGENTS.md`](AGENTS.md) prohíbe incluir claves, tokens,
+La regla 13 de [`AGENTS.md`](AGENTS.md) prohíbe incluir claves, tokens,
 contraseñas, correos reales, URLs privadas o credenciales en el repositorio. Si
 detectas una fuga, no la publiques: repórtala de forma privada y espera
 instrucciones.
