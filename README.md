@@ -10,12 +10,13 @@ código se publica bajo licencia MIT.
 
 **Fundaciones de escritorio con persistencia local.** El repositorio contiene la
 base técnica de Electron con electron-vite, React y TypeScript estricto, el IPC
-tipado y una base SQLite con migraciones, comprobación de integridad y modo
-seguro. `pnpm dev` abre una ventana segura con una pantalla inicial provisional y
-`pnpm build` compila los tres procesos en `out/`. **Todavía no hay una versión
-instalable**: no existe empaquetado NSIS ni interfaz de producto, y las funciones
-de mundo, fichas, mapas y escritura llegan con M1 en adelante. La pantalla actual
-no es el sistema de diseño definitivo.
+tipado, una base SQLite con migraciones, comprobación de integridad y modo
+seguro, y el sistema de diseño con su shell de escritorio. `pnpm dev` abre una
+ventana segura con la barra lateral, el tema Claro/Oscuro conmutable y una página
+de inicio con estado vacío; `pnpm build` compila los tres procesos en `out/`.
+**Todavía no hay una versión instalable**: no existe empaquetado NSIS ni
+funciones de producto, y las de mundo, fichas, mapas y escritura llegan con M1 en
+adelante.
 
 El inventario de lo eliminado y las cuentas externas que hay que cerrar están en
 [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md). El plan aprobado,
@@ -27,7 +28,7 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 |---|---|---|
 | Shell de escritorio | Electron + electron-vite | Implementado (scaffold) |
 | Interfaz | React + TypeScript estricto + Vite | Implementado (scaffold) |
-| Estilos | Tailwind CSS 4 + shadcn/ui + Radix + Lucide + Motion | Previsto (#65) |
+| Estilos | CSS propio con tokens en tres capas (paleta, semántica y escalas), sin Tailwind ni shadcn | Implementado (#65) |
 | Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Implementado (#64) |
 | Migraciones | Runner propio sobre el journal de Drizzle y copia previa | Implementado (#64) |
 | Búsqueda | SQLite FTS5 | Disponible en el binario; esquema previsto (M1) |
@@ -134,10 +135,10 @@ src/
     messages/     Textos de los diálogos nativos
     security/     CSP, navegación, sesión y guards de red
   preload/        Puente congelado que solo expone window.worldCraft
-  renderer/       React, mensajes tipados y estilos provisionales
+  renderer/       React, mensajes, tema, shell, páginas y tokens de estilo
   shared/         Identidad y contratos sin Node, Electron ni React
 drizzle/          Migraciones versionadas, journal y rollback de referencia
-tests/unit/       Pruebas unitarias del scaffold, IPC, seguridad y datos
+tests/unit/       Pruebas unitarias del scaffold, IPC, seguridad, datos y diseño
 tests/integration/ Pruebas con bases SQLite temporales
 docs/             Plan, proceso, arquitectura, persistencia, diseño y ADRs
   adr/            Decisiones de arquitectura y producto

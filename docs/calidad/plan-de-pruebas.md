@@ -79,14 +79,25 @@ renderer, la CSP, la navegación, los permisos y la red.
 
 ### 3.4 UI y accesibilidad
 
-- Componentes con estados de reposo, hover, foco, error, deshabilitado y carga.
-- Navegación por teclado y foco visible.
-- `aria-live` en guardado y errores.
+Desde #65 hay una prueba unitaria estática del sistema de diseño,
+`tests/unit/design-tokens.test.ts` (14 pruebas): lee los CSS reales, resuelve los
+tokens de cada tema y calcula contraste WCAG 2.2; además, exige que solo
+`palette.css` declare colores literales, que `--bg`/`--fg` superen 7:1, que el
+deshabilitado se lea sin opacidad, que exista `prefers-reduced-motion` y que
+`html`/`body` no usen `overflow-x: hidden`. La tabla completa de ratios vive en
+el test y en el informe de #65.
+
+Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión local:
+
+- Componentes con estados de reposo, hover, foco, error, deshabilitado y carga
+  en una matriz visual real a 1024, 1280 y 1600 px.
+- Navegación por teclado y foco visible revisados en la aplicación.
+- `aria-live` en los flujos de guardado y error de las pantallas de dominio (los
+  avisos del shell ya lo usan).
 - axe sin errores críticos en pantallas principales.
-- Contraste AA en los dos temas.
-- `prefers-reduced-motion`.
-- Ventana a 1024, 1280 y 1600 px sin scroll horizontal de página.
-- Textos largos, nombres sin espacios y rutas no rompen el layout.
+- Capturas de los dos temas y revisión de `prefers-reduced-motion` en ejecución.
+- Textos largos, nombres sin espacios y rutas sin romper el layout, comprobados
+  visualmente (el test solo impide el parche de `overflow-x: hidden`).
 
 ### 3.5 Rendimiento
 
@@ -107,11 +118,12 @@ renderer, la CSP, la navegación, los permisos y la red.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **89 pruebas unitarias** en `tests/unit/`: identidad y ventana mínima,
+- **103 pruebas unitarias** en `tests/unit/`: identidad y ventana mínima,
   opciones de seguridad de `BrowserWindow`, CSP de producción y desarrollo,
   resolución del renderer, guards de navegación/sesión/red, contrato y router
   IPC, API congelada del preload, validación de enlaces externos, journal,
-  checksum, rutas de datos, logger y lógica del aviso de modo seguro.
+  checksum, rutas de datos, logger, lógica del aviso de modo seguro y tokens y
+  contraste del sistema de diseño.
 - **18 pruebas de integración** en `tests/integration/`: creación e idempotencia
   de la base, pragmas, migración inicial, versión adelantada, estado incoherente,
   archivo no SQLite, corrupción, log sin rutas, base ajena, checksum alterado,
@@ -129,9 +141,10 @@ renderer, la CSP, la navegación, los permisos y la red.
 - **Nativo.** `pnpm verify:native` carga `better-sqlite3` en Node y Electron y
   comprueba SQLite 3.54.1 con FTS5. Hoy se ejecuta a mano; debe añadirse a la CI
   antes de #68.
-- **Manual del scaffold.** Ventana a 1024, 1280 y 1600 px sin scroll horizontal,
-  temas claro y oscuro por `prefers-color-scheme`, DevTools sin `require` ni
-  `process`, navegación externa bloqueada y arranque sin red.
+- **Manual del scaffold.** DevTools sin `require` ni `process`, navegación
+  externa bloqueada y arranque sin red. La comprobación visual de la ventana a
+  1024, 1280 y 1600 px y de los dos temas con el shell de #65 queda pendiente
+  para #70 y la revisión local.
 - **Pendiente.** E2E con Playwright (#70), auditoría de accesibilidad, temas y
   ventana (#93), y pruebas del instalador y del asar (#68).
 
@@ -161,7 +174,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
-| `test` | Sí | `pnpm test`: 89 unitarias + 18 de integración. |
+| `test` | Sí | `pnpm test`: 103 unitarias + 18 de integración. |
 | `build` | No hasta #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |

@@ -1,0 +1,82 @@
+{
+  "title": "Sistema de diseño, tokens y shell de escritorio",
+  "description": "M0-05. Definir la identidad visual de taller de cartógrafo con tokens en tres capas (paleta, semántica y escalas), implementar los temas Claro y Oscuro con overrides agrupados y contraste AA, construir el shell de escritorio (rail lateral, barra superior, área de contenido, estados vacíos y navegación por teclado) y crear los componentes base con una página de muestras. Se comprueba a 1024, 1280 y 1600 px, con contenido largo, foco visible y prefers-reduced-motion. Depende de M0-02 (#62), fusionada, y coordina con M0-11 (#71) para no duplicar el catálogo tipado. No se reutiliza el shell web ni se añaden requisitos móviles.",
+  "status": "published",
+  "model_variant": "high",
+  "issue": {
+    "number": 65,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/65",
+    "title": "Sistema de diseño, tokens y shell de escritorio"
+  },
+  "acceptance_criteria": [
+    "A 1024, 1280 y 1600 px no hay scroll horizontal de página y ningún texto se sale de su contenedor.",
+    "Los dos temas superan contraste AA (4.5:1 texto normal, 3:1 texto grande y componentes).",
+    "La navegación completa por teclado tiene foco visible y orden lógico.",
+    "axe no reporta errores críticos en el shell ni en la página de muestras.",
+    "El shell respeta prefers-reduced-motion y no usa overflow-x: hidden como parche."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "E2E del flujo crítico ejecutado o justificado como no aplicable.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página y con contenido largo realista.",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen datos; copia y restauración probadas si aplica.",
+    "Funcionamiento offline comprobado si el cambio toca arranque, datos o actualizaciones.",
+    "Manual de usuario actualizado si el cambio es visible (o constancia de cómo se cubrirá).",
+    "ADR creado o actualizado si hay una decisión arquitectónica o de producto relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas de archivos y contenido no confiable.",
+    "Datos exportables e importables si se añade o cambia un modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Coste de contexto revisado: sin cambio de modelo o variante a mitad de sesión y sin editar AGENTS.md ni los agentes mientras se usaban.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-18. Arquitectura: tokens CSS en tres capas (palette.css con todos los hex, semantic.css con roles por tema y selectores agrupados :root/[data-theme=\"light\"] y [data-theme=\"dark\"], scales.css con espaciado, radios, tipografía, movimiento, z-index y medidas de shell); tipografías con pilas Fraunces/Inter/JetBrains Mono y respaldo del sistema, sin @font-face ni recursos remotos, y empaquetado OFL documentado como pendiente; shell de escritorio sin router (estado de vista en App) con skip link, rail de 240/64 px, barra superior, contenido, estados vacíos y navegación por teclado; componentes base nativos sin dependencias nuevas (botón, campo+input, diálogo con <dialog> nativo, pestañas ARIA con navegación por flechas, toast con aria-live, tooltip accesible, tarjeta e insignia) y página de muestras con contenido largo realista; textos ampliados en src/renderer/messages/es.ts, sin crear el traductor de #71; tema Claro/Oscuro conmutable en memoria desde el shell, persistencia en config.json diferida a Ajustes; pruebas unitarias en Vitest que parsean los CSS y calculan contraste WCAG AA, más comprobaciones estáticas de prefers-reduced-motion y ausencia de overflow-x: hidden en html/body; documentación en ADR 0006 (nota de implementación nativa), guía de diseño, manual, changelog y task file. La matriz visual 1024/1280/1600 y axe se verifican con el arnés de #70 y la revisión local; no se duplica esa infraestructura aquí.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-18",
+    "notes": "Issue adoptada con label ai, type: design, priority: p0, size: l, area: ui, area: desktop, variant: high y hito M0. Sin needs-decision ni status: blocked. Dependencia M0-02 (#62) fusionada en dev; M0-11 (#71) sigue abierta y aportará el traductor, Intl y las pruebas de catálogo. Variante recomendada y usada: high. Decisiones aprobadas por el usuario el 2026-11-18: componentes nativos sin dependencias nuevas, pilas de fuentes del sistema con empaquetado OFL pendiente y verificación visual/axe diferida al arnés de #70 y a la revisión local. Implementación completada el 2026-11-18 por tdd-ddd-architect y revisada por el agente maestro: 13 archivos nuevos y 4 modificados, 102 pruebas unitarias. La revisión detectó que components.css usaba --ink como color de texto, invisible en tema oscuro porque allí --ink es la superficie; se corrigió a --fg en 18 declaraciones y se añadió una prueba de regresión que prohíbe --ink como texto y exige que el texto invertido --paper vaya sobre fondo --ink. Comandos en verde: lint, typecheck, test:unit (102), build, verify:build y format:check. Sin cambios de IPC, preload, CSP ni datos. Residuales: tema en memoria (persistencia en config.json con Ajustes), fuentes OFL sin empaquetar, matriz visual 1024/1280/1600 y axe pendientes de #70 y de la revisión local del usuario."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA PASS (2026-11-18) tras dos rondas. Comandos reejecutados por qa-reviewer: lint, typecheck, test:unit (15 archivos, 103 tests), build, format:check y git diff --check, todos en verde. Criterios verificados de forma estática: (1) sin scroll horizontal por grid 240px/minmax(0,1fr), min-width 0 y overflow-wrap en hijos de flex/grid, contenido largo de 157/83/144 caracteres con overflow-wrap: anywhere, cero overflow-x: hidden en html/body (test); (2) contraste AA calculado en ambos temas y corregido el bloqueante del hover danger que usaba --ink como fondo (invisible en oscuro): ahora danger sobre danger-surface 8,47:1 claro y 6,51:1 oscuro con borde danger >=6,72:1; velo con rol --overlay sin opacity; deshabilitado sin opacity, muted sobre surface 5,04:1 claro y 7,99:1 oscuro; tooltip surface-raised/fg 17,49:1 y 14,35:1; (3) teclado y foco: skip link primero, landmarks, main tabIndex -1, :focus-visible global sin outline none, tabs con tabindex móvil y flechas/Inicio/Fin, dialog nativo con restauración de foco, tooltip con foco/hover/Escape; (4) axe estático sin críticos: un main/banner/complementary/navigation con nombre, ids por useId, html lang es, controles con nombre, campos con label/aria-describedby/aria-invalid, insignias con texto; (5) prefers-reduced-motion global y sin overflow-x hidden de parche. Pruebas de regresión añadidas: --overlay y --disabled-* declarados, contraste de deshabilitado, danger/surface >=3:1 y prohibición de background-color: var(--ink) en base y componentes. Residuales aceptados: en oscuro el velo apenas oscurece el fondo ya casi negro (el contenido de detrás se oscurece 5,21); ghost deshabilitado hereda borde --border; dismissTone con locale fijo hasta #71; matriz visual real 1024/1280/1600, capturas y axe real quedan para #70 y la revisión local."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "LOW",
+        "status": "corregido",
+        "description": "Tooltip sobrescribía el aria-describedby del disparador en lugar de fusionarlo; un campo con ayuda o error perdía esa descripción al mostrarse el bocadillo. Corregido en tooltip.tsx concatenando el aria-describedby existente y el id del tooltip."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "La ruta C:\\\\Users\\\\cartografa\\\\... de la página de muestras es ficticia y está documentada como ejemplo en el catálogo; no coincide con ningún usuario real del equipo."
+      },
+      {
+        "severity": "LOW",
+        "status": "preexistente",
+        "description": "La URL del task file contiene el handle público del repositorio, igual que el resto de task files; no es una credencial."
+      }
+    ],
+    "notes": "Security-champion (2026-11-18): PASS sin HIGH ni MEDIUM sobre la rama feat/issue-65-design-system-shell con cambios sin commitear. Revisión por lectura completa del alcance (el subagente no pudo ejecutar shell por política): sin secretos, credenciales, correos reales ni artefactos en src/renderer; la única ruta absoluta es ficticia y está documentada. Frontera del renderer intacta: solo react, react-dom, rutas internas y CSS; cero electron/fs/path/node:*/better-sqlite3/@/main/@/preload, require, process, Buffer, localStorage, fetch, eval, Function o dangerouslySetInnerHTML. CSP sin cambios y sin url(), @import ni @font-face remotos; sin style= inline. Componentes nuevos sin HTML crudo ni enlaces externos; dialog nativo, cloneElement limitado a aria-describedby y textos escapados por React. Sin dependencias nuevas ni servicios de pago/telemetría. Electron intacto: contextIsolation true, sandbox true, nodeIntegration false, webSecurity true, CSP estricta y sin tocar main/preload/protocolo de assets/migraciones. El agente maestro ejecutó después pnpm audit --audit-level=high: 0 HIGH, 2 moderadas de desarrollo ya conocidas (esbuild vía drizzle-kit y minimatch vía eslint), y lint/typecheck/test:unit (103)/build/format:check en verde tras corregir el LOW del tooltip."
+  },
+  "documentation": {
+    "adr": "docs/adr/0006-two-themes-desktop-design-system.md",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": null
+  },
+  "pr": {
+    "number": 106,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/106",
+    "title": "feat: añadir sistema de diseño, shell y componentes base (#65)",
+    "branch": "feat/issue-65-design-system-shell",
+    "commit": "bcf0716"
+  }
+}

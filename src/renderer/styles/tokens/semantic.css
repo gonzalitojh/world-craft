@@ -1,0 +1,178 @@
+/* ==========================================================================
+ * World Craft · Capa 2 de 3 · Roles semánticos y temas
+ * --------------------------------------------------------------------------
+ * Esta capa NO contiene colores propios: solo asigna valores de
+ * `palette.css` a papeles de interfaz. Los componentes usan exclusivamente
+ * estos roles y nunca la paleta cruda.
+ *
+ * Contrato de temas (ADR 0006):
+ *   Claro  → `--paper` es superficie y `--ink` es texto.
+ *   Oscuro → `--ink` es superficie y `--paper` es texto.
+ *
+ * Los overrides van agrupados y con una sola fuente de verdad por regla. Al
+ * añadir un rol nuevo hay que comprobar los dos temas y actualizar la tabla de
+ * contraste de la issue 65. Ratios calculados con WCAG 2.2 (sRGB).
+ *
+ * Aviso de verificación: en tema oscuro `--paper` es TEXTO y `--ink` es
+ * SUPERFICIE. Por eso los estados (`--success`, `--warning`, `--danger`) se
+ * comprueban contra `--ink`, `--surface`, `--surface-raised` y su superficie
+ * tintada, no contra `--paper`. En claro se comprueban contra `--paper`,
+ * `--surface`, `--surface-raised` y su superficie tintada.
+ *
+ * Regla de uso: `--selection`, `--accent*` y los `--*-surface` son fondos;
+ * `--ink`/`--paper`, `--muted`, `--success`, `--warning`, `--danger`,
+ * `--accent-contrast` y `--focus` son textos o trazos. No se intercambian sin
+ * verificar la pareja correspondiente.
+ * ========================================================================== */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* --- Base de fondo y texto -------------------------------------------
+   * `--paper` y `--ink` intercambian su papel entre temas: en claro el
+   * papel es la superficie base y la tinta el texto; en oscuro es al
+   * revés. Los componentes usan `--bg`/`--fg` para ese par y no necesitan
+   * conocer el tema activo. La pareja mantiene 16,61:1 en ambos temas.
+   */
+  --bg: var(--paper);
+  --fg: var(--ink);
+
+  /* --- Superficies -----------------------------------------------------
+   * Claro: papel como base; las tarjetas suben a paper-50.
+   * ink sobre paper 16,61:1 · ink sobre surface 15,36:1 ·
+   * ink sobre surface-raised 17,49:1.
+   */
+  --paper: var(--palette-paper-100);
+  --surface: var(--palette-paper-200);
+  --surface-raised: var(--palette-paper-50);
+  --border: var(--palette-ink-400); /* 3,43:1 sobre surface; decorativo AA. */
+
+  /* --- Texto -----------------------------------------------------------
+   * muted sobre paper 5,45:1 · sobre surface 5,04:1 · sobre raised 5,73:1.
+   */
+  --ink: var(--palette-ink-950);
+  --muted: var(--palette-ink-600);
+
+  /* --- Acento ----------------------------------------------------------
+   * accent como texto sobre surface 4,89:1 y sobre raised 5,57:1.
+   * accent-contrast sobre accent 5,57:1 y sobre accent-strong 7,30:1.
+   * accent sobre accent-surface 4,81:1.
+   */
+  --accent: var(--palette-moss-600);
+  --accent-strong: var(--palette-moss-700);
+  --accent-contrast: var(--palette-paper-50);
+  --accent-surface: var(--palette-moss-100);
+
+  /* --- Estados ---------------------------------------------------------
+   * Cada color de estado se usa como texto sobre paper, surface, raised y
+   * su propia superficie tintada; todas las parejas superan 4,5:1.
+   */
+  --success: var(--palette-moss-700); /* 6,31:1 sobre success-surface. */
+  --success-surface: var(--palette-moss-100);
+  --warning: var(--palette-ochre-700); /* 8,32:1 sobre warning-surface. */
+  --warning-surface: var(--palette-ochre-100);
+  --danger: var(--palette-danger-700); /* 8,47:1 sobre danger-surface. */
+  --danger-surface: var(--palette-danger-100);
+
+  /* --- Foco y selección -------------------------------------------------
+   * focus ≥ 7,61:1 sobre las tres superficies (mínimo exigido 3:1).
+   * selection es siempre un fondo; el texto encima es `--ink` (11,16:1).
+   */
+  --focus: var(--palette-prussian-700);
+  --selection: var(--palette-ochre-300);
+
+  /* --- Velo y controles deshabilitados ----------------------------------
+   * El velo oscurece en ambos temas sin depender de `--ink`, que se invierte.
+   * El deshabilitado usa superficie y texto secundarios sin opacidad: muted
+   * sobre surface da 5,04:1 y el control sigue leyéndose.
+   */
+  --overlay: var(--palette-overlay);
+  --disabled-surface: var(--surface);
+  --disabled-text: var(--muted);
+
+  /* --- Sombras ---------------------------------------------------------
+   * Sombra cálida y contenida: eleva tarjetas sin dramatizar la interfaz.
+   */
+  --shadow-1:
+    0 1px 2px var(--palette-shadow-warm-1),
+    0 1px 3px var(--palette-shadow-warm-2);
+  --shadow-2:
+    0 2px 4px var(--palette-shadow-warm-1),
+    0 12px 28px var(--palette-shadow-warm-2);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* --- Base de fondo y texto -------------------------------------------
+   * Aquí `--ink` es la superficie base y `--paper` el texto. Los
+   * componentes siguen usando `--bg`/`--fg`: el par se invierte solo y la
+   * pareja mantiene 16,61:1.
+   */
+  --bg: var(--ink);
+  --fg: var(--paper);
+
+  /* --- Superficies -----------------------------------------------------
+   * Oscuro: tinta como base; los paneles suben en dos pasos.
+   * paper sobre ink 16,61:1 · sobre surface 15,69:1 ·
+   * sobre surface-raised 14,35:1.
+   */
+  --ink: var(--palette-ink-950);
+  --paper: var(--palette-paper-100);
+  --surface: var(--palette-ink-900);
+  --surface-raised: var(--palette-ink-800);
+  --border: var(--palette-ink-500); /* 3,36:1 sobre surface-raised. */
+
+  /* --- Texto -----------------------------------------------------------
+   * muted sobre ink 8,47:1 · sobre surface 7,99:1 · sobre raised 7,31:1.
+   */
+  --muted: var(--palette-ink-200);
+
+  /* --- Acento ----------------------------------------------------------
+   * accent sobre raised 6,30:1 · accent-strong sobre raised 8,34:1.
+   * accent-contrast (tinta) sobre accent 7,29:1 y sobre strong 9,65:1.
+   * accent sobre accent-surface 5,49:1.
+   */
+  --accent: var(--palette-moss-400);
+  --accent-strong: var(--palette-moss-300);
+  --accent-contrast: var(--palette-ink-950);
+  --accent-surface: var(--palette-moss-900);
+
+  /* --- Estados ---------------------------------------------------------
+   * Tonos claros de la misma familia para mantener 4,5:1 sobre superficies
+   * oscuras y sobre las tintas de estado.
+   */
+  --success: var(--palette-moss-300); /* 7,26:1 sobre success-surface. */
+  --success-surface: var(--palette-moss-900);
+  --warning: var(--palette-ochre-300); /* 8,72:1 sobre warning-surface. */
+  --warning-surface: var(--palette-ochre-900);
+  --danger: var(--palette-danger-300); /* 6,51:1 sobre danger-surface. */
+  --danger-surface: var(--palette-danger-900);
+
+  /* --- Foco y selección -------------------------------------------------
+   * focus ≥ 8,88:1 sobre las tres superficies.
+   * selection es fondo; el texto encima es `--paper` (5,29:1).
+   */
+  --focus: var(--palette-prussian-300);
+  --selection: var(--palette-moss-600);
+
+  /* --- Velo y controles deshabilitados ----------------------------------
+   * Mismo velo y misma pareja de deshabilitado que en claro; en oscuro
+   * muted sobre surface da 7,99:1.
+   */
+  --overlay: var(--palette-overlay);
+  --disabled-surface: var(--surface);
+  --disabled-text: var(--muted);
+
+  /* --- Sombras ---------------------------------------------------------
+   * En oscuro la sombra apenas separa; el escalón de superficie hace el
+   * trabajo principal y la sombra solo remata bordes de diálogos y menús.
+   */
+  --shadow-1:
+    0 1px 2px var(--palette-shadow-deep-1),
+    0 1px 3px var(--palette-shadow-deep-2);
+  --shadow-2:
+    0 2px 4px var(--palette-shadow-deep-1),
+    0 16px 32px var(--palette-shadow-deep-2);
+}

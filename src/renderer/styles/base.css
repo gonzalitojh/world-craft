@@ -1,41 +1,16 @@
-/*
- * Estilos base del scaffold.
+/* ==========================================================================
+ * World Craft · Estilos base
+ * --------------------------------------------------------------------------
+ * Reset mínimo, tipografía del documento, foco visible y utilidades comunes.
+ * Solo usa tokens: los colores llegan de `semantic.css` y las medidas y las
+ * pilas de `scales.css`. El tema se cambia con `data-theme` en `<html>`; aquí
+ * no hay overrides por tema.
  *
- * Paleta provisional de andamiaje con tokens `--wc-*`: superficies y texto
- * cumplen contraste AA en claro y oscuro, pero no son el sistema de diseño
- * definitivo. El ADR 0006 define la elección de tema del usuario (Claro u
- * Oscuro), no el modo del sistema; aquí `prefers-color-scheme` es solo el
- * fallback temporal mientras no exista selector. La issue #65 sustituirá esta
- * paleta por los tokens definitivos y los overrides `[data-theme="light"]` y
- * `[data-theme="dark"]`. Sin animaciones ni recursos externos: todo funciona
- * sin conexión.
- */
-
-:root {
-  color-scheme: light dark;
-
-  /* Tema claro: papel cálido con tinta oscura. */
-  --wc-paper: #f7f3ea;
-  --wc-ink: #201d18;
-  --wc-muted: #5b5347;
-  --wc-rule: #c9bfa9;
-  --wc-focus: #1f5d8a;
-
-  --wc-font-ui: 'Segoe UI', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
-  --wc-font-heading:
-    'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Tema oscuro: papel profundo con tinta clara. */
-    --wc-paper: #1b1917;
-    --wc-ink: #f3eddf;
-    --wc-muted: #bcb3a2;
-    --wc-rule: #4a443b;
-    --wc-focus: #8fc7ef;
-  }
-}
+ * Regla firme: nunca se usa `overflow-x: hidden` en `html`/`body`. Los textos
+ * largos se resuelven con `overflow-wrap` y `min-width: 0`, y el desplazamiento
+ * horizontal solo vive dentro de contenedores que lo necesitan (tablas, código
+ * o el lienzo del mapa).
+ * ========================================================================== */
 
 *,
 *::before,
@@ -43,75 +18,126 @@
   box-sizing: border-box;
 }
 
-html,
-body {
-  margin: 0;
-  min-height: 100%;
+html {
+  block-size: 100%;
+  background-color: var(--bg);
+  text-size-adjust: 100%;
 }
 
 body {
-  background-color: var(--wc-paper);
-  color: var(--wc-ink);
-  font-family: var(--wc-font-ui);
-  line-height: 1.6;
+  min-block-size: 100vh;
+  min-width: 0;
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
   overflow-wrap: break-word;
+  text-rendering: optimizeLegibility;
 }
 
 #root {
+  min-block-size: 100vh;
   min-width: 0;
 }
 
-.wc-scaffold {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1rem;
-  min-width: 0;
-  min-height: 100vh;
-  max-width: 68ch;
-  margin: 0 auto;
-  padding: clamp(1.5rem, 5vw, 4rem);
-}
-
-.wc-scaffold__title {
+/* Títulos y párrafos no arrastran márgenes del navegador: cada bloque decide
+ * su ritmo vertical y así el shell controla el espaciado. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd {
   margin: 0;
-  font-family: var(--wc-font-heading);
-  font-size: clamp(2rem, 3.5vw, 2.75rem);
-  line-height: 1.15;
-  letter-spacing: 0.01em;
-  overflow-wrap: break-word;
 }
 
-.wc-scaffold__lead {
-  margin: 0;
-  max-width: 60ch;
-  color: var(--wc-muted);
-  overflow-wrap: break-word;
+ul,
+ol {
+  margin-block: 0;
 }
 
-.wc-scaffold__version {
-  margin: 0;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--wc-rule);
-  color: var(--wc-muted);
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: break-word;
+a {
+  color: var(--accent-strong);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  transition: color var(--motion-fast) var(--ease-standard);
 }
 
+a:hover {
+  color: var(--fg);
+}
+
+/* El fondo de selección se invierte con el tema; el texto va sobre `--fg`. */
+::selection {
+  background-color: var(--selection);
+  color: var(--fg);
+}
+
+/* Anillo de foco único para toda la aplicación: AA sobre las tres superficies
+ * de ambos temas. `:focus-visible` evita el anillo en clics de ratón. */
 :focus-visible {
-  outline: 3px solid var(--wc-focus);
-  outline-offset: 2px;
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
 }
 
-/* El scaffold no anima nada; la regla deja constancia del respeto al ajuste. */
+/* --- Utilidades --------------------------------------------------------- */
+
+/* Contenido solo para lectores de pantalla. */
+.wc-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enlace de salto: fuera de la vista hasta que recibe el foco. */
+.wc-skip-link {
+  position: fixed;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: var(--z-tooltip);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  box-shadow: var(--shadow-1);
+  transform: translateY(calc(-100% - var(--space-8)));
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.wc-skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* --- Movimiento reducido ------------------------------------------------
+ * Única excepción a la regla de no usar `!important`: el ajuste del sistema
+ * debe ganar a cualquier transición o animación de componente.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
