@@ -1,7 +1,10 @@
 # Sistema de diseño de World Craft
 
 > **Estado:** guía vigente desde el 18/11/2026 para la aplicación de escritorio.
-> Los componentes y tokens se implementarán en las issues de UI de M0 y M1.
+> Los tokens, los componentes base y el shell de escritorio se implementaron en
+> la issue #65; las pantallas de dominio llegarán con las issues de UI de M1.
+> La matriz visual real, las capturas, axe y el E2E se verifican en #70 y en la
+> revisión local.
 > **Ámbito:** principios visuales, tokens, temas, tipografía, componentes,
 > estados, accesibilidad y patrones de escritorio.
 
@@ -35,24 +38,44 @@
 - Ancho de lectura del editor: 60–72 caracteres; columna centrada con panel de
   escena opcional.
 
+### 2.1 Shell implementado (#65)
+
+`src/renderer/shell/app-shell.tsx` aplica esas medidas: barra lateral (`aside`)
+de 240 px plegable a 64 px, barra superior (`header`) de 56 px y `main` como
+destino del enlace de salto, con `tabIndex={-1}` para poder enfocarlo.
+
+- La navegación marca la vista activa con `aria-current="page"` y el botón de
+  plegado usa `aria-expanded` y `aria-controls`.
+- Con el rail plegado, las etiquetas pasan a visualmente ocultas y su texto
+  queda disponible como `title`. El estado plegado dura la sesión: todavía no se
+  guarda entre reinicios.
+- La barra superior muestra el título de la vista y el botón de tema.
+- Las vistas son Inicio (`src/renderer/pages/home-page.tsx`) y Muestras
+  (`src/renderer/pages/samples-page.tsx`). No hay router: el shell alterna dos
+  vistas en una sola ventana.
+
 ## 3. Tokens
 
 ### 3.1 Capas
 
-| Capa | Archivo previsto | Contenido |
+| Capa | Archivo | Contenido |
 |---|---|---|
-| Paleta | `src/renderer/styles/tokens/palette.css` | Única fuente de colores hex. |
-| Semántica | `src/renderer/styles/tokens/semantic.css` | Roles (`--paper`, `--ink`, `--surface`...). Sin hex. |
-| Escalas | `src/renderer/styles/tokens/scales.css` | Espaciado, radios, sombras, tipografía, movimiento. |
-| Tema | `[data-theme="light"]` y `[data-theme="dark"]` | Overrides agrupados por rol. |
+| Paleta | `src/renderer/styles/tokens/palette.css` | Única fuente de colores hex y de los valores con alfa (sombras y velo). |
+| Semántica | `src/renderer/styles/tokens/semantic.css` | Roles (`--bg`, `--fg`, `--surface`...). Sin hex. |
+| Escalas | `src/renderer/styles/tokens/scales.css` | Espaciado, radios, tipografía, movimiento, capas y medidas del shell. |
+| Tema | `:root`, `[data-theme="light"]` y `[data-theme="dark"]` en `semantic.css` | Overrides agrupados por rol. |
 
-Los archivos se crearán con el scaffold de UI; las rutas son el contrato
-previsto, no archivos existentes.
+Los tres archivos existen desde #65 y se importan en ese orden en
+`src/renderer/main.tsx`, antes de `base.css` y `components.css`. `palette.css` es
+la única capa con colores literales; `scales.css` no declara ningún valor
+cromático y las sombras y el velo toman su color de la paleta.
 
 ### 3.2 Roles semánticos
 
 | Token | Papel en tema claro | Papel en tema oscuro |
 |---|---|---|
+| `--bg` | Fondo base (resuelve a `--paper`) | Fondo base (resuelve a `--ink`) |
+| `--fg` | Texto base (resuelve a `--ink`) | Texto base (resuelve a `--paper`) |
 | `--paper` | Superficie principal | Texto principal |
 | `--ink` | Texto principal | Superficie principal |
 | `--surface` | Superficie secundaria | Superficie elevada |
@@ -61,20 +84,57 @@ previsto, no archivos existentes.
 | `--muted` | Texto secundario | Texto secundario |
 | `--accent` | Acento principal | Acento principal |
 | `--accent-strong` | Acento con más contraste | Acento con más contraste |
+| `--accent-contrast` | Texto sobre acento | Texto sobre acento |
+| `--accent-surface` | Fondo tintado de acento | Fondo tintado de acento |
 | `--success` | Éxito | Éxito |
+| `--success-surface` | Fondo tintado de éxito | Fondo tintado de éxito |
 | `--warning` | Aviso | Aviso |
+| `--warning-surface` | Fondo tintado de aviso | Fondo tintado de aviso |
 | `--danger` | Error o destructivo | Error o destructivo |
+| `--danger-surface` | Fondo tintado de error | Fondo tintado de error |
 | `--focus` | Anillo de foco | Anillo de foco |
+| `--selection` | Fondo de selección | Fondo de selección |
 
-Cada variable tiene **un solo papel por tema** y un override agrupado. No se
-usa una variable como fondo en un tema y como texto en el otro sin comprobar
-los dos.
+`--paper` y `--ink` son la excepción deliberada: intercambian su papel entre
+temas para conservar la identidad papel/tinta. Los componentes no eligen entre
+ellas: usan `--bg` y `--fg`, que ya resuelven el par en el tema activo y
+mantienen 16,61:1 en Claro y en Oscuro. El resto de roles tiene **un solo papel
+por tema** y un override agrupado; no se usa una variable como fondo en un tema
+y como texto en el otro sin comprobar los dos.
 
-### 3.3 Colores de tipos de entidad
+### 3.3 Velo y controles deshabilitados
+
+- `--overlay`: negro cálido translúcido para el velo de los diálogos modales.
+  No depende de `--ink` porque esa variable se invierte; su color vive en la
+  paleta junto a las sombras y oscurece en ambos temas.
+- `--disabled-surface` y `--disabled-text`: superficie y texto de un control
+  deshabilitado, resueltos con la superficie secundaria y el texto `--muted`,
+  sin `opacity`. El texto sigue leyéndose (5,04:1 en claro y 7,99:1 en oscuro).
+
+### 3.4 Colores de tipos de entidad
 
 Cada tipo de entidad tiene un color accesible en ambos temas. El color se usa
 en el icono, la etiqueta y el nodo del grafo; nunca es el único indicador de
 estado. Se eligen de una paleta limitada y se validan con contraste.
+
+### 3.5 Verificación automática
+
+`tests/unit/design-tokens.test.ts` lee los CSS reales, resuelve los tokens de
+cada tema y calcula el contraste WCAG 2.2 con la fórmula de luminancia relativa.
+Comprueba:
+
+- Los ratios de texto principal (≥ 7:1), roles secundarios y de estado
+  (≥ 4,5:1) y foco y bordes (≥ 3:1) en Claro y Oscuro.
+- Que `--bg`/`--fg` superen 7:1 y que el deshabilitado se lea sin `opacity`.
+- Que solo `palette.css` declare colores literales y que toda referencia a la
+  paleta exista.
+- Que ningún componente use `--ink` como color de texto ni como fondo de
+  superficie.
+- Que exista `prefers-reduced-motion` y que `html`/`body` no usen
+  `overflow-x: hidden`.
+
+La tabla completa de parejas y ratios vive en el test y en el informe de la
+issue #65; no se duplica aquí.
 
 ## 4. Tipografía
 
@@ -87,32 +147,45 @@ estado. Se eligen de una paleta limitada y se validan con contraste.
 - Interlineado de 1,4–1,6 en texto corrido.
 - El texto de 13 px solo se usa en metadatos; el cuerpo va a 14–16 px.
 - No se usan mayúsculas sostenidas en párrafos largos.
-- Las fuentes se empaquetan con la aplicación; no se cargan de Internet.
+- Las fuentes se empaquetarán con la aplicación; no se cargan de Internet.
+- Las pilas viven en `src/renderer/styles/tokens/scales.css` y ponen Fraunces,
+  Inter y JetBrains Mono como primera opción, con respaldo local del sistema
+  (Georgia, Segoe UI, Consolas...).
+- **El empaquetado OFL de los archivos de fuente sigue pendiente**: todavía no
+  hay `@font-face` ni recursos remotos, así que la app usa las fuentes del
+  sistema que estén instaladas. Empaquetarlas es una tarea posterior y no debe
+  introducir ninguna URL externa.
 
 ## 5. Componentes
 
-### 5.1 Base
+### 5.1 Base implementada (#65)
 
-| Componente | Estados | Notas |
+Los componentes son nativos: no hay Radix, shadcn ni dependencias nuevas. Todos
+usan solo roles semánticos y escalas, viven en `src/renderer/components/` y se
+exportan desde su `index.ts`.
+
+| Componente | Archivo | Qué cubre |
 |---|---|---|
-| Botón | Reposo, hover, foco, activo, deshabilitado, cargando | Variantes primaria, secundaria, fantasma y destructiva. |
-| Campo de texto | Reposo, foco, error, deshabilitado, lectura | Etiqueta siempre visible; error asociado. |
-| Área de texto | Igual que campo | Contador opcional. |
-| Selector | Reposo, abierto, foco, error | Teclado completo. |
-| Casilla y radio | Marcado, indeterminado, foco | Área de clic amplia. |
-| Tarjeta | Reposo, hover, seleccionada | No usa hover como único indicador. |
-| Insignia | Neutra, acento, éxito, aviso, peligro | Texto, no solo color. |
-| Diálogo | Abierto, cerrado, foco atrapado | Confirmación para acciones destructivas. |
-| Panel lateral | Abierto, cerrado, redimensionando | Persistente cuando aporta. |
-| Pestañas | Activa, inactiva, foco | `aria-selected`. |
-| Menú | Abierto, cerrado, teclado | Sin menús anidados profundos. |
-| Tooltip | Visible al foco y al hover | Solo para iconos y datos breves. |
-| Aviso toast | Información, éxito, error | `aria-live` y cierre manual si es un error. |
-| Estado vacío | Con y sin acción | Explica qué hacer, no solo «no hay datos». |
-| Tabla | Ordenación, selección, vacía, carga | Scroll horizontal dentro del contenedor. |
-| Árbol | Expandido, colapsado, seleccionado | Para capítulos y capas. |
+| Botón | `button.tsx` | Variantes primaria, secundaria, fantasma y destructiva; tamaño normal y pequeño; carga con `aria-busy`; deshabilitado. |
+| Campo de texto | `text-field.tsx` | Etiqueta visible, ayuda y error con `aria-describedby`, `aria-invalid`, lectura y deshabilitado. |
+| Insignia | `badge.tsx` | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. |
+| Tarjeta | `card.tsx` | Superficie con título y tono; nivel de encabezado configurable. |
+| Estado vacío | `empty-state.tsx` | Título, descripción y acción opcional; explica qué hacer. |
+| Diálogo | `dialog.tsx` | `<dialog>` nativo con `showModal()`, que aporta velo, foco atrapado y cierre con Escape; acciones y botón de cierre. |
+| Pestañas | `tabs.tsx` | `tablist`/`tab`/`tabpanel`, `aria-selected`, flechas, Inicio y Fin. |
+| Aviso toast | `toast.tsx` | Región con `aria-live="polite"` y `role="status"`; cierre manual. |
+| Tooltip | `tooltip.tsx` | Visible con foco y hover, `aria-describedby`, se oculta con Escape. |
+
+`src/renderer/pages/samples-page.tsx` muestra esos componentes con sus estados y
+con contenido largo (nombres sin espacios y rutas). Es una **página de
+desarrollo** para revisar el sistema de diseño, no una función de producto.
+
+Siguen **previstos**: área de texto, selector, casilla y radio, panel lateral,
+menú, tabla y árbol. Se añadirán cuando las pantallas de M1 los necesiten.
 
 ### 5.2 Dominio
+
+Estos componentes **todavía no existen**: llegarán con las pantallas de M1 y M2.
 
 | Componente | Uso |
 |---|---|
@@ -135,9 +208,17 @@ estado. Se eligen de una paleta limitada y se validan con contraste.
 - **Claro:** `--paper` como superficie y `--ink` como texto.
 - **Oscuro:** `--ink` como superficie y `--paper` como texto.
 
-No hay modo «sistema» en el MVP: el usuario elige Claro u Oscuro en Ajustes. La
-preferencia se guarda en `config.json` y se aplica antes del primer pintado para
-evitar parpadeo.
+No hay modo «sistema» en el MVP. Desde #65 el tema se conmuta en memoria desde
+la barra superior: `src/renderer/theme.ts` aplica `data-theme` en `<html>` y los
+overrides de `semantic.css` repintan toda la aplicación. El arranque usa Claro
+por defecto.
+
+**La preferencia todavía no se recuerda al reiniciar.** Guardarla en
+`config.json` y elegirla en Ajustes son tareas posteriores; cuando existan,
+deberán aplicarla antes del primer pintado para evitar parpadeo.
+
+Los componentes no usan `--paper` ni `--ink` directamente para fondo y texto
+base: usan `--bg` y `--fg`, que resuelven la inversión del par en cada tema.
 
 ### 6.2 Reglas
 
@@ -176,6 +257,9 @@ Toda pantalla debe cubrir:
   automáticos.
 - axe sin errores críticos en las pantallas principales.
 - Los atajos se documentan y no chocan con los del sistema.
+- El shell incluye un enlace «Saltar al contenido principal» visible al foco y
+  `main` enfocable (`tabIndex={-1}`); las pestañas, el diálogo y el tooltip
+  tienen navegación de teclado propia (flechas, Inicio/Fin y Escape).
 
 ## 9. Movimiento
 
@@ -207,6 +291,11 @@ Toda pantalla debe cubrir:
 - Las acciones destructivas nombran el objeto y la consecuencia.
 
 ## 12. Verificación
+
+Desde #65 existe una verificación automática de tokens y contraste
+(`tests/unit/design-tokens.test.ts`, 14 pruebas). La matriz visual real a 1024,
+1280 y 1600 px, las capturas, axe y el E2E **siguen pendientes** de #70 y de la
+revisión local; no deben darse por hechos.
 
 Antes de cerrar una issue de UI:
 

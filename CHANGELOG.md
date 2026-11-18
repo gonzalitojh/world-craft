@@ -54,6 +54,23 @@ primera versión estable.
 - Scripts `db:generate`, `db:check`, `test:unit`, `test:integration` y
   `verify:native`, y copia de `drizzle/` a `out/main/drizzle` con verificación en
   `verify:build`.
+- Sistema de diseño implementado (#65): tokens en tres capas (`palette.css`,
+  `semantic.css` y `scales.css`), con la paleta como única fuente de color y
+  overrides agrupados por tema.
+- Temas Claro y Oscuro conmutables desde la barra superior (#65): el tema vive
+  en memoria, arranca en Claro y todavía no se guarda entre sesiones.
+- Componentes base nativos sin dependencias nuevas (#65): botón, campo de texto,
+  insignia, tarjeta, estado vacío, diálogo, pestañas, aviso toast y tooltip, con
+  estados, teclado y textos del catálogo.
+- Shell de escritorio (#65): enlace de salto, barra lateral de 240 px plegable a
+  64 px, barra superior de 56 px, navegación Inicio/Muestras con `aria-current` y
+  `main` enfocable.
+- Páginas de Inicio con estado vacío y de Muestras para revisar el sistema de
+  diseño en los dos temas (#65).
+- Pruebas de tokens y contraste (#65): 14 pruebas que calculan ratios WCAG por
+  tema, prohíben colores literales fuera de la paleta, exigen
+  `prefers-reduced-motion` y evitan `overflow-x: hidden`; el repositorio pasa a
+  103 pruebas unitarias.
 
 ### Cambiado
 

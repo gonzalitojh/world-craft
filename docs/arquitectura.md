@@ -11,11 +11,12 @@ una operación**. No sustituye al plan ni a los ADRs: el plan define el alcance 
 los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
 En la fase actual el repositorio contiene el **scaffold de escritorio** (#62), el
-**IPC tipado** (#63) y la **persistencia local** (#64): ventana Electron segura,
-preload nominativo, renderer React con una pantalla provisional, un único canal
-IPC (`shell:openExternal`) y una base SQLite con migraciones, comprobación de
-integridad y modo seguro. Todavía no hay sistema de diseño ni assets: eso llega
-con #65 y #66. Las secciones distinguen lo implementado de lo previsto.
+**IPC tipado** (#63), la **persistencia local** (#64) y el **sistema de diseño con
+shell de escritorio** (#65): ventana Electron segura, preload nominativo,
+renderer React con tokens, componentes base y navegación, un único canal IPC
+(`shell:openExternal`) y una base SQLite con migraciones, comprobación de
+integridad y modo seguro. Los assets llegan con #66. Las secciones distinguen lo
+implementado de lo previsto.
 
 ## 1. Vista general
 
@@ -29,7 +30,7 @@ con #65 y #66. Las secciones distinguen lo implementado de lo previsto.
 ┌───────────────────────────────▼──────────────────────────────────┐
 │ Renderer (React + Vite + TypeScript)                              │
 │  shell · fichas · grafo · mapas · editor · juego · ajustes        │
-│  Zustand · React Hook Form · Tailwind + shadcn/ui                 │
+│  CSS con tokens · componentes propios · estado de UI              │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,11 +41,11 @@ con #65 y #66. Las secciones distinguen lo implementado de lo previsto.
 | Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5, #68) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Previsto (#66) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
-| Dos temas y sistema de diseño | Parcial: pantalla provisional (#62); sistema previsto (#65) | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
+| Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base y shell (#65); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: 89 unitarias y 18 de integración (#62–#64); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Pruebas y calidad | Parcial: 103 unitarias y 18 de integración (#62–#65); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Parcial: copia pre-migración y modo seguro (#64); restauración, retención y UI previstas (M0-07) | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, db:check y build (#62–#64); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
@@ -69,14 +70,17 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo` y `shell.openExternal`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, mensajes tipados y estilos provisionales; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | `ui/` base, `shell/`, `editors/`, `maps/`, `graph/`. Prevista. | Módulos del renderer, shared |
+| `src/renderer/` | UI React, mensajes tipados, tema y estilos; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (estado vacío) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
+| `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. Prevista. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer (hoy `es.ts`). | — |
-| `src/renderer/styles/` | Base provisional; tokens definitivos y movimiento en #65. | — |
+| `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error y contrato de la API del preload. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos y de la capa de datos (journal, checksum, rutas, logger y modo seguro). | `src/` |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, logger y modo seguro) y del sistema de diseño (tokens y contraste). | `src/` |
 | `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas. | `src/` |
 | `tests/e2e/` | Playwright Electron. Previsto (#70). | `src/` |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
@@ -92,8 +96,11 @@ Reglas de dependencia:
    IPC concretos.
 4. **Los textos visibles viven en `src/renderer/messages/`.** No se escriben
    cadenas de interfaz en componentes.
-5. **Los tokens viven en `src/renderer/styles/`.** Los componentes usan
-   utilidades semánticas, nunca la paleta cruda ni variantes `dark:`.
+5. **Los tokens viven en `src/renderer/styles/tokens/`.** Solo `palette.css`
+   declara colores literales; los componentes usan roles semánticos, nunca la
+   paleta cruda ni variantes `dark:`. Para fondo y texto base el renderer usa
+   **solo `--bg` y `--fg`**, que resuelven la inversión de `--paper`/`--ink`
+   entre temas; `--ink` no se usa como texto ni como fondo de componente.
 6. **La lógica de negocio no vive en componentes.** Vive en casos de uso del
    renderer o en el main, según si necesita disco.
 
@@ -117,9 +124,10 @@ Reglas de dependencia:
   ignora en la versión empaquetada y las DevTools se deshabilitan en ella.
 - **Verificación.** `pnpm verify:build` comprueba que existen los tres artefactos,
   que la CSP está antes de los scripts, que no hay `unsafe-*` ni URLs remotas.
-- **Tema y datos.** `prefers-color-scheme` es solo un fallback provisional; el
-  sistema de diseño con `[data-theme]` llega en #65. La escritura en `userData`,
-  SQLite y las migraciones se añadieron en #64 (sección 2.3).
+- **Tema y datos.** `prefers-color-scheme` fue un fallback provisional del
+  scaffold; desde #65 el tema se aplica con `data-theme` (sección 2.4). La
+  escritura en `userData`, SQLite y las migraciones se añadieron en #64
+  (sección 2.3).
 
 ### 2.2 Estado implementado del IPC (#63)
 
@@ -178,6 +186,35 @@ Reglas de dependencia:
   copia a `out/main/drizzle`. `pnpm verify:build` valida las migraciones
   copiadas y la externalización. #68 debe desempaquetar el módulo nativo del
   asar.
+
+### 2.4 Estado implementado del sistema de diseño (#65)
+
+- **Tokens.** `src/renderer/styles/tokens/` contiene `palette.css` (única fuente
+  de hex y valores con alfa), `semantic.css` (roles por tema con overrides
+  agrupados en `:root`/`[data-theme="light"]` y `[data-theme="dark"]`) y
+  `scales.css` (espaciado, radios, tipografía, movimiento, z-index y medidas del
+  shell de 240/64/56 px). Se importan antes de `base.css` y `components.css` en
+  `main.tsx`.
+- **Tema.** `src/renderer/theme.ts` aplica `data-theme` en `<html>` y arranca en
+  Claro (`DEFAULT_THEME`). El botón de la barra superior conmuta en memoria; la
+  persistencia en `config.json` y la pantalla de Ajustes son posteriores.
+- **Componentes.** `src/renderer/components/` tiene componentes nativos
+  (botón, campo de texto, insignia, tarjeta, estado vacío, diálogo, pestañas,
+  toast y tooltip) sin Radix/shadcn ni dependencias nuevas. El diálogo usa
+  `<dialog>` con `showModal()`; las pestañas siguen el patrón ARIA con flechas e
+  Inicio/Fin.
+- **Shell.** `src/renderer/shell/app-shell.tsx` compone el enlace de salto, el
+  rail de 240 px plegable a 64 px, la barra superior de 56 px, la navegación con
+  `aria-current` y `main` con `tabIndex={-1}`. No hay router.
+- **Vistas.** `src/renderer/pages/home-page.tsx` muestra el estado vacío real y
+  `samples-page.tsx` revisa los componentes con contenido largo; la página de
+  muestras es solo de desarrollo.
+- **Tipografía.** Las pilas de `scales.css` usan Fraunces, Inter y JetBrains Mono
+  con respaldo del sistema; el empaquetado OFL de las fuentes sigue pendiente y
+  no hay `@font-face` ni recursos remotos.
+- **Verificación.** `tests/unit/design-tokens.test.ts` resuelve los tokens de
+  cada tema, calcula contraste WCAG y comprueba la disciplina de colores. La
+  matriz visual, las capturas, axe y el E2E quedan para #70 y la revisión local.
 
 ## 3. Flujo de una operación
 
@@ -335,13 +372,14 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 89 pruebas unitarias y 18 de integración:
+- **Pruebas.** `pnpm test` ejecuta 103 pruebas unitarias y 18 de integración:
   scaffold (ventana, navegación, CSP e identidad), contrato IPC, router IPC, API
-  del preload, enlaces externos, journal, checksum, rutas, logger y modo seguro,
-  más arranque, migraciones, copia, corrupción, versión adelantada, base ajena,
-  preservación y rollback de referencia. `pnpm build` y `pnpm verify:build`
-  validan los artefactos; `pnpm verify:native` comprueba el módulo nativo en
-  Node y Electron. `test:e2e` (Playwright Electron) sigue previsto para #70.
+  del preload, enlaces externos, journal, checksum, rutas, logger, modo seguro y
+  tokens y contraste del sistema de diseño, más arranque, migraciones, copia,
+  corrupción, versión adelantada, base ajena, preservación y rollback de
+  referencia. `pnpm build` y `pnpm verify:build` validan los artefactos;
+  `pnpm verify:native` comprueba el módulo nativo en Node y Electron. `test:e2e`
+  (Playwright Electron) sigue previsto para #70.
 - **CI.** GitHub Actions en `ubuntu-latest`: jobs `lint` (con `format:check`),
   `typecheck`, `test`, `build` (con `db:check` y `verify:build`), `gitleaks` y
   `audit`. Los tres primeros son required; `build` todavía no lo es hasta #69, y

@@ -26,7 +26,7 @@ La propuesta técnica es:
 | Capa | Decisión |
 |---|---|
 | Shell de escritorio | **Electron + Vite + React + TypeScript estricto** |
-| UI | **Tailwind CSS 4 + shadcn/ui + Radix + Lucide + Motion** |
+| UI | **CSS propio con tokens + componentes nativos accesibles** (actualizado en #65; ver D2 y ADR 0006) |
 | Persistencia | **SQLite local con better-sqlite3 + Drizzle ORM** |
 | Búsqueda | **SQLite FTS5** |
 | Archivos | **Sistema de archivos local** bajo `app.getPath('userData')` |
@@ -350,6 +350,14 @@ y el acceso a SQLite.
 es una dependencia monolítica: los componentes se copian al repositorio y se
 adaptan. Encaja con una estética editorial propia y con los dos temas.
 
+> **Actualización (2026-11-18, issue #65).** La implementación de los
+> componentes base usa CSS propio con tokens en tres capas y primitivas nativas
+> (diálogo, pestañas, tooltip y avisos), sin Tailwind, shadcn/ui, Radix, Lucide
+> ni Motion. La decisión se tomó con el usuario para reducir dependencias y
+> superficie de ataque; Radix sigue como opción futura si un componente complejo
+> (menús anidados, combobox, tablas) lo justifica. Ver la nota de implementación
+> del [ADR 0006](adr/0006-two-themes-desktop-design-system.md).
+
 #### D3. Persistencia: SQLite + better-sqlite3
 
 | Criterio | SQLite + better-sqlite3 | node:sqlite | libSQL | JSON/lowdb | IndexedDB | PGlite |
@@ -513,6 +521,13 @@ Tokens adicionales: `--surface`, `--surface-raised`, `--border`, `--muted`,
 Cada tipo de entidad tiene un color accesible en ambos modos. Los colores
 hardcodeados deben justificarse con un comentario y comprobarse en los dos
 temas.
+
+> **Actualización (2026-11-18, issue #65).** Los tokens viven en
+> `src/renderer/styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`) y
+> añaden `--bg`/`--fg` para resolver la inversión de `--paper`/`--ink` sin que
+> cada componente conozca el tema, además de `--overlay`, `--disabled-surface` y
+> `--disabled-text`. Las fuentes aún no se empaquetan: se usan pilas con
+> respaldo del sistema hasta añadir los archivos OFL.
 
 **Dirección visual:** «taller de cartógrafo». Tipografía de display **Fraunces**
 (serif con carácter), texto de interfaz **Inter** y monoespaciada **JetBrains

@@ -86,6 +86,33 @@ Se revisa si se añade un tercer tema, si se adopta el tema del sistema o si la
 estética cambia. Cualquier cambio de tokens o de contraste exige revisar las
 capturas y la guía.
 
+## Nota de implementación (2026-11-18, issue #65)
+
+La primera implementación del sistema confirma la decisión con estos matices:
+
+- **Componentes nativos.** Los componentes base se implementaron sin Radix ni
+  shadcn, con HTML y React propios, para no añadir dependencias ni romper el
+  aislamiento del renderer. Radix sigue siendo una opción futura si un patrón
+  complejo (menús anidados, combobox, tablas) lo justifica.
+- **Alias de tema.** `--paper` y `--ink` se invierten entre temas, así que los
+  componentes usan `--bg` y `--fg` para fondo y texto base y no necesitan
+  conocer el tema activo. `--ink` queda prohibido como color de texto o como
+  fondo de componente.
+- **Roles nuevos.** Se añadieron `--overlay` (velo de diálogo, independiente de
+  `--ink`), `--disabled-surface` y `--disabled-text` (deshabilitado sin
+  `opacity`), `--accent-contrast` y las superficies tintadas de estado
+  (`--accent-surface`, `--success-surface`, `--warning-surface`,
+  `--danger-surface`).
+- **Fuentes.** Las pilas usan Fraunces, Inter y JetBrains Mono como primera
+  opción con respaldo del sistema; el empaquetado OFL de los archivos sigue
+  pendiente y no hay `@font-face` ni recursos remotos.
+- **Tema en memoria.** Se conmuta desde la barra superior y arranca en Claro.
+  La persistencia en `config.json` y la pantalla de Ajustes son posteriores; la
+  preferencia todavía no se recuerda al reiniciar.
+- **Verificación.** `tests/unit/design-tokens.test.ts` calcula el contraste por
+  tema y comprueba la disciplina de tokens. La matriz visual real, las capturas,
+  axe y el E2E quedan para #70 y la revisión local.
+
 ## Referencias
 
 - [`docs/diseno/sistema-de-diseno.md`](../diseno/sistema-de-diseno.md)
