@@ -340,7 +340,7 @@ exportar cualquier dato de prueba que se quiera conservar.
 | Servicio | Qué cerrar | Notas |
 |---|---|---|
 | **Supabase** | Proyecto de desarrollo | Exportar o descargar la base si se quiere conservar; después pausar y eliminar el proyecto. |
-| **Vercel** | Proyecto `world-craft` | Eliminar el proyecto, sus deployments y cualquier dominio asignado. |
+| **Vercel** | Proyecto `world-craft` e integración con GitHub | Eliminar el proyecto, sus deployments y cualquier dominio asignado; desconectar la integración de GitHub para que deje de crear checks y deployments en las PRs. |
 | **Cloudflare R2** | Bucket de assets y tokens API | Vaciar el bucket, borrar el bucket y revocar los tokens S3 usados por el adaptador. |
 | **UptimeRobot** | Monitor del healthcheck | Pausar y eliminar el monitor si llegó a crearse. |
 | **GitHub Actions** | Secretos `SUPABASE_DB_URL` y `BACKUP_PASSPHRASE`; variable `HEALTHCHECK_URL` | Eliminar en Settings → Secrets and variables → Actions. |
