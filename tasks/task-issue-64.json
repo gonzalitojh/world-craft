@@ -1,0 +1,117 @@
+{
+  "title": "SQLite local con better-sqlite3, Drizzle y migraciones",
+  "description": "M0-04. Infraestructura de persistencia local: abrir la base en app.getPath('userData')/data con WAL, busy_timeout y synchronous=NORMAL; crear el esquema Drizzle inicial y el runner de migraciones versionadas con transacción y copia previa verificable; ejecutar PRAGMA integrity_check al arrancar y ante un fallo de migración, con arranque en modo seguro; añadir helpers de base de datos temporal y real para pruebas e integración. Depende de M0-02 (#62), ya fusionada en dev. Coordina con M0-07 (copias y restauración) y M0-08 (instalador); el esquema completo llega en M1 y esta issue crea la infraestructura y las tablas base (ADR 0002).",
+  "status": "published",
+  "model_variant": "max",
+  "issue": {
+    "number": 64,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/64",
+    "title": "SQLite local con better-sqlite3, Drizzle y migraciones"
+  },
+  "acceptance_criteria": [
+    "La base se crea en userData y nunca dentro de la carpeta de instalación ni del repositorio.",
+    "Las migraciones son versionadas, transaccionales e idempotentes, y nunca se edita una migración aplicada.",
+    "Antes de una migración se crea una copia verificable y un fallo deja la base intacta y la app en modo seguro.",
+    "integrity_check se ejecuta al arrancar y su resultado se registra sin volcar contenido del usuario.",
+    "Las pruebas usan bases temporales y cubren creación, migración, rollback y preservación."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "E2E del flujo crítico ejecutado o justificado como no aplicable.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página y con contenido largo realista.",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen datos; copia y restauración probadas si aplica.",
+    "Funcionamiento offline comprobado si el cambio toca arranque, datos o actualizaciones.",
+    "Manual de usuario actualizado si el cambio es visible (o constancia de cómo se cubrirá).",
+    "ADR creado o actualizado si hay una decisión arquitectónica o de producto relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas de archivos y contenido no confiable.",
+    "Datos exportables e importables si se añade o cambia un modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Coste de contexto revisado: sin cambio de modelo o variante a mitad de sesión y sin editar AGENTS.md ni los agentes mientras se usaban.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado (task-architect, 2026-11-18; aprobación del usuario el mismo día). Variante max. Arquitectura: src/main/db puro sin Electron (rutas, conexión, esquema, journal, runner, backup, integridad y logger) + src/main/persistence.ts y safe-mode-dialog.ts; app.setName(APP_NAME) y bootstrap antes de crear la ventana. Nativo: better-sqlite3 13.2.0 exacto con Node-API 10; verificado que el mismo prebuild carga en Node 22.23.5 y Electron 45.3.4 (ABI 150) con SQLite 3.54.1 y FTS5; sin electron-rebuild; externalizar better-sqlite3 y drizzle-orm y copiar drizzle/ a out/main/drizzle; #68 deberá desempaquetar el módulo del asar. Datos: userData/data/world-craft.sqlite con WAL, synchronous=NORMAL, foreign_keys=ON y busy_timeout=5000; una conexión de main. Esquema base: migración 0000 con schema_migrations y app_settings; journal, snapshot y rollback de referencia; sin tablas M1 ni FTS5. Migraciones: runner propio sobre journal Zod, checksum SHA-256 normalizado, lote en una transacción, user_version como número de migraciones aplicadas (0000_init => 1) e idempotencia; base nueva sin copia (no hay datos que preservar, documentado) y base existente con copia online verificable, manifiesto y SHA-256; una base con tablas propias sin schema_migrations se rechaza con DB_MIGRATION_FAILED; fallo de copia o migración deja la base intacta y modo seguro. Modo seguro: sin conexión de escritura, códigos estables DB_MIGRATION_FAILED, DB_INTEGRITY_FAILED, DB_VERSION_AHEAD, DB_MIGRATION_CHECKSUM_MISMATCH, DB_BACKUP_FAILED y DB_OPEN_FAILED, log JSONL con rotación y sin contenido, textos centralizados en src/main/messages/es.ts y diálogo nativo con abrir copias, continuar o salir; restauración guiada diferida a M0-07. Pruebas: unitarias + integración con bases temporales (creación, idempotencia, rollback, checksum, backup, integridad, versión adelantada, base ajena, preservación y restauración manual), smoke nativo y verify:build; E2E no aplica hasta #70. Documentación: persistencia, esquema, migraciones, arquitectura, continuidad, plan de pruebas, README, CONTRIBUTING, CHANGELOG, ADR 0016/D-040 y ADR 0002; manual no aplica justificado. Scripts: db:generate, db:check, test:unit, test:integration y verify:native.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-18",
+    "notes": "Issue adoptada con label ai y sin needs-decision. Dependencia M0-02 (#62) fusionada en dev. Variante recomendada max; variante usada max. Plan aprobado por el usuario el 2026-11-18. Verificación previa del riesgo nativo: better-sqlite3 13.2.0 usa Node-API 10 y el mismo prebuild carga en Node 22.23.5 y Electron 45.3.4 (Node 24.22.3, ABI 150) con SQLite 3.54.1 y FTS5, sin electron-rebuild. Excepción de copia previa en base nueva aprobada explícitamente por el usuario el 2026-11-18: no hay datos que preservar, se documenta en ADR 0016 y en docs/persistencia.md; se propone aclarar AGENTS.md en una tarea documental posterior, sin tocarlo en esta sesión por coste de contexto."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA PASS (2026-11-18), confirmado tras las correcciones. Criterios 1-5 verificados con evidencia en código y pruebas: base solo bajo userData y aislamiento de rutas; migraciones versionadas, transaccionales e idempotentes con journal Zod, checksum SHA-256 normalizado y user_version como número de migraciones aplicadas (0000_init => 1); copia online con manifiesto, SHA-256 e integrity_check antes de migrar en base existente, base nueva sin copia justificada y rechazo de bases ajenas con tablas sin schema_migrations; integrity_check al arrancar, tras migrar y tras fallo, con código estable y log JSONL sin SQL, filas, rutas ni contenido; pruebas con bases temporales de creación, idempotencia, checksum alterado, rollback, preservación, backup, corrupción, versión adelantada, base ajena y restauración manual. Comandos en verde: lint, typecheck, db:check, format:check, test (89 unitarias + 18 integración), build, verify:build y verify:native (SQLite 3.54.1 con FTS5 en Node y Electron). Sin cambios de renderer/preload/IPC/CSP; ventana 1024/1280/1600, temas y axe no aplican por no haber diff de UI; el diálogo es nativo. E2E no aplica hasta #70. Residuales no bloqueantes: ADR 0002 y documentos de persistencia pendientes de la puerta documental; bloqueo de instancia única diferido como follow-up antes de escrituras de contenido; el guard de base ajena solo mira tablas (LOW, caso muy improbable); el mensaje de getDatabase es interno (LOW); audit sin HIGH y con 2 moderadas de desarrollo (esbuild vía drizzle-kit y minimatch vía eslint). No se añadió bloque pr."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "status": "diferido",
+        "description": "No hay app.requestSingleInstanceLock. Dos instancias podrían competir por inspeccionar/migrar y una acabar en modo seguro, con copias duplicadas. SQLite serializa y la transacción revierte, así que no hay corrupción ni pérdida de datos y aún no existen escrituras de contenido. Debe cerrarse antes de M1 y preferiblemente antes de #68; se registra como riesgo de ciclo de vida."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "getDatabase lanza un Error interno con mensaje en español; el router IPC lo enmascara como INTERNAL_ERROR y no llega al renderer. Sustituir por un error tipado si se expone en el futuro."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El guard de base ajena consulta solo tablas; una base con únicamente vistas, triggers o índices no se detecta como ajena, pero la migración choca y queda en modo seguro sin escribir. Ampliarlo es una mejora barata para M1."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "No se comprueban enlaces simbólicos o junctions en userData. La contención de rutas es correcta y el modelo es monousuario local con carpeta del perfil; revisar si se aceptan rutas externas o restauración desde otras ubicaciones."
+      },
+      {
+        "severity": "LOW",
+        "status": "diferido",
+        "description": "Las copias pre-migración no se podan; cada migración deja una carpeta. No afecta a la integridad y la retención llega con M0-07."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El logger de arranque se crea antes de ensureDataDirectories; si falla la creación de logs, el evento de ese fallo se pierde porque el logger traga errores. Mover su creación después de las carpetas mejora el diagnóstico."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El plugin de build copia drizzle/rollback al bundle. Es inalcanzable porque loadMigrations solo lee los tags del journal, pero conviene excluirlo o documentar que nunca se ejecuta automáticamente."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "@types/better-sqlite3 9.6 va por detrás del runtime 13.2.0; typecheck pasa y es deuda de mantenimiento, no de seguridad."
+      },
+      {
+        "severity": "LOW",
+        "status": "diferido",
+        "description": "verify:native no se ejecuta en CI; el ABI Node/Electron se valida a mano. Recomendación para #68: job windows-latest antes de empaquetar."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El manual marcaba no aplica y el diálogo de modo seguro es visible ante fallos. La puerta documental actualizó docs/manual-de-usuario.md con el primer arranque, el modo seguro y la restauración guiada como prevista (M0-07)."
+      }
+    ],
+    "notes": "Security-champion (2026-11-18): PASS sin HIGH sobre la rama feat/issue-64-sqlite-drizzle-migrations con cambios sin commitear. Sin secretos, claves, credenciales, correos reales ni rutas del desarrollador; los fixtures C:\\datos son sintéticos. Sin cambios en renderer/preload/IPC/CSP/ventana; src/main/db no importa Electron y la regla ESLint lo impone; el renderer no tiene acceso a la base, copias ni logs. Rutas absolutas con contención, manifiesto sin rutas absolutas, diálogo solo con rutas calculadas en main, logs tipados sin contenido y errores por códigos estables. Journal Zod con tags sin traversal, checksum SHA-256, transacción única, copia online verificada, integrity_check antes de WAL, modo seguro sin conexión y rechazo de bases ajenas. Dependencias MIT/Apache-2.0, better-sqlite3 13.2.0 sin scripts de instalación y con prebuild Node-API 10; drizzle-kit es dev. Las 2 moderadas de audit son dev-only (esbuild vía drizzle-kit y minimatch vía eslint); QA ejecutó pnpm audit --audit-level=high con código 0 y sin HIGH, y security no pudo repetirlo por permisos del entorno. better-sqlite3 y drizzle-orm quedan externalizados y las migraciones se copian a out/main/drizzle; #68 debe desempaquetar el módulo nativo del asar. El MEDIUM de instancia única se difiere con seguimiento antes de M1/#68; el resto son LOW aceptados o diferidos. No se añadió bloque pr."
+  },
+  "documentation": {
+    "adr": "docs/adr/0016-sqlite-migrations-safe-mode.md",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": null
+  },
+  "pr": {
+    "number": 105,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/105",
+    "title": "feat: añadir SQLite local, migraciones y modo seguro (#64)",
+    "branch": "feat/issue-64-sqlite-drizzle-migrations",
+    "commit": "e6b7e7e"
+  }
+}

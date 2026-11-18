@@ -30,6 +30,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0013](0013-ci-releases.md) | CI, releases y distribución | Aceptado | D-032 |
 | [0014](0014-repository-structure-tooling.md) | Estructura del repositorio y tooling | Aceptado | D-033, D-038 |
 | [0015](0015-optional-code-signing-smartscreen.md) | Firma de código opcional y SmartScreen | Aceptado | D-034 |
+| [0016](0016-sqlite-migrations-safe-mode.md) | SQLite, migraciones propias y modo seguro | Aceptado | D-040 |
 
 ## 3. Relación con otros documentos
 
@@ -67,3 +68,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | Fecha | Cambio |
 |---|---|
 | 2026-11-18 | Serie de escritorio 0001–0015; se retiran los ADRs web 0001–0020. |
+| 2026-11-18 | Se añade el ADR 0016 (persistencia local, migraciones y modo seguro, #64). |

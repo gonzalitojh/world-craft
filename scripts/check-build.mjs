@@ -2,14 +2,17 @@
  * Verifica los artefactos del build de escritorio.
  *
  * Comprueba que existen los tres procesos, que el HTML lleva la CSP de
- * producción antes de los scripts y que no se cuela contenido remoto ni
- * `unsafe-eval` / `unsafe-inline`. Sale con código 1 si algo falla; el job
- * `build` de CI lo ejecuta después de `pnpm build`.
+ * producción antes de los scripts, que no se cuela contenido remoto ni
+ * `unsafe-eval` / `unsafe-inline`, que las migraciones se copian a
+ * `out/main/drizzle` y que el módulo nativo y Drizzle quedan externalizados.
+ * Sale con código 1 si algo falla; el job `build` de CI lo ejecuta después de
+ * `pnpm build`.
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const RENDERER_DIR = 'out/renderer';
+const DRIZZLE_DIR = 'out/main/drizzle';
 
 const REQUIRED_ARTIFACTS = [
   'out/main/index.cjs',
@@ -144,13 +147,87 @@ async function collectFiles(directory) {
   return files;
 }
 
+/** Comprueba que las migraciones viajan con el bundle de `main`. */
+async function checkDrizzleMigrations() {
+  const journalText = await checkArtifact(`${DRIZZLE_DIR}/meta/_journal.json`);
+
+  await checkArtifact(`${DRIZZLE_DIR}/0000_init.sql`);
+
+  if (journalText === null) {
+    return;
+  }
+
+  let journal;
+
+  try {
+    journal = JSON.parse(journalText);
+  } catch {
+    fail('El journal de migraciones copiado al build no es JSON válido.');
+    return;
+  }
+
+  if (
+    journal === null ||
+    typeof journal !== 'object' ||
+    !Array.isArray(journal.entries) ||
+    journal.entries.length === 0
+  ) {
+    fail('El journal de migraciones copiado al build no tiene entradas.');
+    return;
+  }
+
+  for (const [index, entry] of journal.entries.entries()) {
+    if (
+      entry === null ||
+      typeof entry !== 'object' ||
+      typeof entry.tag !== 'string' ||
+      !/^\d{4}_[a-z0-9]+(?:_[a-z0-9]+)*$/.test(entry.tag)
+    ) {
+      fail(
+        `El journal contiene una etiqueta de migración no válida: ${index}.`,
+      );
+      continue;
+    }
+
+    if (entry.idx !== index) {
+      fail(
+        `El journal contiene una secuencia de migraciones no válida: ${index}.`,
+      );
+    }
+
+    await checkArtifact(`${DRIZZLE_DIR}/${entry.tag}.sql`);
+  }
+}
+
+/** Comprueba que el módulo nativo y Drizzle no se han empaquetado. */
+function checkExternalizedDependencies(mainBundle) {
+  if (mainBundle === null) {
+    return;
+  }
+
+  if (!/require\(["']better-sqlite3["']\)/.test(mainBundle)) {
+    fail('better-sqlite3 no está externalizado en out/main/index.cjs.');
+  }
+
+  if (!/require\(["']drizzle-orm\/better-sqlite3["']\)/.test(mainBundle)) {
+    fail('drizzle-orm no está externalizado en out/main/index.cjs.');
+  }
+}
+
 const html = await checkArtifact('out/renderer/index.html');
+const mainBundle = await checkArtifact('out/main/index.cjs');
 
 for (const artifact of REQUIRED_ARTIFACTS) {
-  if (artifact !== 'out/renderer/index.html') {
+  if (
+    artifact !== 'out/renderer/index.html' &&
+    artifact !== 'out/main/index.cjs'
+  ) {
     await checkArtifact(artifact);
   }
 }
+
+await checkDrizzleMigrations();
+checkExternalizedDependencies(mainBundle);
 
 if (html !== null) {
   checkContentSecurityPolicy(html);
@@ -186,5 +263,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  'verify:build correcto: artefactos presentes, CSP estricta y sin URLs remotas.',
+  'verify:build correcto: artefactos presentes, CSP estricta, sin URLs remotas, migraciones copiadas y módulos nativos externalizados.',
 );

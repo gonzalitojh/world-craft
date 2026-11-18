@@ -36,6 +36,24 @@ primera versión estable.
   ventana no navega y las ventanas nuevas se siguen denegando.
 - Catálogo de GitHub de escritorio: 46 etiquetas, 7 hitos y 41 issues
   (#61–#101) con contexto, alcance, dependencias, criterios y variante.
+- Persistencia local con SQLite, better-sqlite3 y Drizzle ORM (#64): base en
+  `userData/data/world-craft.sqlite`, WAL, comprobación de integridad y cierre
+  idempotente, con el módulo nativo cargado en Node y Electron sin
+  `electron-rebuild`.
+- Migraciones versionadas (#64): journal de Drizzle validado con Zod, checksum
+  SHA-256, lote transaccional, `user_version` como número de migraciones y
+  rechazo de bases ajenas o de versión superior.
+- Copia previa a cada migración de una base existente (#64): manifiesto, SHA-256
+  e `integrity_check` en solo lectura; si la copia falla, no se migra.
+- Modo seguro de arranque (#64): sin conexión de escritura, códigos estables, log
+  JSONL rotativo sin contenido y diálogo nativo con abrir copias, continuar o
+  salir. La restauración guiada queda para M0-07.
+- Pruebas de persistencia (#64): 89 unitarias y 18 de integración con bases
+  temporales, más `pnpm db:check` en la CI y `pnpm verify:native` para el módulo
+  nativo.
+- Scripts `db:generate`, `db:check`, `test:unit`, `test:integration` y
+  `verify:native`, y copia de `drizzle/` a `out/main/drizzle` con verificación en
+  `verify:build`.
 
 ### Cambiado
 
@@ -69,6 +87,11 @@ primera versión estable.
 - Preload congelado que solo expone `window.worldCraft.appInfo` y
   `shell.openExternal`, sin `ipcRenderer` ni `invoke` genérico; el proceso
   principal comprueba el remitente y valida la entrada de cada canal (#62, #63).
+- Base de datos aislada del renderer (#64): `src/main/db/` no importa Electron,
+  las rutas se validan contra `userData`, las migraciones se leen solo del bundle
+  y los logs de arranque no incluyen SQL, filas, rutas ni contenido.
+- Modo seguro sin conexión de escritura (#64) y rechazo de bases ajenas,
+  manipuladas o de versión superior antes de aplicar cualquier cambio.
 
 ## Cómo se escribe una entrada
 

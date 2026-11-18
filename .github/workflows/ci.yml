@@ -60,6 +60,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
+      - run: pnpm db:check
       - run: pnpm build
       - run: pnpm verify:build
 

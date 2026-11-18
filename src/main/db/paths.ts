@@ -1,0 +1,120 @@
+/**
+ * Rutas de los datos locales de World Craft.
+ *
+ * Este módulo no conoce Electron: recibe la carpeta `userData` ya resuelta por
+ * el proceso principal. La raíz debe ser absoluta; se normaliza con `resolve` y
+ * se comprueba con `relative` que todos los directorios derivados quedan
+ * dentro. Las rutas inválidas se rechazan con `DB_OPEN_FAILED` sin incluir la
+ * ruta en el error.
+ */
+import { mkdirSync, statSync } from 'node:fs';
+import { isAbsolute, relative, resolve } from 'node:path';
+
+import { DatabaseError } from './errors';
+
+/** Nombre del archivo principal de SQLite. */
+export const DATABASE_FILE_NAME = 'world-craft.sqlite';
+
+/** Nombre del log JSONL de arranque. */
+export const STARTUP_LOG_FILE_NAME = 'startup.log';
+
+/** Rutas derivadas de la carpeta de datos del usuario. */
+export interface DataPaths {
+  readonly userDataDir: string;
+  readonly dataDir: string;
+  readonly databaseFile: string;
+  readonly logsDir: string;
+  readonly startupLogFile: string;
+  readonly backupsDir: string;
+  readonly preMigrationBackupsDir: string;
+}
+
+/** Calcula y valida todas las rutas de datos a partir de `userData`. */
+export function resolveDataPaths(userDataDir: string): DataPaths {
+  if (
+    typeof userDataDir !== 'string' ||
+    userDataDir.trim().length === 0 ||
+    userDataDir.includes('\0') ||
+    !isAbsolute(userDataDir)
+  ) {
+    throw new DatabaseError('DB_OPEN_FAILED');
+  }
+
+  const root = resolve(userDataDir);
+  const dataDir = resolve(root, 'data');
+  const logsDir = resolve(root, 'logs');
+  const backupsDir = resolve(root, 'backups');
+  const preMigrationBackupsDir = resolve(backupsDir, 'pre-migration');
+  const databaseFile = resolve(dataDir, DATABASE_FILE_NAME);
+  const startupLogFile = resolve(logsDir, STARTUP_LOG_FILE_NAME);
+
+  for (const candidate of [
+    dataDir,
+    logsDir,
+    backupsDir,
+    preMigrationBackupsDir,
+    databaseFile,
+    startupLogFile,
+  ]) {
+    assertInside(root, candidate);
+  }
+
+  return {
+    userDataDir: root,
+    dataDir,
+    databaseFile,
+    logsDir,
+    startupLogFile,
+    backupsDir,
+    preMigrationBackupsDir,
+  };
+}
+
+/** Crea las carpetas necesarias usando rutas ya validadas. */
+export function ensureDataDirectories(paths: DataPaths): void {
+  try {
+    mkdirSync(paths.dataDir, { recursive: true });
+    mkdirSync(paths.logsDir, { recursive: true });
+    mkdirSync(paths.preMigrationBackupsDir, { recursive: true });
+  } catch (error) {
+    throw new DatabaseError('DB_OPEN_FAILED', { cause: error });
+  }
+}
+
+/**
+ * Una base es nueva cuando el archivo no existe o está vacío.
+ *
+ * En ese caso no hay datos que preservar y la migración inicial no necesita
+ * copia previa; el runner lo documenta y las pruebas lo verifican.
+ */
+export function isNewDatabase(databaseFile: string): boolean {
+  try {
+    return statSync(databaseFile).size === 0;
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return true;
+    }
+
+    throw new DatabaseError('DB_OPEN_FAILED', { cause: error });
+  }
+}
+
+function assertInside(root: string, candidate: string): void {
+  const relation = relative(root, candidate);
+
+  if (
+    relation.length === 0 ||
+    relation.startsWith('..') ||
+    isAbsolute(relation)
+  ) {
+    throw new DatabaseError('DB_OPEN_FAILED');
+  }
+}
+
+function isMissingFileError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    (error as NodeJS.ErrnoException).code === 'ENOENT'
+  );
+}

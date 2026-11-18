@@ -54,6 +54,33 @@ export default tseslint.config(
     },
   },
   {
+    // La capa de datos y la lógica pura del modo seguro deben poder probarse
+    // sin Electron. La composición (userData, diálogos, ciclo de vida) vive en
+    // `src/main/persistence.ts` y `src/main/safe-mode-dialog.ts`.
+    files: ['src/main/db/**/*.ts', 'src/main/safe-mode-prompt.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'electron',
+              message:
+                'La capa de datos y el prompt puro no importan Electron; reciben puertos o rutas ya resueltas.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['electron/*'],
+              message:
+                'La capa de datos y el prompt puro no importan Electron; reciben puertos o rutas ya resueltas.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: rendererFiles,
     plugins: { 'react-hooks': reactHooks },
     languageOptions: {

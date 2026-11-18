@@ -50,14 +50,18 @@ Ejemplo: `docs: documentar el flujo de publicación local-first`.
 
 ## Datos y migraciones
 
-- El esquema vive con el código de persistencia y las migraciones se versionan
-  en el repositorio; la cadena es única y lineal.
+- El esquema vive con el código de persistencia (`src/main/db/schema/`) y las
+  migraciones se versionan en `drizzle/`; la cadena es única y lineal.
 - **Nunca se edita una migración aplicada.** Se corrige con otra migración hacia
-  delante.
+  delante; el checksum SHA-256 detecta cualquier cambio.
+- Las migraciones se generan con `pnpm db:generate` y se validan con
+  `pnpm db:check`. La aplicación las aplica con un runner propio en una
+  transacción, no con `drizzle-kit migrate` ni `drizzle-kit push`.
 - Toda migración que pueda afectar a datos existentes crea antes una copia de
   seguridad verificable, se prueba sobre una base temporal y se ejecuta en una
   transacción.
-- Las migraciones documentan su reversión o rollback y se prueban en la CI.
+- Las migraciones documentan su reversión o rollback en `drizzle/rollback/` y se
+  prueban en la CI.
 - Los datos de usuario viven en `app.getPath('userData')`, nunca en el
   repositorio ni en la carpeta de instalación.
 - Las operaciones destructivas exigen confirmación explícita y dejan una copia
@@ -122,27 +126,34 @@ Requisitos: Node 22 LTS y pnpm vía Corepack (`corepack enable`). La primera vez
 instala las dependencias con `pnpm install`.
 
 ```bash
-pnpm dev          # ventana de Electron en desarrollo
-pnpm build        # compila main, preload y renderer en out/
-pnpm start        # previsualiza el build de producción
-pnpm verify:build # valida artefactos, CSP y ausencia de URLs remotas
-pnpm clean        # borra out/ y otros artefactos locales
+pnpm dev              # ventana de Electron en desarrollo
+pnpm build            # compila main, preload y renderer en out/
+pnpm start            # previsualiza el build de producción
+pnpm verify:build     # valida artefactos, CSP, migraciones y externalización
+pnpm verify:native    # comprueba better-sqlite3 en Node y Electron
+pnpm clean            # borra out/ y otros artefactos locales
+pnpm db:generate      # genera una migración
+pnpm db:check         # valida el journal y las instantáneas
 pnpm lint
 pnpm typecheck
-pnpm test
+pnpm test             # unitarias + integración
+pnpm test:unit
+pnpm test:integration
 pnpm format:check
 ```
 
 `pnpm build` escribe `out/main/index.cjs`, `out/preload/index.cjs` y
-`out/renderer/index.html`; **no genera un instalador**. `pnpm start` compila y
-abre el build de producción (se puede omitir la compilación con
-`--skipBuild`). `test:integration`, `test:e2e` y los comandos de empaquetado se
-añadirán con sus issues y no se documentan como disponibles antes de tiempo.
+`out/renderer/index.html`, y copia `drizzle/` a `out/main/drizzle`; **no genera
+un instalador**. `pnpm start` compila y abre el build de producción (se puede
+omitir la compilación con `--skipBuild`). `test:e2e` y los comandos de
+empaquetado se añadirán con sus issues y no se documentan como disponibles antes
+de tiempo.
 
 - `lint`, `typecheck` y `test` son **required checks**: una PR no se fusiona si
   fallan.
-- El job `build` (`pnpm build` y `pnpm verify:build`) ya se ejecuta en la CI,
-  pero no es required hasta la issue #69.
+- El job `build` (`pnpm db:check`, `pnpm build` y `pnpm verify:build`) ya se
+  ejecuta en la CI, pero no es required hasta la issue #69.
+- `pnpm verify:native` se ejecuta a mano; debe añadirse a la CI antes de #68.
 - `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear.
 - En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
   (por ejemplo `pnpm.cmd typecheck`).
@@ -158,6 +169,9 @@ añadirán con sus issues y no se documentan como disponibles antes de tiempo.
   se pueda empaquetar (por ejemplo, un módulo nativo) va en `dependencies` y se
   justifica con tamaño, licencia, mantenimiento, seguridad y alternativa
   gratuita.
+- `better-sqlite3` se fija en una versión con Node-API y prebuild compartido
+  entre Node y Electron; no se añade `electron-rebuild` salvo contingencia
+  justificada. `pnpm verify:native` comprueba ambos runtimes.
 - No se duplica funcionalidad ya disponible en el stack ni se añaden librerías
   propietarias o con licencias incompatibles.
 - El lockfile se versiona y cualquier cambio de dependencias explica el motivo
@@ -169,8 +183,10 @@ añadirán con sus issues y no se documentan como disponibles antes de tiempo.
   privadas. Los `.env*` no se versionan.
 - El renderer no accede a Node, al sistema de archivos ni a SQLite; todo pasa por
   la API tipada del preload.
-- Cuando exista IPC (issue #63), todo canal estará en una allowlist y validará la
-  entrada con Zod.
+- Todo canal IPC está en una allowlist y valida la entrada con Zod en el proceso
+  principal.
+- La capa `src/main/db/` no importa Electron: recibe rutas ya resueltas y se
+  prueba sin el runtime de escritorio.
 - No se carga contenido remoto en la ventana y la CSP es estricta en producción.
 - No se añaden servicios de pago ni dependencias injustificadas: el coste
   objetivo es 0 €/mes.

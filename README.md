@@ -8,13 +8,14 @@ código se publica bajo licencia MIT.
 
 ## Estado
 
-**Scaffold de escritorio ejecutable.** El repositorio ya contiene la base
-técnica de Electron con electron-vite, React y TypeScript estricto: `pnpm dev`
-abre una ventana segura con una pantalla inicial provisional y `pnpm build`
-compila los tres procesos en `out/`. **Todavía no hay una versión instalable**:
-no existe empaquetado NSIS ni base de datos, y las funciones de producto llegan
-con las issues de las fases M0 y M1. La pantalla actual no es el sistema de
-diseño definitivo.
+**Fundaciones de escritorio con persistencia local.** El repositorio contiene la
+base técnica de Electron con electron-vite, React y TypeScript estricto, el IPC
+tipado y una base SQLite con migraciones, comprobación de integridad y modo
+seguro. `pnpm dev` abre una ventana segura con una pantalla inicial provisional y
+`pnpm build` compila los tres procesos en `out/`. **Todavía no hay una versión
+instalable**: no existe empaquetado NSIS ni interfaz de producto, y las funciones
+de mundo, fichas, mapas y escritura llegan con M1 en adelante. La pantalla actual
+no es el sistema de diseño definitivo.
 
 El inventario de lo eliminado y las cuentas externas que hay que cerrar están en
 [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md). El plan aprobado,
@@ -27,8 +28,9 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Shell de escritorio | Electron + electron-vite | Implementado (scaffold) |
 | Interfaz | React + TypeScript estricto + Vite | Implementado (scaffold) |
 | Estilos | Tailwind CSS 4 + shadcn/ui + Radix + Lucide + Motion | Previsto (#65) |
-| Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Previsto (#64) |
-| Búsqueda | SQLite FTS5 | Previsto |
+| Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Implementado (#64) |
+| Migraciones | Runner propio sobre el journal de Drizzle y copia previa | Implementado (#64) |
+| Búsqueda | SQLite FTS5 | Disponible en el binario; esquema previsto (M1) |
 | Archivos | Sistema de archivos local bajo `app.getPath('userData')` | Previsto (#66) |
 | Editor | Tiptap 3 | Previsto (M3) |
 | Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |
@@ -64,32 +66,38 @@ Instala las dependencias una vez y usa los scripts del `package.json`:
 
 ```bash
 pnpm install
-pnpm dev          # abre la ventana de Electron en desarrollo
-pnpm build        # compila main, preload y renderer en out/
-pnpm start        # previsualiza el build de producción
-pnpm verify:build # valida artefactos, CSP y ausencia de URLs remotas
-pnpm clean        # borra out/ y otros artefactos locales
+pnpm dev              # abre la ventana de Electron en desarrollo
+pnpm build            # compila main, preload y renderer en out/
+pnpm start            # previsualiza el build de producción
+pnpm verify:build     # valida artefactos, CSP, migraciones y externalización
+pnpm verify:native    # comprueba better-sqlite3 en Node y Electron
+pnpm clean            # borra out/ y otros artefactos locales
 ```
 
-Los checks de calidad son:
+Los checks de calidad y de datos son:
 
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm test
-pnpm format       # corrige el formato
-pnpm format:check # comprueba el formato
+pnpm test             # unitarias + integración
+pnpm test:unit
+pnpm test:integration
+pnpm db:generate      # genera una migración con Drizzle Kit
+pnpm db:check         # valida el journal y las instantáneas
+pnpm format           # corrige el formato
+pnpm format:check     # comprueba el formato
 ```
 
 `pnpm build` **no genera un instalador**: produce `out/main/index.cjs`,
-`out/preload/index.cjs` y `out/renderer/index.html`. El instalador NSIS llega
-con la issue del empaquetado (#68) y la carpeta `out/` no se versiona.
+`out/preload/index.cjs` y `out/renderer/index.html`, y copia `drizzle/` a
+`out/main/drizzle`. El instalador NSIS llega con la issue del empaquetado (#68) y
+la carpeta `out/` no se versiona.
 
 ## Seguridad del scaffold
 
 - El renderer no accede a Node, al sistema de archivos ni a Electron. El preload
-  congela y expone solo `window.worldCraft.appInfo`; el IPC tipado llega en la
-  issue #63.
+  congela y expone solo `window.worldCraft` (`appInfo` y `shell.openExternal`);
+  todo canal IPC está en una allowlist y valida la entrada con Zod.
 - `contextIsolation`, `sandbox`, `nodeIntegration: false`, `webSecurity: true` y
   `webviewTag: false`; DevTools están deshabilitadas en la versión empaquetada.
 - CSP estricta de producción inyectada antes de los scripts y CSP de desarrollo
@@ -97,6 +105,9 @@ con la issue del empaquetado (#68) y la carpeta `out/` no se versiona.
 - Navegación, redirecciones, ventanas nuevas, webviews y descargas bloqueadas;
   permisos denegados y peticiones remotas canceladas. `pnpm verify:build` lo
   comprueba sobre los artefactos.
+- La base SQLite vive solo en `userData`, el renderer no la ve y `src/main/db/`
+  no importa Electron. Un fallo de integridad, copia o migración deja la app en
+  modo seguro sin conexión de escritura.
 
 ## Privacidad y datos
 
@@ -105,9 +116,10 @@ con la issue del empaquetado (#68) y la carpeta `out/` no se versiona.
 - No hay telemetría, analítica ni servicios de terceros.
 - La aplicación funciona sin conexión. La red solo se usa para comprobar
   actualizaciones cuando la persona usuaria lo permite.
-- Las copias de seguridad son locales, verificables y restaurables desde la
-  propia aplicación.
-- Los datos se pueden exportar e importar en formatos abiertos (JSON y assets).
+- Antes de una migración se crea una copia local verificable. La restauración
+  guiada y las copias automáticas llegan con M0-07.
+- Los datos se podrán exportar e importar en formatos abiertos (JSON y assets) en
+  las fases siguientes.
 
 El detalle está en [`docs/persistencia.md`](docs/persistencia.md) y
 [`docs/continuidad.md`](docs/continuidad.md).
@@ -116,25 +128,30 @@ El detalle está en [`docs/persistencia.md`](docs/persistencia.md) y
 
 ```text
 src/
-  main/           Proceso principal: ventana, ciclo de vida y seguridad
+  main/           Proceso principal: ventana, ciclo de vida, IPC y persistencia
+    db/           Rutas, conexión SQLite, esquema, migraciones, copia e integridad
+    ipc/          Router tipado con allowlist y Zod
+    messages/     Textos de los diálogos nativos
     security/     CSP, navegación, sesión y guards de red
   preload/        Puente congelado que solo expone window.worldCraft
   renderer/       React, mensajes tipados y estilos provisionales
   shared/         Identidad y contratos sin Node, Electron ni React
-tests/unit/       Pruebas unitarias de la configuración segura
+drizzle/          Migraciones versionadas, journal y rollback de referencia
+tests/unit/       Pruebas unitarias del scaffold, IPC, seguridad y datos
+tests/integration/ Pruebas con bases SQLite temporales
 docs/             Plan, proceso, arquitectura, persistencia, diseño y ADRs
   adr/            Decisiones de arquitectura y producto
   base-de-datos/  Esquema SQLite y migraciones
   calidad/        Plan de pruebas
 tasks/            Task files del flujo SDD
-scripts/          check-build, clean y utilidades de mantenimiento
+scripts/          check-build, check-native, clean y utilidades
 .github/          CI, Dependabot y plantillas de issue y PR
 .opencode/        Agentes y configuración de OpenCode
 ```
 
 Las pantallas y los módulos de producto se añadirán dentro de `src/renderer/` y
 `src/main/` con sus issues; todavía no existen `src/renderer/modules/` ni
-`src/main/db/`.
+`src/main/assets/`.
 
 ## Ramas
 

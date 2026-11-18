@@ -10,11 +10,12 @@ Este documento explica **cómo está organizada la aplicación** y **por dónde 
 una operación**. No sustituye al plan ni a los ADRs: el plan define el alcance y
 los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
-En la fase actual el repositorio contiene el **scaffold de escritorio** (#62) y
-el **IPC tipado** (#63): ventana Electron segura, preload nominativo, renderer
-React con una pantalla provisional y un único canal IPC
-(`shell:openExternal`). Todavía no hay base de datos ni sistema de diseño: eso
-llega con #64 y #65. Las secciones distinguen lo implementado de lo previsto.
+En la fase actual el repositorio contiene el **scaffold de escritorio** (#62), el
+**IPC tipado** (#63) y la **persistencia local** (#64): ventana Electron segura,
+preload nominativo, renderer React con una pantalla provisional, un único canal
+IPC (`shell:openExternal`) y una base SQLite con migraciones, comprobación de
+integridad y modo seguro. Todavía no hay sistema de diseño ni assets: eso llega
+con #65 y #66. Las secciones distinguen lo implementado de lo previsto.
 
 ## 1. Vista general
 
@@ -35,7 +36,7 @@ llega con #64 y #65. Las secciones distinguen lo implementado de lo previsto.
 | Pieza | Estado | Dónde se decide |
 |---|---|---|
 | Electron + Vite + React + TypeScript | Implementado (M0-02, #62) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
-| SQLite + better-sqlite3 + Drizzle + FTS5 | Previsto (#64) | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md) |
+| SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 disponible en el binario, esquema en M1 | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5, #68) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Previsto (#66) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
@@ -43,10 +44,10 @@ llega con #64 y #65. Las secciones distinguen lo implementado de lo previsto.
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: 54 unitarios del scaffold e IPC (#62, #63); integración y E2E previstos (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Pruebas y calidad | Parcial: 89 unitarias y 18 de integración (#62–#64); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
-| Copias, restauración y recuperación | Previsto (M0/M5) | [ADR 0012](adr/0012-backup-restore-recovery.md) |
-| CI y releases | Parcial: lint, typecheck, test y build (#62); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
+| Copias, restauración y recuperación | Parcial: copia pre-migración y modo seguro (#64); restauración, retención y UI previstas (M0-07) | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
+| CI y releases | Parcial: lint, typecheck, test, db:check y build (#62–#64); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
 | Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
 | Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
 
@@ -56,15 +57,17 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, guards de seguridad e IPC con handlers tipados; SQLite, backups, updates y protocolo de assets llegarán con sus issues. | Node, Electron, disco. |
+| **Main** | Ventana, ciclo de vida, guards de seguridad, IPC con handlers tipados y persistencia local (SQLite, migraciones, copia previa y modo seguro); backups de usuario, updates y protocolo de assets llegarán con sus issues. | Node, Electron, disco. |
 | **Preload** | Puente mínimo y tipado entre renderer y main: solo `appInfo` y funciones nominativas. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`) y router IPC (`ipc/`); base de datos, assets, backups y updates llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`) y aviso de modo seguro (`safe-mode-*.ts`); assets, backups de usuario y updates llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
+| `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo` y `shell.openExternal`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados y estilos provisionales; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
 | `src/renderer/components/` | `ui/` base, `shell/`, `editors/`, `maps/`, `graph/`. Prevista. | Módulos del renderer, shared |
@@ -73,8 +76,9 @@ Electron separa tres procesos con permisos distintos:
 | `src/renderer/styles/` | Base provisional; tokens definitivos y movimiento en #65. | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error y contrato de la API del preload. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards y de los enlaces externos. | `src/` |
-| `tests/integration/`, `tests/e2e/` | Integración con SQLite y Playwright Electron. Previstos (#64, #70). | `src/` |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos y de la capa de datos (journal, checksum, rutas, logger y modo seguro). | `src/` |
+| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas. | `src/` |
+| `tests/e2e/` | Playwright Electron. Previsto (#70). | `src/` |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
 Reglas de dependencia:
@@ -114,8 +118,8 @@ Reglas de dependencia:
 - **Verificación.** `pnpm verify:build` comprueba que existen los tres artefactos,
   que la CSP está antes de los scripts, que no hay `unsafe-*` ni URLs remotas.
 - **Tema y datos.** `prefers-color-scheme` es solo un fallback provisional; el
-  sistema de diseño con `[data-theme]` llega en #65. No se escribe en
-  `userData`, no hay SQLite ni migraciones (#64).
+  sistema de diseño con `[data-theme]` llega en #65. La escritura en `userData`,
+  SQLite y las migraciones se añadieron en #64 (sección 2.3).
 
 ### 2.2 Estado implementado del IPC (#63)
 
@@ -148,7 +152,55 @@ Reglas de dependencia:
   válido, sin allowlist de dominios por ahora; esa allowlist llegará con la
   pantalla de ayuda.
 
+### 2.3 Estado implementado de la persistencia (#64)
+
+- **Dependencia nativa.** `better-sqlite3` 13.2.0 usa Node-API 10 y un prebuild
+  compartido entre Node 22.23.5 y Electron 45.3.4 (SQLite 3.54.1 con FTS5). No
+  se usa `electron-rebuild`: `pnpm verify:native` comprueba ambos runtimes y la
+  reconstrucción queda como contingencia si una versión futura cambia la
+  compatibilidad.
+- **Composición.** `src/main/persistence.ts` resuelve `userData`, arranca la base
+  antes de crear la ventana y cierra la conexión en `before-quit`. En modo
+  seguro, `safe-mode-dialog.ts` conecta el diálogo nativo con `safe-mode-prompt.ts`,
+  que es lógica pura y testeable sin Electron.
+- **Capa de datos.** `src/main/db/` no importa Electron: contiene rutas,
+  conexión, esquema, journal validado con Zod, runner de migraciones, copia
+  previa, integridad, logger JSONL y códigos de error. La regla ESLint lo
+  impone.
+- **Ubicación y pragmas.** `app.setName(APP_NAME)` antes de
+  `app.getPath('userData')`; base en `userData/data/world-craft.sqlite`; una
+  conexión de escritura; WAL, `synchronous = NORMAL`, `foreign_keys = ON` y
+  `busy_timeout = 5000`.
+- **Arranque.** Integridad antes de WAL, copia online si la base existía y hay
+  migraciones pendientes, lote transaccional y comprobación posterior. Si algo
+  falla, se cierra la conexión y se entra en modo seguro sin escritura.
+- **Build.** `better-sqlite3` y `drizzle-orm` se externalizan; `drizzle/` se
+  copia a `out/main/drizzle`. `pnpm verify:build` valida las migraciones
+  copiadas y la externalización. #68 debe desempaquetar el módulo nativo del
+  asar.
+
 ## 3. Flujo de una operación
+
+### 3.1 Arranque (implementado, #64)
+
+```text
+app.setName(APP_NAME) → app.getPath('userData')
+  → initializePersistence()
+    → rutas, carpetas y log de arranque
+    → abrir SQLite sin WAL → integrity_check
+    → user_version + schema_migrations
+    → copia pre-migración si la base existía y hay pendientes
+    → WAL + synchronous = NORMAL
+    → migraciones en una transacción
+    → integrity_check posterior
+    → ready: registrar IPC y crear la ventana
+    → safe-mode: diálogo nativo (abrir copias, continuar o salir)
+```
+
+La ventana no se crea hasta que el arranque termina. Si el usuario elige salir,
+no se registra IPC ni se abre ninguna vía de escritura.
+
+### 3.2 IPC
 
 Hoy el único canal real es `shell:openExternal`. Una llamada recorre esta ruta:
 
@@ -162,8 +214,8 @@ Llamada IPC (implementado, #63)
     → preload: comprueba la forma del resultado → renderer
 ```
 
-Los flujos de dominio siguientes son el **objetivo** una vez existan SQLite y
-las issues de cada módulo; todavía no tienen canales ni consultas.
+Los flujos de dominio siguientes son el **objetivo** una vez existan las tablas
+de M1 y las issues de cada módulo; todavía no tienen canales ni consultas.
 
 ```text
 Lectura
@@ -198,18 +250,27 @@ convierten en `{ ok: false, error: { code } }`.
 
 ## 4. Persistencia y datos
 
-Nada de esta sección está implementado todavía: la base SQLite llega con #64 y
-los assets con #66. El scaffold no escribe en `userData` ni crea migraciones.
+La persistencia local está implementada desde M0-04 (#64). Los assets (#66) y
+las copias automáticas con restauración (M0-07) todavía no existen.
 
-- **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`.
+- **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`, con una única
+  conexión de escritura en el proceso principal.
 - **WAL** para lecturas concurrentes y escrituras rápidas; `foreign_keys=ON`,
   `busy_timeout=5000`, `synchronous=NORMAL`.
-- **Drizzle ORM** para esquema, consultas y migraciones versionadas.
-- **FTS5** para búsqueda global, sincronizada con `search_documents` y triggers.
-- **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\`.
-- **Copias** en `%APPDATA%\World Craft\backups\` con rotación diaria/semanal/
-  mensual y copia previa a migraciones.
-- **Exportación** de mundo en ZIP con `manifest.json`, `data.json` y `assets/`.
+- **Drizzle ORM** para el esquema y las consultas tipadas. Drizzle Kit solo
+  genera y revisa migraciones; el runner propio las aplica.
+- **Migraciones** en `drizzle/`: `0000_init` crea `schema_migrations` y
+  `app_settings`. `PRAGMA user_version` guarda el número de migraciones
+  aplicadas.
+- **Copia previa** en `%APPDATA%\World Craft\backups\pre-migration\<timestamp>\`
+  con manifiesto, SHA-256 e integridad. La rotación diaria/semanal/mensual y la
+  restauración guiada llegan con M0-07.
+- **FTS5** está disponible en el binario; la tabla `search_fts` y sus triggers
+  llegan con las tablas de dominio de M1.
+- **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\` (previsto,
+  #66).
+- **Exportación** de mundo en ZIP con `manifest.json`, `data.json` y `assets/`
+  (prevista, M1).
 
 El detalle está en [`docs/persistencia.md`](persistencia.md),
 [`docs/base-de-datos/esquema.md`](base-de-datos/esquema.md) y
@@ -246,6 +307,19 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   navega la ventana: el guard lo descarta y el canal lo devuelve como
   `INTERNAL_ERROR`. La política aprobada admite cualquier `https:` válido; la
   allowlist de dominios llegará con la pantalla de ayuda.
+- **Base de datos.** Implementado (#64): vive solo en `userData`, el renderer no
+  tiene acceso, `src/main/db/` no importa Electron y los errores usan códigos
+  estables. El journal se valida con Zod, el checksum es SHA-256 y el SQL de
+  migración se revisa. El guard de base ajena mira tablas: una base con solo
+  vistas, triggers o índices no se detecta, pero la migración choca y deja modo
+  seguro sin escribir (LOW aceptado).
+- **Modo seguro.** Implementado (#64): sin conexión de escritura, log JSONL con
+  rotación y sin SQL, filas, rutas ni contenido, y diálogo nativo con rutas ya
+  resueltas en `main`. La restauración guiada no existe todavía.
+- **Instancia única.** Pendiente: no hay `app.requestSingleInstanceLock`. Dos
+  instancias podrían competir por migrar y una acabar en modo seguro; SQLite
+  serializa y la transacción revierte, así que no hay corrupción. Debe cerrarse
+  antes de M1 y preferiblemente antes de #68.
 - **Assets y rutas.** Previsto (#66): normalización, comprobación de prefijo y
   rechazo de `..`, rutas absolutas y enlaces simbólicos.
 - **Importación.** Previsto: ZIP/JSON validados con Zod, límites de tamaño y de
@@ -261,18 +335,23 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 54 pruebas unitarias: scaffold (ventana,
-  navegación, CSP e identidad), contrato IPC, router IPC, API del preload y
-  enlaces externos. `pnpm build` y `pnpm verify:build` validan los artefactos.
-  `test:integration` (SQLite) y `test:e2e` (Playwright Electron) están previstos
-  con #64 y #70.
+- **Pruebas.** `pnpm test` ejecuta 89 pruebas unitarias y 18 de integración:
+  scaffold (ventana, navegación, CSP e identidad), contrato IPC, router IPC, API
+  del preload, enlaces externos, journal, checksum, rutas, logger y modo seguro,
+  más arranque, migraciones, copia, corrupción, versión adelantada, base ajena,
+  preservación y rollback de referencia. `pnpm build` y `pnpm verify:build`
+  validan los artefactos; `pnpm verify:native` comprueba el módulo nativo en
+  Node y Electron. `test:e2e` (Playwright Electron) sigue previsto para #70.
 - **CI.** GitHub Actions en `ubuntu-latest`: jobs `lint` (con `format:check`),
-  `typecheck`, `test`, `build` (con `verify:build`), `gitleaks` y `audit`. Los
-  tres primeros son required; `build` todavía no lo es hasta #69, y gitleaks y
-  audit no bloquean.
+  `typecheck`, `test`, `build` (con `db:check` y `verify:build`), `gitleaks` y
+  `audit`. Los tres primeros son required; `build` todavía no lo es hasta #69, y
+  gitleaks y audit no bloquean. `verify:native` se ejecuta a mano y debe añadirse
+  a la CI antes de #68.
 - **Instalador.** Previsto (#68): `electron-builder` con NSIS por usuario;
   `pnpm dist` generará el instalador y `pnpm dist:dir` una carpeta desempaquetada
-  para pruebas. Hoy no existen esos scripts.
+  para pruebas. Hoy no existen esos scripts. #68 también debe desempaquetar
+  `better-sqlite3` del asar y empaquetar las dependencias de producción y
+  `drizzle/`.
 - **Release.** Previsto: tag `vX.Y.Z`, workflow que compila, firma si hay
   certificado y publica en GitHub Releases con `latest.yml`.
 - **Actualización.** Previsto (M5): `electron-updater` contra GitHub Releases;
@@ -314,6 +393,7 @@ decisiones está en [`docs/registro-decisiones.md`](registro-decisiones.md).
 - [Persistencia](persistencia.md)
 - [Modelo de datos](base-de-datos/esquema.md)
 - [Migraciones](base-de-datos/migraciones.md)
+- [ADR 0016: SQLite, migraciones y modo seguro](adr/0016-sqlite-migrations-safe-mode.md)
 - [Continuidad y copias](continuidad.md)
 - [Plan de pruebas](calidad/plan-de-pruebas.md)
 - [Sistema de diseño](diseno/sistema-de-diseno.md)
