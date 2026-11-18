@@ -10,10 +10,11 @@ Este documento explica **cómo está organizada la aplicación** y **por dónde 
 una operación**. No sustituye al plan ni a los ADRs: el plan define el alcance y
 los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
-En la fase actual el repositorio contiene el **baseline de tooling y la
-documentación del pivote**. Todavía no hay ventana Electron ni base de datos
-ejecutable: eso llega con las primeras issues de M0. Las secciones distinguen lo
-previsto de lo implementado.
+En la fase actual el repositorio contiene el **scaffold de escritorio** de la
+issue M0-02 (#62): ventana Electron segura, preload mínimo y renderer React con
+una pantalla provisional. Todavía no hay IPC, base de datos ni sistema de diseño:
+eso llega con #63, #64 y #65. Las secciones distinguen lo implementado de lo
+previsto.
 
 ## 1. Vista general
 
@@ -33,19 +34,19 @@ previsto de lo implementado.
 
 | Pieza | Estado | Dónde se decide |
 |---|---|---|
-| Electron + Vite + React + TypeScript | Previsto (M0) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
-| SQLite + better-sqlite3 + Drizzle + FTS5 | Previsto (M0) | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md) |
-| Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
-| Seguridad Electron e IPC tipado | Previsto (M0) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
-| Assets locales y protocolo propio | Previsto (M0) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
-| Dos temas y sistema de diseño | Previsto (M0) | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
+| Electron + Vite + React + TypeScript | Implementado (M0-02, #62) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
+| SQLite + better-sqlite3 + Drizzle + FTS5 | Previsto (#64) | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md) |
+| Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5, #68) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
+| Seguridad Electron e IPC tipado | Parcial: ventana segura (#62); IPC previsto (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
+| Assets locales y protocolo propio | Previsto (#66) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
+| Dos temas y sistema de diseño | Parcial: pantalla provisional (#62); sistema previsto (#65) | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
-| i18n centralizada | Previsto (M0) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Previsto (M0/M5) | [ADR 0010](adr/0010-testing-strategy.md) |
+| i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
+| Pruebas y calidad | Parcial: unitarios del scaffold (#62); integración y E2E previstos (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Previsto (M0/M5) | [ADR 0012](adr/0012-backup-restore-recovery.md) |
-| CI y releases | Previsto (M0/M5) | [ADR 0013](adr/0013-ci-releases.md) |
+| CI y releases | Parcial: lint, typecheck, test y build (#62); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
 | Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
 | Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
 
@@ -55,21 +56,22 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, SQLite, sistema de archivos, backups, updates, protocolo de assets y handlers IPC. | Node, Electron, disco. |
+| **Main** | Ventana, ciclo de vida y guards de seguridad; SQLite, sistema de archivos, backups, updates, protocolo de assets y handlers IPC llegarán con sus issues. | Node, Electron, disco. |
 | **Preload** | Puente mínimo y tipado entre renderer y main. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/main/` | Composición del proceso principal, ventana, base de datos, assets, backups, updates e IPC. | `src/shared/`, Node, Electron |
-| `src/preload/` | `contextBridge` y API tipada; sin lógica de negocio. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, módulos de dominio de presentación y estado. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | `ui/` base, `shell/`, `editors/`, `maps/`, `graph/`. | Módulos del renderer, shared |
-| `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. | API tipada, shared |
-| `src/renderer/messages/` | Catálogo tipado y proveedor de i18n. | — |
-| `src/renderer/styles/` | Tokens, base y movimiento. | — |
-| `src/shared/` | Tipos, contratos IPC, esquemas Zod y utilidades puras sin Node ni React. | — |
-| `tests/` | `unit/`, `integration/` y `e2e/`. | `src/` |
+| `src/main/` | Composición del proceso principal, ventana y guards de seguridad (`security/`); base de datos, assets, backups, updates e IPC llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft`; sin lógica de negocio ni `ipcRenderer`. | `src/shared/`, Electron |
+| `src/renderer/` | UI React, mensajes tipados y estilos provisionales; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | `ui/` base, `shell/`, `editors/`, `maps/`, `graph/`. Prevista. | Módulos del renderer, shared |
+| `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. Prevista. | API tipada, shared |
+| `src/renderer/messages/` | Catálogo tipado del renderer (hoy `es.ts`). | — |
+| `src/renderer/styles/` | Base provisional; tokens definitivos y movimiento en #65. | — |
+| `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
+| `tests/unit/` | Pruebas unitarias del scaffold y de la configuración de seguridad. | `src/` |
+| `tests/integration/`, `tests/e2e/` | Integración con SQLite y Playwright Electron. Previstos (#64, #70). | `src/` |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
 Reglas de dependencia:
@@ -87,7 +89,34 @@ Reglas de dependencia:
 6. **La lógica de negocio no vive en componentes.** Vive en casos de uso del
    renderer o en el main, según si necesita disco.
 
+### 2.1 Estado implementado del scaffold (M0-02, #62)
+
+- **Compilación.** electron-vite compila `main` y `preload` como CommonJS
+  (`.cjs`) y el renderer como ESM. `pnpm dev` levanta Vite y la ventana;
+  `pnpm build` escribe los tres artefactos en `out/` y `pnpm start` previsualiza
+  el build de producción. `out/` no se versiona.
+- **Ventana.** Se crea a 1280×800, con mínimo 1024×700, oculta hasta
+  `ready-to-show` y con fondo acorde a `nativeTheme` para evitar destellos. No
+  recuerda tamaño ni posición: esa persistencia sigue prevista.
+- **Preload.** `contextBridge` publica un objeto congelado con `appInfo` (nombre y
+  versión). No expone `ipcRenderer`, `require` ni un `invoke` genérico.
+- **CSP.** La política de producción se inyecta como `<meta>` antes de los
+  scripts; la de desarrollo solo añade inline y loopback para Vite y su HMR.
+- **Guards.** Se bloquean navegación, redirecciones, navegación de subframes,
+  `window.open`, webviews y descargas. Los permisos del navegador se deniegan y
+  las peticiones HTTP(S)/WS remotas se cancelan. `ELECTRON_RENDERER_URL` se
+  ignora en la versión empaquetada y las DevTools se deshabilitan en ella.
+- **Verificación.** `pnpm verify:build` comprueba que existen los tres artefactos,
+  que la CSP está antes de los scripts, que no hay `unsafe-*` ni URLs remotas.
+- **Tema y datos.** `prefers-color-scheme` es solo un fallback provisional; el
+  sistema de diseño con `[data-theme]` llega en #65. No se escribe en
+  `userData`, no hay SQLite ni migraciones (#64).
+
 ## 3. Flujo de una operación
+
+Los flujos siguientes son el **objetivo** una vez existan IPC y SQLite. Hoy el
+único cruce real por el puente es `window.worldCraft.appInfo`; todavía no hay
+canales IPC ni consultas.
 
 ```text
 Lectura
@@ -115,12 +144,15 @@ Actualización
     → userData no se toca
 ```
 
-El contrato de IPC se define en `src/shared/` y se implementa en
-`src/main/ipc/`. Cada canal tiene un esquema Zod de entrada y un tipo de salida.
-Los errores nunca cruzan IPC como excepciones crudas: se convierten en
+Cuando exista IPC, el contrato se definirá en `src/shared/` y se implementará en
+`src/main/ipc/`. Cada canal tendrá un esquema Zod de entrada y un tipo de salida.
+Los errores nunca cruzarán IPC como excepciones crudas: se convertirán en
 `{ ok: false, error: { code, message } }`.
 
 ## 4. Persistencia y datos
+
+Nada de esta sección está implementado todavía: la base SQLite llega con #64 y
+los assets con #66. El scaffold no escribe en `userData` ni crea migraciones.
 
 - **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`.
 - **WAL** para lecturas concurrentes y escrituras rápidas; `foreign_keys=ON`,
@@ -138,21 +170,31 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
 
 ## 5. Seguridad y límites de confianza
 
-- **Renderer no confiable.** `contextIsolation`, `sandbox`, `nodeIntegration:
-  false`, `webSecurity: true`.
-- **Preload mínimo.** Solo funciones concretas; nunca `ipcRenderer` ni
-  `require`.
-- **IPC allowlisted.** Validación Zod, canales explícitos y errores tipados.
-- **CSP estricta.** Sin contenido remoto, sin `unsafe-eval`, assets solo desde
-  `wc-asset:`.
-- **Navegación bloqueada.** `will-navigate` y `setWindowOpenHandler` deniegan
-  ventanas nuevas; los enlaces externos se abren con `shell.openExternal` solo
-  para HTTPS.
-- **Assets y rutas.** Normalización, comprobación de prefijo y rechazo de `..`,
-  rutas absolutas y enlaces simbólicos.
-- **Importación.** ZIP/JSON validados con Zod, límites de tamaño y de número de
-  archivos, transacción y carpeta temporal.
-- **Contenido rico.** JSON de ProseMirror; HTML saneado solo al exportar.
+- **Renderer no confiable.** Implementado: `contextIsolation`, `sandbox`,
+  `nodeIntegration: false`, `webSecurity: true` y `webviewTag: false`; además
+  `app.enableSandbox()` antes de crear ventanas.
+- **Preload mínimo.** Implementado: publica un objeto congelado con `appInfo`;
+  nunca `ipcRenderer`, `require` ni rutas del sistema.
+- **CSP estricta.** Implementada: producción sin `unsafe-eval`, `unsafe-inline`
+  ni orígenes remotos, inyectada antes de los scripts; desarrollo solo permite
+  inline y loopback para Vite. `img-src` ya reserva `wc-asset:`, aunque el
+  protocolo llega con #66.
+- **Navegación y ventanas.** Implementado: `will-navigate`, `will-redirect`,
+  `will-frame-navigate`, `setWindowOpenHandler` y `will-attach-webview` deniegan
+  cualquier salto o ventana nueva. Los enlaces externos con `shell.openExternal`
+  llegarán en una issue posterior.
+- **Red y permisos.** Implementado: todos los permisos se deniegan, las descargas
+  se cancelan y `webRequest` cancela HTTP(S) y WebSocket remotos; en desarrollo
+  solo deja pasar loopback. `ELECTRON_RENDERER_URL` se ignora empaquetado.
+- **DevTools.** Implementado: deshabilitadas en la versión empaquetada.
+- **IPC allowlisted.** Previsto (#63): validación Zod, canales explícitos y
+  errores tipados.
+- **Assets y rutas.** Previsto (#66): normalización, comprobación de prefijo y
+  rechazo de `..`, rutas absolutas y enlaces simbólicos.
+- **Importación.** Previsto: ZIP/JSON validados con Zod, límites de tamaño y de
+  número de archivos, transacción y carpeta temporal.
+- **Contenido rico.** Previsto (M3): JSON de ProseMirror; HTML saneado solo al
+  exportar.
 - **Secretos.** No hay claves de servicios en la app. Los certificados de firma,
   si existen, viven fuera del repositorio.
 - **Privacidad.** Sin telemetría, cuentas ni subida de datos.
@@ -162,17 +204,23 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` (Vitest unitario), `pnpm test:integration` (SQLite
-  temporal, migraciones, backups) y `pnpm test:e2e` (Playwright Electron).
-- **CI.** GitHub Actions en `windows-latest`: lint, format, typecheck, test,
-  integration y build. gitleaks y audit no bloquean.
-- **Instalador.** `electron-builder` con NSIS por usuario; `pnpm dist` genera el
-  instalador y `pnpm dist:dir` una carpeta desempaquetada para pruebas.
-- **Release.** Tag `vX.Y.Z`, workflow que compila, firma si hay certificado y
-  publica en GitHub Releases con `latest.yml`.
-- **Actualización.** `electron-updater` contra GitHub Releases; descarga en
-  segundo plano y reinicio consentido.
-- **Datos.** El instalador no toca `userData`; la app migra con copia previa.
+- **Pruebas.** `pnpm test` ejecuta 25 pruebas unitarias del scaffold (ventana,
+  navegación, CSP, API del preload e identidad). `pnpm build` y
+  `pnpm verify:build` validan los artefactos. `test:integration` (SQLite) y
+  `test:e2e` (Playwright Electron) están previstos con #64 y #70.
+- **CI.** GitHub Actions en `ubuntu-latest`: jobs `lint` (con `format:check`),
+  `typecheck`, `test`, `build` (con `verify:build`), `gitleaks` y `audit`. Los
+  tres primeros son required; `build` todavía no lo es hasta #69, y gitleaks y
+  audit no bloquean.
+- **Instalador.** Previsto (#68): `electron-builder` con NSIS por usuario;
+  `pnpm dist` generará el instalador y `pnpm dist:dir` una carpeta desempaquetada
+  para pruebas. Hoy no existen esos scripts.
+- **Release.** Previsto: tag `vX.Y.Z`, workflow que compila, firma si hay
+  certificado y publica en GitHub Releases con `latest.yml`.
+- **Actualización.** Previsto (M5): `electron-updater` contra GitHub Releases;
+  descarga en segundo plano y reinicio consentido.
+- **Datos.** Cuando exista instalador, no tocará `userData`; la app migrará con
+  copia previa.
 
 El detalle está en el [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md),
 [ADR 0013](adr/0013-ci-releases.md) y

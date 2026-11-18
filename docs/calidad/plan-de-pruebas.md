@@ -29,7 +29,9 @@
 | E2E | Playwright Electron | Arranque, ventana, flujos críticos, temas, accesibilidad. | `tests/e2e/` |
 | Manual | Checklist | Instalación, actualización, desinstalación y percepción visual. | Task file |
 
-Las rutas se crearán con el scaffold de M0; son el contrato previsto.
+Las rutas de `tests/unit/` ya existen con el scaffold (M0-02); `components/`,
+`integration/` y `e2e/` se crearán con sus issues y hasta entonces son contrato
+previsto.
 
 ## 3. Qué se prueba en cada área
 
@@ -51,6 +53,10 @@ Las rutas se crearán con el scaffold de M0; son el contrato previsto.
 - Versión de esquema superior → la app no escribe.
 
 ### 3.3 IPC y seguridad
+
+El IPC todavía no existe (#63); las comprobaciones de canales se activan cuando
+llegue. El scaffold ya cubre el aislamiento del renderer, la CSP, la navegación,
+los permisos y la red.
 
 - Cada canal tiene esquema de entrada y salida.
 - Un canal desconocido se rechaza.
@@ -89,6 +95,24 @@ Las rutas se crearán con el scaffold de M0; son el contrato previsto.
 - La app arranca sin conexión.
 - SmartScreen se documenta y el checksum coincide.
 
+### 3.7 Scaffold y artefactos (implementado)
+
+- **25 pruebas unitarias** en `tests/unit/`: identidad y ventana mínima,
+  opciones de seguridad de `BrowserWindow`, CSP de producción y desarrollo,
+  resolución del renderer, guards de navegación/sesión/red y API congelada del
+  preload.
+- **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
+  `out/renderer/index.html`; no genera instalador.
+- **Verificación.** `pnpm verify:build` comprueba la existencia y tamaño de los
+  artefactos, que la CSP de producción va antes de los scripts, que no contiene
+  `unsafe-*` ni URLs remotas. Una prueba negativa manual (quitar la CSP o añadir
+  una URL) debe hacerlo fallar.
+- **Manual del scaffold.** Ventana a 1024, 1280 y 1600 px sin scroll horizontal,
+  temas claro y oscuro por `prefers-color-scheme`, DevTools sin `require` ni
+  `process`, navegación externa bloqueada y arranque sin red.
+- **Pendiente.** E2E con Playwright (#70) y auditoría de accesibilidad, temas y
+  ventana (#93).
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -114,24 +138,24 @@ descenso injustificado bloquea la puerta de QA.
 | Job | Bloqueante | Qué ejecuta |
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
-| `typecheck` | Sí | `tsc --noEmit`. |
-| `test` | Sí | Vitest unitario, componentes e integración. |
-| `build` | Cuando exista | Build de main, preload y renderer; llega con el scaffold. |
-| `e2e` | No | Playwright Electron en Windows. |
+| `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
+| `test` | Sí | Vitest unitario (hoy 25 pruebas del scaffold). |
+| `build` | No hasta #69 | `pnpm build` y `pnpm verify:build`: artefactos, CSP y URLs remotas. |
+| `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |
 | `audit` | No | `pnpm audit --audit-level=high`. |
 
-En el baseline actual solo existen `lint`, `typecheck` y `test`. `build` se
-activa con el scaffold de Electron (M0-02) y `e2e` con el arranque de pruebas
-(M0-10); entonces se añaden a la CI y, el build, a los required checks. Los
-required checks se aplican en los rulesets `protect-dev` y `protect-main`. La
-CI no tiene credenciales ni datos de usuario.
+El scaffold ya ejecuta `lint`, `typecheck`, `test` y `build`. `build` no es
+todavía required: añadirlo a la protección de `dev` corresponde a #69. `e2e`
+llegará con #70 y la auditoría de accesibilidad, temas y ventana con #93. Los
+required checks se aplican en los rulesets `protect-dev` y `protect-main`. La CI
+no tiene credenciales ni datos de usuario.
 
 ## 7. Checklist de QA por issue
 
 - [ ] Criterios de aceptación cumplidos.
 - [ ] Tests nuevos o actualizados y en verde.
-- [ ] Typecheck, lint y tests en verde; build cuando exista.
+- [ ] Typecheck, lint, tests, build y verify:build en verde.
 - [ ] Ventana a 1024, 1280 y 1600 px.
 - [ ] Temas Claro y Oscuro, contraste AA.
 - [ ] Teclado, foco, axe y movimiento reducido.

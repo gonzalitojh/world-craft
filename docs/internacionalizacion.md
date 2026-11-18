@@ -20,9 +20,9 @@ src/renderer/messages/
   translator.ts  Resolución de claves y plurales
 ```
 
-La ruta se creará con el scaffold del renderer; es el contrato previsto, no un
-archivo existente. El catálogo se exporta como objeto const para que TypeScript
-derive las claves válidas.
+Hoy solo existe `es.ts` con los mensajes del scaffold; `index.ts` y
+`translator.ts` se añadirán con el catálogo completo (#71). El catálogo se
+exporta como objeto const para que TypeScript derive las claves válidas.
 
 ## 3. Reglas
 

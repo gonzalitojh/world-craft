@@ -4,6 +4,10 @@
 > todavía **no hay una versión instalable** para usar. Las funciones se marcan
 > como **previstas** hasta que la issue que las implementa esté terminada y
 > probada. Este manual se actualiza en la misma tarea que cada cambio visible.
+>
+> Hoy el proyecto solo tiene una **pantalla inicial de comprobación** que se abre
+> en el entorno de desarrollo. No hay mundos, fichas ni ajustes, y la apariencia
+> es provisional: el sistema de diseño y los temas llegarán más adelante.
 
 ## 1. Qué es World Craft
 
@@ -43,6 +47,17 @@ La primera vez se crea la carpeta de datos y una base de datos vacía. Verás un
 pantalla de bienvenida con la opción de crear tu primer mundo o importar uno
 existente.
 
+### 2.4 Estado actual del desarrollo
+
+El proyecto ya permite abrir la ventana de la aplicación en un entorno de
+desarrollo, pero **todavía no existe un programa instalable**. Esa ventana solo
+muestra una pantalla de bienvenida técnica con el nombre y la versión; sirve
+para comprobar que la base de la aplicación arranca correctamente.
+
+Por ahora no se puede crear un mundo, guardar datos ni cambiar ajustes. Cuando
+haya una versión instalable, esta sección explicará cómo conseguirla y qué
+esperar del primer arranque.
+
 ## 3. La ventana
 
 ### 3.1 Partes de la pantalla (previstas)
@@ -56,10 +71,12 @@ existente.
 
 ### 3.2 Tamaño de ventana
 
-La ventana se puede redimensionar y recuerda su tamaño y posición. El tamaño
-mínimo es 1024×700. A 1024, 1280 y 1600 píxeles de ancho el contenido se adapta
-sin desplazamiento horizontal de página; solo las tablas y el lienzo del mapa
-pueden desplazarse dentro de su propio espacio.
+La ventana se puede redimensionar y el tamaño mínimo es 1024×700. A 1024, 1280 y
+1600 píxeles de ancho el contenido se adapta sin desplazamiento horizontal de
+página; solo las tablas y el lienzo del mapa pueden desplazarse dentro de su
+propio espacio. **Hoy la ventana aún no recuerda su tamaño ni su posición**: se
+abre con un tamaño inicial de 1280×800 y esa memoria llegará en una actualización
+posterior.
 
 ## 4. Mundos (previsto)
 
@@ -201,6 +218,7 @@ significa que la aplicación tenga un problema.
 
 | Función | Estado |
 |---|---|
+| Pantalla inicial de comprobación | Solo en desarrollo |
 | Instalador y aplicación | Prevista |
 | Mundos | Prevista |
 | Fichas y tipos | Prevista |
