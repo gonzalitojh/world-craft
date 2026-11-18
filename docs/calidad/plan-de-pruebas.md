@@ -97,10 +97,10 @@ los permisos y la red.
 
 ### 3.7 Scaffold y artefactos (implementado)
 
-- **25 pruebas unitarias** en `tests/unit/`: identidad y ventana mínima,
+- **54 pruebas unitarias** en `tests/unit/`: identidad y ventana mínima,
   opciones de seguridad de `BrowserWindow`, CSP de producción y desarrollo,
-  resolución del renderer, guards de navegación/sesión/red y API congelada del
-  preload.
+  resolución del renderer, guards de navegación/sesión/red, contrato y router
+  IPC, API congelada del preload y validación de enlaces externos.
 - **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
   `out/renderer/index.html`; no genera instalador.
 - **Verificación.** `pnpm verify:build` comprueba la existencia y tamaño de los
@@ -139,7 +139,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
-| `test` | Sí | Vitest unitario (hoy 25 pruebas del scaffold). |
+| `test` | Sí | Vitest unitario (hoy 54 pruebas del scaffold y del IPC). |
 | `build` | No hasta #69 | `pnpm build` y `pnpm verify:build`: artefactos, CSP y URLs remotas. |
 | `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |

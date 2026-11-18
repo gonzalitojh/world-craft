@@ -1,16 +1,24 @@
 /**
  * Puente mínimo entre el renderer y Electron.
  *
- * Solo publica `window.worldCraft.appInfo` mediante `contextBridge`. No expone
- * `ipcRenderer`, `require`, rutas del sistema ni ningún `invoke` genérico
- * (ADR 0004). Cuando exista IPC real, cada canal tendrá su función tipada aquí
- * y su validación en el proceso principal.
+ * Solo publica `window.worldCraft` mediante `contextBridge`: la identidad de la
+ * aplicación y funciones nominativas que hablan por la allowlist de canales. No
+ * expone `ipcRenderer`, `require`, rutas del sistema ni ningún `invoke`
+ * genérico (ADR 0004). El preload no valida reglas de dominio: eso ocurre en el
+ * proceso principal.
  */
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 import {
   createWorldCraftApi,
   WORLD_CRAFT_API_KEY,
+  type IpcInvoke,
 } from '../shared/contracts/world-craft-api';
 
-contextBridge.exposeInMainWorld(WORLD_CRAFT_API_KEY, createWorldCraftApi());
+const invoke: IpcInvoke = (channel, payload) =>
+  ipcRenderer.invoke(channel, payload) as Promise<unknown>;
+
+contextBridge.exposeInMainWorld(
+  WORLD_CRAFT_API_KEY,
+  createWorldCraftApi({ invoke }),
+);

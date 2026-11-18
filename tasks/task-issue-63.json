@@ -1,0 +1,103 @@
+{
+  "title": "Ventana segura, preload e IPC tipado con Zod",
+  "description": "M0-03. El renderer es no confiable y no accede a Node, al sistema de archivos ni a SQLite. Esta tarea define el contrato compartido de petición y respuesta, la allowlist de canales IPC, las funciones nominativas del preload, la validación con Zod en el proceso principal, los errores estables sin detalles internos, el bloqueo de navegación y ventanas nuevas con apertura externa solo https y la verificación de la CSP estricta de producción. Depende de M0-02 (#62), ya fusionada en dev.",
+  "status": "published",
+  "model_variant": "high",
+  "issue": {
+    "number": 63,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/63",
+    "title": "Ventana segura, preload e IPC tipado con Zod"
+  },
+  "acceptance_criteria": [
+    "El preload solo expone funciones nominativas y no ipcRenderer, require ni rutas absolutas.",
+    "Un canal desconocido o una entrada inválida devuelve un error tipado sin exponer detalles internos.",
+    "La navegación y las ventanas nuevas están bloqueadas; los enlaces externos solo abren https.",
+    "La CSP de producción no permite unsafe-eval ni contenido remoto.",
+    "Existen pruebas unitarias de validación, errores y allowlist de canales.",
+    "La revisión de seguridad no encuentra hallazgos HIGH."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "E2E del flujo crítico ejecutado o justificado como no aplicable.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página y con contenido largo realista.",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Preservación de datos verificada o justificada como no aplicable (la tarea no escribe datos de usuario).",
+    "Funcionamiento offline comprobado.",
+    "Manual de usuario actualizado si el cambio es visible (o constancia de cómo se cubrirá).",
+    "ADR creado o actualizado si hay una decisión arquitectónica o de producto relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas de archivos y contenido no confiable.",
+    "Datos exportables e importables si se añade o cambia un modelo de datos (no aplica).",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Coste de contexto revisado: sin cambio de modelo o variante a mitad de sesión y sin editar AGENTS.md ni los agentes mientras se usaban.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado (task-architect, 2026-11-18). Arquitectura: `src/shared/contracts/result.ts` con `IpcResult<T>` y `IpcErrorCode` (`INVALID_INPUT`, `UNKNOWN_CHANNEL`, `INTERNAL_ERROR`, `UNTRUSTED_SENDER`) sin mensajes internos; `src/shared/contracts/channels.ts` con la allowlist `IPC_CHANNELS` como lista única; contrato `world-craft-api.ts` ampliado con `createWorldCraftApi({ invoke })` y `shell.openExternal(url)`; `src/main/ipc/registry.ts` con router único que resuelve canal, valida con Zod, envuelve en `IpcResult` y convierte excepciones en `INTERNAL_ERROR`; `src/main/ipc/schemas/shell.ts` y `src/main/ipc/handlers/shell.ts`; `src/main/security/external-links.ts` con validación pura (solo https, sin credenciales, longitud máxima, rechazo de loopback/IP privada); `setWindowOpenHandler` deniega la ventana y abre enlaces https validados con `shell.openExternal` inyectado; `will-navigate` sigue bloqueado. Decisión: zod@^4 solo en main (MIT, sin dependencias transitivas) para no empaquetarlo en el renderer; el preload es transporte tonto y main es la frontera de confianza. Política de dominios aprobada por el usuario: cualquier https válido, sin allowlist de dominios por ahora. Canal real mínimo `shell:openExternal`; sin canales de datos (llegan con #64) y sin UI nueva. Pruebas unitarias de router (entrada válida, inválida sin eco, canal desconocido, excepción interna, igualdad registry/allowlist), validación de enlaces hostiles, API del preload y navegación; sin E2E porque Playwright llega con #70. Documentación: `docs/arquitectura.md` y `CHANGELOG.md`; ADR 0004 no cambia; manual no aplica por no haber UI nueva.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-18",
+    "notes": "Issue adoptada con label ai, sin needs-decision. Dependencia M0-02 (#62) fusionada en dev. Variante recomendada high; variante usada high. Plan aprobado por el usuario el 2026-11-18 y política de dominios confirmada: cualquier https válido con rechazo de http, credenciales, loopback/IP privada y URLs largas; se añadirá allowlist cuando exista la pantalla de ayuda."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA PASS (2026-11-18). Criterios 1-5 verificados con evidencia: preload nominativo sin ipcRenderer/require/rutas (tests de claves, congelado y artefacto out/preload), allowlist única en src/shared/contracts/channels.ts con un handler por canal garantizado por tipo y test, validación Zod solo en main y sin zod en renderer/preload, errores estables sin mensaje/stack/rutas/eco, navegación, redirecciones, subframes y webviews bloqueados, apertura externa solo https validada (rechaza http, otros esquemas, credenciales, espacios/controles, loopback, IP privadas, CGNAT, IPv6 privada y mapeada), CSP de producción estricta. Criterio 6 queda pendiente de la puerta de seguridad; la revisión preliminar no detecta HIGH. Ejecutado en verde: typecheck, lint, test (7 archivos, 52 tests), build, verify:build y format:check; git diff --check limpio. Ventana 1024/1280/1600, temas y accesibilidad no aplican: el diff no toca renderer, HTML, CSS ni JSX y no hay UI nueva. Datos y migraciones no aplican (sin escrituras) y el arranque se comprobó con el build real y perfil temporal, sin errores ni peticiones remotas (guards de sesión activos). Manual: no aplica justificado. Recomendaciones no bloqueantes: (1) tests de IPv4 ofuscada, IPv6 mapeada, punto final y credenciales codificadas; (2) acotar la confianza de remitente file:// al HTML empaquetado; (3) precisar en ADR 0004 y docs/arquitectura.md la validación de salida estructural del preload y la política de dominios https; (4) el empaquetado futuro debe incluir zod como dependencia de producción."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "LOW",
+        "status": "resuelto",
+        "description": "tests/unit/ipc-registry.test.ts usaba una ruta absoluta con el usuario real del desarrollador como cadena de error simulada. Sustituida por C:\\Users\\usuario\\datos.db manteniendo la aserción de no-filtrado."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "registry.ts acepta cualquier remitente file:// y cualquier loopback sin comparar event.sender con la ventana principal. No explotable con una sola ventana, navegación y subframes bloqueados, window.open denegado, webviewTag false y will-attach-webview bloqueado. Se acotará al HTML empaquetado y a la ventana principal en una iteración posterior."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "shell.openExternal puede abrir cualquier https válido sin gesto de usuario y sin allowlist de dominios (política aprobada por el usuario). El esquema, credenciales y hosts privados están validados y se abre la URL normalizada; el impacto máximo ante un renderer comprometido es abrir pestañas del navegador, sin ejecución local. La allowlist llega con la pantalla de ayuda."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "external-links.ts no bloquea NAT64, 6to4, Teredo ni nombres DNS que resuelven a IP privada; el bloqueo de IPv4-mapped es conservador y sobre-bloquea. Sin impacto práctico porque la app no resuelve DNS ni realiza la petición. Se añadieron tests de IPv4 decimal/hex/octal, ::ffff: y punto final para fijar la canonicalización del parser."
+      },
+      {
+        "severity": "LOW",
+        "status": "diferido",
+        "description": "Endurecimiento opcional: declarar nodeIntegrationInSubFrames/nodeIntegrationInWorker en false y setDevicePermissionHandler(() => false). Los valores por defecto de Electron 45 ya son seguros; no se cambia en esta tarea."
+      },
+      {
+        "severity": "LOW",
+        "status": "verificado",
+        "description": "out/ está ignorado y no trackeado; out/preload/index.cjs no contiene zod, rutas absolutas ni ipcRenderer expuesto; out/renderer/index.html lleva la CSP estricta antes de los scripts y sin unsafe-*; out/main/index.cjs externaliza require('zod'), por lo que zod debe permanecer en dependencies (lo está)."
+      },
+      {
+        "severity": "LOW",
+        "status": "verificado",
+        "description": "pnpm audit no se pudo ejecutar por permisos del entorno. zod 4.6.7 es MIT, sin dependencias transitivas ni scripts de instalación, está en dependencies y el lockfile lo fija en 4.6.7; el CI ejecuta pnpm audit --audit-level=high."
+      }
+    ],
+    "notes": "Security-champion (2026-11-18): PASS sin HIGH ni MEDIUM sobre la rama feat/issue-63-typed-ipc con cambios sin commitear. Revisados por lectura los 8 archivos modificados y los 11 nuevos, más el contexto de main, renderer, out/, package.json, lockfile, .gitignore, pnpm-workspace.yaml y CI. Aislamiento Electron completo (contextIsolation, sandbox, nodeIntegration false, webSecurity, webviewTag false, app.enableSandbox, DevTools solo en dev), preload mínimo y congelado sin invoke genérico, allowlist única con handler por canal y Zod exclusivo de main, errores solo por código estable sin mensaje/stack/ruta/eco, navegación, subframes, redirecciones, window.open, webviews, descargas y permisos bloqueados, red remota cancelada, CSP de producción estricta verificada en el artefacto, apertura externa solo https sin credenciales ni hosts privados usando la URL normalizada, sin secretos ni datos de usuario en git ni en out/ y sin escrituras en userData ni migraciones (no aplica). El hallazgo LOW del fixture con el usuario real se resolvió después del escaneo y se añadieron tests de canonicalización (54 tests en verde). Limitaciones: git status y pnpm audit fueron denegados por el entorno; el alcance se obtuvo con git ls-files, git diff --name-only y git ls-files --others, y la auditoría de dependencias se cubre con el job audit del CI."
+  },
+  "documentation": {
+    "adr": "docs/adr/0004-electron-security-typed-ipc.md",
+    "manual": "no aplica",
+    "changelog": "CHANGELOG.md",
+    "agents": "no aplica"
+  },
+  "pr": {
+    "number": 104,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/104",
+    "title": "feat: IPC tipado con Zod y enlaces externos seguros (#63)",
+    "branch": "feat/issue-63-typed-ipc",
+    "commit": "ea056d0"
+  }
+}

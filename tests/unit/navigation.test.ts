@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Session, WebContents } from 'electron';
 
@@ -12,20 +12,21 @@ import { registerSessionGuards } from '@/main/security/session';
 
 type PreventableEvent = { preventDefault: () => void };
 type Listener = (event: PreventableEvent) => void;
+type WindowOpenHandler = (details: { url: string }) => unknown;
 
 function createFakeWebContents(): {
   contents: WebContents;
   listeners: Map<string, Listener>;
-  getWindowOpenHandler: () => (() => unknown) | undefined;
+  getWindowOpenHandler: () => WindowOpenHandler | undefined;
 } {
   const listeners = new Map<string, Listener>();
-  let windowOpenHandler: (() => unknown) | undefined;
+  let windowOpenHandler: WindowOpenHandler | undefined;
 
   const contents = {
     on: (event: string, listener: Listener) => {
       listeners.set(event, listener);
     },
-    setWindowOpenHandler: (handler: () => unknown) => {
+    setWindowOpenHandler: (handler: WindowOpenHandler) => {
       windowOpenHandler = handler;
     },
   } as unknown as WebContents;
@@ -205,7 +206,7 @@ describe('navigation guards', () => {
   it('bloquea navegación, redirecciones y webviews', () => {
     const { contents, listeners } = createFakeWebContents();
 
-    registerNavigationGuards(contents);
+    registerNavigationGuards(contents, { openExternal: async () => {} });
 
     for (const eventName of [
       'will-navigate',
@@ -225,9 +226,56 @@ describe('navigation guards', () => {
   it('deniega la apertura de ventanas nuevas', () => {
     const { contents, getWindowOpenHandler } = createFakeWebContents();
 
-    registerNavigationGuards(contents);
+    registerNavigationGuards(contents, { openExternal: async () => {} });
 
-    expect(getWindowOpenHandler()?.()).toEqual({ action: 'deny' });
+    expect(getWindowOpenHandler()?.({ url: 'https://example.com' })).toEqual({
+      action: 'deny',
+    });
+  });
+
+  it('abre en el navegador solo los enlaces https válidos', () => {
+    const openExternal = vi.fn(async () => {});
+    const { contents, getWindowOpenHandler } = createFakeWebContents();
+
+    registerNavigationGuards(contents, { openExternal });
+
+    const handler = getWindowOpenHandler();
+
+    expect(handler?.({ url: 'https://example.com/docs?page=1' })).toEqual({
+      action: 'deny',
+    });
+    expect(openExternal).toHaveBeenCalledWith(
+      'https://example.com/docs?page=1',
+    );
+
+    for (const url of [
+      'http://example.com',
+      'javascript:alert(1)',
+      'file:///C:/Windows/System32/calc.exe',
+      'mailto:hola@example.com',
+      'https://localhost/',
+      'https://127.0.0.1/',
+    ]) {
+      expect(handler?.({ url }), url).toEqual({ action: 'deny' });
+    }
+
+    expect(openExternal).toHaveBeenCalledTimes(1);
+  });
+
+  it('no propaga los fallos al abrir el enlace externo', async () => {
+    const { contents, getWindowOpenHandler } = createFakeWebContents();
+
+    registerNavigationGuards(contents, {
+      openExternal: () => Promise.reject(new Error('sin navegador')),
+    });
+
+    expect(() =>
+      getWindowOpenHandler()?.({ url: 'https://example.com' }),
+    ).not.toThrow();
+
+    // Deja que el rechazo capturado se resuelva para que Vitest no lo marque
+    // como unhandled rejection.
+    await Promise.resolve();
   });
 });
 

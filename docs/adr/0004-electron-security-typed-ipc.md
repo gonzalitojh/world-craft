@@ -36,6 +36,12 @@ genérico y ampliar la superficie de ataque.
 8. **Logs:** sin contenido del usuario ni rutas absolutas por defecto.
 9. **Dependencias:** lockfile, auditoría y licencias compatibles.
 
+> **Precisión de implementación (#63, 18/11/2026).** La entrada se valida con
+> Zod en el proceso principal, que es la frontera de confianza. La salida se
+> comprueba de forma estructural en el preload, sin Zod, para no empaquetar la
+> librería en preload ni renderer; una respuesta con otra forma se degrada a
+> `INTERNAL_ERROR`. La decisión de validar ambos lados se mantiene.
+
 ## Alternativas consideradas
 
 | Alternativa | Motivo del descarte |
@@ -91,4 +97,5 @@ CSP o del sandbox exige un ADR nuevo.
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.5
 - [`docs/arquitectura.md`](../arquitectura.md), §5
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-024 y D-025
+- Issue #63: implementación del IPC tipado con allowlist y Zod.
 - Documentación de seguridad de Electron consultada el 18/11/2026.
