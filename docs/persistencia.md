@@ -1,10 +1,13 @@
 # Persistencia local de World Craft
 
-> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio). La base local,
+> las migraciones y el modo seguro están implementados en M0-04 (#64); la
+> restauración guiada, la retención de copias y su interfaz llegan con M0-07, y
+> el instalador con #68. Las secciones distinguen lo implementado de lo previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 (assets locales), ADR 0012
-> (copias y recuperación).
+> (copias y recuperación) y ADR 0016 (migraciones y modo seguro).
 
 ## 1. Principio
 
@@ -13,9 +16,10 @@ datos remota, cuentas, telemetría ni subida de contenido. Actualizar,
 reinstalar o desinstalar la aplicación **no puede borrar** la base de datos,
 los assets ni las copias.
 
-La carpeta de datos vive en `app.getPath('userData')`, fuera de la carpeta de
-instalación. En Windows, con el nombre de producto `World Craft`, la ruta
-habitual es:
+El proceso principal ejecuta `app.setName(APP_NAME)` **antes** de llamar a
+`app.getPath('userData')`, de modo que la carpeta de datos es la del nombre de
+producto y no la del identificador de Electron. En Windows, con el nombre
+`World Craft`, la ruta habitual es:
 
 ```text
 %APPDATA%\World Craft\
@@ -32,64 +36,87 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │   ├─ world-craft.sqlite
   │   ├─ world-craft.sqlite-wal
   │   └─ world-craft.sqlite-shm
-  ├─ assets\
+  ├─ assets\                    (previsto, #66)
   │   └─ worlds\<worldId>\<assetId>.<ext>
   ├─ backups\
-  │   ├─ daily\
-  │   ├─ weekly\
-  │   ├─ monthly\
+  │   ├─ daily\                 (previsto, M0-07)
+  │   ├─ weekly\                (previsto, M0-07)
+  │   ├─ monthly\               (previsto, M0-07)
   │   └─ pre-migration\
-  ├─ exports\
-  ├─ logs\
-  └─ config.json
+  │       └─ <timestamp>\
+  │           ├─ world-craft.sqlite
+  │           └─ manifest.json
+  ├─ exports\                   (previsto, M1)
+  └─ logs\
+      ├─ startup.log
+      └─ startup.log.1
 ```
 
 | Ruta | Contenido | Se puede borrar a mano |
 |---|---|---|
 | `data/world-craft.sqlite` | Base de datos principal | No sin copia y con la app cerrada |
 | `data/*-wal`, `data/*-shm` | Ficheros auxiliares de SQLite | Se consolidan al cerrar; no borrar sueltos |
-| `assets/worlds/<worldId>/` | Imágenes y archivos de cada mundo | Solo desde la app o con exportación previa |
-| `backups/` | Copias verificables | Las antiguas, desde la app o el explorador |
-| `exports/` | Exportaciones ZIP/JSON generadas por el usuario | Sí |
-| `logs/` | Logs locales rotativos, sin contenido por defecto | Sí |
-| `config.json` | Ventana, tema, idioma y preferencias | Se regenera con valores por defecto |
+| `assets/worlds/<worldId>/` | Imágenes y archivos de cada mundo (previsto) | Solo desde la app o con exportación previa |
+| `backups/pre-migration/` | Copia y manifiesto previos a una migración (implementado) | Solo si no hay una actualización pendiente |
+| `backups/daily`, `weekly`, `monthly` | Copias automáticas (previstas, M0-07) | Las antiguas, desde la app |
+| `exports/` | Exportaciones ZIP/JSON generadas por el usuario (previsto) | Sí |
+| `logs/startup.log` | Arranque en JSONL, rotado a 256 KiB | Sí; no contiene contenido del usuario |
 
-La app ofrece desde Ajustes «Abrir carpeta de datos», «Abrir copias» y «Abrir
-logs». Esas acciones abren el explorador de Windows; no exponen rutas al
-renderer.
+La app ofrecerá desde Ajustes «Abrir carpeta de datos», «Abrir copias» y «Abrir
+logs». Esas acciones abrirán el explorador de Windows sin exponer rutas al
+renderer. En M0-04 el diálogo de modo seguro ya permite abrir la carpeta de
+copias (o `userData` si aún no existe) y el log de arranque se escribe sin
+interfaz. Las preferencias de ventana, tema e idioma se guardarán en la tabla
+`app_settings`; no se crea `config.json`.
 
 ## 3. SQLite
 
 ### 3.1 Motor y configuración
 
-- **better-sqlite3** en el proceso principal; ninguna consulta desde el
-  renderer.
+- **better-sqlite3 13.2.0** en el proceso principal; ninguna consulta desde el
+  renderer. Usa Node-API 10 y un prebuild que carga en Node y Electron, por lo
+  que no necesita `electron-rebuild`; `pnpm verify:native` lo comprueba en ambos
+  runtimes. El SQLite incluido es 3.54.1 con FTS5.
+- Base en `userData/data/world-craft.sqlite`.
 - **WAL** (`PRAGMA journal_mode = WAL`) para lecturas concurrentes y menos
   bloqueos.
 - `PRAGMA synchronous = NORMAL`, `foreign_keys = ON`, `busy_timeout = 5000`.
-- `PRAGMA integrity_check` al arrancar; si falla, modo seguro y restauración
-  guiada.
+- `PRAGMA integrity_check` al arrancar, antes de activar WAL y después de
+  migrar; si falla, modo seguro sin escritura.
+- `PRAGMA user_version` es el **número de migraciones aplicadas** (con
+  `0000_init`, vale 1), no el prefijo de la etiqueta. La tabla
+  `schema_migrations` conserva el detalle y se contrasta con él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
-- IDs UUIDv7 generados en el proceso principal.
+- IDs UUIDv7 generados en el proceso principal (las tablas de dominio llegan en
+  M1; las tablas del sistema usan claves de texto).
 
 ### 3.2 Acceso
 
-El proceso principal abre una única conexión y la comparte entre los casos de
-uso. Las operaciones largas (exportación, importación y copias) se ejecutan en
-un **utility process** para no bloquear la interfaz. Las migraciones se
-ejecutan al arrancar, antes de mostrar datos, dentro de una transacción y con
-copia previa.
+El proceso principal abre una única conexión de escritura y la comparte entre
+los casos de uso a través de `src/main/persistence.ts`; el renderer no tiene
+acceso a SQLite ni a los archivos. El arranque se ejecuta antes de crear la
+ventana: abrir sin WAL, comprobar integridad, leer el estado, copiar si hace
+falta, activar WAL, migrar en una transacción y volver a comprobar. El cierre es
+idempotente en `before-quit`.
+
+Las operaciones largas (exportación, importación y copias automáticas) se
+ejecutarán en un **utility process** para no bloquear la interfaz; todavía no
+está implementado. La copia previa a migraciones usa la API online de SQLite y
+se ejecuta durante el arranque, antes de abrir la ventana.
 
 ### 3.3 Búsqueda
 
-FTS5 con tokenizador `unicode61`, prefijos y una tabla virtual
-`search_fts(title, body)` sincronizada por triggers sobre `search_documents`.
-La aplicación reconstruye los documentos cuando cambia una entidad, un mapa,
-una escena o una tabla de juego. Si FTS5 no está disponible en el binario de
-SQLite empaquetado, la app degrada a búsqueda `LIKE` y lo registra; el binario
-de better-sqlite3 se compila con FTS5 habilitado.
+FTS5 está disponible en el binario de better-sqlite3 y `pnpm verify:native` lo
+comprueba en Node y Electron. El esquema de búsqueda (tokenizador `unicode61`,
+tabla virtual `search_fts(title, body)` y triggers sobre `search_documents`)
+llega con las tablas de dominio de M1. La aplicación reconstruirá los documentos
+cuando cambie una entidad, un mapa, una escena o una tabla de juego. Si FTS5 no
+estuviera disponible en un binario futuro, la app degradará a búsqueda `LIKE` y
+lo registrará.
 
 ## 4. Assets
+
+**Previsto para #66.** El diseño es:
 
 - Ruta relativa guardada en la base de datos:
   `worlds/<worldId>/<assetId>.<ext>`.
@@ -108,38 +135,56 @@ de better-sqlite3 se compila con FTS5 habilitado.
 ## 5. Migraciones
 
 - Versionadas y revisadas; nunca se edita una migración ya aplicada.
-- Se ejecutan en una transacción y con una copia previa en
-  `backups/pre-migration/`.
-- La versión del esquema se guarda en `PRAGMA user_version` y en la tabla
-  `schema_migrations`.
-- Si una migración falla, se revierte la transacción, se conserva la copia y la
-  app arranca en **modo seguro**: no escribe, permite exportar y restaurar.
+- Se generan con `pnpm db:generate` y se validan con `pnpm db:check`. La
+  aplicación **no** usa `drizzle-kit migrate` ni `drizzle-kit push`: un runner
+  propio lee el journal de Drizzle validado con Zod y aplica el lote pendiente
+  dentro de una única transacción.
+- Antes de migrar una base existente se crea una copia online verificable en
+  `backups/pre-migration/<timestamp>/`, con manifiesto, SHA-256 e
+  `integrity_check` en solo lectura. Si la copia falla, no se migra. Una base
+  nueva no crea copia porque no hay datos que preservar.
+- La versión del esquema se guarda en `PRAGMA user_version` como **número de
+  migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
+  SHA-256 del SQL normalizado.
+- Si una migración falla, se revierte el lote, se conserva la copia y la app
+  arranca en **modo seguro** sin conexión de escritura. La restauración guiada
+  llega con M0-07; hoy el aviso permite abrir la carpeta de copias, continuar en
+  modo seguro o salir.
+- Una base con tablas propias y sin `schema_migrations` se rechaza: no se adopta
+  como propia.
 - Cada migración incluye una prueba sobre una base temporal y una prueba de
   preservación de datos.
 - El detalle está en [`docs/base-de-datos/migraciones.md`](base-de-datos/migraciones.md).
 
 ## 6. Copias de seguridad
 
-| Tipo | Frecuencia | Retención | Contenido |
-|---|---|---|---|
-| Diaria | Una al día, al cerrar o al arrancar | 7 | SQLite + manifiesto |
-| Semanal | Una a la semana | 4 | SQLite + manifiesto |
-| Mensual | Una al mes | 12 | SQLite + manifiesto |
-| Pre-migración | Antes de cada migración | Hasta la siguiente migración estable | SQLite |
-| Manual | Cuando el usuario lo pide | La decide el usuario | SQLite + assets opcionales |
+| Tipo | Frecuencia | Retención | Contenido | Estado |
+|---|---|---|---|---|
+| Pre-migración | Antes de migrar una base existente | Sin poda todavía | SQLite + manifiesto | Implementada (M0-04) |
+| Diaria | Una al día, al cerrar o al arrancar | 7 | SQLite + manifiesto | Prevista (M0-07) |
+| Semanal | Una a la semana | 4 | SQLite + manifiesto | Prevista (M0-07) |
+| Mensual | Una al mes | 12 | SQLite + manifiesto | Prevista (M0-07) |
+| Manual | Cuando el usuario lo pide | La decide el usuario | SQLite + assets opcionales | Prevista (M0-07) |
 
-- Formato: carpeta o ZIP con `world-craft.sqlite`, un `manifest.json` (versión
-  de esquema, fecha, tamaño y SHA-256) y, si se elige «copia completa», los
-  assets.
-- Verificación: se abre la copia en una conexión de solo lectura y se ejecuta
-  `PRAGMA integrity_check`; si falla, la copia se marca como no válida.
-- Rotación: se eliminan las copias más antiguas del grupo correspondiente, no
-  las pre-migración ni las manuales.
-- Ubicación por defecto: `backups/`. El usuario puede elegir otra carpeta,
+- La copia pre-migración se crea con la API online de SQLite dentro de
+  `backups/pre-migration/<timestamp>/`; incluye `world-craft.sqlite` y un
+  `manifest.json` con `formatVersion`, `reason`, `createdAt`,
+  `databaseFile`, `schemaVersion`, `sizeBytes` y `sha256`. Se verifica con una
+  conexión de solo lectura que ejecuta `PRAGMA integrity_check` y comprueba la
+  versión de esquema; si falla, no se migra.
+- Las copias automáticas diaria, semanal y mensual, la rotación y la copia
+  manual llegarán con M0-07. Mientras tanto, las copias pre-migración no se
+  podan.
+- Verificación de una copia: manifiesto válido, tamaño y SHA-256 coincidentes,
+  `integrity_check` correcto y versión de esquema esperada.
+- Ubicación por defecto: `backups/`. El usuario podrá elegir otra carpeta,
   incluida una unidad externa, desde Ajustes.
 - Las copias son locales; no se suben a ningún servicio.
 
 ## 7. Restauración
+
+**Prevista para M0-07.** Todavía no hay interfaz de copias ni restauración
+guiada. El flujo previsto es:
 
 1. El usuario elige una copia desde Ajustes → Copias.
 2. La app verifica el manifiesto y la integridad antes de ofrecer restaurar.
@@ -151,9 +196,15 @@ de better-sqlite3 se compila con FTS5 habilitado.
 6. Los assets no se sustituyen salvo que la copia sea completa y el usuario lo
    confirme; las referencias huérfanas se listan en el informe.
 
-La restauración exige confirmación explícita y nunca se hace en segundo plano.
+La restauración exigirá confirmación explícita y nunca se hará en segundo plano.
+En M0-04 el modo seguro solo permite abrir la carpeta de copias, continuar sin
+escritura o salir; la copia pre-migración ya está creada y verificada. Las
+pruebas de integración comprueban que una copia se puede restaurar manualmente
+con la app cerrada y que la migración vuelve a aplicarse sin perder datos.
 
 ## 8. Exportación e importación
+
+**Previsto para M1.** El formato es:
 
 ### 8.1 Exportación de un mundo
 
@@ -186,23 +237,30 @@ según la elección del usuario. La app se reinicia en estado inicial.
 
 ## 9. Preservación en actualizaciones y desinstalación
 
-- El instalador NSIS escribe en `%LOCALAPPDATA%\Programs\World Craft` y no toca
-  `%APPDATA%\World Craft`.
-- El desinstalador elimina binarios y accesos directos; conserva `userData` y
-  lo indica al terminar.
-- La primera ejecución tras una actualización comprueba la versión del esquema,
-  crea copia si hay migraciones y las aplica.
-- Una prueba automatizada instala/actualiza/desinstala en un entorno temporal y
-  verifica que la base y los assets siguen intactos.
+- El instalador NSIS escribirá en `%LOCALAPPDATA%\Programs\World Craft` y no
+  tocará `%APPDATA%\World Craft`. El instalador llega con #68; todavía no existe.
+- El desinstalador eliminará binarios y accesos directos; conservará `userData`
+  y lo indicará al terminar.
+- Cada arranque comprueba la integridad y la versión del esquema; si hay
+  migraciones pendientes en una base existente, crea la copia previa y las
+  aplica. Esto ya funciona en M0-04.
+- Una prueba automatizada instalará, actualizará y desinstalará en un entorno
+  temporal y verificará que la base y los assets siguen intactos. Llega con #68.
+- #68 debe desempaquetar `better-sqlite3` del asar y garantizar que las
+  dependencias de producción y `drizzle/` viajan en el paquete. La
+  externalización y la copia de migraciones ya se comprueban con
+  `pnpm verify:build`.
 
 ## 10. Logs y diagnóstico
 
-- Logs rotativos en `logs/`, con nivel configurable.
-- Por defecto no incluyen contenido del usuario, rutas completas ni datos
-  personales; los errores usan códigos estables.
-- El usuario puede exportar un diagnóstico local (versión, sistema, estado de
-  la base, últimas líneas de log) y revisarlo antes de compartirlo.
-- No hay envío automático de diagnósticos.
+- El arranque escribe `logs/startup.log` en JSONL, con eventos tipados y
+  rotación a 256 KiB (`startup.log.1`). No incluye SQL, filas, rutas ni contenido
+  del usuario; solo códigos, versiones y contadores.
+- Si el log no se puede escribir, el arranque continúa: el diagnóstico nunca
+  impide abrir la aplicación.
+- Los logs generales de la app, con nivel configurable, y la exportación de un
+  diagnóstico local (versión, sistema, estado de la base y últimas líneas)
+  llegarán con M0-07/M5. No habrá envío automático de diagnósticos.
 
 ## 11. Límites y rendimiento
 
@@ -233,3 +291,4 @@ según la elección del usuario. La app se reinicia en estado inicial.
 - [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md)
 - [ADR 0005](adr/0005-local-assets-custom-protocol.md)
 - [ADR 0012](adr/0012-backup-restore-recovery.md)
+- [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)

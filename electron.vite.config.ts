@@ -8,6 +8,7 @@
  * - La CSP de producción se inyecta como `<meta>` en el `<head>` antes de los
  *   scripts generados.
  */
+import { cp, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
@@ -23,6 +24,26 @@ const createCommonjsOutput = () => ({
   entryFileNames: '[name].cjs',
   chunkFileNames: '[name]-[hash].cjs',
 });
+
+/**
+ * Copia las migraciones versionadas junto al bundle de `main` (`out/main/drizzle`).
+ *
+ * El runner las lee desde `__dirname/drizzle` tanto en desarrollo como en la
+ * versión instalada; #68 se encarga de desempaquetar los módulos nativos del
+ * asar.
+ */
+function copyDrizzleMigrationsPlugin(): Plugin {
+  return {
+    name: 'world-craft:copy-drizzle-migrations',
+    async writeBundle() {
+      const source = fromRoot('./drizzle');
+      const target = fromRoot('./out/main/drizzle');
+
+      await rm(target, { recursive: true, force: true });
+      await cp(source, target, { recursive: true });
+    },
+  };
+}
 
 function contentSecurityPolicyPlugin(development: boolean): Plugin {
   const policy = buildContentSecurityPolicy({ development });
@@ -54,12 +75,19 @@ export default defineConfig(({ command }) => {
 
   return {
     main: {
+      plugins: [copyDrizzleMigrationsPlugin()],
       build: {
         lib: {
           entry: fromRoot('./src/main/index.ts'),
           formats: ['cjs'],
         },
-        rolldownOptions: { output: createCommonjsOutput() },
+        rolldownOptions: {
+          // El módulo nativo y el ORM no se empaquetan: se cargan desde
+          // `node_modules` en desarrollo y desde el paquete en la versión
+          // instalada. #68 desempaqueta better-sqlite3 del asar.
+          external: ['better-sqlite3', /^drizzle-orm(\/.*)?$/],
+          output: createCommonjsOutput(),
+        },
       },
     },
     preload: {

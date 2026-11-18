@@ -59,3 +59,15 @@ sustituyen los documentos y ADRs web por la serie de escritorio.
 | D-037 | Documentación | Reescribir `AGENTS.md`, plan, arquitectura, proceso, agentes, variantes, persistencia, esquema, migraciones, continuidad, manual, diseño, i18n y calidad; sustituir los ADRs 0001–0020 por 0001–0015. | Los documentos web quedan en el historial de git; no se mantienen en paralelo. |
 | D-038 | Limpieza del repositorio | Eliminar el código y la configuración web, conservar un baseline mínimo de tooling (`src/shared/app-info.ts` y su test) y dejar el scaffold Electron para la primera issue de M0. | `lint`, `typecheck` y `test` siguen funcionando sin Next.js; `build` llega con el scaffold de Electron. |
 | D-039 | Cuentas externas | El usuario cerrará manualmente Supabase, Vercel, Cloudflare R2, UptimeRobot y los secretos de GitHub Actions de la etapa web. Sentry y Resend no se configuraron; si se hubiera creado alguno, se cierra igualmente. | Se documenta el inventario y las comprobaciones en `docs/cambio-a-escritorio.md`. |
+
+## 2026-11-18 — Persistencia local implementada (M0-04)
+
+**Contexto.** La issue #64 convierte la decisión de persistencia del pivote en
+infraestructura ejecutable: abrir SQLite en `userData`, comprobar integridad,
+migrar con copia previa y arrancar en modo seguro si algo falla. Todavía no hay
+instalador ni tablas de dominio; la restauración guiada y la interfaz de copias
+pertenecen a M0-07.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-040 | SQLite, migraciones y modo seguro | `better-sqlite3` 13.2.0 con Node-API 10 y prebuild compartido, sin `electron-rebuild`; base en `userData/data/world-craft.sqlite` con WAL, `synchronous=NORMAL`, `foreign_keys=ON` y `busy_timeout=5000`; una conexión de main; integridad antes de WAL; runner propio sobre el journal de Drizzle con Zod, checksum SHA-256 normalizado, lote transaccional y `user_version` como número de migraciones aplicadas; copia online con manifiesto, SHA-256 e integridad antes de migrar una base existente; rechazo de bases con tablas propias sin `schema_migrations`; modo seguro sin conexión de escritura, códigos estables, log JSONL rotativo sin contenido y diálogo nativo con abrir copias, continuar o salir; `better-sqlite3` y `drizzle-orm` externalizados y `drizzle/` copiado al build. | La actualización no puede dejar una base a medias ni perder datos; un fallo se explica sin exponer SQL ni rutas; la restauración guiada, la retención de copias y la UI quedan para M0-07; #68 debe desempaquetar el módulo nativo del asar; el bloqueo de instancia única se cierra antes de M1/#68. ADR 0016. |

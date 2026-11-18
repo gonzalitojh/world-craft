@@ -7,7 +7,7 @@
 - **Decisiones del registro:** D-031
 - **Decisores:** usuario / agentes
 - **Supersede:** ADR 0009 y ADR 0013 de la etapa web
-- **Relacionados:** ADR 0002, ADR 0003, ADR 0005
+- **Relacionados:** ADR 0002, ADR 0003, ADR 0005, ADR 0016
 
 ## Contexto
 
@@ -31,6 +31,14 @@ externas.
 8. **Modo seguro** si la integridad falla o una migración no se puede aplicar.
 9. **Exportación de mundo** en ZIP (JSON + assets) como copia de usuario.
 10. **Desinstalación** que conserva `userData` y muestra su ruta.
+
+> **Precisión de implementación (M0-04, #64, 18/11/2026).** La copia
+> pre-migración se crea en una base **existente** antes de aplicar migraciones;
+> una base nueva no necesita copia porque no hay datos que preservar. La copia
+> usa la API online de SQLite, incluye manifiesto con SHA-256 e integridad y se
+> verifica antes de migrar. El modo seguro ya está implementado; la restauración
+> guiada, la retención y la interfaz de copias llegan con M0-07. El detalle está
+> en el [ADR 0016](0016-sqlite-migrations-safe-mode.md).
 
 ## Alternativas consideradas
 

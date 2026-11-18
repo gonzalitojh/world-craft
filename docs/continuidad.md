@@ -1,9 +1,12 @@
 # Continuidad y recuperación
 
-> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio). El modo seguro,
+> la comprobación de integridad y la copia pre-migración están implementados en
+> M0-04 (#64); la restauración guiada, las copias automáticas y su retención
+> llegan con M0-07; el instalador, con #68.
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
-> **Decisiones:** ADR 0012. La estructura de datos está en
+> **Decisiones:** ADR 0012 y ADR 0016. La estructura de datos está en
 > [`persistencia.md`](persistencia.md).
 
 ## 1. Objetivo
@@ -18,59 +21,67 @@ quiere, en una unidad externa.
 | Escenario | Detección | Respuesta | Datos que se conservan |
 |---|---|---|---|
 | Cierre inesperado | Al arrancar | SQLite recupera el WAL; `integrity_check` | Todos |
-| Corrupción de la base | `integrity_check` falla | Modo seguro + restaurar copia | Copia elegida |
-| Migración fallida | Error en transacción | Rollback + copia pre-migración + modo seguro | Base anterior |
-| Actualización de la app | Primera ejecución | Comprobación de esquema + copia + migración | Todos |
-| Reinstalación | Instalador | No toca `userData` | Todos |
-| Desinstalación | Desinstalador | Conserva `userData` y avisa | Todos |
-| Borrado accidental de un mundo | Papelera | Restaurar desde papelera | Mundo y assets |
-| Borrado definitivo | Confirmación | Copia recuperable previa | Copia |
-| Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio | Hasta la última escritura |
-| Archivo de asset perdido | Al abrir | Aviso y placeholder; se conserva la ficha | Metadatos |
-| Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar | Todos |
+| Corrupción de la base | `integrity_check` falla | Modo seguro sin escritura (M0-04); restauración guiada en M0-07 | Copia elegida |
+| Migración fallida | Error en transacción | Rollback del lote + copia pre-migración + modo seguro (M0-04) | Base anterior |
+| Actualización de la app | Primer arranque | Comprobación de esquema + copia previa + migración (M0-04) | Todos |
+| Reinstalación | Instalador | No toca `userData` (previsto, #68) | Todos |
+| Desinstalación | Desinstalador | Conserva `userData` y avisa (previsto, #68) | Todos |
+| Borrado accidental de un mundo | Papelera | Restaurar desde papelera (previsto, M1) | Mundo y assets |
+| Borrado definitivo | Confirmación | Copia recuperable previa (previsto) | Copia |
+| Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
+| Archivo de asset perdido | Al abrir | Aviso y placeholder; se conserva la ficha (previsto, #66) | Metadatos |
+| Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar (M0-04) | Todos |
 
 ## 3. Copias
 
 ### 3.1 Automáticas
 
-- **Diaria:** al cerrar la app o en el primer arranque del día.
-- **Semanal:** se conserva la última diaria de la semana.
-- **Mensual:** se conserva la última semanal del mes.
-- **Pre-migración:** antes de aplicar migraciones.
-- **Pre-restauración:** antes de reemplazar la base.
+- **Pre-migración:** antes de aplicar migraciones a una base existente
+  (implementada, M0-04).
+- **Diaria:** al cerrar la app o en el primer arranque del día (prevista,
+  M0-07).
+- **Semanal:** se conserva la última diaria de la semana (prevista, M0-07).
+- **Mensual:** se conserva la última semanal del mes (prevista, M0-07).
+- **Pre-restauración:** antes de reemplazar la base (prevista, M0-07).
 - **Antes de operaciones destructivas:** borrar un mundo, vaciar la papelera o
-  eliminar todos los datos.
+  eliminar todos los datos (previstas).
 
-Retención por defecto: 7 diarias, 4 semanales y 12 mensuales. Las copias
-pre-migración, pre-restauración y manuales no se rotan automáticamente.
+Retención prevista: 7 diarias, 4 semanales y 12 mensuales. Las copias
+pre-migración, pre-restauración y manuales no se rotarán automáticamente. La
+poda de copias pre-migración todavía no existe.
 
 ### 3.2 Manuales
 
-El usuario puede crear una copia completa (base + assets) desde Ajustes →
-Copias. Puede elegir destino, incluida una unidad externa o una carpeta de red
-de confianza. La app no sube la copia a Internet.
+El usuario podrá crear una copia completa (base + assets) desde Ajustes →
+Copias. Podrá elegir destino, incluida una unidad externa o una carpeta de red
+de confianza. La app no sube la copia a Internet. Previsto para M0-07.
 
 ### 3.3 Verificación
 
-Cada copia incluye un `manifest.json` con:
+La copia pre-migración implementada incluye un `manifest.json` con:
 
 ```json
 {
-  "format": 1,
-  "appVersion": "0.1.0",
-  "schemaVersion": 3,
+  "formatVersion": 1,
+  "reason": "pre-migration",
   "createdAt": "2026-11-18T10:00:00.000Z",
-  "sqliteSha256": "abc1234",
+  "databaseFile": "world-craft.sqlite",
+  "schemaVersion": 1,
   "sizeBytes": 0,
-  "includesAssets": false
+  "sha256": "abc1234"
 }
 ```
 
-Antes de dar una copia por válida, la app la abre en solo lectura y ejecuta
-`PRAGMA integrity_check`. Si falla, la marca como no válida y no la ofrece para
-restaurar.
+Antes de dar la copia por válida, la app comprueba el manifiesto, el tamaño y el
+SHA-256, la abre en solo lectura y ejecuta `PRAGMA integrity_check`; además
+contrasta `PRAGMA user_version` con la versión declarada. Si algo falla, no se
+migra y la app entra en modo seguro. Las copias manuales y automáticas de M0-07
+tendrán su propio manifiesto y verificación.
 
 ## 4. Restauración
+
+**Prevista para M0-07.** Todavía no hay interfaz de copias ni restauración
+guiada. El flujo previsto es:
 
 1. Ajustes → Copias → elegir copia.
 2. La app muestra fecha, versión de esquema y si incluye assets.
@@ -84,25 +95,44 @@ restaurar.
 8. Se muestra un informe: versión restaurada, migraciones aplicadas, assets
    ausentes y referencias huérfanas.
 
-La restauración nunca se ejecuta en segundo plano ni sin confirmación.
+La restauración nunca se ejecutará en segundo plano ni sin confirmación. En
+M0-04, el modo seguro permite abrir la carpeta de copias; la copia pre-migración
+ya está creada y verificada. Las pruebas de integración restauran una copia
+manualmente con la app cerrada y comprueban que la migración vuelve a aplicarse
+sin perder datos.
 
 ## 5. Modo seguro
 
-La app arranca en modo seguro cuando:
+Implementado en M0-04. La app arranca en modo seguro cuando:
 
 - `PRAGMA integrity_check` falla.
-- Una migración no puede aplicarse.
+- Una migración no puede aplicarse o el lote no se puede confirmar.
 - La versión de esquema es superior a la que entiende la app.
-- La carpeta de datos no es escribible.
+- Una migración aplicada cambió (checksum distinto).
+- No se puede crear o verificar la copia previa.
+- La carpeta de datos o la base no se pueden abrir.
 
 En modo seguro:
 
-- No se escribe en la base ni en los assets.
-- Se muestra el diagnóstico y las acciones disponibles.
-- Se puede **exportar** lo que se pueda leer.
-- Se puede **restaurar** una copia.
-- Se puede **abrir la carpeta de datos** y los logs.
-- No se ejecutan actualizaciones automáticas.
+- No se conserva ninguna conexión de escritura: no se escribe en la base ni en
+  los assets.
+- Se muestra un diálogo nativo con el código estable y una explicación sin SQL
+  ni rutas.
+- Se puede **abrir la carpeta de copias** (o `userData` si aún no existe).
+- Se puede **continuar en modo seguro** (sin escritura) o **salir**.
+- El arranque queda registrado en `logs/startup.log` (JSONL, rotación a 256 KiB,
+  sin SQL, filas, rutas ni contenido).
+- Todavía no se puede exportar ni restaurar desde la app: la restauración guiada
+  y la exportación llegan en M0-07 y M1.
+
+### 5.1 Riesgo de instancia única
+
+No hay `app.requestSingleInstanceLock`. Dos instancias podrían inspeccionar o
+migrar a la vez y una acabar en modo seguro, con copias duplicadas. SQLite
+serializa las escrituras y la transacción revierte, así que no hay corrupción ni
+pérdida de datos, y todavía no existen escrituras de contenido. El bloqueo debe
+cerrarse antes de M1 y preferiblemente antes de #68; queda registrado como riesgo
+de ciclo de vida.
 
 ## 6. Papelera y borrados
 
@@ -119,27 +149,30 @@ En modo seguro:
 
 ### 7.1 Actualización
 
-1. `electron-updater` descarga la nueva versión en segundo plano.
-2. El usuario decide cuándo reiniciar.
-3. Al arrancar, la app compara la versión de esquema.
-4. Si hay migraciones, crea copia y las aplica.
-5. Si falla, vuelve a la base anterior y arranca en modo seguro.
+1. `electron-updater` descargará la nueva versión en segundo plano (previsto,
+   M5).
+2. El usuario decidirá cuándo reiniciar.
+3. Al arrancar, la app compara la versión de esquema (implementado, M0-04).
+4. Si hay migraciones y la base ya existía, crea la copia y las aplica en una
+   transacción (implementado, M0-04).
+5. Si falla, la transacción revierte y la app arranca en modo seguro; la
+   restauración guiada de la copia llega con M0-07.
 6. Los assets y las copias no se tocan.
 
-La actualización se puede desactivar en Ajustes. Nunca se instala sin
+La actualización se podrá desactivar en Ajustes. Nunca se instalará sin
 consentimiento.
 
 ### 7.2 Reinstalación
 
-El instalador detecta una instalación previa, actualiza los binarios y
-conserva `userData`. Si el usuario elige otra carpeta de instalación, los datos
-siguen en la misma ruta de `userData`.
+El instalador detectará una instalación previa, actualizará los binarios y
+conservará `userData`. Si el usuario elige otra carpeta de instalación, los
+datos siguen en la misma ruta de `userData`. Previsto para #68.
 
 ### 7.3 Desinstalación
 
-El desinstalador elimina binarios y accesos directos. **No borra**
-`%APPDATA%\World Craft`. Al terminar, muestra la ruta de los datos y recuerda
-que puede eliminarlos manualmente si lo desea.
+El desinstalador eliminará binarios y accesos directos. **No borrará**
+`%APPDATA%\World Craft`. Al terminar, mostrará la ruta de los datos y recordará
+que puede eliminarlos manualmente si lo desea. Previsto para #68.
 
 ## 8. Pruebas de continuidad
 
@@ -148,19 +181,26 @@ que puede eliminarlos manualmente si lo desea.
 | Instalar → usar → actualizar | Cada release | Datos y assets intactos |
 | Instalar → usar → desinstalar | Cada release | `userData` intacto |
 | Migración con datos | Cada migración | Copia + preservación |
-| Restauración | Cada release | Informe de restauración |
-| Corrupción simulada | Hito M5 | Modo seguro + restauración |
+| Migración fallida | Cada migración | Rollback, copia y modo seguro (pruebas de integración) |
+| Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
+| Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
+| Restauración manual | M0-04 | Copia restaurada y migración reaplicada (integración) |
+| Restauración guiada | M0-07 | Informe de restauración |
 | Disco lleno | Hito M5 | Aviso y modo lectura |
 | Corte de energía | Hito M5 | WAL recupera la base |
 
-Las pruebas se ejecutan en una máquina virtual o en una carpeta temporal; nunca
-sobre los datos reales del desarrollador.
+Las pruebas se ejecutan en una carpeta temporal; nunca sobre los datos reales
+del desarrollador. Las de integración usan `os.tmpdir()`.
 
 ## 9. Diagnóstico y soporte
 
-- Ajustes → Ayuda → «Exportar diagnóstico» genera un ZIP con versión, sistema,
-  estado de la base, configuración no sensible y últimas líneas de log.
-- El usuario revisa el ZIP antes de compartirlo.
+- En M0-04, el arranque escribe `logs/startup.log` en JSONL: base nueva,
+  migraciones aplicadas, versión resultante, copia creada y código de modo
+  seguro. No incluye SQL, filas, rutas ni contenido.
+- Ajustes → Ayuda → «Exportar diagnóstico» (previsto) generará un ZIP con
+  versión, sistema, estado de la base, configuración no sensible y últimas
+  líneas de log.
+- El usuario revisará el ZIP antes de compartirlo.
 - No se envía nada automáticamente.
 - Los informes de error usan códigos estables y no incluyen contenido del
   usuario.
@@ -173,3 +213,4 @@ sobre los datos reales del desarrollador.
 - [Manual de usuario](manual-de-usuario.md)
 - [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md)
 - [ADR 0012](adr/0012-backup-restore-recovery.md)
+- [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)

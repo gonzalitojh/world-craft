@@ -56,7 +56,13 @@ Thumbs.db
 # `app.getPath('userData')`, nunca en el repositorio. Estas reglas evitan
 # commitear copias accidentales.
 *.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
 *.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
 *.db
 *.db-journal
 *.db-wal

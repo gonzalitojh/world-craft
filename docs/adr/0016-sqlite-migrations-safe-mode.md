@@ -1,0 +1,156 @@
+# ADR 0016 — SQLite, migraciones propias y modo seguro
+
+- **Estado:** aceptado
+- **Fecha de la decisión:** 2026-11-18
+- **Fecha del documento:** 2026-11-18
+- **Issue:** #64
+- **Decisiones del registro:** D-040
+- **Decisores:** usuario / agentes
+- **Supersede:** —
+- **Relacionados:** ADR 0002, ADR 0004, ADR 0012
+
+## Contexto
+
+El ADR 0002 fijó SQLite, better-sqlite3, Drizzle y FTS5, pero no cómo se abre la
+base, cómo se aplican las migraciones, cómo se protege una base existente ni qué
+ocurre cuando el arranque falla. La issue #64 (M0-04) tenía que convertir esa
+decisión en infraestructura ejecutable sin instalar todavía la aplicación y sin
+arriesgar datos futuros.
+
+Las restricciones eran: módulo nativo dentro de Electron, migraciones
+versionadas que nunca se editan una vez aplicadas, copia verificable antes de
+tocar una base con datos, funcionamiento offline y ningún detalle técnico del
+usuario en los avisos o los logs. Además, la restauración guiada y la interfaz
+de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí solo.
+
+## Decisión
+
+1. **Módulo nativo sin `electron-rebuild`.** Se fija `better-sqlite3` 13.2.0,
+   que usa Node-API 10. El mismo prebuild carga en Node 22.23.5 y en Electron
+   45.3.4, con SQLite 3.54.1 y FTS5. `pnpm verify:native` comprueba ambos
+   runtimes; `electron-rebuild` queda solo como contingencia si una versión
+   futura deja de ser compatible con Node-API.
+2. **Ubicación y conexión.** `app.setName(APP_NAME)` se ejecuta antes de
+   `app.getPath('userData')` para que la carpeta de datos sea
+   `%APPDATA%\World Craft`. La base vive en `userData/data/world-craft.sqlite`;
+   hay una única conexión de escritura en el proceso principal, con WAL,
+   `synchronous = NORMAL`, `foreign_keys = ON` y `busy_timeout = 5000`. El cierre
+   es idempotente y se engancha a `before-quit`.
+3. **Orden de arranque.** Abrir sin WAL → `PRAGMA integrity_check` → leer
+   `PRAGMA user_version` y `schema_migrations` → copia previa si la base ya
+   existía y hay migraciones pendientes → activar WAL y `synchronous` → aplicar
+   el lote en una transacción → `integrity_check` posterior → `ready` o modo
+   seguro. Ante un fallo se cierra la conexión y no se escribe nada más.
+4. **Runner propio de migraciones.** No se usa `drizzle-kit migrate` ni
+   `drizzle-kit push`. Un runner en `src/main/db/` lee el journal de Drizzle
+   validado con Zod, exige una secuencia sin huecos, calcula el SHA-256 del SQL
+   normalizado (BOM y finales de línea) y aplica el lote pendiente dentro de una
+   única transacción. Cada aplicación inserta su fila en `schema_migrations` y
+   actualiza `PRAGMA user_version`.
+5. **`user_version` es el número de migraciones aplicadas.** Con `0000_init`
+   vale 1; no es el prefijo ni el índice de la etiqueta. Esta regla evita
+   confundir la versión del esquema con el nombre del archivo.
+6. **Copia previa verificable.** Antes de migrar una base existente se crea
+   `backups/pre-migration/<timestamp>/` con la API online de better-sqlite3, un
+   `manifest.json` (formato, motivo, fecha, archivo, versión de esquema, tamaño y
+   SHA-256) y una comprobación de integridad y versión en solo lectura. Si la
+   copia falla, no se migra. Una base nueva no crea copia porque no hay datos que
+   preservar; la decisión queda documentada y probada.
+7. **Rechazo de bases ajenas.** Si la base tiene tablas propias pero no
+   `schema_migrations`, no se adopta ni se le aplica la migración inicial: se
+   devuelve `DB_MIGRATION_FAILED` y se entra en modo seguro.
+8. **Modo seguro sin escritura.** Los fallos se comunican con códigos estables
+   (`DB_OPEN_FAILED`, `DB_INTEGRITY_FAILED`, `DB_VERSION_AHEAD`,
+   `DB_MIGRATION_CHECKSUM_MISMATCH`, `DB_BACKUP_FAILED`, `DB_MIGRATION_FAILED`).
+   No se conserva ninguna conexión de escritura. Se escribe un log JSONL en
+   `userData/logs/startup.log`, con rotación a 256 KiB y sin SQL, filas, rutas ni
+   contenido del usuario, y se muestra un diálogo nativo con «Abrir carpeta de
+   copias», «Continuar en modo seguro» y «Salir». La restauración guiada, la
+   retención de copias y su interfaz llegan con M0-07.
+9. **Empaquetado.** `better-sqlite3` y `drizzle-orm` se externalizan del bundle
+   de `main`; `drizzle/` se copia a `out/main/drizzle` y `pnpm verify:build`
+   comprueba el journal, la migración inicial y la externalización. Desempaquetar
+   el módulo nativo del asar y empaquetar las dependencias de producción
+   corresponde a #68.
+
+## Alternativas consideradas
+
+| Alternativa | Motivo del descarte |
+|---|---|
+| `drizzle-kit migrate` o el migrator de Drizzle | No ofrece el orden de comprobación, copia, transacción y modo seguro que exige el proyecto, ni el rechazo explícito de bases ajenas. Se conserva Drizzle Kit para generar y revisar migraciones. |
+| `electron-rebuild` en cada instalación | Añade una compilación nativa lenta y frágil en Windows. La comprobación de M0-04 demuestra que el prebuild Node-API 10 sirve en Node y Electron; se mantiene como contingencia. |
+| Copiar la base con `copyFile` antes de migrar | Con WAL puede copiar un estado inconsistente. Se usa la API online de SQLite, que produce una copia coherente y después se verifica. |
+| Migrar antes de comprobar la integridad | Una base corrupta recibiría escrituras en la cabecera antes de detectar el daño. El orden real comprueba primero, sin WAL. |
+| Modo seguro silencioso o cierre automático | El usuario no sabría qué pasó ni dónde están sus copias. El diálogo nativo explica el fallo y permite abrir la carpeta antes de decidir. |
+| Guardar la versión solo en `schema_migrations` | Se pierde una comprobación barata de coherencia. Se usan la tabla y `user_version` y se contrastan entre sí. |
+
+## Consecuencias
+
+### Positivas
+
+- La base se crea y migra antes de que exista una ventana que pueda leer datos a
+  medias.
+- Una migración fallida no deja cambios parciales: la transacción revierte el
+  lote completo.
+- Una base existente siempre tiene una copia verificable antes de cambiar.
+- El modo seguro no conserva ninguna vía de escritura y deja un diagnóstico
+  legible sin exponer contenido.
+- El mismo binario nativo funciona en desarrollo, pruebas y Electron; el
+  arranque es reproducible sin herramientas de compilación adicionales.
+- Los códigos estables y el manifiesto preparan la restauración y la interfaz de
+  copias de M0-07.
+
+### Negativas y riesgos
+
+- El runner es código propio que hay que mantener y probar con cada cambio de
+  formato del journal de Drizzle.
+- Cada migración de una base existente deja una carpeta en
+  `backups/pre-migration/`; la poda llega con M0-07.
+- El diálogo nativo no permite restaurar todavía: solo abrir la carpeta,
+  continuar en modo seguro o salir.
+- No hay `app.requestSingleInstanceLock`; dos instancias podrían competir por
+  inspeccionar o migrar. SQLite serializa y la transacción revierte, pero debe
+  cerrarse antes de M1 y preferiblemente antes de #68.
+- `@types/better-sqlite3` va por detrás del runtime; es deuda de mantenimiento,
+  no un fallo funcional.
+
+### Impacto transversal
+
+| Dimensión | Impacto |
+|---|---|
+| Ventana y escritorio | La ventana se crea después de comprobar y migrar; un fallo muestra un diálogo nativo antes de abrirla. |
+| Temas (Claro/Oscuro) | No aplica: el aviso es un diálogo nativo y no hay UI de copias todavía. |
+| Accesibilidad | El diálogo usa botones y textos del sistema; la UI de copias deberá cumplir AA en M0-07. |
+| Seguridad y privacidad | `src/main/db/` no importa Electron; el renderer no accede a la base; los logs no incluyen SQL, filas ni rutas. |
+| Datos y preservación | Copia previa verificable, transacción, integridad antes y después, y rechazo de bases ajenas. |
+| Coste | 0 €/mes: SQLite, better-sqlite3, Drizzle y Zod son gratuitos y locales. |
+| Portabilidad de datos | Base SQLite estándar y migraciones versionadas; la exportación de mundo llega en M1. |
+
+## Riesgos de free tier y mitigación
+
+| Riesgo | Límite o coste | Mitigación | Seguimiento |
+|---|---|---|---|
+| Módulo nativo incompatible con Electron | Cambio de ABI en una versión futura | Node-API 10, versión fijada y `pnpm verify:native`; `electron-rebuild` como contingencia | #68 y actualizaciones de Electron |
+| Corrupción de la base | Fallo de disco o cierre abrupto | `integrity_check` antes de WAL, WAL, copia previa y modo seguro | M0-07 y M5 |
+| Migración con error | SQL inválido o estado manipulado | Lote transaccional, checksum, copia y rechazo de bases ajenas | Cada migración |
+| Copias sin retención | Crecimiento de disco | Retención y poda en M0-07 | M0-07 |
+| Dos instancias a la vez | Condición de carrera al migrar | SQLite serializa y la transacción revierte; falta el bloqueo de instancia | Antes de M1 y de #68 |
+| Empaquetado del binario nativo | Asar impide cargar `.node` | Externalización verificada; desempaquetado en #68 | #68 |
+
+## Plan de revisión
+
+Se revisa al cerrar M0-07 (restauración guiada y retención de copias), al
+implementar #68 (empaquetado y asar), al añadir las tablas de dominio de M1 y si
+Drizzle Kit cambia el formato del journal. Cualquier cambio de motor, de formato
+de migración o de estrategia de copia exige un ADR nuevo.
+
+## Referencias
+
+- Issue: #64 — SQLite local con better-sqlite3, Drizzle y migraciones.
+- [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D3–D4 y §5.
+- [`docs/registro-decisiones.md`](../registro-decisiones.md), D-040.
+- [`docs/persistencia.md`](../persistencia.md).
+- [`docs/base-de-datos/migraciones.md`](../base-de-datos/migraciones.md).
+- [ADR 0002](0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0004](0004-electron-security-typed-ipc.md)
+  y [ADR 0012](0012-backup-restore-recovery.md).
+- Documentación de better-sqlite3, Drizzle y SQLite consultada el 18/11/2026.

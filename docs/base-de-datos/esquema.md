@@ -1,6 +1,9 @@
 # Esquema de base de datos
 
-> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio). La migración
+> `0000_init` y las tablas `schema_migrations` y `app_settings` están
+> implementadas en M0-04 (#64). Las tablas de dominio y FTS5 llegan en M1 con
+> sus propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -24,6 +27,9 @@
 
 ## 2. Diagrama
 
+Modelo objetivo (las tablas de contenido llegan en M1; implementadas hoy solo
+`app_settings` y `schema_migrations`):
+
 ```text
 worlds
   ├─< entity_types
@@ -44,13 +50,34 @@ search_documents >─ search_fts (FTS5)
 
 ## 3. Tablas del sistema
 
+Implementadas en la migración `0000_init.sql`. Su SQL real es:
+
+```sql
+CREATE TABLE `app_settings` (
+  `key` text PRIMARY KEY NOT NULL,
+  `value` text NOT NULL,
+  `updated_at` integer NOT NULL
+);
+
+CREATE TABLE `schema_migrations` (
+  `id` text PRIMARY KEY NOT NULL,
+  `applied_at` integer NOT NULL,
+  `checksum` text NOT NULL
+);
+```
+
+La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
+guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, no 0 ni el
+prefijo de la etiqueta. El runner contrasta ese valor con
+`schema_migrations` y entra en modo seguro si no coinciden.
+
 ### 3.1 `schema_migrations`
 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
-| `id` | TEXT | PK | Identificador de la migración (`0001_init`). |
-| `applied_at` | INTEGER | NOT NULL | Momento de aplicación en UTC. |
-| `checksum` | TEXT | NOT NULL | SHA-256 del SQL aplicado. |
+| `id` | TEXT | PK | Etiqueta de la migración (`0000_init`). |
+| `applied_at` | INTEGER | NOT NULL | Momento de aplicación en milisegundos UTC. |
+| `checksum` | TEXT | NOT NULL | SHA-256 del SQL normalizado (BOM y finales de línea). |
 
 ### 3.2 `app_settings`
 
@@ -58,9 +85,12 @@ search_documents >─ search_fts (FTS5)
 |---|---|---|---|
 | `key` | TEXT | PK | Clave de ajuste (`theme`, `locale`, `window`, `backup`). |
 | `value` | TEXT | NOT NULL | JSON validado por la app. |
-| `updated_at` | INTEGER | NOT NULL | Última actualización. |
+| `updated_at` | INTEGER | NOT NULL | Última actualización en milisegundos UTC. |
 
 ## 4. Mundos y contenido
+
+**Previstas para M1.** Las tablas de esta sección describen el modelo objetivo;
+ninguna existe todavía en `0000_init`.
 
 ### 4.1 `worlds`
 
@@ -395,11 +425,14 @@ mantienen el índice. La reconstrucción completa se hace con
 
 Cualquier cambio de tabla, columna, índice o trigger requiere:
 
-1. Una migración nueva en `drizzle/` (nunca editar una aplicada).
-2. Actualizar este documento y [`migraciones.md`](migraciones.md).
-3. Una prueba de preservación de datos.
-4. Revisión de seguridad si afecta a rutas, assets o importación.
-5. Actualizar el manual si el cambio es visible.
+1. Cambiar el esquema Drizzle en `src/main/db/schema/`.
+2. Generar una migración nueva con `pnpm db:generate` (nunca editar una
+   aplicada).
+3. Revisar el SQL y ejecutar `pnpm db:check`.
+4. Actualizar este documento y [`migraciones.md`](migraciones.md).
+5. Una prueba de preservación de datos sobre una base temporal.
+6. Revisión de seguridad si afecta a rutas, assets o importación.
+7. Actualizar el manual si el cambio es visible.
 
 ## 8. Documentos relacionados
 
@@ -408,3 +441,4 @@ Cualquier cambio de tabla, columna, índice o trigger requiere:
 - [Continuidad](../continuidad.md)
 - [Arquitectura](../arquitectura.md)
 - [ADR 0002](../adr/0002-sqlite-better-sqlite3-drizzle-fts5.md)
+- [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
