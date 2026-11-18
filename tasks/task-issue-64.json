@@ -1,7 +1,7 @@
 {
   "title": "SQLite local con better-sqlite3, Drizzle y migraciones",
   "description": "M0-04. Infraestructura de persistencia local: abrir la base en app.getPath('userData')/data con WAL, busy_timeout y synchronous=NORMAL; crear el esquema Drizzle inicial y el runner de migraciones versionadas con transacción y copia previa verificable; ejecutar PRAGMA integrity_check al arrancar y ante un fallo de migración, con arranque en modo seguro; añadir helpers de base de datos temporal y real para pruebas e integración. Depende de M0-02 (#62), ya fusionada en dev. Coordina con M0-07 (copias y restauración) y M0-08 (instalador); el esquema completo llega en M1 y esta issue crea la infraestructura y las tablas base (ADR 0002).",
-  "status": "review",
+  "status": "published",
   "model_variant": "max",
   "issue": {
     "number": 64,
@@ -106,5 +106,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": null
+  },
+  "pr": {
+    "number": 105,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/105",
+    "title": "feat: añadir SQLite local, migraciones y modo seguro (#64)",
+    "branch": "feat/issue-64-sqlite-drizzle-migrations",
+    "commit": "e6b7e7e"
   }
 }
