@@ -1,7 +1,7 @@
 {
   "title": "Ventana segura, preload e IPC tipado con Zod",
   "description": "M0-03. El renderer es no confiable y no accede a Node, al sistema de archivos ni a SQLite. Esta tarea define el contrato compartido de petición y respuesta, la allowlist de canales IPC, las funciones nominativas del preload, la validación con Zod en el proceso principal, los errores estables sin detalles internos, el bloqueo de navegación y ventanas nuevas con apertura externa solo https y la verificación de la CSP estricta de producción. Depende de M0-02 (#62), ya fusionada en dev.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 63,
@@ -92,5 +92,12 @@
     "manual": "no aplica",
     "changelog": "CHANGELOG.md",
     "agents": "no aplica"
+  },
+  "pr": {
+    "number": 104,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/104",
+    "title": "feat: IPC tipado con Zod y enlaces externos seguros (#63)",
+    "branch": "feat/issue-63-typed-ipc",
+    "commit": "ea056d0"
   }
 }
