@@ -1,7 +1,7 @@
 {
   "title": "Sistema de diseño, tokens y shell de escritorio",
   "description": "M0-05. Definir la identidad visual de taller de cartógrafo con tokens en tres capas (paleta, semántica y escalas), implementar los temas Claro y Oscuro con overrides agrupados y contraste AA, construir el shell de escritorio (rail lateral, barra superior, área de contenido, estados vacíos y navegación por teclado) y crear los componentes base con una página de muestras. Se comprueba a 1024, 1280 y 1600 px, con contenido largo, foco visible y prefers-reduced-motion. Depende de M0-02 (#62), fusionada, y coordina con M0-11 (#71) para no duplicar el catálogo tipado. No se reutiliza el shell web ni se añaden requisitos móviles.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 65,
@@ -71,5 +71,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": null
+  },
+  "pr": {
+    "number": 106,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/106",
+    "title": "feat: añadir sistema de diseño, shell y componentes base (#65)",
+    "branch": "feat/issue-65-design-system-shell",
+    "commit": "bcf0716"
   }
 }
