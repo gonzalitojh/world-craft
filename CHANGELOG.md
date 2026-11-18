@@ -27,6 +27,13 @@ primera versión estable.
   y ausencia de URLs remotas.
 - Pruebas unitarias del scaffold (25) y job `build` en la CI, todavía no
   required hasta #69.
+- IPC tipado con allowlist de canales y validación Zod en el proceso principal
+  (#63): preload nominativo con `appInfo` y `shell.openExternal`, comprobación
+  del remitente y errores estables (`INVALID_INPUT`, `UNKNOWN_CHANNEL`,
+  `INTERNAL_ERROR`, `UNTRUSTED_SENDER`), con 54 pruebas en verde.
+- Apertura de enlaces externos solo para `https` válidos (#63): sin
+  credenciales, con longitud máxima y rechazo de loopback y redes privadas; la
+  ventana no navega y las ventanas nuevas se siguen denegando.
 - Catálogo de GitHub de escritorio: 46 etiquetas, 7 hitos y 41 issues
   (#61–#101) con contexto, alcance, dependencias, criterios y variante.
 
@@ -59,8 +66,9 @@ primera versión estable.
   limitada a loopback; navegación, redirecciones, ventanas nuevas, webviews y
   descargas bloqueadas, permisos denegados y peticiones HTTP(S)/WS remotas
   canceladas (#62).
-- Preload congelado que solo expone `window.worldCraft.appInfo`, sin
-  `ipcRenderer` ni `invoke` genérico (#62); el IPC tipado con Zod llega en #63.
+- Preload congelado que solo expone `window.worldCraft.appInfo` y
+  `shell.openExternal`, sin `ipcRenderer` ni `invoke` genérico; el proceso
+  principal comprueba el remitente y valida la entrada de cada canal (#62, #63).
 
 ## Cómo se escribe una entrada
 

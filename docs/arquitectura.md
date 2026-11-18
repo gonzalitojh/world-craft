@@ -10,11 +10,11 @@ Este documento explica **cómo está organizada la aplicación** y **por dónde 
 una operación**. No sustituye al plan ni a los ADRs: el plan define el alcance y
 los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
-En la fase actual el repositorio contiene el **scaffold de escritorio** de la
-issue M0-02 (#62): ventana Electron segura, preload mínimo y renderer React con
-una pantalla provisional. Todavía no hay IPC, base de datos ni sistema de diseño:
-eso llega con #63, #64 y #65. Las secciones distinguen lo implementado de lo
-previsto.
+En la fase actual el repositorio contiene el **scaffold de escritorio** (#62) y
+el **IPC tipado** (#63): ventana Electron segura, preload nominativo, renderer
+React con una pantalla provisional y un único canal IPC
+(`shell:openExternal`). Todavía no hay base de datos ni sistema de diseño: eso
+llega con #64 y #65. Las secciones distinguen lo implementado de lo previsto.
 
 ## 1. Vista general
 
@@ -37,13 +37,13 @@ previsto.
 | Electron + Vite + React + TypeScript | Implementado (M0-02, #62) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
 | SQLite + better-sqlite3 + Drizzle + FTS5 | Previsto (#64) | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md) |
 | Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5, #68) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
-| Seguridad Electron e IPC tipado | Parcial: ventana segura (#62); IPC previsto (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
+| Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Previsto (#66) | [ADR 0005](adr/0005-local-assets-custom-protocol.md) |
 | Dos temas y sistema de diseño | Parcial: pantalla provisional (#62); sistema previsto (#65) | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: unitarios del scaffold (#62); integración y E2E previstos (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Pruebas y calidad | Parcial: 54 unitarios del scaffold e IPC (#62, #63); integración y E2E previstos (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Previsto (M0/M5) | [ADR 0012](adr/0012-backup-restore-recovery.md) |
 | CI y releases | Parcial: lint, typecheck, test y build (#62); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
@@ -56,21 +56,24 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida y guards de seguridad; SQLite, sistema de archivos, backups, updates, protocolo de assets y handlers IPC llegarán con sus issues. | Node, Electron, disco. |
-| **Preload** | Puente mínimo y tipado entre renderer y main. | API de Electron limitada. |
+| **Main** | Ventana, ciclo de vida, guards de seguridad e IPC con handlers tipados; SQLite, backups, updates y protocolo de assets llegarán con sus issues. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main: solo `appInfo` y funciones nominativas. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/main/` | Composición del proceso principal, ventana y guards de seguridad (`security/`); base de datos, assets, backups, updates e IPC llegarán con sus issues. | `src/shared/`, Node, Electron |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft`; sin lógica de negocio ni `ipcRenderer`. | `src/shared/`, Electron |
+| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`) y router IPC (`ipc/`); base de datos, assets, backups y updates llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
+| `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo` y `shell.openExternal`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados y estilos provisionales; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
 | `src/renderer/components/` | `ui/` base, `shell/`, `editors/`, `maps/`, `graph/`. Prevista. | Módulos del renderer, shared |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. Prevista. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer (hoy `es.ts`). | — |
 | `src/renderer/styles/` | Base provisional; tokens definitivos y movimiento en #65. | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold y de la configuración de seguridad. | `src/` |
+| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error y contrato de la API del preload. | — |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards y de los enlaces externos. | `src/` |
 | `tests/integration/`, `tests/e2e/` | Integración con SQLite y Playwright Electron. Previstos (#64, #70). | `src/` |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
@@ -78,8 +81,9 @@ Reglas de dependencia:
 
 1. **Main decide y persiste; renderer presenta y compone.** El renderer no
    importa `src/main/` ni módulos de Node.
-2. **Shared no depende de nadie.** Contiene contratos y esquemas que ambos lados
-   pueden importar.
+2. **Shared no depende de nadie.** Contiene contratos puros (canales,
+   resultados y API) que ambos lados pueden importar; los esquemas Zod viven en
+   el main.
 3. **Preload no contiene reglas de negocio.** Solo traduce llamadas a canales
    IPC concretos.
 4. **Los textos visibles viven en `src/renderer/messages/`.** No se escriben
@@ -99,7 +103,8 @@ Reglas de dependencia:
   `ready-to-show` y con fondo acorde a `nativeTheme` para evitar destellos. No
   recuerda tamaño ni posición: esa persistencia sigue prevista.
 - **Preload.** `contextBridge` publica un objeto congelado con `appInfo` (nombre y
-  versión). No expone `ipcRenderer`, `require` ni un `invoke` genérico.
+  versión); desde #63 añade también `shell.openExternal` (sección 2.2). No expone
+  `ipcRenderer`, `require` ni un `invoke` genérico.
 - **CSP.** La política de producción se inyecta como `<meta>` antes de los
   scripts; la de desarrollo solo añade inline y loopback para Vite y su HMR.
 - **Guards.** Se bloquean navegación, redirecciones, navegación de subframes,
@@ -112,17 +117,59 @@ Reglas de dependencia:
   sistema de diseño con `[data-theme]` llega en #65. No se escribe en
   `userData`, no hay SQLite ni migraciones (#64).
 
+### 2.2 Estado implementado del IPC (#63)
+
+- **Contrato compartido.** `src/shared/contracts/` contiene la allowlist
+  `IPC_CHANNELS` (hoy un solo canal, `shell:openExternal`), el resultado
+  discriminado `IpcResult` con los códigos `INVALID_INPUT`, `UNKNOWN_CHANNEL`,
+  `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y `createWorldCraftApi({ invoke })`,
+  que construye la API congelada del preload. Son módulos puros: no importan
+  Electron, Node ni Zod.
+- **Preload nominativo.** Publica `appInfo` y `shell.openExternal(url)`. No
+  expone `ipcRenderer`, `require` ni un `invoke` genérico; el renderer solo
+  puede llamar a las funciones declaradas en el contrato.
+- **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
+  canal de la allowlist, comprueba el remitente (`file:` empaquetado o loopback
+  de desarrollo), valida la entrada con Zod (`zod@^4.6.7`, declarado en
+  `dependencies` y usado solo por el main), ejecuta el handler y envuelve el
+  resultado. Un canal fuera de la lista no se registra.
+- **Errores estables.** Un payload inválido devuelve `INVALID_INPUT`, un canal
+  desconocido `UNKNOWN_CHANNEL`, un remitente no confiable `UNTRUSTED_SENDER` y
+  cualquier excepción `INTERNAL_ERROR`, sin mensaje, stack, rutas ni valores
+  recibidos.
+- **Salida validada sin Zod.** El preload no valida reglas de dominio: comprueba
+  la forma de `IpcResult` de manera estructural (`isIpcResult`) y degrada
+  cualquier respuesta inesperada a `INTERNAL_ERROR`, para no empaquetar Zod en
+  preload ni renderer.
+- **Enlaces externos.** `src/main/security/external-links.ts` decide qué URL se
+  abre: solo `https:`, sin credenciales, sin espacios ni controles, con longitud
+  máxima de 2048 y rechazo de loopback y redes privadas. Se abre la URL ya
+  normalizada por el parser. La política aprobada admite cualquier `https:`
+  válido, sin allowlist de dominios por ahora; esa allowlist llegará con la
+  pantalla de ayuda.
+
 ## 3. Flujo de una operación
 
-Los flujos siguientes son el **objetivo** una vez existan IPC y SQLite. Hoy el
-único cruce real por el puente es `window.worldCraft.appInfo`; todavía no hay
-canales IPC ni consultas.
+Hoy el único canal real es `shell:openExternal`. Una llamada recorre esta ruta:
+
+```text
+Llamada IPC (implementado, #63)
+  renderer → window.worldCraft.shell.openExternal(url)
+    → preload: función nominativa del contrato → ipcRenderer.invoke('shell:openExternal', { url })
+    → main: comprueba remitente → allowlist → Zod (forma) → handler
+    → handler: resolveExternalUrl(url) → shell.openExternal(url normalizada)
+    → main: IpcResult<{ opened: true }> o error estable
+    → preload: comprueba la forma del resultado → renderer
+```
+
+Los flujos de dominio siguientes son el **objetivo** una vez existan SQLite y
+las issues de cada módulo; todavía no tienen canales ni consultas.
 
 ```text
 Lectura
   renderer → window.worldCraft.entities.list({ worldId })
-    → preload: ipcRenderer.invoke('entities:list', payload)
-    → main: Zod → consulta Drizzle/SQLite → Result<T>
+    → preload: función nominativa → ipcRenderer.invoke('entities:list', payload)
+    → main: remitente → allowlist → Zod → consulta Drizzle/SQLite → IpcResult
     → renderer: pinta datos o error tipado
 
 Mutación
@@ -136,7 +183,7 @@ Asset
 
 Exportación
   renderer → window.worldCraft.backup.exportWorld(worldId)
-    → main: consulta → ZIP temporal → dialog.save → Result
+    → main: consulta → ZIP temporal → dialog.save → IpcResult
 
 Actualización
   main: electron-updater consulta GitHub Releases (opcional)
@@ -144,10 +191,10 @@ Actualización
     → userData no se toca
 ```
 
-Cuando exista IPC, el contrato se definirá en `src/shared/` y se implementará en
-`src/main/ipc/`. Cada canal tendrá un esquema Zod de entrada y un tipo de salida.
-Los errores nunca cruzarán IPC como excepciones crudas: se convertirán en
-`{ ok: false, error: { code, message } }`.
+Cada canal nuevo se declara en `src/shared/contracts/channels.ts`, añade su
+esquema Zod y su handler en `src/main/ipc/` y su función nominativa en el
+contrato del preload. Los errores nunca cruzan IPC como excepciones crudas: se
+convierten en `{ ok: false, error: { code } }`.
 
 ## 4. Persistencia y datos
 
@@ -173,22 +220,32 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
 - **Renderer no confiable.** Implementado: `contextIsolation`, `sandbox`,
   `nodeIntegration: false`, `webSecurity: true` y `webviewTag: false`; además
   `app.enableSandbox()` antes de crear ventanas.
-- **Preload mínimo.** Implementado: publica un objeto congelado con `appInfo`;
-  nunca `ipcRenderer`, `require` ni rutas del sistema.
+- **Preload mínimo.** Implementado: publica un objeto congelado con `appInfo` y
+  `shell.openExternal`; nunca `ipcRenderer`, `require`, rutas del sistema ni un
+  `invoke` genérico.
 - **CSP estricta.** Implementada: producción sin `unsafe-eval`, `unsafe-inline`
   ni orígenes remotos, inyectada antes de los scripts; desarrollo solo permite
   inline y loopback para Vite. `img-src` ya reserva `wc-asset:`, aunque el
   protocolo llega con #66.
 - **Navegación y ventanas.** Implementado: `will-navigate`, `will-redirect`,
   `will-frame-navigate`, `setWindowOpenHandler` y `will-attach-webview` deniegan
-  cualquier salto o ventana nueva. Los enlaces externos con `shell.openExternal`
-  llegarán en una issue posterior.
+  cualquier salto o ventana nueva. `setWindowOpenHandler` abre los destinos
+  `https:` válidos en el navegador del sistema con el `shell.openExternal` del
+  proceso principal y deniega siempre la ventana de Electron.
 - **Red y permisos.** Implementado: todos los permisos se deniegan, las descargas
   se cancelan y `webRequest` cancela HTTP(S) y WebSocket remotos; en desarrollo
   solo deja pasar loopback. `ELECTRON_RENDERER_URL` se ignora empaquetado.
 - **DevTools.** Implementado: deshabilitadas en la versión empaquetada.
-- **IPC allowlisted.** Previsto (#63): validación Zod, canales explícitos y
-  errores tipados.
+- **IPC allowlisted.** Implementado (#63): allowlist de canales en
+  `src/shared/contracts/channels.ts`, comprobación del remitente, validación Zod
+  de la entrada en el main, respuesta `IpcResult` y errores tipados sin detalles
+  internos. La salida se comprueba estructuralmente en el preload, sin Zod.
+- **Enlaces externos.** Implementado (#63): solo `https:` absolutas, sin
+  credenciales, sin espacios ni controles, con longitud máxima de 2048 y rechazo
+  de loopback y redes privadas. Se abre la URL normalizada. Un fallo al abrir no
+  navega la ventana: el guard lo descarta y el canal lo devuelve como
+  `INTERNAL_ERROR`. La política aprobada admite cualquier `https:` válido; la
+  allowlist de dominios llegará con la pantalla de ayuda.
 - **Assets y rutas.** Previsto (#66): normalización, comprobación de prefijo y
   rechazo de `..`, rutas absolutas y enlaces simbólicos.
 - **Importación.** Previsto: ZIP/JSON validados con Zod, límites de tamaño y de
@@ -204,10 +261,11 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 25 pruebas unitarias del scaffold (ventana,
-  navegación, CSP, API del preload e identidad). `pnpm build` y
-  `pnpm verify:build` validan los artefactos. `test:integration` (SQLite) y
-  `test:e2e` (Playwright Electron) están previstos con #64 y #70.
+- **Pruebas.** `pnpm test` ejecuta 54 pruebas unitarias: scaffold (ventana,
+  navegación, CSP e identidad), contrato IPC, router IPC, API del preload y
+  enlaces externos. `pnpm build` y `pnpm verify:build` validan los artefactos.
+  `test:integration` (SQLite) y `test:e2e` (Playwright Electron) están previstos
+  con #64 y #70.
 - **CI.** GitHub Actions en `ubuntu-latest`: jobs `lint` (con `format:check`),
   `typecheck`, `test`, `build` (con `verify:build`), `gitleaks` y `audit`. Los
   tres primeros son required; `build` todavía no lo es hasta #69, y gitleaks y
