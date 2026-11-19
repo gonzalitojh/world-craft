@@ -65,6 +65,8 @@ primera versión estable.
 - Shell de escritorio (#65): enlace de salto, barra lateral de 240 px plegable a
   64 px, barra superior de 56 px, navegación Inicio/Muestras con `aria-current` y
   `main` enfocable.
+- Logotipo de la aplicación en el rail: `src/renderer/assets/world-craft-logo.svg`
+  se muestra con sus propios colores y se puede sustituir sin tocar componentes.
 - Páginas de Inicio con estado vacío y de Muestras para revisar el sistema de
   diseño en los dos temas (#65).
 - Pruebas de tokens y contraste (#65): 14 pruebas que calculan ratios WCAG por
@@ -103,6 +105,9 @@ primera versión estable.
   los assets viven en `app.getPath('userData')`.
 - El proceso SDD, las etiquetas, los hitos y las variantes de modelo se adaptan
   al trabajo de escritorio; los subagentes heredan el modelo de la sesión.
+- `sdd-master` queda fijado como agente primario por defecto en `opencode.jsonc`
+  (`default_agent`), de modo que una sesión nueva entra directamente en el flujo
+  SDD.
 - La Definition of Done sustituye el responsive web por la ventana de escritorio
   a 1024, 1280 y 1600 px, y añade preservación de datos y seguridad Electron.
 

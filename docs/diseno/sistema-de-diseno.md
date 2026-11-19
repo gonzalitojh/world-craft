@@ -46,6 +46,10 @@ destino del enlace de salto, con `tabIndex={-1}` para poder enfocarlo.
 
 - La navegación marca la vista activa con `aria-current="page"` y el botón de
   plegado usa `aria-expanded` y `aria-controls`.
+- El rail muestra el logotipo (`src/renderer/assets/world-craft-logo.svg`) como
+  imagen con sus propios colores, con el nombre y el lema al lado. El SVG se
+  puede sustituir sin tocar el componente; si el logotipo cambia de fondo o de
+  paleta, se revisa su legibilidad sobre `--surface` en ambos temas.
 - Con el rail plegado, las etiquetas pasan a visualmente ocultas y su texto
   queda disponible como `title`. El estado plegado dura la sesión: todavía no se
   guarda entre reinicios.

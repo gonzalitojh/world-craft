@@ -51,11 +51,19 @@
   color: var(--fg);
 }
 
+/*
+ * Logotipo del rail: se muestra el SVG de
+ * `src/renderer/assets/world-craft-logo.svg` con sus propios colores (fondo
+ * oscuro, hojas crema y tapas doradas). El archivo ya trae esquinas redondeadas
+ * y un borde cálido, así que aquí solo se fija el tamaño; si se sustituye por
+ * otro logotipo, compruébese su legibilidad sobre `--surface` en Claro y Oscuro.
+ */
 .wc-shell__brand-mark {
+  display: block;
   flex: 0 0 auto;
   inline-size: 1.75rem;
   block-size: 1.75rem;
-  color: var(--accent);
+  object-fit: contain;
 }
 
 .wc-shell__brand-name {

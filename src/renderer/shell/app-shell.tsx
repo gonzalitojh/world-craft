@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 
+import logoUrl from '../assets/world-craft-logo.svg';
 import { Button } from '../components/button';
 import { cx } from '../lib/class-names';
 import { messages } from '../messages/es';
@@ -15,27 +16,6 @@ export interface AppShellProps {
   /** Versión visible al pie del rail; la pasa `App` desde el preload. */
   readonly version: string;
   readonly children: ReactNode;
-}
-
-function CompassMark() {
-  return (
-    <svg
-      className="wc-shell__brand-mark"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9.25"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path d="M12 5.5 14.4 12 12 18.5 9.6 12Z" fill="currentColor" />
-    </svg>
-  );
 }
 
 function HomeIcon() {
@@ -169,7 +149,18 @@ export function AppShell({
       <div className={cx('wc-shell', collapsed && 'wc-shell--collapsed')}>
         <aside className="wc-shell__rail" aria-label={messages.shell.railLabel}>
           <div className="wc-shell__brand">
-            <CompassMark />
+            {/*
+              Logotipo de la aplicación. El SVG vive en
+              `src/renderer/assets/world-craft-logo.svg` y se muestra con sus
+              propios colores. Es decorativo: el nombre accesible lo aporta el
+              texto contiguo de la marca.
+            */}
+            <img
+              className="wc-shell__brand-mark"
+              src={logoUrl}
+              alt=""
+              aria-hidden="true"
+            />
             <span
               className={cx(
                 'wc-shell__brand-name',

@@ -1,0 +1,48 @@
+{
+  "title": "Agente por defecto sdd-master y logotipo en el rail",
+  "description": "Tarea local de configuración y UI: fija `sdd-master` como agente primario por defecto en `opencode.jsonc` (`default_agent`) y sustituye el SVG en línea del rail por el logotipo definitivo en `src/renderer/assets/world-craft-logo.svg`, mostrado como imagen con sus propios colores. Es una tarea interna pequeña: no crea issue.",
+  "status": "review",
+  "model_variant": "low",
+  "acceptance_criteria": [
+    "`opencode.jsonc` declara `default_agent: sdd-master` y sigue siendo JSONC válido.",
+    "El rail usa el archivo `src/renderer/assets/world-craft-logo.svg`; sustituirlo no requiere tocar el componente.",
+    "El logotipo se muestra con sus propios colores y conserva la legibilidad en los temas Claro y Oscuro.",
+    "El logotipo es decorativo para lectores de pantalla: el nombre accesible lo aporta el texto de la marca.",
+    "Manual de usuario, documentación de agentes, sistema de diseño y changelog reflejan el cambio.",
+    "Sin secretos, servicios de pago ni dependencias nuevas."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, pruebas unitarias, pruebas de integración y build en verde.",
+    "`verify:build` en verde, incluida la ausencia de URLs remotas en el SVG empaquetado.",
+    "Formato comprobado en los archivos tocados (el árbol de trabajo usa CRLF por `core.autocrlf`, y `prettier --check` global falla en todo el repositorio por ese motivo preexistente).",
+    "Sin cambio de medidas: la marca sigue ocupando 1,75 rem y el rail 240/64 px, así que 1024/1280/1600 px no cambian.",
+    "Dos temas comprobados: el SVG tiene fondo oscuro propio con hojas crema y tapas doradas, legible sobre la superficie clara y sobre la oscura.",
+    "Accesibilidad sin cambios de foco ni teclado; la imagen es decorativa (`alt=\"\"` y `aria-hidden`).",
+    "Seguridad Electron revisada: asset local empaquetado por Vite, sin scripts ni referencias externas en el SVG.",
+    "Manual de usuario actualizado (la barra lateral muestra el logotipo).",
+    "Sin ADR: no hay decisión arquitectónica nueva.",
+    "Task file actualizado con el resultado real."
+  ],
+  "plan": "1) Añadir `default_agent: sdd-master` a `opencode.jsonc` con un comentario que explique el flujo. 2) Integrar el logotipo definitivo de `src/renderer/assets/world-craft-logo.svg` como imagen con sus colores. 3) Quitar el SVG en línea de `app-shell.tsx`, declarar los tipos de assets de Vite y ajustar el CSS. 4) Actualizar manual, agentes, sistema de diseño y changelog. 5) Ejecutar typecheck, lint, pruebas, build y verify:build, y revisar el SVG (scripts, eventos y URLs remotas).",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-19",
+    "notes": "El usuario pidió añadir sdd-master como agente por defecto, preparar el código para su logotipo SVG y, tras colocar el archivo, publicar. Variante `low` por ser una tarea mecánica de configuración y estilos."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Typecheck y lint en verde. 176 pruebas unitarias (4 omitidas) y 40 de integración (1 omitida) en verde sobre `dev`. `pnpm build` emite el logotipo como asset propio (11,61 kB) y `pnpm verify:build` confirma CSP estricta, artefactos, migraciones y ausencia de URLs remotas. Temas: el SVG trae fondo oscuro, hojas crema y tapas doradas; el fondo destaca sobre la superficie clara y el contenido dorado sobre la oscura. Sin cambios de medidas ni de teclado: la marca conserva 1,75 rem y es decorativa. `prettier --check` global falla en todo el árbol por CRLF (`core.autocrlf=true`) frente a LF del repositorio; los archivos tocados pasan `prettier --check --end-of-line auto`."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "SVG revisado: sin `<script>`, eventos `onload`/`onerror`, `foreignObject`, `javascript:` ni referencias externas; los `xlink:href` apuntan a `defs` internos. Se eliminó el bloque `<metadata>` C2PA y su espacio de nombres porque `verify:build` lo interpretaba como URL remota (`http://c2pa.org/manifest`) y no aporta nada visual. Sin secretos ni credenciales. No se añaden dependencias ni servicios; el asset es local, empaquetado por Vite, y la CSP `img-src 'self' data:` ya lo permite. Sin cambios en IPC, preload o main."
+  },
+  "documentation": {
+    "adr": null,
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": "docs/agentes.md"
+  }
+}
