@@ -29,7 +29,7 @@
 | E2E | Playwright Electron | Arranque, ventana, flujos críticos, temas, accesibilidad. | `tests/e2e/` |
 | Manual | Checklist | Instalación, actualización, desinstalación y percepción visual. | Task file |
 
-`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-06).
+`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-07).
 `components/` y `e2e/` se crearán con sus issues y hasta entonces son contrato
 previsto.
 
@@ -60,7 +60,8 @@ previsto.
 - Versión de esquema superior → la app no escribe.
 - Corrupción simulada → `integrity_check` falla, modo seguro y el archivo queda
   intacto.
-- Restauración manual de la copia → integridad y migraciones pendientes.
+- Restauración desde el diálogo de modo seguro → datos restaurados, copia
+  pre-restauración creada y migraciones pendientes al relanzar.
 
 Estos casos viven en `tests/integration/` y usan bases temporales en
 `os.tmpdir()`.
@@ -109,7 +110,9 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
 - Apertura de un mundo con 1.000 fichas sin bloquear la UI.
 - Búsqueda con 10.000 documentos en menos de 200 ms.
 - Mapa con 2.000 features y grafo con 500 nodos con respuesta fluida.
-- Copia y exportación sin bloquear la ventana.
+- Copia y exportación sin bloquear la ventana: las copias automáticas se crean
+  antes de abrir la ventana y la restauración ocurre en el diálogo de modo
+  seguro; las copias manuales y la exportación de M1 no deben bloquear la UI.
 - Sin fugas evidentes al abrir y cerrar editor, mapa y grafo varias veces.
 
 ### 3.6 Distribución
@@ -122,18 +125,22 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **176 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **216 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
   journal, checksum, rutas de datos, UUIDv7, logger, lógica del aviso de modo
-  seguro, tokens y contraste del sistema de diseño y servicio de assets.
-- **40 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
+  seguro, tokens y contraste del sistema de diseño, servicio de assets y copias
+  (manifiesto, rutas de restauración, buckets, rotación y composición de modo
+  seguro).
+- **84 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
   base ajena, checksum alterado, rollback del lote, preservación con copia,
-  restauración manual, fallo de copia, rollback de referencia, upgrade a
-  `0001_assets`, importación, protocolo, repositorio y purga con SQLite real.
+  restauración manual heredada, fallo de copia, rollback de referencia, upgrade
+  a `0001_assets`, importación, protocolo, repositorio y purga con SQLite real, y
+  creación, verificación, restauración, rotación y restauración interrumpida de
+  copias.
 - **Comandos.** `pnpm test:unit`, `pnpm test:integration`, `pnpm test`,
   `pnpm db:check`, `pnpm verify:native` y `pnpm verify:build`.
 - **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
@@ -202,6 +209,58 @@ Las pruebas de symlink de archivo se omiten en Windows sin modo desarrollador
 (EPERM); las junctions sí se ejecutan. Los residuales están en el
 [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md).
 
+### 3.9 Copias, restauración y modo seguro (implementado, #67)
+
+Unitarias en `tests/unit/backup/` y `tests/unit/safe-mode-recovery.test.ts`:
+
+- **Manifiesto:** v2 válido, normalización de v1 como íntegro y sin assets,
+  rechazo de motivos, versiones, hashes, campos desconocidos, manifiesto ausente
+  o JSON inválido, y criterio de restaurabilidad (integridad `ok` y versión
+  conocida).
+- **Rutas de restauración:** aceptación de una carpeta real dentro de `backups/`,
+  rechazo de una carpeta fuera, de la propia raíz, de un archivo, de NUL y de
+  rutas inexistentes; en la composición, rechazo de una junction que escapa y
+  reinicio tras restaurar.
+- **Buckets:** día y mes locales, semana ISO del primer día del año, lunes del
+  año ISO siguiente, años de 53 semanas y relleno con ceros.
+- **Rotación:** conserva las más recientes, no caduca si la retención cubre
+  todas, protege la copia más reciente global y la del propio motivo, admite
+  retención cero sin borrar una protegida y conserva la candidata que deja de
+  verificar.
+
+Integración en `tests/integration/backup-create.test.ts`,
+`backup-restore.test.ts` y `backup-scheduler.test.ts` con SQLite real:
+
+- **Creación e inventario:** copia v2 verificable, lectura de una copia v1
+  pre-migración, rechazo de bytes alterados o manifiesto manipulado, inventario
+  ordenado con separación de válidas y corruptas, copia en bruto de una base
+  corrupta con WAL/SHM y ausencia de copia si no hay base.
+- **Restauración:** datos restaurados, base actual conservada, assets intactos,
+  restauración sin base actual, rechazo de copia corrupta o de versión futura,
+  rollback tras fallo de cada renombrado, recuperación de WAL/SHM/journal, no
+  aplicar un WAL antiguo, migración al relanzar, lock vivo rechazado y obsoleto o
+  ilegible recuperado, búsqueda de la copia más reciente, copia v1 de extremo a
+  extremo y preservación de `.rollback` y `.restore.tmp` obsoletos.
+- **Restauración interrumpida:** fallo tras archivar el `.rollback`, fallo de la
+  copia, fallo del primer renombrado, reutilización del marcador pendiente,
+  `DB_RESTORE_ROLLBACK_FAILED` con restos detectados por el arranque y ausencia
+  de temporales tras una restauración correcta. Se comprueba que el arranque no
+  crea una base vacía.
+- **Programación y rotación:** creación de los tres buckets en el primer arranque
+  sin duplicar, solo el diario al cambiar el día, solo el semanal al cambiar la
+  semana ISO, rotación de diarias a 7 sin tocar corruptas, conservación de la
+  única copia válida de un bucket, rotación de pre-migración a 5 sin tocar otros
+  motivos, arranque que no se bloquea si una carpeta es un archivo, no repetir la
+  rotación sin copia nueva, rotar pre-migración tras una copia aunque no haya
+  buckets nuevos, bucket con copia corrupta que no cuenta, versión futura que no
+  se poda como válida ni llena el bucket, y `pre-restore` que no se poda.
+
+Los fixtures usan `os.tmpdir()` y rutas sintéticas; no se tocan datos reales ni
+se incluyen rutas del desarrollador en logs o mensajes.
+
+Pendiente antes de M1/#68: endurecer el inventario y la rotación con `realpath` y
+contención, y añadir una prueba de junction dentro de `backups/daily`.
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -228,7 +287,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
-| `test` | Sí | `pnpm test`: 176 unitarias en verde (4 omitidas) + 40 de integración en verde (1 omitida). |
+| `test` | Sí | `pnpm test`: 216 unitarias en verde (4 omitidas) + 84 de integración en verde (1 omitida). |
 | `build` | No hasta #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |

@@ -12,13 +12,16 @@ los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 
 En la fase actual el repositorio contiene el **scaffold de escritorio** (#62), el
 **IPC tipado** (#63), la **persistencia local** (#64), el **sistema de diseño con
-shell de escritorio** (#65) y el **servicio de assets locales con
-`wc-asset://`** (#66): ventana Electron segura, preload nominativo, renderer
-React con tokens, componentes base y navegación, un único canal IPC
+shell de escritorio** (#65), el **servicio de assets locales con
+`wc-asset://`** (#66) y las **copias de seguridad con restauración desde modo
+seguro** (#67): ventana Electron segura, preload nominativo, renderer React con
+tokens, componentes base y navegación, un único canal IPC
 (`shell:openExternal`), una base SQLite con migraciones, comprobación de
-integridad y modo seguro, y un servicio de imágenes con protocolo propio,
-miniaturas y purga recuperable. La subida y la galería visibles llegan en M1.
-Las secciones distinguen lo implementado de lo previsto.
+integridad y modo seguro, un servicio de imágenes con protocolo propio,
+miniaturas y purga recuperable, y copias automáticas con retención, verificación
+y restauración. La subida y la galería visibles, la interfaz de Ajustes y las
+copias manuales llegan en M1. Las secciones distinguen lo implementado de lo
+previsto.
 
 ## 1. Vista general
 
@@ -47,9 +50,9 @@ Las secciones distinguen lo implementado de lo previsto.
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: 176 unitarias en verde (4 omitidas) y 40 de integración en verde (1 omitida) (#62–#66); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Pruebas y calidad | Parcial: 216 unitarias en verde (4 omitidas) y 84 de integración en verde (1 omitida) (#62–#67); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
-| Copias, restauración y recuperación | Parcial: copia pre-migración y modo seguro (#64); restauración, retención y UI previstas (M0-07) | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
+| Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, db:check y build (#62–#64); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
 | Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
 | Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
@@ -60,14 +63,15 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro) y servicio de assets con protocolo `wc-asset://`; backups de usuario y actualizaciones llegarán con sus issues. | Node, Electron, disco. |
+| **Main** | Ventana, ciclo de vida, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://` y copias de seguridad con restauración; actualizaciones y UI de Ajustes llegarán con sus issues. | Node, Electron, disco. |
 | **Preload** | Puente mínimo y tipado entre renderer y main: solo `appInfo` y funciones nominativas. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`), aviso de modo seguro (`safe-mode-*.ts`) y protocolo de assets (`assets/`); backups de usuario y updates llegarán con sus issues. | `src/shared/`, Node, Electron |
+| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`), aviso de modo seguro (`safe-mode-*.ts`), protocolo de assets (`assets/`) y composición de la recuperación; updates llegarán con su issue. | `src/shared/`, Node, Electron |
 | `src/main/assets/` | Servicio de assets: importación, procesamiento con sharp, rutas, protocolo `wc-asset://`, repositorio de metadatos, huérfanos, purga y log. Sin Electron salvo la composición. | Node, sharp, Drizzle |
+| `src/main/backup/` | Copias y restauración puros: manifiesto v2, creación online, verificación, inventario, rotación, programación por arranque, lock, marcador pendiente y reemplazo con rollback. No importa Electron (regla ESLint); la composición vive en `persistence.ts` y `safe-mode-recovery.ts`. | Node, better-sqlite3, Zod |
 | `src/main/logging/` | Escritura JSONL con rotación compartida por el log de arranque y el de assets. | Node |
 | `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
@@ -84,8 +88,8 @@ Electron separa tres procesos con permisos distintos:
 | `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error y contrato de la API del preload. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste) y del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log). | `src/` |
-| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets. | `src/` |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log) y de copias (manifiesto, rutas de restauración, buckets y rotación). | `src/` |
+| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias. | `src/` |
 | `tests/e2e/` | Playwright Electron. Previsto (#70). | `src/` |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
@@ -258,28 +262,70 @@ Reglas de dependencia:
   crear, `backups/orphans` sin comprobar y symlinks de archivo omitidos en
   Windows) están en el [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md).
 
+### 2.6 Estado implementado de copias y restauración (#67)
+
+- **Módulo puro.** `src/main/backup/` no importa Electron: `manifest.ts`,
+  `create.ts`, `verify.ts`, `inventory.ts`, `rotation.ts`, `scheduler.ts`,
+  `restore.ts`, `lock.ts`, `pending.ts`, `remnants.ts` y `fs.ts`. La composición
+  vive en `persistence.ts` (programación al arrancar) y en
+  `safe-mode-recovery.ts` (diálogo, selección de carpeta, restauración y
+  `app.relaunch()`).
+- **Manifiesto v2.** `formatVersion`, `reason`, `createdAt`, `databaseFile`,
+  `schemaVersion`, `sizeBytes`, `sha256`, `integrity` y `assetsIncluded:false`;
+  el lector acepta v1 de M0-04. Una copia contiene solo el SQLite y el
+  manifiesto; los assets no se incluyen ni se sustituyen.
+- **Creación.** La copia normal usa `db.backup()` (API online de SQLite), escribe
+  `.partial`, verifica integridad y versión en solo lectura, publica con
+  `rename`, calcula SHA-256 y escribe el manifiesto con `wx`. La copia
+  pre-restauración es en bruto: copia la base y sus `-wal`/`-shm`/`-journal` sin
+  abrirla, porque puede estar corrupta.
+- **Verificación e inventario.** Manifiesto Zod estricto, tamaño, SHA-256,
+  `integrity_check`, `user_version` y rechazo de versiones futuras. Las copias
+  corruptas se marcan, no se ofrecen, no cuentan para la retención y no se
+  borran.
+- **Programación.** Una pasada por arranque, tras `ready` y antes de la ventana;
+  buckets locales de día, semana ISO y mes; se crea el bucket actual que falte.
+  Un fallo se registra y no bloquea el arranque. La rotación se ejecuta solo si
+  se creó una copia nueva o una pre-migración.
+- **Rotación.** 7 diarias, 4 semanales, 12 mensuales y 5 pre-migración; nunca se
+  borra la copia válida más reciente ni la última de un motivo; cada candidata
+  se reverifica antes de borrarse; `pre-restore` no se poda.
+- **Restauración.** Se ofrece desde el diálogo nativo de modo seguro (la UI de
+  Ajustes llega en M1). Valida la carpeta con `realpath`/`relative` dentro de
+  `backups/`, verifica antes y después, crea `backups/pre-restore/`, usa
+  `.restore.lock` y `.restore.pending`, sustituye con `.restore.tmp` y
+  `.rollback*`, y relanza. Un fallo vuelve al modo seguro; nunca se ejecuta en
+  segundo plano.
+- **Logs.** `backup.schedule` y `backup.restore` registran resultado y códigos
+  sin rutas, nombres, tamaños, SHA, identificadores ni contenido.
+
 ## 3. Flujo de una operación
 
-### 3.1 Arranque (implementado, #64)
+### 3.1 Arranque (implementado, #64 y #67)
 
 ```text
 app.setName(APP_NAME) → app.getPath('userData')
   → registerLocalAssetScheme()            (antes de whenReady)
   → initializePersistence()
     → rutas, carpetas y log de arranque
+    → detectar restos de restauración       (.rollback*, .restore.tmp*, .pending)
     → abrir SQLite sin WAL → integrity_check
     → user_version + schema_migrations
     → copia pre-migración si la base existía y hay pendientes
     → WAL + synchronous = NORMAL
     → migraciones en una transacción
     → integrity_check posterior
+    → copias automáticas del periodo en curso y rotación 7/4/12/5
     → ready: registrar protocolo de assets, IPC y crear la ventana
-    → safe-mode: diálogo nativo (abrir copias, continuar o salir)
+    → safe-mode: diálogo nativo (restaurar, abrir copias, continuar o salir)
 ```
 
 La ventana no se crea hasta que el arranque termina. Solo en estado `ready` se
-registra el handler de `wc-asset://` y el IPC; en modo seguro no hay ninguna vía
-de lectura ni de escritura.
+registran el handler de `wc-asset://` y el IPC, y se ejecutan las copias
+automáticas. En modo seguro no hay ninguna vía de lectura ni de escritura; el
+diálogo permite restaurar una copia verificada desde `backups/`. Una restauración
+correcta relanza la aplicación y vuelve a pasar por este flujo, incluida la copia
+previa a las migraciones pendientes.
 
 ### 3.2 IPC
 
@@ -356,9 +402,9 @@ Actualización
 
 ## 4. Persistencia y datos
 
-La persistencia local está implementada desde M0-04 (#64) y el servicio de
-assets desde M0-06 (#66). Las copias automáticas con restauración (M0-07) todavía
-no existen.
+La persistencia local está implementada desde M0-04 (#64), el servicio de assets
+desde M0-06 (#66) y las copias automáticas con restauración desde M0-07 (#67).
+La interfaz de Ajustes y las copias manuales siguen previstas para M1.
 
 - **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`, con una única
   conexión de escritura en el proceso principal.
@@ -369,9 +415,10 @@ no existen.
 - **Migraciones** en `drizzle/`: `0000_init` crea `schema_migrations` y
   `app_settings`; `0001_assets` crea `assets`. `PRAGMA user_version` guarda el
   número de migraciones aplicadas (hoy 2).
-- **Copia previa** en `%APPDATA%\World Craft\backups\pre-migration\<timestamp>\`
-  con manifiesto, SHA-256 e integridad. La rotación diaria/semanal/mensual y la
-  restauración guiada llegan con M0-07.
+- **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
+  `monthly` (12), `pre-migration` (5) y `pre-restore` (sin poda). Cada copia
+  lleva `manifest.json` v2, SHA-256 e integridad; solo contiene SQLite, no
+  assets. La restauración se ofrece desde el diálogo de modo seguro de M0-07.
 - **FTS5** está disponible en el binario; la tabla `search_fts` y sus triggers
   llegan con las tablas de dominio de M1.
 - **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\<assetId>.webp`
@@ -420,13 +467,30 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   migración se revisa. El guard de base ajena mira tablas: una base con solo
   vistas, triggers o índices no se detecta, pero la migración choca y deja modo
   seguro sin escribir (LOW aceptado).
-- **Modo seguro.** Implementado (#64): sin conexión de escritura, log JSONL con
-  rotación y sin SQL, filas, rutas ni contenido, y diálogo nativo con rutas ya
-  resueltas en `main`. La restauración guiada no existe todavía.
+- **Modo seguro.** Implementado (#64, ampliado en #67): sin conexión de
+  escritura, log JSONL con rotación y sin SQL, filas, rutas ni contenido, y
+  diálogo nativo con rutas ya resueltas en `main`. Desde M0-07 el aviso permite
+  restaurar una copia verificada; no hay UI de Ajustes hasta M1.
+- **Copias y restauración.** Implementado (#67): la carpeta elegida se valida con
+  `realpath`/`relative` dentro de `backups/`; cada copia se verifica por
+  manifiesto, tamaño, SHA-256, `integrity_check` y `user_version`; se rechazan
+  las versiones futuras y las copias `pre-restore`; antes de reemplazar se crea
+  una copia en bruto de la base actual; `.restore.lock` y `.restore.pending`
+  evitan restauraciones solapadas y la creación de una base vacía tras un cierre
+  abrupto; el reemplazo usa `.rollback*` y revierte si falla. Los logs
+  `backup.schedule` y `backup.restore` no incluyen rutas, nombres, tamaños,
+  SHA, identificadores ni contenido. Residuales: el lock no es una exclusión
+  mutua estricta sin `requestSingleInstanceLock`, un lock obsoleto o ilegible
+  puede requerir borrado manual, una base de 0 bytes se considera nueva, una
+  base válida con restos obliga a modo seguro, la limpieza fallida de
+  `.rollback*` puede repetir el modo seguro y la durabilidad cubre el cierre del
+  proceso, no un corte de energía.
 - **Instancia única.** Pendiente: no hay `app.requestSingleInstanceLock`. Dos
-  instancias podrían competir por migrar y una acabar en modo seguro; SQLite
-  serializa y la transacción revierte, así que no hay corrupción. Debe cerrarse
-  antes de M1 y preferiblemente antes de #68.
+  instancias podrían competir por migrar o restaurar y una acabar en modo
+  seguro; SQLite serializa y la transacción revierte, así que no hay corrupción.
+  El lock de restauración reduce el solapamiento, pero no es una exclusión mutua
+  estricta entre procesos. Debe cerrarse antes de M1 y preferiblemente antes de
+  #68.
 - **Assets y rutas.** Implementado (#66): gramática cerrada de `wc-asset://`, la
   ruta relativa sale de SQLite, coincidencia de ID y mundo, lista blanca
   `worlds/<uuid>/<uuid>.webp`, rechazo de `..`, rutas absolutas, UNC, NUL,
@@ -450,14 +514,16 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 176 pruebas unitarias en verde (4 omitidas por
-  symlinks en Windows sin modo desarrollador) y 40 de integración en verde (1
+- **Pruebas.** `pnpm test` ejecuta 216 pruebas unitarias en verde (4 omitidas por
+  symlinks en Windows sin modo desarrollador) y 84 de integración en verde (1
   omitida): scaffold (ventana, navegación, CSP e identidad), contrato IPC, router
   IPC, API del preload, enlaces externos, journal, checksum, rutas, UUIDv7,
-  logger, modo seguro, tokens y contraste, y servicio de assets (URL, rutas,
-  formatos, importación, huérfanos, protocolo y log), más arranque, migraciones,
+  logger, modo seguro, tokens y contraste, servicio de assets (URL, rutas,
+  formatos, importación, huérfanos, protocolo y log) y copias (manifiesto, rutas
+  de restauración, buckets, rotación y recuperación), más arranque, migraciones,
   copia, corrupción, versión adelantada, base ajena, preservación, rollback de
-  referencia e importación, protocolo, repositorio y purga con SQLite real.
+  referencia, importación, protocolo, repositorio y purga con SQLite real, y
+  creación, restauración, rotación y restauración interrumpida de copias.
   `pnpm build` y `pnpm verify:build` validan los artefactos; `pnpm verify:native`
   comprueba better-sqlite3 y sharp en Node y Electron. `test:e2e` (Playwright
   Electron) sigue previsto para #70.

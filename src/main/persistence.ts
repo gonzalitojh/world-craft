@@ -1,17 +1,21 @@
 /**
  * Composición Electron de la persistencia local.
  *
- * `src/main/db` no conoce Electron: aquí se resuelve `userData`, se arranca la
- * base antes de crear la ventana y se cierra la conexión de forma idempotente
- * en `before-quit`. En modo seguro no se conserva ninguna conexión de
- * escritura y la decisión del usuario se devuelve a `index.ts`.
+ * `src/main/db` y `src/main/backup` no conocen Electron: aquí se resuelve
+ * `userData`, se arranca la base, se programan las copias automáticas antes de
+ * crear la ventana y se cierra la conexión de forma idempotente en
+ * `before-quit`. En modo seguro no se conserva ninguna conexión de escritura y
+ * la decisión del usuario se devuelve a `index.ts`.
  */
 import { app } from 'electron';
 import { join } from 'node:path';
 
+import { runScheduledBackups } from './backup/scheduler';
 import type { DatabaseClient } from './db/client';
 import { closeDatabase } from './db/connection';
 import type { DatabaseErrorCode } from './db/errors';
+import { createStartupLogger } from './db/logger';
+import { readTargetSchemaVersion } from './db/migrations';
 import { initializeDatabase } from './db/startup';
 import { showSafeModeDialog } from './safe-mode-dialog';
 import type { SafeModeDecision } from './safe-mode-prompt';
@@ -31,6 +35,7 @@ let initialization: Promise<PersistenceStartupOutcome> | null = null;
 /** Opciones de composición; las pruebas inyectan la carpeta de migraciones. */
 export interface PersistenceOptions {
   readonly migrationsDir?: string;
+  readonly now?: () => number;
 }
 
 /**
@@ -42,6 +47,7 @@ export function initializePersistence(
 ): Promise<PersistenceStartupOutcome> {
   initialization ??= startPersistence(
     options?.migrationsDir ?? join(__dirname, 'drizzle'),
+    options?.now ?? Date.now,
   );
 
   return initialization;
@@ -49,24 +55,46 @@ export function initializePersistence(
 
 async function startPersistence(
   migrationsDir: string,
+  now: () => number,
 ): Promise<PersistenceStartupOutcome> {
   const userDataDir = app.getPath('userData');
   const result = await initializeDatabase({
     userDataDir,
     migrationsDir,
-    now: Date.now,
+    now,
   });
 
   if (result.status === 'ready') {
     client = result.client;
 
+    // Una copia automática fallida o lenta nunca bloquea el arranque ni la
+    // creación de la ventana; el propio programador registra el resultado.
+    try {
+      await runScheduledBackups({
+        database: result.client.sqlite,
+        directories: {
+          daily: result.paths.dailyBackupsDir,
+          weekly: result.paths.weeklyBackupsDir,
+          monthly: result.paths.monthlyBackupsDir,
+          preMigration: result.paths.preMigrationBackupsDir,
+        },
+        timestamp: now(),
+        targetSchemaVersion: readTargetSchemaVersion(migrationsDir),
+        forceRotation: result.backup !== null,
+        logger: createStartupLogger(result.paths.startupLogFile, now),
+      });
+    } catch {
+      console.error('No se pudieron programar las copias automáticas.');
+    }
+
     return { status: 'ready' };
   }
 
-  const paths = result.paths;
   const decision = await showSafeModeDialog(result.code, {
-    backupsDirectory: paths?.preMigrationBackupsDir ?? null,
-    userDataDirectory: paths?.userDataDir ?? userDataDir,
+    paths: result.paths,
+    migrationsDir,
+    userDataDirectory: userDataDir,
+    now,
   });
 
   return { status: 'safe-mode', code: result.code, decision };

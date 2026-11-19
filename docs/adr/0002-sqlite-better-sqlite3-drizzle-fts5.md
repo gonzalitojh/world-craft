@@ -79,7 +79,7 @@ Usar **SQLite** con:
 | Temas (Claro/Oscuro) | No aplica. |
 | Accesibilidad | Los errores de base se muestran con códigos y acciones. |
 | Seguridad y privacidad | Datos locales; sin credenciales ni red. |
-| Datos y preservación | Copia previa, transacción e integridad; restauración guiada en M0-07. |
+| Datos y preservación | Copia previa, transacción e integridad; restauración desde modo seguro (M0-07). |
 | Coste | 0 €/mes. |
 | Portabilidad de datos | Exportación JSON/ZIP y copia del archivo SQLite. |
 

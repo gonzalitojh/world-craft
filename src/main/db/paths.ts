@@ -41,7 +41,11 @@ export interface DataPaths {
   readonly logsDir: string;
   readonly startupLogFile: string;
   readonly backupsDir: string;
+  readonly dailyBackupsDir: string;
+  readonly weeklyBackupsDir: string;
+  readonly monthlyBackupsDir: string;
   readonly preMigrationBackupsDir: string;
+  readonly preRestoreBackupsDir: string;
   readonly assetsDir: string;
   readonly assetsWorldsDir: string;
   readonly assetsTempDir: string;
@@ -64,7 +68,11 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const dataDir = resolve(root, 'data');
   const logsDir = resolve(root, 'logs');
   const backupsDir = resolve(root, 'backups');
+  const dailyBackupsDir = resolve(backupsDir, 'daily');
+  const weeklyBackupsDir = resolve(backupsDir, 'weekly');
+  const monthlyBackupsDir = resolve(backupsDir, 'monthly');
   const preMigrationBackupsDir = resolve(backupsDir, 'pre-migration');
+  const preRestoreBackupsDir = resolve(backupsDir, 'pre-restore');
   const assetsDir = resolve(root, ASSETS_DIR_NAME);
   const assetsWorldsDir = resolve(assetsDir, ASSETS_WORLDS_DIR_NAME);
   const assetsTempDir = resolve(assetsDir, ASSETS_TEMP_DIR_NAME);
@@ -77,7 +85,11 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     dataDir,
     logsDir,
     backupsDir,
+    dailyBackupsDir,
+    weeklyBackupsDir,
+    monthlyBackupsDir,
     preMigrationBackupsDir,
+    preRestoreBackupsDir,
     assetsDir,
     assetsWorldsDir,
     assetsTempDir,
@@ -96,7 +108,11 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     logsDir,
     startupLogFile,
     backupsDir,
+    dailyBackupsDir,
+    weeklyBackupsDir,
+    monthlyBackupsDir,
     preMigrationBackupsDir,
+    preRestoreBackupsDir,
     assetsDir,
     assetsWorldsDir,
     assetsTempDir,
@@ -105,18 +121,39 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   };
 }
 
-/** Crea las carpetas necesarias usando rutas ya validadas. */
+/**
+ * Crea las carpetas necesarias usando rutas ya validadas.
+ *
+ * Las carpetas esenciales (datos, logs y assets) son estrictas: sin ellas la
+ * aplicación no puede trabajar. Las de `backups/` son best-effort: una ruta
+ * ocupada por un archivo o sin permisos no debe impedir arrancar con una base
+ * sana; cada copia crea su carpeta bajo demanda.
+ */
 export function ensureDataDirectories(paths: DataPaths): void {
   try {
     mkdirSync(paths.dataDir, { recursive: true });
     mkdirSync(paths.logsDir, { recursive: true });
-    mkdirSync(paths.preMigrationBackupsDir, { recursive: true });
     mkdirSync(paths.assetsDir, { recursive: true });
     mkdirSync(paths.assetsWorldsDir, { recursive: true });
     mkdirSync(paths.assetsTempDir, { recursive: true });
-    mkdirSync(paths.orphanBackupsDir, { recursive: true });
   } catch (error) {
     throw new DatabaseError('DB_OPEN_FAILED', { cause: error });
+  }
+
+  for (const directory of [
+    paths.backupsDir,
+    paths.dailyBackupsDir,
+    paths.weeklyBackupsDir,
+    paths.monthlyBackupsDir,
+    paths.preMigrationBackupsDir,
+    paths.preRestoreBackupsDir,
+    paths.orphanBackupsDir,
+  ]) {
+    try {
+      mkdirSync(directory, { recursive: true });
+    } catch {
+      // Best-effort: la copia o la purga crearán su carpeta cuando puedan.
+    }
   }
 }
 

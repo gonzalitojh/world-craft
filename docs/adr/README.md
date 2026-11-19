@@ -71,3 +71,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-18 | Serie de escritorio 0001–0015; se retiran los ADRs web 0001–0020. |
 | 2026-11-18 | Se añade el ADR 0016 (persistencia local, migraciones y modo seguro, #64). |
 | 2026-11-19 | Se añade el ADR 0017 (servicio de assets locales, sharp y purga recuperable, #66). |
+| 2026-11-19 | Se anota la implementación de M0-07 (#67) en los ADR 0012 y 0016: manifiesto v2, copias automáticas, retención 7/4/12/5 y restauración desde modo seguro. |

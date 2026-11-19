@@ -1,0 +1,107 @@
+﻿{
+  "title": "Copias de seguridad, restauración y modo seguro",
+  "description": "M0-07. Red de seguridad de los datos locales: copias automáticas diarias, semanales y mensuales con rotación 7/4/12, copia previa a cada migración y a cada restauración, verificación de integridad y legibilidad antes de ofrecer una copia, restauración guiada desde la app con confirmación explícita, y arranque en modo seguro cuando la base o una migración falla ofreciendo restaurar. Depende de M0-04 (#64), fusionada en dev. Coordina con M0-08 (#68); la interfaz de ajustes de datos llega en M1 y en M0 la restauración se ofrece desde el diálogo nativo de modo seguro. ADR 0012 y ADR 0016.",
+  "status": "published",
+  "model_variant": "max",
+  "issue": {
+    "number": 67,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/67",
+    "title": "Copias de seguridad, restauración y modo seguro"
+  },
+  "acceptance_criteria": [
+    "Cada copia se verifica y una copia corrupta no se ofrece como restaurable.",
+    "Restaurar exige confirmación, crea una copia de la base actual y no deja la app a medias si falla.",
+    "Un fallo de migración o de integridad activa el modo seguro y permite restaurar.",
+    "Las pruebas cubren copia, corrupción, restauración, rotación y preservación de assets.",
+    "El manual y docs/persistencia.md explican cómo recuperar los datos."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "E2E del flujo crítico ejecutado o justificado como no aplicable.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página y con contenido largo realista (no aplica si no hay UI nueva).",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles (no aplica si no hay UI nueva).",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion (no aplica si no hay UI nueva).",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Preservación de datos verificada: actualización, reinicio, migración y restauración no borran ni corrompen datos; copia y restauración probadas.",
+    "Funcionamiento offline comprobado si el cambio toca arranque, datos o actualizaciones.",
+    "Manual de usuario actualizado si el cambio es visible (o constancia de cómo se cubrirá).",
+    "ADR creado o actualizado si hay una decisión arquitectónica o de producto relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas de archivos y contenido no confiable.",
+    "Datos exportables e importables si se añade o cambia un modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Coste de contexto revisado: sin cambio de modelo o variante a mitad de sesión y sin editar AGENTS.md ni los agentes mientras se usaban.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan de task-architect (2026-11-19), aprobado por el usuario el mismo día. Variante max. Arquitectura: módulo puro nuevo src/main/backup/ (manifest, create, verify, inventory, rotation, scheduler, restore) sin Electron; se traslada db/backup.ts y startup.ts consume la nueva API; composición en persistence.ts, safe-mode-dialog.ts, safe-mode-recovery.ts e index.ts. Manifiesto v2 compatible con lectura v1: formatVersion, reason (daily, weekly, monthly, pre-migration, pre-restore), createdAt, databaseFile, schemaVersion, sizeBytes, sha256, integrity y assetsIncluded; la copia incluye solo SQLite y manifiesto y no sustituye assets. La copia pre-restore admite schemaVersion null e integrity distinta de ok y copia en bruto la base y sus WAL/SHM cuando la base actual está corrupta. Programación: una ejecución por arranque tras ready y antes de crear la ventana, buckets con fecha local (día YYYY-MM-DD, semana ISO, mes YYYY-MM) y reloj inyectable; se crea el bucket que falte, aunque hayan pasado semanas; un fallo de copia automática se registra y nunca bloquea el arranque; no se copia al cerrar. Rotación tras crear: 7 diarias, 4 semanales, 12 mensuales y 5 pre-migración (cierra la deuda del ADR 0016); pre-restore no se poda; las copias corruptas no cuentan, no se borran y se documentan; guardas para no borrar la copia válida más reciente ni la última de un bucket y reverificación antes de cada borrado. Restauración en M0 sin la UI de Ajustes de M1: el diálogo de modo seguro añade Restaurar copia, con segunda elección entre la más reciente y una carpeta elegida con dialog.showOpenDialog limitada a backups/ tras realpath y relative; se verifica manifiesto, tamaño, SHA-256, integrity_check y user_version, se rechaza una versión superior a la del journal y se confirma con fecha, versión y aviso de que los assets no se sustituyen. Antes de reemplazar se crea backups/pre-restore/ con la base actual y sus WAL/SHM; el reemplazo usa data/.restore.lock con wx, archivo temporal, renombrado de la base actual a .rollback y de la nueva a la base, verificación tras el reemplazo y rollback completo ante cualquier fallo; si el lock existe y su PID ya no vive se elimina como obsoleto, y si vive se rechaza la restauración. Tras restaurar se relanza la app y el arranque normal aplica las migraciones pendientes con su copia pre-migración. Nuevos códigos DB_RESTORE_INVALID y DB_RESTORE_FAILED; logs backup.schedule y backup.restore con resultado y motivo enumerado, sin rutas, nombres, tamaños, SHA ni contenido. Pruebas: unitarias de manifiesto v1/v2, rotación, scheduler, inventario y prompt; integración con bases temporales de creación, corrupción, restauración feliz, fallo inyectado en cada renombrado con rollback, WAL antiguo, migración pendiente tras restaurar, versión futura rechazada, assets intactos y modo seguro con y sin copias válidas; E2E no aplica porque los diálogos son nativos y se prueban con puertos inyectados. Documentación: persistencia, continuidad, migraciones, manual de usuario, arquitectura, CHANGELOG, ADR 0012 y nota en ADR 0016. Fuera de alcance: Ajustes de M1, copias manuales con assets, exportación ZIP, cifrado, unidad externa, nube, restauración con la app abierta, vista previa de copias y bloqueo de instancia única.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-19",
+    "notes": "Issue adoptada el 2026-11-19: labels ai, type: feature, status: todo, priority: p0, size: l, area: data, area: persistence, variant: max y hito M0. Sin needs-decision ni status: blocked. Dependencia M0-04 (#64) cerrada y fusionada en dev; M0-06 (#66) también fusionada. Variante recomendada y usada: max. Plan de task-architect recibido el 2026-11-19 y aprobado explícitamente por el usuario ese mismo día, incluida la retención de 5 copias pre-migración y el resto del alcance descrito en plan. Implementación completada el 2026-11-19 por tdd-ddd-architect: módulo puro src/main/backup/ con manifiesto v2 compatible con v1, creación y verificación, inventario, rotación 7/4/12/5, programación por arranque, restauración con lock y rollback, y composición Electron en safe-mode-recovery; db/backup.ts trasladado y sin duplicación. Ajuste del agente maestro antes de QA: «Abrir carpeta de copias» abre backups/ y no solo pre-migration, con su prueba actualizada. QA PASS en la tercera ronda (216 unitarias + 84 de integración, 5 omitidas; lint, typecheck, db:check, build, verify:build y verify:native en verde), tras cerrar el HIGH de restauración interrumpida con .restore.pending y los MEDIUM de rollback, carpetas best-effort y rendimiento. Security PASS sin HIGH, con 2 MEDIUM y 6 LOW documentados como deuda para M1/#68. Documentación PASS: persistencia, continuidad, manual, arquitectura, plan de pruebas, CHANGELOG, ADRs 0002/0012/0016, README, plan de desarrollo y registro de decisiones actualizados; enlaces y bloques verificados. Sin commit, push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA PASS (2026-11-19), tercera ronda. Comandos en verde: lint, typecheck, test (216 unitarias + 84 integración, 5 omitidas), db:check, build, verify:build y verify:native; format:check global falla por CRLF preexistente y los archivos de la tarea pasan Prettier. Criterios 1-4 cumplidos; el 5 queda diferido a la puerta documental. El HIGH del reintento de restauración interrumpida queda cerrado con .restore.pending: se crea tras el lock y antes de tocar base, restos o pre-restore; el arranque nunca crea base vacía mientras exista; se conserva si no hay base viva o falla el rollback; las pruebas cubren fallo de copyFile, matchesManifest y primer renombrado, reintento, éxito, rollback correcto y rollback fallido. MEDIUM de rollback, carpetas best-effort y rendimiento cerrados; los LOW quedan como residuales documentables (base de 0 bytes considerada viva, base válida con restos que obliga a modo seguro, limpieza de .rollback que puede repetir modo seguro, rotación diferida, pre-restore sin poda y hasta tres integrity_check por arranque). Historial: primera ronda FAIL por restauración interrumpida, rollback fallido y carpetas en el camino crítico; segunda ronda FAIL por la ventana del reintento; tercera ronda PASS."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "status": "diferido",
+        "description": "El lock de restauración no es una exclusión mutua estricta sin app.requestSingleInstanceLock: entre leer un lock obsoleto y borrarlo otro proceso puede crear uno nuevo, un lock recién creado puede leerse parcial y considerarse obsoleto, y restoreBackup borra el lock en finally sin comprobar que sea suyo. Dos instancias podrían solapar restauraciones. Mitigado por la copia pre-restore, .rollback, .restore.pending y la reverificación SHA-256; la ausencia de requestSingleInstanceLock ya es deuda aceptada en ADR 0016 y debe cerrarse antes de M1/#68."
+      },
+      {
+        "severity": "MEDIUM",
+        "status": "diferido",
+        "description": "findLatestRestorableBackup y la rotación listan las carpetas de copias sin realpath ni comprobación de contención, y no hay prueba de junction dentro de backups/daily. resolveRestoreDirectory sí valida la carpeta elegida en el diálogo. Un atacante local con escritura en userData podría colocar una junction para que la restauración lea fuera de backups/ o para que la rotación la liste; no se observó escritura fuera. Endurecer inventario y rotación antes de M1/#68 y añadir prueba de junction."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El marcador .restore.pending y la copia pre-restore no hacen fsync; la durabilidad está garantizada frente a un cierre del proceso, no frente a un corte de energía en el instante exacto del reemplazo. Los restos .rollback/.restore.tmp suelen forzar modo seguro. Documentar el alcance de la garantía."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "La preservación de restos usa solo el timestamp en milisegundos para el directorio; dos reintentos en el mismo milisegundo podrían reutilizar el directorio y reemplazar un resto ya preservado. Poco probable; añadir sufijo o crear el directorio sin recursive en una mejora futura."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "La reutilización de PID o un lock ilegible pueden bloquear la restauración hasta reiniciar o borrar el lock a mano. Es fail-safe y no corrompe datos; documentar la recuperación manual."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "Un createdAt hostil en el manifiesto podría hacer que Intl.DateTimeFormat lance RangeError al mostrar la confirmación y abortar el aviso de modo seguro. No hay pérdida de datos; acotar la fecha o envolver el formateo en una mejora futura."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El mensaje de fallback del diálogo de restauración dice que la aplicación se cerrará, pero en algunos fallos el bucle continúa. Es confuso, no inseguro; unificar el texto en una mejora de UX."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "Las copias pre-restore no se podan y no se ofrecen para restaurar desde la app; la recuperación es manual. Puede ocupar disco con restauraciones repetidas. Documentarlo y valorar retención o restauración explícita en M1/M5."
+      }
+    ],
+    "notes": "Security-champion (2026-11-19): PASS sin HIGH sobre la rama feat/issue-67-backups-restore-safe-mode con cambios sin commitear. Sin secretos, credenciales, correos reales, rutas del desarrollador, .env, bases, assets de usuario ni binarios; los fixtures usan tmpdir() y rutas sintéticas. Frontera Electron intacta: sin cambios de renderer, preload, IPC, CSP, ventana ni protocolo de assets; window-options mantiene contextIsolation, sandbox, webSecurity y nodeIntegration false; src/main/backup no importa Electron por regla ESLint y la composición vive en safe-mode-*. Rutas: resolveRestoreDirectory con realpath, relative e isAbsolute rechaza raíz, .., NUL, rutas relativas y archivos; showOpenDialog solo directorios; databaseFile es literal del esquema; shell.openPath solo recibe backupsDir/userDataDir resueltos. Integridad: manifiesto v1/v2 estricto, SHA-256, tamaño, integrity_check, user_version, rechazo de versión futura, reverificación del temporal y copia pre-restore en bruto; rotación 7/4/12/5 con protección de la más reciente, corruptas conservadas y reverificación previa. Lock y pending: .restore.lock con PID y .restore.pending antes de tocar la base; el arranque no crea una base vacía con restos. Logs tipados sin rutas, tamaños, SHA, IDs ni contenido; mensajes centralizados y sin rutas. Sin dependencias nuevas, sin eval, child_process de producción, red ni contenido remoto. El escaneo se hizo por lectura porque el shell del subagente estaba denegado; el agente maestro y QA ejecutaron git diff --check y búsqueda de secretos sin hallazgos. Los 2 MEDIUM y 6 LOW quedan documentados; solo bloquean los HIGH y no hay ninguno. No se añadió bloque pr."
+  },
+  "documentation": {
+    "adr": "docs/adr/0012-backup-restore-recovery.md",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": null
+  },
+  "pr": {
+    "number": 108,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/108",
+    "title": "feat: añadir copias, restauración y modo seguro (#67)",
+    "branch": "feat/issue-67-backups-restore-safe-mode",
+    "commit": "50623fb"
+  }
+}

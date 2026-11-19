@@ -10,7 +10,8 @@ import {
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { createPreMigrationBackup, verifyBackup } from '@/main/db/backup';
+import { createPreMigrationBackup } from '@/main/backup/create';
+import { verifyBackup } from '@/main/backup/verify';
 import { closeDatabase, openDatabase } from '@/main/db/connection';
 import { ensureDataDirectories } from '@/main/db/paths';
 import {
@@ -269,9 +270,11 @@ describe('migraciones', () => {
 
       const manifest = await verifyBackup(safe.backup.directory);
       expect(manifest).toMatchObject({
-        formatVersion: 1,
+        formatVersion: 2,
         reason: 'pre-migration',
         schemaVersion: 1,
+        integrity: 'ok',
+        assetsIncluded: false,
       });
 
       const manifestFile = JSON.parse(

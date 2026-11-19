@@ -9,8 +9,9 @@
 > de desarrollo: barra lateral con navegación, barra superior, tema Claro/Oscuro
 > conmutable, una página de inicio con estado vacío y una **página de muestras
 > solo para desarrollo**. También existe una **base de datos local** que se crea
-> y se comprueba al arrancar. Todavía no hay mundos, fichas, ajustes ni
-> instalador, y la preferencia de tema no se recuerda al reiniciar.
+> y se comprueba al arrancar, con **copias automáticas** y **restauración desde
+> modo seguro**. Todavía no hay mundos, fichas, ajustes ni instalador, y la
+> preferencia de tema no se recuerda al reiniciar.
 
 ## 1. Qué es World Craft
 
@@ -63,12 +64,13 @@ tiene el aspecto definitivo en lo básico: una barra lateral con navegación, un
 barra superior, dos temas de color y componentes de interfaz ya creados (botones,
 campos, insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
 
-La aplicación ya crea y comprueba su base de datos local, y sabe arrancar en
-**modo seguro** si algo va mal. Por ahora **no se puede crear un mundo**, guardar
-contenido ni cambiar ajustes. El botón «Crear mundo» de la página de inicio
-todavía avisa de que la función llegará en una próxima versión. Cuando haya una
-versión instalable, esta sección explicará cómo conseguirla y qué esperar del
-primer arranque.
+La aplicación ya crea y comprueba su base de datos local, guarda copias
+automáticas y sabe arrancar en **modo seguro** si algo va mal, ofreciendo
+restaurar una copia. Por ahora **no se puede crear un mundo**, guardar contenido
+ni cambiar ajustes. El botón «Crear mundo» de la página de inicio todavía avisa
+de que la función llegará en una próxima versión. Cuando haya una versión
+instalable, esta sección explicará cómo conseguirla y qué esperar del primer
+arranque.
 
 ## 3. La ventana
 
@@ -216,28 +218,108 @@ criaturas, eventos y cualquier tipo que crees.
 - **Ventana:** recordar tamaño y posición.
 - **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda,
   compactar y eliminar todos los datos.
-- **Copias:** crear, verificar y restaurar copias.
+- **Copias:** dentro de Ajustes → Datos, crear, verificar y restaurar copias. La
+  restauración desde el aviso de modo seguro ya existe (sección 12.3); esta
+  pantalla, con la copia manual y la elección de carpeta, es prevista.
 - **Actualizaciones:** buscar, descargar e instalar; se puede desactivar.
 - **Ayuda:** abrir este manual y exportar un diagnóstico.
 
 ## 12. Tus datos y las copias
 
+### 12.1 Dónde están tus datos
+
 - Todo se guarda en tu equipo, en la carpeta de datos de World Craft
   (`%APPDATA%\World Craft`). La base de datos está en la subcarpeta `data` y se
-  crea sola al arrancar.
+  crea sola al arrancar. Las imágenes y los archivos están en `assets`.
 - Actualizar o desinstalar la aplicación **no borrará** tus datos: la carpeta de
   datos queda fuera de la carpeta de instalación.
-- Antes de cambiar la estructura de la base, la app guarda una copia de
-  seguridad verificable en la subcarpeta `backups`. Si la copia no se puede
-  crear o comprobar, no se cambia nada.
-- Las copias automáticas diarias, semanales y mensuales, la restauración guiada
-  desde Ajustes → Copias y la exportación de un mundo completo son **previstas**:
-  todavía no están disponibles. La restauración guiada llegará en una próxima
-  etapa del desarrollo.
 - No hay sincronización automática entre equipos ni subida de datos a Internet.
-- Mientras no exista la restauración guiada, si la app avisa de un problema,
-  **no borres la carpeta de datos ni la de copias**: son la vía para recuperar tu
-  información cuando la restauración esté disponible.
+
+### 12.2 Copias automáticas
+
+Mientras la aplicación está en desarrollo, las copias ya funcionan pero no
+tienen una pantalla propia: se crean solas al arrancar con normalidad y solo se
+pueden consultar o restaurar desde el aviso de modo seguro. La pantalla
+Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
+
+- **Cuándo se crean:** al abrir la aplicación, una vez comprobada la base. No se
+  crean al cerrar. Si pasas días sin abrirla, al volver se crea la copia del
+  periodo actual.
+- **Con qué frecuencia:** una copia **diaria**, una **semanal** y una
+  **mensual**. Cada una se guarda en su carpeta dentro de `backups`.
+- **Antes de actualizar la estructura de la base:** se guarda una copia
+  **pre-migración**; si esa copia no se puede crear o comprobar, no se cambia
+  nada.
+- **Cuántas se conservan:** 7 diarias, 4 semanales, 12 mensuales y 5
+  pre-migración. Las más antiguas se van borrando automáticamente. Las copias
+  **pre-restauración** no se borran solas.
+- **Qué contienen:** solo la base de datos. **Las imágenes y los archivos
+  (assets) no van dentro de la copia** y no se sustituyen al restaurar.
+- **Copias dañadas:** si una copia no supera la comprobación, no se te ofrece,
+  no cuenta para el límite y **no se borra automáticamente**. Se queda donde
+  está por si sirve para un diagnóstico.
+- Las copias son locales. La aplicación no las sube a ningún servicio.
+
+### 12.3 Restaurar una copia
+
+Hoy la restauración se ofrece desde el **aviso de modo seguro**, que aparece
+cuando la aplicación no puede usar la base de datos con seguridad. La pantalla
+Ajustes → Datos llegará en una etapa posterior. Si la aplicación arranca con
+normalidad, **todavía no hay una pantalla para restaurar una copia**: esa opción
+llegará con Ajustes.
+
+1. Abre World Craft. Si hay un problema, antes de la ventana aparece el aviso
+   «World Craft ha arrancado en modo seguro», con una explicación y un código.
+2. Pulsa **Restaurar copia**.
+3. Elige **Usar la copia más reciente** o **Elegir una carpeta**. La carpeta
+   debe estar dentro de la carpeta de copias; si eliges otra cosa, la aplicación
+   la rechaza.
+4. La aplicación comprueba la copia antes de continuar. Si está dañada, es de
+   una versión más reciente o no es una copia válida, no te la ofrece y no toca
+   nada.
+5. Aparece una confirmación con la **fecha de la copia** y su **versión**. Si
+   aceptas, la aplicación guarda primero una copia de los datos actuales, cambia
+   la base y se reinicia sola.
+6. Al volver a abrirse, la aplicación termina de preparar la base restaurada.
+   Tus imágenes y archivos no se tocan.
+
+Si la restauración falla, la aplicación vuelve al aviso de modo seguro e intenta
+dejar los datos como estaban. No se pierde la copia que acabas de elegir ni la
+copia de los datos anteriores. La restauración **nunca se hace sola ni en
+segundo plano**.
+
+### 12.4 Copias pre-restauración y recuperación manual
+
+Antes de reemplazar la base, la aplicación guarda la base anterior en la
+subcarpeta `backups/pre-restore`. Esa copia **no se ofrece desde la aplicación**
+y no se borra automáticamente: sirve para una recuperación manual si algo sale
+mal.
+
+- La recuperación manual requiere **cerrar la aplicación** y copiar el archivo
+  `world-craft.sqlite` de la carpeta `pre-restore` sobre
+  `data/world-craft.sqlite`. Si hay archivos `-wal`, `-shm` o `-journal` junto a
+  la copia, se copian también.
+- Si no te sientes cómodo moviendo archivos, **no borres nada**: conserva la
+  carpeta de datos y la de copias y pide ayuda antes de tocar los archivos.
+
+### 12.5 Si la aplicación no arranca o no ofrece una copia
+
+- **No borres la carpeta de datos ni la de copias.** Son la vía para recuperar
+  tu información.
+- Si el aviso de modo seguro aparece pero no hay copias que restaurar, puede que
+  las copias estén dañadas o que sean de otra versión. Abre la carpeta de copias
+  desde el propio aviso y revisa que existan `backups/daily`, `weekly`,
+  `monthly` o `pre-migration` con su `manifest.json`.
+- Si la aplicación se cierra sin mostrar el aviso, comprueba los requisitos
+  (sección 2.1) y, cuando exista el instalador, el aviso de Windows (sección
+  13). Si el problema continúa, conserva las carpetas y pide ayuda.
+- Si la aplicación se queda en modo seguro después de una restauración, puede
+  haber quedado un archivo de bloqueo o un resto de la operación anterior. Cierra
+  la aplicación, vuelve a abrirla y prueba otra copia. En casos excepcionales,
+  con la aplicación cerrada, se puede borrar el archivo `data/.restore.lock`;
+  no es un archivo con tus datos. **No borres `data/.restore.pending`**: es el
+  marcador que impide crear una base vacía; si está presente, prueba otra copia
+  o pide ayuda.
 
 ## 13. Aviso de SmartScreen (previsto)
 
@@ -278,11 +360,14 @@ las funciones correspondientes.
 
 | Problema | Qué hacer |
 |---|---|
-| La app avisa de que ha arrancado en modo seguro | El aviso explica el motivo y ofrece tres opciones: **Abrir carpeta de copias**, **Continuar en modo seguro** (sin escribir en tus datos) o **Salir**. La restauración guiada todavía no está disponible; no borres la carpeta de copias. |
-| La base no abre | La app arranca en modo seguro sin modificar el archivo. Conserva la carpeta de datos y las copias; la restauración guiada llegará en una próxima etapa. |
-| La app no arranca | Comprueba los requisitos y, cuando exista el instalador, revisa el aviso de Windows. |
+| La app avisa de que ha arrancado en modo seguro | El aviso explica el motivo y ofrece **Restaurar copia**, **Abrir carpeta de copias**, **Continuar en modo seguro** (sin escribir en tus datos) o **Salir**. Para recuperar una versión anterior, pulsa «Restaurar copia» y sigue la sección 12.3. |
+| La base no abre | La app arranca en modo seguro sin modificar el archivo. Restaura una copia desde el propio aviso. Si no hay copias válidas, conserva la carpeta de datos y la de copias y pide ayuda. |
+| No aparece la copia que busco | La app no ofrece copias dañadas, con manifiesto inválido, de una versión más reciente ni las de `pre-restore`. Abre la carpeta de copias y comprueba que la carpeta elegida contiene `world-craft.sqlite` y `manifest.json`. |
+| La restauración falla | La app vuelve al aviso de modo seguro e intenta dejar los datos como estaban. Prueba otra copia; la base anterior queda en `backups/pre-restore`. No borres esas carpetas. |
+| La app sigue en modo seguro después de restaurar | Cierra la aplicación y vuelve a abrirla. Si persiste, prueba otra copia; como último recurso, con la app cerrada, borra `data/.restore.lock` (no contiene tus datos), pero **no borres `data/.restore.pending`**. |
+| La app no arranca | Comprueba los requisitos (sección 2.1) y, cuando exista el instalador, revisa el aviso de Windows (sección 13). No borres la carpeta de datos ni la de copias; conserva ambas y pide ayuda. |
 | No encuentro una ficha | Previsto: revisa la papelera y reconstruye la búsqueda. |
-| Una imagen no se ve | Previsto: comprueba que el archivo sigue en la carpeta de assets. |
+| Una imagen no se ve | Previsto: comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. |
 | Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 13. |
 | He borrado un mundo | Previsto: restáuralo desde la papelera o desde una copia. |
 
@@ -294,9 +379,12 @@ las funciones correspondientes.
 - **Grafo:** representación visual de las relaciones.
 - **Asset:** archivo (imagen, documento) asociado a un mundo.
 - **Manuscrito:** conjunto de textos organizados en libros, capítulos y escenas.
-- **Copia:** archivo de seguridad de la base y, opcionalmente, de los assets.
-- **Modo seguro:** arranque sin escritura para diagnosticar el problema y abrir
-  la carpeta de copias sin modificar tus datos.
+- **Copia:** archivo de seguridad de la base de datos. Las copias automáticas no
+  incluyen las imágenes ni los archivos.
+- **Copia pre-restauración:** copia de la base anterior que se guarda antes de
+  restaurar; no se ofrece desde la aplicación y se recupera a mano.
+- **Modo seguro:** arranque sin escritura para diagnosticar el problema, abrir la
+  carpeta de copias y restaurar una copia sin modificar tus datos.
 
 ## 17. Estado de las funciones
 
@@ -309,8 +397,10 @@ las funciones correspondientes.
 | Página de inicio con estado vacío | Implementada (en desarrollo); «Crear mundo» avisa de que llegará |
 | Página de muestras | Solo en desarrollo; no es una función de producto |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
-| Aviso de modo seguro con apertura de la carpeta de copias | Implementada (en desarrollo) |
+| Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
+| Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12 |
+| Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
 | Instalador y aplicación | Prevista |
 | Mundos | Prevista |
 | Fichas y tipos | Prevista |
@@ -321,7 +411,7 @@ las funciones correspondientes.
 | Búsqueda | Prevista |
 | Ajustes | Prevista |
 | Guardar la preferencia de tema | Prevista (con Ajustes) |
-| Copias automáticas y restauración guiada | Prevista (M0-07) |
+| Copias manuales y elección de carpeta | Prevista (con Ajustes) |
 | Actualizaciones | Prevista |
 | Manual dentro de la app | Prevista |
 

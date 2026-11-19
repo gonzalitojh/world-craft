@@ -4,6 +4,8 @@
  * Todas las bases viven en `os.tmpdir()`; ninguna prueba toca
  * `app.getPath('userData')`, `%APPDATA%` ni el repositorio.
  */
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -60,6 +62,27 @@ export async function cleanup(directory: string): Promise<void> {
     maxRetries: 3,
     retryDelay: 100,
   });
+}
+
+/**
+ * PID de un proceso ya terminado.
+ *
+ * Sirve para comprobar que un lock de restauración obsoleto no bloquea el
+ * arranque. El PID podría reutilizarse, pero la ventana es mínima.
+ */
+export async function deadPid(): Promise<number> {
+  const child = spawn(process.execPath, ['-e', 'process.exit(0)'], {
+    stdio: 'ignore',
+  });
+  const pid = child.pid;
+
+  await once(child, 'exit');
+
+  if (pid === undefined) {
+    throw new Error('El proceso auxiliar no arrancó.');
+  }
+
+  return pid;
 }
 
 export interface MigrationFixture {

@@ -2,7 +2,7 @@
 
 - **Estado:** aceptado
 - **Fecha de la decisión:** 2026-11-18
-- **Fecha del documento:** 2026-11-18
+- **Fecha del documento:** 2026-11-19
 - **Issue:** #64
 - **Decisiones del registro:** D-040
 - **Decisores:** usuario / agentes
@@ -73,6 +73,20 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
    el módulo nativo del asar y empaquetar las dependencias de producción
    corresponde a #68.
 
+> **Actualización (M0-07, #67, 19/11/2026).** La poda de copias pre-migración y
+> la restauración guiada ya están implementadas. Se conservan las **5 copias
+> pre-migración válidas más recientes**, junto con 7 diarias, 4 semanales y 12
+> mensuales; las copias corruptas no cuentan y no se borran. El diálogo de modo
+> seguro añade «Restaurar copia.»: verifica la copia, guarda una copia
+> pre-restauración en bruto, usa `.restore.lock` y `.restore.pending`, reemplaza
+> con `.rollback*` y relanza; si falla, vuelve al modo seguro. También detecta
+> restauraciones interrumpidas sin crear una base vacía y añade
+> `DB_RESTORE_INVALID`, `DB_RESTORE_FAILED`, `DB_RESTORE_INTERRUPTED` y
+> `DB_RESTORE_ROLLBACK_FAILED`. La interfaz de Ajustes sigue prevista para M1 y
+> el bloqueo de instancia única sigue pendiente antes de M1/#68. El detalle está
+> en el [ADR 0012](0012-backup-restore-recovery.md) y en
+> [`docs/persistencia.md`](../persistencia.md).
+
 ## Alternativas consideradas
 
 | Alternativa | Motivo del descarte |
@@ -97,17 +111,18 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
   legible sin exponer contenido.
 - El mismo binario nativo funciona en desarrollo, pruebas y Electron; el
   arranque es reproducible sin herramientas de compilación adicionales.
-- Los códigos estables y el manifiesto preparan la restauración y la interfaz de
-  copias de M0-07.
+- Los códigos estables y el manifiesto prepararon la restauración implementada en
+  M0-07; la interfaz de copias llega en M1.
 
 ### Negativas y riesgos
 
 - El runner es código propio que hay que mantener y probar con cada cambio de
   formato del journal de Drizzle.
 - Cada migración de una base existente deja una carpeta en
-  `backups/pre-migration/`; la poda llega con M0-07.
-- El diálogo nativo no permite restaurar todavía: solo abrir la carpeta,
-  continuar en modo seguro o salir.
+  `backups/pre-migration/`; desde M0-07 se conservan las 5 válidas más recientes.
+- En M0-04 el diálogo nativo no permitía restaurar: solo abrir la carpeta,
+  continuar en modo seguro o salir. Desde M0-07 ofrece restaurar una copia
+  verificada con confirmación y copia previa.
 - No hay `app.requestSingleInstanceLock`; dos instancias podrían competir por
   inspeccionar o migrar. SQLite serializa y la transacción revierte, pero debe
   cerrarse antes de M1 y preferiblemente antes de #68.
@@ -120,7 +135,7 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 |---|---|
 | Ventana y escritorio | La ventana se crea después de comprobar y migrar; un fallo muestra un diálogo nativo antes de abrirla. |
 | Temas (Claro/Oscuro) | No aplica: el aviso es un diálogo nativo y no hay UI de copias todavía. |
-| Accesibilidad | El diálogo usa botones y textos del sistema; la UI de copias deberá cumplir AA en M0-07. |
+| Accesibilidad | El diálogo usa botones y textos del sistema; la UI de copias deberá cumplir AA en M1. |
 | Seguridad y privacidad | `src/main/db/` no importa Electron; el renderer no accede a la base; los logs no incluyen SQL, filas ni rutas. |
 | Datos y preservación | Copia previa verificable, transacción, integridad antes y después, y rechazo de bases ajenas. |
 | Coste | 0 €/mes: SQLite, better-sqlite3, Drizzle y Zod son gratuitos y locales. |
@@ -131,22 +146,24 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 | Riesgo | Límite o coste | Mitigación | Seguimiento |
 |---|---|---|---|
 | Módulo nativo incompatible con Electron | Cambio de ABI en una versión futura | Node-API 10, versión fijada y `pnpm verify:native`; `electron-rebuild` como contingencia | #68 y actualizaciones de Electron |
-| Corrupción de la base | Fallo de disco o cierre abrupto | `integrity_check` antes de WAL, WAL, copia previa y modo seguro | M0-07 y M5 |
+| Corrupción de la base | Fallo de disco o cierre abrupto | `integrity_check` antes de WAL, WAL, copia previa, modo seguro y restauración desde modo seguro (M0-07) | M5 para el aviso de disco |
 | Migración con error | SQL inválido o estado manipulado | Lote transaccional, checksum, copia y rechazo de bases ajenas | Cada migración |
-| Copias sin retención | Crecimiento de disco | Retención y poda en M0-07 | M0-07 |
+| Copias sin retención | Crecimiento de disco | Retención 7/4/12/5 y poda implementadas en M0-07 | #67 |
 | Dos instancias a la vez | Condición de carrera al migrar | SQLite serializa y la transacción revierte; falta el bloqueo de instancia | Antes de M1 y de #68 |
 | Empaquetado del binario nativo | Asar impide cargar `.node` | Externalización verificada; desempaquetado en #68 | #68 |
 
 ## Plan de revisión
 
-Se revisa al cerrar M0-07 (restauración guiada y retención de copias), al
-implementar #68 (empaquetado y asar), al añadir las tablas de dominio de M1 y si
-Drizzle Kit cambia el formato del journal. Cualquier cambio de motor, de formato
-de migración o de estrategia de copia exige un ADR nuevo.
+Se revisó al cerrar M0-07 (restauración guiada y retención de copias), se revisa
+al implementar #68 (empaquetado y asar), al añadir las tablas de dominio de M1 y
+si Drizzle Kit cambia el formato del journal. Cualquier cambio de motor, de
+formato de migración o de estrategia de copia exige un ADR nuevo.
 
 ## Referencias
 
 - Issue: #64 — SQLite local con better-sqlite3, Drizzle y migraciones.
+- Issue de implementación de la poda y la restauración: #67 — Copias de
+  seguridad, restauración y modo seguro.
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D3–D4 y §5.
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-040.
 - [`docs/persistencia.md`](../persistencia.md).

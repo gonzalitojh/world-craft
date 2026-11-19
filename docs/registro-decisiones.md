@@ -71,3 +71,27 @@ pertenecen a M0-07.
 | ID | Tema | Decisión | Consecuencias principales |
 |---|---|---|---|
 | D-040 | SQLite, migraciones y modo seguro | `better-sqlite3` 13.2.0 con Node-API 10 y prebuild compartido, sin `electron-rebuild`; base en `userData/data/world-craft.sqlite` con WAL, `synchronous=NORMAL`, `foreign_keys=ON` y `busy_timeout=5000`; una conexión de main; integridad antes de WAL; runner propio sobre el journal de Drizzle con Zod, checksum SHA-256 normalizado, lote transaccional y `user_version` como número de migraciones aplicadas; copia online con manifiesto, SHA-256 e integridad antes de migrar una base existente; rechazo de bases con tablas propias sin `schema_migrations`; modo seguro sin conexión de escritura, códigos estables, log JSONL rotativo sin contenido y diálogo nativo con abrir copias, continuar o salir; `better-sqlite3` y `drizzle-orm` externalizados y `drizzle/` copiado al build. | La actualización no puede dejar una base a medias ni perder datos; un fallo se explica sin exponer SQL ni rutas; la restauración guiada, la retención de copias y la UI quedan para M0-07; #68 debe desempaquetar el módulo nativo del asar; el bloqueo de instancia única se cierra antes de M1/#68. ADR 0016. |
+
+## 2026-11-19 — Copias y restauración implementadas (M0-07)
+
+**Contexto.** La issue #67 implementa el alcance de D-031 y completa la deuda de
+D-040 sin cambiar ninguna decisión.
+
+- Copias automáticas diaria, semanal y mensual al arrancar, con buckets locales y
+  retención 7/4/12; manifiesto v2 compatible con la lectura de v1; las copias
+  solo contienen SQLite y manifiesto, no assets.
+- Retención de 5 copias pre-migración, que cierra la deuda del ADR 0016;
+  `pre-restore` no se poda y su recuperación es manual.
+- Restauración desde el diálogo nativo de modo seguro con verificación,
+  confirmación, copia pre-restauración en bruto, lock, marcador durable
+  `.restore.pending`, `.rollback`, relanzamiento y detección de restauraciones
+  interrumpidas. La pantalla Ajustes → Datos y las copias manuales siguen
+  previstas para M1.
+- Residuales documentados: sin `requestSingleInstanceLock` el lock no es una
+  exclusión mutua estricta; un lock obsoleto o ilegible puede requerir borrado
+  manual de `data/.restore.lock`; una base de 0 bytes se considera nueva; una
+  base válida con restos obliga a modo seguro; la limpieza fallida de
+  `.rollback` puede repetir el modo seguro; la rotación se difiere si no hay
+  copia nueva ni pre-migración; hasta tres `integrity_check` por arranque; y la
+  durabilidad cubre el cierre del proceso, no un corte de energía.
+- Referencias: ADR 0012, ADR 0016, `docs/persistencia.md` y `docs/continuidad.md`.

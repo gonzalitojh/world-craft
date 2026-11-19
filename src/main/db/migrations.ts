@@ -103,6 +103,16 @@ export function inspectMigrations(
 }
 
 /**
+ * Devuelve la versión de esquema que instalaría el journal actual.
+ *
+ * Se usa para rechazar la restauración de una copia creada por una versión más
+ * reciente de la aplicación: `user_version` es el número de migraciones.
+ */
+export function readTargetSchemaVersion(migrationsDir: string): number {
+  return loadMigrations(migrationsDir).length;
+}
+
+/**
  * Aplica todas las migraciones pendientes en una sola transacción.
  *
  * Devuelve cuántas se aplicaron. Si una falla, SQLite revierte el lote entero

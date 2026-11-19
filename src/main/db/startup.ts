@@ -2,16 +2,18 @@
  * Arranque de la base local.
  *
  * Orquesta el orden del ADR 0002 sin conocer Electron:
- * abrir sin WAL → integridad → inspeccionar migraciones → copia previa si hay
- * datos y migraciones pendientes → activar WAL → migrar en transacción →
- * integridad posterior.
+ * detectar restos de restauración → abrir sin WAL → integridad → inspeccionar
+ * migraciones → copia previa si hay datos y migraciones pendientes → activar
+ * WAL → migrar en transacción → integridad posterior.
  *
  * Cualquier fallo cierra la conexión de escritura, registra un código estable
- * y devuelve `safe-mode`. La restauración guiada desde copia llega en M0-07;
- * aquí la copia queda creada y verificada.
+ * y devuelve `safe-mode`. La restauración guiada desde copia la ofrece el
+ * diálogo nativo de modo seguro (M0-07); aquí la copia queda creada y
+ * verificada antes de migrar.
  */
 import { createDatabaseClient, type DatabaseClient } from './client';
-import { createPreMigrationBackup, type BackupResult } from './backup';
+import { createPreMigrationBackup, type BackupResult } from '../backup/create';
+import { inspectRestoreRemnants } from '../backup/remnants';
 import {
   closeDatabase,
   enableWritePragmas,
@@ -87,6 +89,22 @@ export async function initializeDatabase(
     paths = resolvedPaths;
     logger = createStartupLogger(resolvedPaths.startupLogFile, now);
     ensureDataDirectories(resolvedPaths);
+
+    // Antes de decidir si la base es nueva: un `.rollback*` o un
+    // `.restore.tmp*` indica que una restauración anterior se cortó. Abrir o
+    // crear la base en ese estado podría dejar los datos antiguos huérfanos.
+    const remnants = await inspectRestoreRemnants({
+      dataDir: resolvedPaths.dataDir,
+      databaseFile: resolvedPaths.databaseFile,
+    });
+
+    if (remnants.status === 'interrupted') {
+      throw new DatabaseError('DB_RESTORE_INTERRUPTED');
+    }
+
+    if (remnants.status === 'io-error') {
+      throw new DatabaseError('DB_OPEN_FAILED');
+    }
 
     newDatabase = isNewDatabase(resolvedPaths.databaseFile);
     database = openDatabase({

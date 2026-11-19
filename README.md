@@ -117,8 +117,9 @@ la carpeta `out/` no se versiona.
 - No hay telemetría, analítica ni servicios de terceros.
 - La aplicación funciona sin conexión. La red solo se usa para comprobar
   actualizaciones cuando la persona usuaria lo permite.
-- Antes de una migración se crea una copia local verificable. La restauración
-  guiada y las copias automáticas llegan con M0-07.
+- Antes de una migración se crea una copia local verificable. Las copias
+  automáticas diarias, semanales y mensuales, la retención y la restauración
+  desde el aviso de modo seguro ya funcionan; la interfaz de Ajustes llega en M1.
 - Los datos se podrán exportar e importar en formatos abiertos (JSON y assets) en
   las fases siguientes.
 
@@ -130,6 +131,8 @@ El detalle está en [`docs/persistencia.md`](docs/persistencia.md) y
 ```text
 src/
   main/           Proceso principal: ventana, ciclo de vida, IPC y persistencia
+    assets/       Servicio de imágenes, protocolo wc-asset:// y purga recuperable
+    backup/       Copias, manifiesto, rotación, programación y restauración
     db/           Rutas, conexión SQLite, esquema, migraciones, copia e integridad
     ipc/          Router tipado con allowlist y Zod
     messages/     Textos de los diálogos nativos
@@ -151,8 +154,9 @@ scripts/          check-build, check-native, clean y utilidades
 ```
 
 Las pantallas y los módulos de producto se añadirán dentro de `src/renderer/` y
-`src/main/` con sus issues; todavía no existen `src/renderer/modules/`. El
-servicio de assets ya vive en `src/main/assets/`.
+`src/main/` con sus issues; todavía no existen `src/renderer/modules/`. Los
+servicios de assets y de copias ya viven en `src/main/assets/` y
+`src/main/backup/`.
 
 ## Ramas
 
