@@ -1,7 +1,7 @@
 ﻿{
   "title": "Copias de seguridad, restauración y modo seguro",
   "description": "M0-07. Red de seguridad de los datos locales: copias automáticas diarias, semanales y mensuales con rotación 7/4/12, copia previa a cada migración y a cada restauración, verificación de integridad y legibilidad antes de ofrecer una copia, restauración guiada desde la app con confirmación explícita, y arranque en modo seguro cuando la base o una migración falla ofreciendo restaurar. Depende de M0-04 (#64), fusionada en dev. Coordina con M0-08 (#68); la interfaz de ajustes de datos llega en M1 y en M0 la restauración se ofrece desde el diálogo nativo de modo seguro. ADR 0012 y ADR 0016.",
-  "status": "review",
+  "status": "published",
   "model_variant": "max",
   "issue": {
     "number": 67,
@@ -96,5 +96,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": null
+  },
+  "pr": {
+    "number": 108,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/108",
+    "title": "feat: añadir copias, restauración y modo seguro (#67)",
+    "branch": "feat/issue-67-backups-restore-safe-mode",
+    "commit": "50623fb"
   }
 }
