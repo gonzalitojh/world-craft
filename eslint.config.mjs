@@ -54,10 +54,15 @@ export default tseslint.config(
     },
   },
   {
-    // La capa de datos y la lógica pura del modo seguro deben poder probarse
-    // sin Electron. La composición (userData, diálogos, ciclo de vida) vive en
-    // `src/main/persistence.ts` y `src/main/safe-mode-dialog.ts`.
-    files: ['src/main/db/**/*.ts', 'src/main/safe-mode-prompt.ts'],
+    // La capa de datos, las copias y la lógica pura del modo seguro deben poder
+    // probarse sin Electron. La composición (userData, diálogos, ciclo de vida)
+    // vive en `src/main/persistence.ts`, `src/main/safe-mode-dialog.ts` y
+    // `src/main/safe-mode-recovery.ts`.
+    files: [
+      'src/main/db/**/*.ts',
+      'src/main/backup/**/*.ts',
+      'src/main/safe-mode-prompt.ts',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',

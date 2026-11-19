@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   initializeDatabase: vi.fn(),
   showSafeModeDialog: vi.fn(),
   closeDatabase: vi.fn(),
+  runScheduledBackups: vi.fn(),
 }));
 
 vi.mock('electron', () => ({
@@ -29,8 +30,18 @@ vi.mock('@/main/db/connection', () => ({
   closeDatabase: mocks.closeDatabase,
 }));
 
+vi.mock('@/main/backup/scheduler', () => ({
+  runScheduledBackups: mocks.runScheduledBackups,
+}));
+
+vi.mock('@/main/db/migrations', () => ({
+  readTargetSchemaVersion: () => 2,
+}));
+
 import { app } from 'electron';
 
+import type { BackupResult } from '@/main/backup/create';
+import { runScheduledBackups } from '@/main/backup/scheduler';
 import { closeDatabase } from '@/main/db/connection';
 import { initializeDatabase } from '@/main/db/startup';
 import {
@@ -71,10 +82,40 @@ function createSafeResult(
   };
 }
 
+function createPreMigrationBackupResult(): BackupResult {
+  return {
+    directory: 'C:/datos/backups/pre-migration/1',
+    databaseFile: 'C:/datos/backups/pre-migration/1/world-craft.sqlite',
+    manifestFile: 'C:/datos/backups/pre-migration/1/manifest.json',
+    manifest: {
+      formatVersion: 2,
+      reason: 'pre-migration',
+      createdAt: '2026-11-19T10:00:00.000Z',
+      databaseFile: 'world-craft.sqlite',
+      schemaVersion: 1,
+      sizeBytes: 1,
+      sha256: 'a'.repeat(64),
+      integrity: 'ok',
+      assetsIncluded: false,
+    },
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(app.getPath).mockReturnValue(userDataDir);
   vi.mocked(showSafeModeDialog).mockResolvedValue('continue');
+  vi.mocked(runScheduledBackups).mockResolvedValue({
+    created: [],
+    failed: [],
+    rotation: {
+      removed: 0,
+      kept: 0,
+      corrupt: 0,
+      skipped: 0,
+      failed: 0,
+    },
+  });
 });
 
 afterEach(() => {
@@ -110,6 +151,65 @@ describe('composición del arranque de persistencia', () => {
     expect(initializeDatabase).toHaveBeenCalledTimes(1);
   });
 
+  it('programa las copias automáticas con las rutas resueltas antes de ready', async () => {
+    const client = createClient();
+    const paths = resolveDataPaths(
+      join(tmpdir(), 'world-craft-persistence-scheduled'),
+    );
+    vi.mocked(initializeDatabase).mockResolvedValue({
+      ...createReadyResult(client),
+      paths,
+    });
+
+    await expect(initializePersistence({ migrationsDir })).resolves.toEqual({
+      status: 'ready',
+    });
+
+    expect(runScheduledBackups).toHaveBeenCalledWith(
+      expect.objectContaining({
+        database: client.sqlite,
+        directories: {
+          daily: paths.dailyBackupsDir,
+          weekly: paths.weeklyBackupsDir,
+          monthly: paths.monthlyBackupsDir,
+          preMigration: paths.preMigrationBackupsDir,
+        },
+        timestamp: expect.any(Number),
+        targetSchemaVersion: expect.any(Number),
+        forceRotation: false,
+        logger: expect.objectContaining({ log: expect.any(Function) }),
+      }),
+    );
+  });
+
+  it('fuerza la rotación si el arranque creó una copia pre-migración', async () => {
+    const client = createClient();
+    vi.mocked(initializeDatabase).mockResolvedValue({
+      ...createReadyResult(client),
+      backup: createPreMigrationBackupResult(),
+    });
+
+    await expect(initializePersistence({ migrationsDir })).resolves.toEqual({
+      status: 'ready',
+    });
+
+    expect(runScheduledBackups).toHaveBeenCalledWith(
+      expect.objectContaining({ forceRotation: true }),
+    );
+  });
+
+  it('un fallo del programador no impide el estado ready', async () => {
+    const client = createClient();
+    vi.mocked(initializeDatabase).mockResolvedValue(createReadyResult(client));
+    vi.mocked(runScheduledBackups).mockRejectedValue(new Error('sin espacio'));
+
+    await expect(initializePersistence({ migrationsDir })).resolves.toEqual({
+      status: 'ready',
+    });
+
+    expect(getDatabase()).toBe(client);
+  });
+
   it('no expone conexión en modo seguro y propaga continue', async () => {
     const safePaths = resolveDataPaths(
       join(tmpdir(), 'world-craft-persistence-safe'),
@@ -129,10 +229,13 @@ describe('composición del arranque de persistencia', () => {
       'La base de datos no está disponible en modo seguro.',
     );
     expect(showSafeModeDialog).toHaveBeenCalledWith('DB_OPEN_FAILED', {
-      backupsDirectory: safePaths.preMigrationBackupsDir,
-      userDataDirectory: safePaths.userDataDir,
+      paths: safePaths,
+      migrationsDir,
+      userDataDirectory: userDataDir,
+      now: expect.any(Function),
     });
     expect(closeDatabase).not.toHaveBeenCalled();
+    expect(runScheduledBackups).not.toHaveBeenCalled();
   });
 
   it('propaga exit sin dejar una vía de escritura', async () => {
@@ -146,8 +249,10 @@ describe('composición del arranque de persistencia', () => {
     });
 
     expect(showSafeModeDialog).toHaveBeenCalledWith('DB_OPEN_FAILED', {
-      backupsDirectory: null,
+      paths: null,
+      migrationsDir,
       userDataDirectory: userDataDir,
+      now: expect.any(Function),
     });
     expect(() => getDatabase()).toThrow();
     expect(closeDatabase).not.toHaveBeenCalled();

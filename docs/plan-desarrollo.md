@@ -501,6 +501,9 @@ ProseMirror + texto plano para búsqueda/exportación.
 #### D12. Copias y recuperación
 
 - Copia automática diaria de la base de datos y de los assets críticos.
+  En M0-07 la copia automática contiene **solo la base SQLite y su manifiesto**;
+  los assets no se incluyen ni se sustituyen al restaurar. La copia completa con
+  assets y la exportación de mundo llegan con M1.
 - Rotación de copias (por ejemplo, 7 diarias, 4 semanales y 12 mensuales).
 - Copia previa obligatoria a cada migración.
 - Verificación de integridad (`PRAGMA integrity_check`) al arrancar y tras una

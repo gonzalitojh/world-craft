@@ -1,4 +1,4 @@
-import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -43,6 +43,18 @@ describe('rutas de datos', () => {
     );
     expect(paths.preMigrationBackupsDir).toBe(
       join(resolve(userDataDir), 'backups', 'pre-migration'),
+    );
+    expect(paths.dailyBackupsDir).toBe(
+      join(resolve(userDataDir), 'backups', 'daily'),
+    );
+    expect(paths.weeklyBackupsDir).toBe(
+      join(resolve(userDataDir), 'backups', 'weekly'),
+    );
+    expect(paths.monthlyBackupsDir).toBe(
+      join(resolve(userDataDir), 'backups', 'monthly'),
+    );
+    expect(paths.preRestoreBackupsDir).toBe(
+      join(resolve(userDataDir), 'backups', 'pre-restore'),
     );
   });
 
@@ -89,7 +101,11 @@ describe('rutas de datos', () => {
       paths.dataDir,
       paths.logsDir,
       paths.backupsDir,
+      paths.dailyBackupsDir,
+      paths.weeklyBackupsDir,
+      paths.monthlyBackupsDir,
       paths.preMigrationBackupsDir,
+      paths.preRestoreBackupsDir,
       paths.databaseFile,
       paths.startupLogFile,
       paths.assetsDir,
@@ -115,7 +131,11 @@ describe('rutas de datos', () => {
     for (const expected of [
       paths.dataDir,
       paths.logsDir,
+      paths.dailyBackupsDir,
+      paths.weeklyBackupsDir,
+      paths.monthlyBackupsDir,
       paths.preMigrationBackupsDir,
+      paths.preRestoreBackupsDir,
       paths.assetsDir,
       paths.assetsWorldsDir,
       paths.assetsTempDir,
@@ -131,5 +151,36 @@ describe('rutas de datos', () => {
 
     await writeFile(paths.databaseFile, 'contenido', 'utf8');
     expect(isNewDatabase(paths.databaseFile)).toBe(false);
+  });
+
+  it('no bloquea el arranque si una carpeta de copias no se puede crear', async () => {
+    const directory = await createTemporaryDirectory();
+    const paths = resolveDataPaths(directory);
+
+    await mkdir(paths.backupsDir, { recursive: true });
+    await writeFile(paths.dailyBackupsDir, 'bloqueado', 'utf8');
+
+    expect(() => ensureDataDirectories(paths)).not.toThrow();
+
+    for (const expected of [
+      paths.dataDir,
+      paths.logsDir,
+      paths.assetsDir,
+      paths.assetsWorldsDir,
+      paths.assetsTempDir,
+    ]) {
+      expect((await stat(expected)).isDirectory()).toBe(true);
+    }
+
+    expect((await stat(paths.dailyBackupsDir)).isFile()).toBe(true);
+  });
+
+  it('sigue fallando si una carpeta esencial no se puede crear', async () => {
+    const directory = await createTemporaryDirectory();
+    const paths = resolveDataPaths(directory);
+
+    await writeFile(paths.dataDir, 'no es una carpeta', 'utf8');
+
+    expect(() => ensureDataDirectories(paths)).toThrow(DatabaseError);
   });
 });

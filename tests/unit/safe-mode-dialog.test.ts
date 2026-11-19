@@ -6,17 +6,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   showMessageBox: vi.fn(),
   showErrorBox: vi.fn(),
+  showOpenDialog: vi.fn(),
   openPath: vi.fn(),
+  relaunch: vi.fn(),
+  exit: vi.fn(),
 }));
 
 vi.mock('electron', () => ({
+  app: {
+    relaunch: mocks.relaunch,
+    exit: mocks.exit,
+  },
   dialog: {
     showMessageBox: mocks.showMessageBox,
     showErrorBox: mocks.showErrorBox,
+    showOpenDialog: mocks.showOpenDialog,
   },
   shell: { openPath: mocks.openPath },
 }));
 
+import { resolveDataPaths } from '@/main/db/paths';
 import { showSafeModeDialog } from '@/main/safe-mode-dialog';
 
 const temporaryDirectories: string[] = [];
@@ -31,7 +40,10 @@ async function createUserDataDirectory(): Promise<string> {
 beforeEach(() => {
   mocks.showMessageBox.mockReset();
   mocks.showErrorBox.mockReset();
+  mocks.showOpenDialog.mockReset();
   mocks.openPath.mockReset();
+  mocks.relaunch.mockReset();
+  mocks.exit.mockReset();
   mocks.openPath.mockResolvedValue('');
 });
 
@@ -44,28 +56,29 @@ afterEach(async () => {
 });
 
 describe('composición del aviso de modo seguro', () => {
-  it('abre backups/pre-migration y vuelve a mostrar el diálogo', async () => {
+  it('abre la carpeta de copias y vuelve a mostrar el diálogo', async () => {
     const userDataDir = await createUserDataDirectory();
-    const backupsDirectory = join(userDataDir, 'backups', 'pre-migration');
+    const paths = resolveDataPaths(userDataDir);
 
-    await mkdir(backupsDirectory, { recursive: true });
+    await mkdir(paths.backupsDir, { recursive: true });
     mocks.showMessageBox
       .mockResolvedValueOnce({ response: 0 })
-      .mockResolvedValueOnce({ response: 1 });
+      .mockResolvedValueOnce({ response: 2 });
 
     await expect(
       showSafeModeDialog('DB_MIGRATION_FAILED', {
-        backupsDirectory,
+        paths,
+        migrationsDir: join(userDataDir, 'migrations'),
         userDataDirectory: userDataDir,
       }),
     ).resolves.toBe('continue');
 
-    expect(mocks.openPath).toHaveBeenCalledWith(backupsDirectory);
+    expect(mocks.openPath).toHaveBeenCalledWith(paths.backupsDir);
     expect(mocks.showMessageBox).toHaveBeenCalledTimes(2);
     expect(mocks.showErrorBox).not.toHaveBeenCalled();
   });
 
-  it('usa userData cuando no hay carpeta de copias resuelta', async () => {
+  it('usa userData cuando no hay rutas de datos resueltas', async () => {
     const userDataDir = await createUserDataDirectory();
 
     mocks.showMessageBox
@@ -74,7 +87,8 @@ describe('composición del aviso de modo seguro', () => {
 
     await expect(
       showSafeModeDialog('DB_OPEN_FAILED', {
-        backupsDirectory: null,
+        paths: null,
+        migrationsDir: join(userDataDir, 'migrations'),
         userDataDirectory: userDataDir,
       }),
     ).resolves.toBe('exit');
@@ -84,17 +98,18 @@ describe('composición del aviso de modo seguro', () => {
 
   it('vuelve al diálogo si abrir la carpeta falla y el usuario continúa', async () => {
     const userDataDir = await createUserDataDirectory();
-    const backupsDirectory = join(userDataDir, 'backups', 'pre-migration');
+    const paths = resolveDataPaths(userDataDir);
 
-    await mkdir(backupsDirectory, { recursive: true });
+    await mkdir(paths.backupsDir, { recursive: true });
     mocks.showMessageBox
       .mockResolvedValueOnce({ response: 0 })
-      .mockResolvedValueOnce({ response: 1 });
+      .mockResolvedValueOnce({ response: 2 });
     mocks.openPath.mockRejectedValueOnce(new Error('sin explorador'));
 
     await expect(
       showSafeModeDialog('DB_OPEN_FAILED', {
-        backupsDirectory,
+        paths,
+        migrationsDir: join(userDataDir, 'migrations'),
         userDataDirectory: userDataDir,
       }),
     ).resolves.toBe('continue');
@@ -110,7 +125,8 @@ describe('composición del aviso de modo seguro', () => {
 
     await expect(
       showSafeModeDialog('DB_OPEN_FAILED', {
-        backupsDirectory: null,
+        paths: null,
+        migrationsDir: join(userDataDir, 'migrations'),
         userDataDirectory: userDataDir,
       }),
     ).resolves.toBe('continue');
@@ -126,7 +142,8 @@ describe('composición del aviso de modo seguro', () => {
 
     await expect(
       showSafeModeDialog('DB_OPEN_FAILED', {
-        backupsDirectory: null,
+        paths: null,
+        migrationsDir: join(userDataDir, 'migrations'),
         userDataDirectory: userDataDir,
       }),
     ).resolves.toBe('exit');
@@ -141,11 +158,31 @@ describe('composición del aviso de modo seguro', () => {
 
     await expect(
       showSafeModeDialog('DB_INTEGRITY_FAILED', {
-        backupsDirectory: null,
+        paths: null,
+        migrationsDir: join(userDataDir, 'migrations'),
         userDataDirectory: userDataDir,
       }),
     ).resolves.toBe('exit');
     expect(mocks.showErrorBox).toHaveBeenCalledTimes(1);
     expect(mocks.openPath).not.toHaveBeenCalled();
+  });
+
+  it('ofrece restaurar cuando las rutas están resueltas', async () => {
+    const userDataDir = await createUserDataDirectory();
+    const paths = resolveDataPaths(userDataDir);
+
+    mocks.showMessageBox.mockResolvedValue({ response: 2 });
+
+    await showSafeModeDialog('DB_INTEGRITY_FAILED', {
+      paths,
+      migrationsDir: join(userDataDir, 'migrations'),
+      userDataDirectory: userDataDir,
+    });
+
+    const dialog = mocks.showMessageBox.mock.calls[0]?.[0] as {
+      buttons: string[];
+    };
+
+    expect(dialog.buttons).toHaveLength(4);
   });
 });

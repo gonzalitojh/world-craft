@@ -11,6 +11,10 @@ export const DATABASE_ERROR_CODES = [
   'DB_MIGRATION_CHECKSUM_MISMATCH',
   'DB_BACKUP_FAILED',
   'DB_MIGRATION_FAILED',
+  'DB_RESTORE_INVALID',
+  'DB_RESTORE_FAILED',
+  'DB_RESTORE_INTERRUPTED',
+  'DB_RESTORE_ROLLBACK_FAILED',
 ] as const;
 
 /** Fallo estable de apertura, integridad, copia o migración. */
@@ -25,6 +29,13 @@ const DATABASE_ERROR_MESSAGES: Record<DatabaseErrorCode, string> = {
     'Una migración aplicada no coincide con el SQL versionado.',
   DB_BACKUP_FAILED: 'No se pudo crear o verificar la copia previa.',
   DB_MIGRATION_FAILED: 'No se pudieron aplicar las migraciones pendientes.',
+  DB_RESTORE_INVALID:
+    'La copia elegida no supera la verificación y no se puede restaurar.',
+  DB_RESTORE_FAILED: 'No se pudo completar la restauración de la copia.',
+  DB_RESTORE_INTERRUPTED:
+    'Hay una restauración en curso o una anterior quedó interrumpida; no se ha abierto la base de datos.',
+  DB_RESTORE_ROLLBACK_FAILED:
+    'La restauración falló y no se pudo devolver la base anterior a su sitio.',
 };
 
 /**

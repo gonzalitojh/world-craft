@@ -2,8 +2,8 @@
 
 - **Estado:** aceptado
 - **Fecha de la decisión:** 2026-11-18
-- **Fecha del documento:** 2026-11-18
-- **Issue:** pivote a escritorio (catálogo nuevo)
+- **Fecha del documento:** 2026-11-19
+- **Issue:** pivote a escritorio (catálogo nuevo); implementación M0-07 en #67
 - **Decisiones del registro:** D-031
 - **Decisores:** usuario / agentes
 - **Supersede:** ADR 0009 y ADR 0013 de la etapa web
@@ -39,6 +39,54 @@ externas.
 > verifica antes de migrar. El modo seguro ya está implementado; la restauración
 > guiada, la retención y la interfaz de copias llegan con M0-07. El detalle está
 > en el [ADR 0016](0016-sqlite-migrations-safe-mode.md).
+>
+> **Precisión de implementación (M0-07, #67, 19/11/2026).** Se implementan las
+> copias automáticas, la retención, la verificación y la restauración desde el
+> diálogo de modo seguro. La interfaz de Ajustes sigue prevista para M1.
+>
+> - **Manifiesto v2** compatible con la lectura de v1: `formatVersion`, `reason`
+>   (`daily`, `weekly`, `monthly`, `pre-migration`, `pre-restore`), `createdAt`,
+>   `databaseFile`, `schemaVersion`, `sizeBytes`, `sha256`, `integrity` y
+>   `assetsIncluded: false`. La copia contiene **solo SQLite y el manifiesto**;
+>   los assets no se incluyen ni se sustituyen al restaurar.
+> - **Programación al arrancar:** una pasada tras `ready` y antes de crear la
+>   ventana, con buckets de fecha local (día `YYYY-MM-DD`, semana ISO `YYYY-Www`
+>   y mes `YYYY-MM`). Se crea el bucket actual que falte aunque hayan pasado
+>   semanas; no se copia al cerrar; un fallo se registra y nunca bloquea el
+>   arranque.
+> - **Retención:** 7 diarias, 4 semanales, 12 mensuales y **5 pre-migración**
+>   (cierra la deuda del ADR 0016). `pre-restore` no se poda. Las copias corruptas
+>   no cuentan, no se ofrecen y no se borran; nunca se elimina la copia válida más
+>   reciente ni la última de un motivo, y cada candidata se reverifica antes de
+>   borrarse.
+> - **Verificación:** manifiesto Zod estricto, tamaño, SHA-256,
+>   `PRAGMA integrity_check` y `PRAGMA user_version`, con rechazo de copias de
+>   versión futura antes de abrirlas.
+> - **Restauración:** en M0 se ofrece desde el diálogo nativo de modo seguro
+>   (Ajustes → Datos llega en M1), con la copia válida más reciente o una carpeta
+>   dentro de `backups/`; confirmación con fecha y versión; copia
+>   pre-restauración **en bruto** de la base actual y sus WAL/SHM/journal; lock
+>   `.restore.lock`, marcador durable `.restore.pending`, reemplazo con
+>   `.restore.tmp` y `.rollback*`, y relanzamiento. Si algo falla se devuelve la
+>   base anterior; si el rollback falla se conserva todo y el arranque entra en
+>   modo seguro. Nunca se restaura en segundo plano.
+> - **Pre-restauración manual:** las copias `pre-restore` no se ofrecen desde la
+>   app y no se podan; su recuperación es manual con la aplicación cerrada.
+> - **Assets intactos:** al restaurar solo la base, los assets existentes no se
+>   sustituyen; las referencias huérfanas se gestionan en M1.
+> - **Residuales documentados:** sin `requestSingleInstanceLock` el lock no es
+>   una exclusión mutua estricta; un lock obsoleto o ilegible y la reutilización
+>   de PID pueden requerir borrar `data/.restore.lock` a mano; una base de 0
+>   bytes se considera nueva; una base válida con restos `.rollback*` o con el
+>   marcador obliga a modo seguro; la limpieza fallida de `.rollback*` puede
+>   repetir el modo seguro; la rotación se difiere si no se crea copia ni hay
+>   pre-migración; un arranque con migraciones puede ejecutar hasta tres
+>   `integrity_check` (base viva antes de migrar, copia pre-migración y base viva
+>   después); el inventario y la rotación listan carpetas sin `realpath` ni
+>   contención, a endurecer antes de M1/#68; y la durabilidad del marcador y de la
+>   copia protege frente a un cierre del proceso, no frente a un corte de
+>   energía. El detalle está en [`docs/persistencia.md`](../persistencia.md) y en
+>   el [ADR 0016](0016-sqlite-migrations-safe-mode.md).
 
 ## Alternativas consideradas
 
@@ -46,7 +94,7 @@ externas.
 |---|---|
 | Copia solo manual | El usuario olvida hacerla; no protege de un fallo. |
 | Copia en la nube | Requiere cuenta, red y confianza; contradice la privacidad local. |
-| Copia solo de SQLite | Pierde assets y dificulta restaurar un mundo completo. |
+| Copia solo de SQLite | Pierde assets y dificulta restaurar un mundo completo. Se descartó para la copia completa y la exportación; las copias automáticas de M0-07 respaldan solo la base porque los assets quedan intactos en disco. |
 | Confiar en el WAL | Protege de un cierre, no de corrupción o borrado. |
 | Restauración automática sin confirmación | Puede empeorar el estado y sorprender al usuario. |
 
@@ -69,7 +117,7 @@ externas.
 
 | Dimensión | Impacto |
 |---|---|
-| Ventana y escritorio | Ajustes → Copias; restauración con diálogo y progreso. |
+| Ventana y escritorio | Ajustes → Datos (sección Copias); restauración con diálogo y progreso. |
 | Temas (Claro/Oscuro) | Avisos y estados con tokens. |
 | Accesibilidad | Confirmaciones claras y anuncios `aria-live`. |
 | Seguridad y privacidad | Copias locales; sin subida automática. |
@@ -93,6 +141,7 @@ prueba de restauración.
 
 ## Referencias
 
+- Issue de implementación: #67 — Copias de seguridad, restauración y modo seguro.
 - [`docs/continuidad.md`](../continuidad.md)
 - [`docs/persistencia.md`](../persistencia.md)
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D12

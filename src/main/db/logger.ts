@@ -6,6 +6,8 @@
  * rutas absolutas o mensajes crudos de SQLite. Rota a los 256 KiB y ningún
  * fallo de escritura impide arrancar.
  */
+import type { RestoreErrorCode, RestoreFailureReason } from '../backup/restore';
+import type { BackupFailureReason } from '../backup/verify';
 import { appendJsonLine } from '../logging/jsonl';
 import type { DatabaseErrorCode } from './errors';
 
@@ -41,6 +43,37 @@ export type StartupLogEntry =
       readonly outcome: 'applied';
       readonly count: number;
       readonly schemaVersion: number;
+    }
+  | {
+      readonly event: 'backup.schedule';
+      readonly outcome: 'created';
+      readonly daily: boolean;
+      readonly weekly: boolean;
+      readonly monthly: boolean;
+      readonly pruned: number;
+    }
+  | {
+      readonly event: 'backup.schedule';
+      readonly outcome: 'skipped';
+    }
+  | {
+      readonly event: 'backup.schedule';
+      readonly outcome: 'failed';
+      readonly reason: BackupFailureReason;
+      readonly created: number;
+      readonly failed: number;
+      readonly pruned: number;
+    }
+  | {
+      readonly event: 'backup.restore';
+      readonly outcome: 'restored';
+      readonly schemaVersion: number;
+    }
+  | {
+      readonly event: 'backup.restore';
+      readonly outcome: 'failed';
+      readonly code: RestoreErrorCode;
+      readonly reason: RestoreFailureReason;
     };
 
 /** Logger mínimo del arranque. */

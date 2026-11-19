@@ -1,4 +1,12 @@
-import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -14,7 +22,7 @@ import {
   type DatabaseStartupResult,
 } from '@/main/db/startup';
 
-import { createTestDatabase } from './helpers/temp-db';
+import { createTestDatabase, deadPid } from './helpers/temp-db';
 
 type ReadyResult = Extract<DatabaseStartupResult, { status: 'ready' }>;
 type SafeModeResult = Extract<DatabaseStartupResult, { status: 'safe-mode' }>;
@@ -227,6 +235,183 @@ describe('arranque de la base de datos', () => {
           result.code,
         );
       }
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('no crea una base vacía si quedan restos .rollback de una restauración', async () => {
+    const test = await createTestDatabase();
+
+    try {
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      closeDatabase(first.client.sqlite);
+
+      await rename(
+        test.paths.databaseFile,
+        `${test.paths.databaseFile}.rollback`,
+      );
+      await writeFile(`${test.paths.databaseFile}.rollback-wal`, 'wal', 'utf8');
+      await writeFile(
+        `${test.paths.databaseFile}.rollback-journal`,
+        'journal',
+        'utf8',
+      );
+
+      const result = expectSafeMode(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+        'DB_RESTORE_INTERRUPTED',
+      );
+
+      expect(result.paths).not.toBeNull();
+      await expect(access(test.paths.databaseFile)).rejects.toThrow();
+      await expect(
+        access(`${test.paths.databaseFile}.rollback`),
+      ).resolves.toBeUndefined();
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('no crea una base vacía si queda un temporal de restauración', async () => {
+    const test = await createTestDatabase();
+
+    try {
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      closeDatabase(first.client.sqlite);
+
+      await rename(
+        test.paths.databaseFile,
+        join(test.rootDir, 'base-guardada.sqlite'),
+      );
+      await writeFile(
+        `${test.paths.databaseFile}.restore.tmp`,
+        'resto',
+        'utf8',
+      );
+
+      expectSafeMode(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+        'DB_RESTORE_INTERRUPTED',
+      );
+      await expect(access(test.paths.databaseFile)).rejects.toThrow();
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('limpia un lock de restauración obsoleto y arranca', async () => {
+    const test = await createTestDatabase();
+
+    try {
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      closeDatabase(first.client.sqlite);
+
+      const lockFile = join(test.paths.dataDir, '.restore.lock');
+
+      await writeFile(
+        lockFile,
+        JSON.stringify({ pid: await deadPid(), createdAt: '2026-11-19' }),
+        'utf8',
+      );
+
+      const ready = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+
+      closeDatabase(ready.client.sqlite);
+
+      await expect(access(lockFile)).rejects.toThrow();
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('entra en modo seguro si el lock de restauración está vivo', async () => {
+    const test = await createTestDatabase();
+
+    try {
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      closeDatabase(first.client.sqlite);
+
+      const lockFile = join(test.paths.dataDir, '.restore.lock');
+
+      await writeFile(
+        lockFile,
+        JSON.stringify({ pid: process.pid, createdAt: '2026-11-19' }),
+        'utf8',
+      );
+
+      expectSafeMode(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+        'DB_RESTORE_INTERRUPTED',
+      );
+      await expect(access(lockFile)).resolves.toBeUndefined();
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('entra en modo seguro si hay un marcador de restauración pendiente', async () => {
+    const test = await createTestDatabase();
+
+    try {
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      closeDatabase(first.client.sqlite);
+
+      const pendingFile = join(test.paths.dataDir, '.restore.pending');
+
+      await writeFile(
+        pendingFile,
+        JSON.stringify({ pid: 999_999, createdAt: '2026-11-19' }),
+        'utf8',
+      );
+
+      expectSafeMode(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+        'DB_RESTORE_INTERRUPTED',
+      );
+      await expect(access(pendingFile)).resolves.toBeUndefined();
     } finally {
       await test.cleanup();
     }

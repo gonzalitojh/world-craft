@@ -1,6 +1,8 @@
 # Migraciones de base de datos
 
-> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
+> 19/11/2026 con M0-07 (#67): poda de copias pre-migración y restauración desde
+> el diálogo de modo seguro.
 > **Ámbito:** creación, aplicación, verificación y reversión de migraciones
 > SQLite. El esquema vigente está en [`esquema.md`](esquema.md).
 
@@ -18,7 +20,8 @@
 5. **Preservación de datos.** Toda migración que toque datos existentes incluye
    una prueba que compara filas antes y después.
 6. **Modo seguro.** Si una migración falla o la integridad falla, la app arranca
-   sin conexión de escritura; la restauración guiada llega con M0-07.
+   sin conexión de escritura y ofrece restaurar una copia desde el diálogo
+   nativo (implementado en M0-07).
 
 ## 2. Herramientas
 
@@ -76,26 +79,35 @@ ejecuta el arranque **antes de crear la ventana**:
 
 ```text
 1. Calcular rutas, crear carpetas y abrir el log de arranque.
-2. Abrir SQLite sin WAL (solo busy_timeout y foreign_keys).
-3. Ejecutar PRAGMA integrity_check. Si falla: DB_INTEGRITY_FAILED.
-4. Leer PRAGMA user_version y leer schema_migrations.
+2. Detectar restos de restauración (.rollback*, .restore.tmp*, .restore.pending).
+   - Si hay restos o el lock pertenece a un proceso vivo: DB_RESTORE_INTERRUPTED.
+   - No se abre ni se crea ninguna base en ese estado.
+3. Abrir SQLite sin WAL (solo busy_timeout y foreign_keys).
+4. Ejecutar PRAGMA integrity_check. Si falla: DB_INTEGRITY_FAILED.
+5. Leer PRAGMA user_version y leer schema_migrations.
    - Si hay tablas propias sin schema_migrations: DB_MIGRATION_FAILED.
    - Si la versión es superior al journal: DB_VERSION_AHEAD.
    - Si una migración aplicada cambió: DB_MIGRATION_CHECKSUM_MISMATCH.
    - Si user_version y las filas no cuadran: DB_MIGRATION_FAILED.
-5. Si la base ya existía y hay pendientes:
+6. Si la base ya existía y hay pendientes:
    a. Copia online en backups/pre-migration/<timestamp>/.
    b. Verificar manifiesto, tamaño, SHA-256, integridad y versión en solo
       lectura. Si falla: DB_BACKUP_FAILED y no se migra.
-6. Activar WAL y synchronous = NORMAL.
-7. Si hay pendientes, abrir una transacción:
+7. Activar WAL y synchronous = NORMAL.
+8. Si hay pendientes, abrir una transacción:
    a. Ejecutar el SQL de cada migración en orden.
    b. Insertar su fila en schema_migrations.
    c. Fijar user_version al número total de migraciones.
    d. Commit. Si algo falla, SQLite revierte el lote completo.
-8. Ejecutar integrity_check posterior.
-9. Volver a inspeccionar el estado y devolver ready, o modo seguro.
+9. Ejecutar integrity_check posterior.
+10. Volver a inspeccionar el estado y devolver ready, o modo seguro.
+11. Si es ready, crear las copias automáticas del periodo en curso y podar las
+    sobrantes (7 diarias, 4 semanales, 12 mensuales y 5 pre-migración) antes de
+    crear la ventana. Un fallo de copia no bloquea el arranque.
 ```
+
+La poda conserva las **5 copias pre-migración válidas más recientes**; se
+ejecuta al arrancar y no borra la más reciente ni las copias corruptas.
 
 Una base nueva (archivo inexistente o vacío) no crea copia previa: no hay datos
 que preservar. La decisión está documentada y cubierta por una prueba.
@@ -109,9 +121,11 @@ el arranque falla, se cierra la conexión y se muestra el aviso de modo seguro
 
 - **Reversión automática:** solo la transacción fallida; SQLite deshace el lote
   completo y `user_version` no cambia.
-- **Reversión manual:** restaurar la copia pre-migración. La restauración guiada
-  llega con M0-07; las pruebas de integración restauran la copia manualmente con
-  la app cerrada y vuelven a migrar sin perder datos.
+- **Reversión manual:** restaurar una copia pre-migración desde el diálogo de
+  modo seguro (implementado en M0-07). La app verifica la copia, guarda la base
+  actual en `backups/pre-restore/` y relanza; al arrancar se aplican las
+  migraciones pendientes con una copia previa nueva. Se conservan las 5 copias
+  pre-migración válidas más recientes.
 - **Rollback de esquema:** los archivos de `drizzle/rollback/` son documentación
   y SQL de referencia; no se ejecutan automáticamente. La vía segura es
   restaurar la copia.
@@ -132,12 +146,16 @@ Los fallos de arranque usan códigos estables y no propagan SQL ni rutas:
 | `DB_MIGRATION_CHECKSUM_MISMATCH` | Una migración ya aplicada cambió. |
 | `DB_BACKUP_FAILED` | No se pudo crear o verificar la copia previa. |
 | `DB_MIGRATION_FAILED` | El lote no se pudo aplicar, el estado no cuadra o la base es ajena. |
+| `DB_RESTORE_INVALID` | La copia elegida no supera la verificación; no se modifica nada. |
+| `DB_RESTORE_FAILED` | Falló el reemplazo y se devolvió la base anterior a su sitio. |
+| `DB_RESTORE_INTERRUPTED` | Hay restos de una restauración en curso o interrumpida. |
+| `DB_RESTORE_ROLLBACK_FAILED` | Falló la restauración y no se pudo devolver la base anterior. |
 
 En modo seguro no queda ninguna conexión de escritura. Se escribe una línea
 JSONL en `logs/startup.log` (rotación a 256 KiB, sin SQL, filas, rutas ni
-contenido) y se muestra un diálogo nativo con «Abrir carpeta de copias»,
-«Continuar en modo seguro» y «Salir». La restauración guiada y la interfaz de
-copias llegan con M0-07.
+contenido) y se muestra un diálogo nativo con «Restaurar copia.», «Abrir carpeta
+de copias», «Continuar en modo seguro» y «Salir». La interfaz de copias de
+Ajustes llega en M1.
 
 ## 4. Convenciones de nombres
 
@@ -173,6 +191,9 @@ drizzle/
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
 | `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0001_assets` deja `user_version` 1 y `0000_init` la deja en 0. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
+| `backup-schedule` | Copias diaria, semanal y mensual al arrancar, sin duplicar el bucket, y rotación 7/4/12/5 sin podar pre-restore. | Implementada (unitaria e integración) |
+| `backup-restore` | Restauración verificada con copia pre-restore, rechazo de copia corrupta o futura, rollback y assets intactos. | Implementada (integración) |
+| `restore-interrupted` | Lock, `.restore.pending`, restos preservados y arranque sin base vacía tras un fallo. | Implementada (unitaria e integración) |
 
 Las pruebas usan archivos temporales en `os.tmpdir()`, nunca la base del
 usuario. `pnpm test:unit` y `pnpm test:integration` se ejecutan en la CI sin
@@ -191,8 +212,9 @@ instantáneas antes del build.
 ## 7. Operación y diagnóstico
 
 - El arranque registra en `logs/startup.log` (JSONL, rotación a 256 KiB) si la
-  base era nueva, cuántas migraciones se aplicaron, la versión resultante y si
-  se creó copia. No registra SQL, filas, rutas ni contenido.
+  base era nueva, cuántas migraciones se aplicaron, la versión resultante, si
+  se creó copia, el resultado de `backup.schedule` y, si hubo restauración, el
+  de `backup.restore`. No registra SQL, filas, rutas ni contenido.
 - La pantalla Ajustes → Datos (prevista) mostrará la versión de esquema, el
   número de migraciones aplicadas, el tamaño de la base y el estado de
   integridad.

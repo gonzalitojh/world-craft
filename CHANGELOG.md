@@ -95,6 +95,32 @@ primera versión estable.
   huérfanos, protocolo, log y mutex, e integración de importación, protocolo,
   repositorio, purga y migración sobre SQLite real. El total pasa a 176
   unitarias en verde (4 omitidas) y 40 de integración en verde (1 omitida).
+- Copias automáticas al arrancar (#67): diaria, semanal y mensual con buckets de
+  fecha local (día, semana ISO y mes), creación del periodo en curso aunque
+  falten arranques, y retención de 7/4/12. Un fallo de copia se registra y nunca
+  bloquea la apertura.
+- Manifiesto de copia v2 (#67), compatible con la lectura de v1: motivo, fecha,
+  versión de esquema, tamaño, SHA-256, integridad y `assetsIncluded: false`. La
+  verificación comprueba manifiesto, tamaño, hash, `integrity_check` y
+  `user_version`, y rechaza copias corruptas o de versión futura. Las copias
+  contienen solo SQLite y manifiesto, no assets.
+- Restauración desde el diálogo de modo seguro (#67): copia válida más reciente
+  o carpeta dentro de `backups/`, confirmación con fecha y versión, copia
+  pre-restauración en bruto de la base y sus WAL/SHM, lock, marcador
+  `.restore.pending`, reemplazo con `.rollback` y relanzamiento. Si falla, vuelve
+  al modo seguro sin dejar la app a medias. La pantalla de Ajustes sigue prevista
+  para M1 y las copias pre-restauración son recuperación manual.
+- Rotación de copias pre-migración a 5 (#67), que cierra la deuda del ADR 0016;
+  las copias pre-restauración no se podan, las corruptas no cuentan ni se borran
+  y nunca se elimina la copia válida más reciente.
+- Modo seguro ampliado (#67): detecta restauraciones interrumpidas
+  (`.rollback`, `.restore.tmp`, `.restore.pending`) sin crear una base vacía y
+  añade los códigos `DB_RESTORE_INVALID`, `DB_RESTORE_FAILED`,
+  `DB_RESTORE_INTERRUPTED` y `DB_RESTORE_ROLLBACK_FAILED`.
+- Pruebas de copias y restauración (#67): manifiesto, buckets, rotación,
+  creación, corrupción, restauración, rollback, restauración interrumpida,
+  preservación de assets y modo seguro. El total pasa a 216 unitarias en verde
+  (4 omitidas) y 84 de integración en verde (1 omitida).
 
 ### Cambiado
 
@@ -105,6 +131,13 @@ primera versión estable.
   al trabajo de escritorio; los subagentes heredan el modelo de la sesión.
 - La Definition of Done sustituye el responsive web por la ventana de escritorio
   a 1024, 1280 y 1600 px, y añade preservación de datos y seguridad Electron.
+- El aviso de modo seguro incorpora «Restaurar copia.» y mantiene abrir la
+  carpeta de copias, continuar sin escritura y salir (#67).
+- El arranque crea las copias automáticas del periodo en curso y poda las
+  sobrantes antes de crear la ventana; no se copia al cerrar (#67).
+- Las copias pre-migración ya no crecen sin límite: se conservan las 5 más
+  recientes, y los eventos `backup.schedule` y `backup.restore` se registran sin
+  rutas, nombres, tamaños, SHA, identificadores ni contenido (#67).
 
 ### Eliminado
 
@@ -133,6 +166,13 @@ primera versión estable.
   y los logs de arranque no incluyen SQL, filas, rutas ni contenido.
 - Modo seguro sin conexión de escritura (#64) y rechazo de bases ajenas,
   manipuladas o de versión superior antes de aplicar cualquier cambio.
+- Restauración confinada a `backups/` con `realpath` y `relative`, verificación
+  previa y posterior, copia pre-restauración en bruto, lock y marcador durable
+  con rollback (#67). La lógica vive en `src/main/backup/`, sin importar
+  Electron, y el renderer no obtiene acceso a rutas ni a la base.
+- Copias y restauración sin secretos ni datos sensibles en logs o avisos: los
+  mensajes están centralizados y no incluyen rutas, nombres, tamaños, SHA ni
+  contenido (#67).
 
 ## Cómo se escribe una entrada
 
