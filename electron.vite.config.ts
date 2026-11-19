@@ -82,10 +82,15 @@ export default defineConfig(({ command }) => {
           formats: ['cjs'],
         },
         rolldownOptions: {
-          // El módulo nativo y el ORM no se empaquetan: se cargan desde
+          // Los módulos nativos y el ORM no se empaquetan: se cargan desde
           // `node_modules` en desarrollo y desde el paquete en la versión
-          // instalada. #68 desempaqueta better-sqlite3 del asar.
-          external: ['better-sqlite3', /^drizzle-orm(\/.*)?$/],
+          // instalada. #68 desempaqueta better-sqlite3 y sharp del asar.
+          external: [
+            'better-sqlite3',
+            /^drizzle-orm(\/.*)?$/,
+            'sharp',
+            /^@img\/.*$/,
+          ],
           output: createCommonjsOutput(),
         },
       },

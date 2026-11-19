@@ -29,7 +29,7 @@
 | E2E | Playwright Electron | Arranque, ventana, flujos críticos, temas, accesibilidad. | `tests/e2e/` |
 | Manual | Checklist | Instalación, actualización, desinstalación y percepción visual. | Task file |
 
-`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-04).
+`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-06).
 `components/` y `e2e/` se crearán con sus issues y hasta entonces son contrato
 previsto.
 
@@ -45,8 +45,11 @@ previsto.
 
 ### 3.2 Migraciones, copias y preservación (implementado)
 
-- Base nueva → `0000_init` → `user_version` 1, tablas del sistema y sin copia
-  previa (justificado: no hay datos que preservar).
+- Base nueva → `0000_init` + `0001_assets` → `user_version` 2, tablas del
+  sistema y `assets`, y sin copia previa (justificado: no hay datos que
+  preservar).
+- Base existente en `0000` → `0001_assets` → `app_settings` intacto y tabla
+  `assets` creada.
 - Base existente → migración → mismos datos y copia previa verificable.
 - Journal válido, secuencia sin huecos, etiqueta sin traversal y checksum
   SHA-256 normalizado.
@@ -71,7 +74,8 @@ renderer, la CSP, la navegación, los permisos y la red.
 - Un canal desconocido se rechaza.
 - Un payload inválido devuelve un error tipado, no una excepción interna.
 - El renderer no accede a `require`, `process`, `fs` ni `ipcRenderer`.
-- El protocolo de assets rechaza rutas fuera de `assets/` (previsto, #66).
+- El protocolo de assets rechaza rutas fuera de `assets/` (implementado, #66;
+  detalle en 3.8).
 - La importación rechaza ZIP con `..`, rutas absolutas y enlaces (previsto).
 - CSP y navegación externa bloqueada.
 - No hay secretos ni rutas absolutas en logs; el log de arranque es JSONL
@@ -118,17 +122,18 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **103 pruebas unitarias** en `tests/unit/`: identidad y ventana mínima,
-  opciones de seguridad de `BrowserWindow`, CSP de producción y desarrollo,
-  resolución del renderer, guards de navegación/sesión/red, contrato y router
-  IPC, API congelada del preload, validación de enlaces externos, journal,
-  checksum, rutas de datos, logger, lógica del aviso de modo seguro y tokens y
-  contraste del sistema de diseño.
-- **18 pruebas de integración** en `tests/integration/`: creación e idempotencia
-  de la base, pragmas, migración inicial, versión adelantada, estado incoherente,
-  archivo no SQLite, corrupción, log sin rutas, base ajena, checksum alterado,
-  rollback del lote, preservación con copia, restauración manual, fallo de copia
-  y rollback de referencia.
+- **176 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+  ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
+  desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
+  y router IPC, API congelada del preload, validación de enlaces externos,
+  journal, checksum, rutas de datos, UUIDv7, logger, lógica del aviso de modo
+  seguro, tokens y contraste del sistema de diseño y servicio de assets.
+- **40 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
+  creación e idempotencia de la base, pragmas, migración inicial, versión
+  adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
+  base ajena, checksum alterado, rollback del lote, preservación con copia,
+  restauración manual, fallo de copia, rollback de referencia, upgrade a
+  `0001_assets`, importación, protocolo, repositorio y purga con SQLite real.
 - **Comandos.** `pnpm test:unit`, `pnpm test:integration`, `pnpm test`,
   `pnpm db:check`, `pnpm verify:native` y `pnpm verify:build`.
 - **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
@@ -136,17 +141,66 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
   instalador.
 - **Verificación.** `pnpm verify:build` comprueba la existencia y tamaño de los
   artefactos, que la CSP de producción va antes de los scripts, que no contiene
-  `unsafe-*` ni URLs remotas, que el journal y `0000_init.sql` están en el build
-  y que `better-sqlite3` y `drizzle-orm` están externalizados.
-- **Nativo.** `pnpm verify:native` carga `better-sqlite3` en Node y Electron y
-  comprueba SQLite 3.54.1 con FTS5. Hoy se ejecuta a mano; debe añadirse a la CI
-  antes de #68.
+  `unsafe-*` ni URLs remotas, que el journal y las migraciones (`0000_init` y
+  `0001_assets`) están en el build y que `better-sqlite3`, `drizzle-orm` y
+  `sharp` están externalizados.
+- **Nativo.** `pnpm verify:native` carga `better-sqlite3` y `sharp` en Node y
+  Electron, comprueba SQLite 3.54.1 con FTS5 y que sharp genera y lee un WebP
+  2×2. Hoy se ejecuta a mano; debe añadirse a la CI antes de #68.
 - **Manual del scaffold.** DevTools sin `require` ni `process`, navegación
   externa bloqueada y arranque sin red. La comprobación visual de la ventana a
   1024, 1280 y 1600 px y de los dos temas con el shell de #65 queda pendiente
   para #70 y la revisión local.
 - **Pendiente.** E2E con Playwright (#70), auditoría de accesibilidad, temas y
   ventana (#93), y pruebas del instalador y del asar (#68).
+
+### 3.8 Assets locales (implementado, #66)
+
+Unitarias en `tests/unit/assets/` y en `tests/unit/db/`:
+
+- **URL y rutas:** gramática `asset|thumb + UUIDv7`, rechazo de query, hash,
+  puerto, userinfo, hosts, segmentos extra, traversal, rutas absolutas, UNC,
+  unidades de Windows, NUL, mayúsculas y UUID que no sean v7.
+- **Contención:** `lstat`/`realpath` con symlinks y junctions de raíz, `worlds/`,
+  `.tmp/`, `worlds/<worldId>` y `.tmp/<assetId>`; una raíz `assets/` enlazada
+  fuera de `userData` se rechaza.
+- **Formato:** detección por magic bytes de PNG, JPEG, WebP, GIF y AVIF; rechazo
+  de SVG, BMP, TIFF, firmas truncadas y contenido arbitrario.
+- **Importación:** publicación del WebP y la miniatura, compensación si falla el
+  `INSERT`, no sobrescritura, rechazo por tamaño del WebP procesado, rechazo de
+  mundo inválido y de origen sobredimensionado antes de leerlo, y log sin rutas
+  ni identificadores.
+- **Huérfanos y purga:** clasificación sin listar referenciados ni sus
+  miniaturas, rutas corruptas contadas sin escribirse, token exacto, copia con
+  manifiesto y checksums antes de borrar, aborto si la copia no verifica,
+  idempotencia, anclas enlazadas, revalidación de un padre convertido en junction
+  y recuperación desde la copia si el borrado falla.
+- **Protocolo:** registro `standard`/`secure`/`stream` con `bypassCSP:false`,
+  cabeceras seguras y longitud exacta, 400/403/404/413/415/500, MIME no admitido,
+  archivo ausente y log del rechazo sin rutas.
+- **Log y serialización:** JSONL con rotación a 256 KiB sin fallar si no se puede
+  escribir; el mutex impide que una purga borre un asset en importación.
+
+Integración en `tests/integration/assets/` con SQLite real:
+
+- Importación completa con sharp: WebP, miniatura, dimensiones y hash; miniatura
+  sin ampliar; JPEG con extensión falsa y HTML disfrazado rechazados; PNG
+  truncado sin dejar archivos ni filas; EXIF/GPS eliminados y orientación
+  aplicada; límites exactos de bytes, lado y píxeles; mismo contenido dos veces
+  sin deduplicar; filas y archivos conservados al reabrir.
+- Protocolo con filas reales: archivo y miniatura servidos, 404 para ID
+  desconocido, 403 para traversal, mundo distinto y fila con ruta ajena, y 415
+  para un MIME guardado no admitido.
+- Repositorio: `insert`, `findById`, `listAll` y `count`, violaciones de los
+  `CHECK` con código estable y persistencia al reabrir.
+- Purga: referenciados conservados, copia verificable del huérfano, ausentes
+  informados sin borrar, temporales purgados e idempotencia.
+- Migración: `0000` → `0001_assets` conservando `app_settings`, `user_version` 2,
+  y rollback de referencia de `0001` y `0000`.
+
+Las pruebas de symlink de archivo se omiten en Windows sin modo desarrollador
+(EPERM); las junctions sí se ejecutan. Los residuales están en el
+[ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md).
 
 ## 4. Cobertura
 
@@ -174,7 +228,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
-| `test` | Sí | `pnpm test`: 103 unitarias + 18 de integración. |
+| `test` | Sí | `pnpm test`: 176 unitarias en verde (4 omitidas) + 40 de integración en verde (1 omitida). |
 | `build` | No hasta #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |
@@ -233,3 +287,4 @@ de #68. Los required checks se aplican en los rulesets `protect-dev` y
 - [ADR 0010](../adr/0010-testing-strategy.md)
 - [ADR 0013](../adr/0013-ci-releases.md)
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
+- [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)

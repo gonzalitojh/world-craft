@@ -1,0 +1,103 @@
+{
+  "title": "Assets locales con protocolo wc-asset://",
+  "description": "M0-06. Servicio de assets locales: guardar archivos en userData/assets/worlds/<worldId>/<assetId>.<ext> con rutas relativas y metadatos en SQLite, servir wc-asset://asset/<assetId> con validación de ruta, MIME y tamaño, normalizar imágenes a WebP con miniatura mediante sharp, y listar y purgar huérfanos solo con confirmación y copia recuperable. Depende de M0-03 (#63) y M0-04 (#64), fusionadas. La UI de subida y galería llega con las fichas (M1); esta issue entrega el servicio y el protocolo.",
+  "status": "published",
+  "model_variant": "high",
+  "issue": {
+    "number": 66,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/66",
+    "title": "Assets locales con protocolo wc-asset://"
+  },
+  "acceptance_criteria": [
+    "El renderer solo carga assets mediante wc-asset:// y nunca ve rutas absolutas.",
+    "Cualquier ruta con .., absoluta o fuera de assets/ se rechaza y se registra como error.",
+    "Las imágenes se convierten a WebP con miniatura y las dimensiones y el MIME se validan.",
+    "La limpieza no borra assets referenciados y deja una copia recuperable antes de purgar huérfanos.",
+    "Existen pruebas de traversal, MIME, límites y limpieza.",
+    "La revisión de seguridad no encuentra hallazgos HIGH."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "E2E del flujo crítico ejecutado o justificado como no aplicable.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página y con contenido largo realista (no aplica: la UI de assets llega en M1).",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles (no aplica: sin UI nueva).",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion (no aplica: sin UI nueva).",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen datos; copia y restauración probadas si aplica.",
+    "Funcionamiento offline comprobado si el cambio toca arranque, datos o actualizaciones.",
+    "Manual de usuario actualizado si el cambio es visible (o constancia de cómo se cubrirá).",
+    "ADR creado o actualizado si hay una decisión arquitectónica o de producto relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas de archivos y contenido no confiable.",
+    "Datos exportables e importables si se añade o cambia un modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Coste de contexto revisado: sin cambio de modelo o variante a mitad de sesión y sin editar AGENTS.md ni los agentes mientras se usaban.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-18. Arquitectura: servicio puro en src/main/assets/ (importación, metadatos, miniaturas, huérfanos y purga) sin Electron; composición y protocolo en src/main/assets/protocol.ts y composition.ts. Protocolo wc-asset:// con gramática cerrada asset/<uuidv7> y thumb/<uuidv7>; el ID es la única entrada, la ruta sale de SQLite y se valida con lista blanca worlds/<uuid>/<uuid>.webp, coincidencia con world_id, rechazo de .., rutas absolutas, NUL, symlinks y junctions, contención con resolve/relative y realpath, MIME permitido image/webp y cabeceras nosniff, Content-Length y CSP. Registro de esquema como standard/secure/stream antes de app.whenReady y protocol.handle tras initializePersistence en estado ready; en modo seguro no se registra. Migración 0001_assets con tabla assets (id, world_id, kind, relative_path, mime, size, width, height, alt, hash SHA-256, created_at), CHECK de kind/size/hash e índices world/hash; FK a worlds diferida a M1 porque worlds no existe y se reconstruirá la tabla; rollback de referencia y prueba de upgrade desde 0000. sharp@^0.35.5 como dependencia de runtime externalizada en electron.vite.config.ts, verificada con check-native y check-build, THIRD-PARTY-NOTICES.md para Apache-2.0 y LGPL-3.0 de libvips, y asarUnpack documentado como requisito de #68. Importación: validación por magic bytes (PNG/JPEG/WebP/GIF/AVIF; SVG rechazado), límites 25 MB, 8192 px por lado y 24 Mpx, rotate EXIF, sRGB, WebP calidad 90 y miniatura 320 px calidad 80 sin metadata, escritura atómica en assets/.tmp y rename, luego INSERT con compensación si falla. UUIDv7 propio. Sin deduplicación en M0. Purga de huérfanos: plan de solo lectura, recálculo dentro de purgeOrphans con token de confirmación, copia verificada con manifiesto y checksums en backups/orphans/<timestamp>/ y solo después borrado; nunca toca referenciados. Sin IPC nuevo en M0; contrato assets:import/list/purgeOrphans documentado para M1 con confirmación por diálogo nativo. Pruebas unitarias con dobles e integración con base y carpeta temporales, imágenes reales con sharp, traversal, MIME falso, corrupción, límites, symlink, huérfanos, rollback y preservación; E2E Electron no aplicable por ausencia de UI. Documentación: ADR 0017 nuevo, persistencia, esquema, migraciones, arquitectura, plan de pruebas, changelog e índice de ADR; manual no aplica por no haber UI nueva.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-18",
+    "notes": "Issue adoptada con label ai, type: feature, priority: p0, size: m, area: security, area: persistence, variant: high y hito M0. Sin needs-decision ni status: blocked. Dependencias M0-03 (#63) y M0-04 (#64) fusionadas en dev. Variante recomendada y usada: high. Plan de task-architect aprobado explícitamente por el usuario el 2026-11-18, incluidos los límites 25 MB/8192 px/24 Mpx, THIRD-PARTY-NOTICES.md en la raíz y alcance M0 solo para kind image. Implementación completada el 2026-11-18 por tdd-ddd-architect: 20 archivos nuevos de código y pruebas, 13 modificados, migración 0001_assets con rollback, sharp 0.35.5 externalizado y verificado en Node y Electron. Comandos en verde: lint, typecheck, test (unit 158 passed/4 skipped; integration 39 passed/1 skipped), db:check, build, verify:build, verify:native y audit (sin HIGH). format:check falla en este checkout Windows por core.autocrlf=true en archivos preexistentes; todos los archivos tocados pasan prettier. Los tests de symlink de archivo se omiten por EPERM sin modo desarrollador; las junctions sí se prueban. Desviación menor aprobada por el agente maestro: el rollback 0001 borra también su fila de schema_migrations para mantener user_version y el registro coherentes. Cierre local preparado el 2026-11-19: QA PASS (tercera ronda), seguridad PASS sin hallazgos HIGH y documentación PASS; commit local listo para revisión del usuario, sin push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA PASS (2026-11-19) en la tercera ronda, tras dos ciclos de corrección. Comandos reejecutados: lint, typecheck, test (176 unit passed/4 skipped; 40 integration passed/1 skipped), db:check, build, verify:build, verify:native, audit sin HIGH y prettier de los archivos tocados, todos en verde; format:check sigue fallando por CRLF preexistente en archivos ajenos. Criterios verificados: (1) sin IPC, preload ni renderer nuevos y respuestas/logs sin rutas; (2) validación de URL, ruta relativa, mundo, ID de fila, traversal, UNC, NUL y mayúsculas; (3) magic bytes, límites 25 MB/8192 px/24 Mpx, orientación EXIF, sRGB, WebP y miniatura, con importación real; (4) raíz, anclas e hijos validados con lstat/realpath, junctions de assets/, worlds/, .tmp/, worlds/<worldId> y .tmp/<assetId> cubiertas, purga con doble revalidación, copia SHA-256, manifiesto con recovery y aborto seguro; (5) pruebas reales de junction y TOCTOU; (6) sin HIGH identificado. Residuales no bloqueantes anotados para seguridad y M1: ventana TOCTOU entre validación y escritura temporal, raíz ausente fuera de userData, backups/orphans sin validar como directorio real, prueba de purga parcial que falla en el primer borrado, tests de symlink de archivo omitidos por EPERM y ausencia de exportador portable (M1)."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "status": "aceptado-documentado",
+        "description": "ensureDataDirectories crea assets/, worlds/, .tmp/ y backups/orphans/ antes de comprobar que assets/ y backups/ son directorios reales dentro de userData, y assertAssetRoot acepta el estado missing sin comprobar contención léxica. Una junction preexistente en assets/ o backups/ haría crear directorios vacíos fuera de userData al arrancar. Requiere atacante local con escritura en userData y no hay IPC que lo alcance en M0. Corrección recomendada antes de M1: validar assetsDir, backupsDir y orphanBackupsDir antes de crear, exigir contención cuando el estado es missing y añadir prueba de raíz ausente fuera de userData."
+      },
+      {
+        "severity": "MEDIUM",
+        "status": "aceptado-documentado",
+        "description": "backups/orphans no se inspecciona con lstat/realpath antes de copiar en la purga; una junction o un destino enlazado podría copiar fuera de userData o sobrescribir un destino enlazado. No es alcanzable en M0 porque la purga no está expuesta por IPC. Corrección recomendada antes de habilitar assets:purgeOrphans en M1: validar orphanBackupsDir como real y contenida en userData y crear destinos con O_NOFOLLOW/O_CREAT|O_EXCL o verificar lstat."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "TOCTOU de escritura en .tmp/<assetId>: entre la validación del directorio temporal y los writeFile un atacante local podría sustituirlo por una junction; se revalida antes de cada rename y se limpia el temporal, y no hay IPC nuevo en M0. Se endurecerá si la importación se expone en M1."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "TOCTOU de lectura entre lstat/realpath y readFile en el protocolo, y el contenido servido no se compara con assets.hash. Solo permite leer archivos del propio usuario, con nosniff y CSP default-src 'none'. Se valorará apertura con handle seguro en M1."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "Los symlinks de archivo no se prueban en este Windows sin modo desarrollador (EPERM); las junctions de raíz, ancla e hijo sí se ejecutan y la lógica lstat/realpath es común. Mantener CI Linux o modo desarrollador para cubrir symlinks."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "THIRD-PARTY-NOTICES.md remite a las licencias de node_modules; el empaquetado de #68 debe incluir los textos completos de sharp y libvips en el instalador, no solo el aviso."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": ".gitignore cubre .env*, SQLite y bases, pero no /assets/ ni /backups/ en la raíz; hoy no hay ninguno trackeado. Añadir reglas ancladas para evitar accidentes futuros."
+      }
+    ],
+    "notes": "Security-champion (2026-11-19): PASS sin HIGH sobre la rama feat/issue-66-local-assets-protocol con cambios sin commitear (13 modificados, 33 nuevos). Sin secretos, credenciales, correos reales, binarios, .env, bases locales ni assets de usuario en el diff ni en git ls-files. Frontera Electron intacta: window-options mantiene contextIsolation true, nodeIntegration false, sandbox true, webSecurity true y webviewTag false; sin cambios en preload, IPC ni renderer; CSP img-src wc-asset: exigida por check-build; registerSchemesAsPrivileged con standard/secure/stream y bypassCSP false; handler solo tras arranque ready y no en modo seguro. Protocolo con gramática cerrada, ruta desde SQLite, coincidencia ID/mundo, allowlist MIME, límites, lstat/realpath, nosniff, Content-Length, CSP de respuesta y errores sin rutas ni IDs. Importación con magic bytes, SVG rechazado, límites, EXIF eliminado, escritura atómica y compensación. Purga con token, mutex, recálculo, doble revalidación, copia SHA-256 y manifiesto. Migración 0001 aditiva, 0000 intacto, rollback probado, user_version 2 y app_settings preservado. sharp 0.35.5 con licencias correctas, externalizado y asarUnpack anotado para #68. Revisión manual de audit (el subagente no pudo ejecutar shell): QA reporta 0 HIGH y 2 moderadas dev preexistentes. gitleaks no ejecutable por la allowlist del subagente; búsqueda manual sin hallazgos. Residuales MEDIUM/LOW anotados; no bloquean la puerta. El agente maestro ejecutó después git diff --check y pnpm audit --audit-level=high en verde (0 HIGH)."
+  },
+  "documentation": {
+    "adr": "docs/adr/0017-assets-service-sharp-orphan-purge.md",
+    "manual": "no aplica",
+    "changelog": "CHANGELOG.md",
+    "agents": null
+  },
+  "pr": {
+    "number": 107,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/107",
+    "title": "feat: añadir assets locales y protocolo wc-asset (#66)",
+    "branch": "feat/issue-66-local-assets-protocol",
+    "commit": "26d6732"
+  }
+}

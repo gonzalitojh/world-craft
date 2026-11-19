@@ -6,8 +6,7 @@
  * rutas absolutas o mensajes crudos de SQLite. Rota a los 256 KiB y ningún
  * fallo de escritura impide arrancar.
  */
-import { appendFileSync, renameSync, rmSync, statSync } from 'node:fs';
-
+import { appendJsonLine } from '../logging/jsonl';
 import type { DatabaseErrorCode } from './errors';
 
 /** Tamaño máximo antes de rotar el log de arranque. */
@@ -64,38 +63,10 @@ export function createStartupLogger(
 
   return {
     log(entry) {
-      try {
-        const record = {
-          timestamp: new Date(now()).toISOString(),
-          ...entry,
-        };
-
-        rotateIfNeeded(file, maxBytes);
-        appendFileSync(file, `${JSON.stringify(record)}\n`, 'utf8');
-      } catch {
-        // El diagnóstico nunca debe tumbar el arranque.
-      }
+      appendJsonLine(file, maxBytes, {
+        timestamp: new Date(now()).toISOString(),
+        ...entry,
+      });
     },
   };
-}
-
-/**
- * Rota `startup.log` a `startup.log.1` si supera el límite.
- *
- * En Windows `rename` no sobrescribe, así que se elimina antes el `.1`
- * anterior. La rotación es best-effort: si falla, el llamador sigue intentando
- * escribir en el archivo actual.
- */
-function rotateIfNeeded(file: string, maxBytes: number): void {
-  try {
-    if (statSync(file).size <= maxBytes) {
-      return;
-    }
-
-    const rotatedFile = `${file}.1`;
-    rmSync(rotatedFile, { force: true });
-    renameSync(file, rotatedFile);
-  } catch {
-    // Sin archivo previo, sin permisos o con el `.1` bloqueado: no se rota.
-  }
 }

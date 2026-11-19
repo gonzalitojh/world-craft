@@ -32,7 +32,7 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Implementado (#64) |
 | Migraciones | Runner propio sobre el journal de Drizzle y copia previa | Implementado (#64) |
 | Búsqueda | SQLite FTS5 | Disponible en el binario; esquema previsto (M1) |
-| Archivos | Sistema de archivos local bajo `app.getPath('userData')` | Previsto (#66) |
+| Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); UI en M1 |
 | Editor | Tiptap 3 | Previsto (M3) |
 | Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |
 | Instalador | electron-builder + NSIS | Previsto (#68) |
@@ -151,8 +151,8 @@ scripts/          check-build, check-native, clean y utilidades
 ```
 
 Las pantallas y los módulos de producto se añadirán dentro de `src/renderer/` y
-`src/main/` con sus issues; todavía no existen `src/renderer/modules/` ni
-`src/main/assets/`.
+`src/main/` con sus issues; todavía no existen `src/renderer/modules/`. El
+servicio de assets ya vive en `src/main/assets/`.
 
 ## Ramas
 

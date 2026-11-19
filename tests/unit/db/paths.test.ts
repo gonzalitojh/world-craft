@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -46,6 +46,18 @@ describe('rutas de datos', () => {
     );
   });
 
+  it('deriva las rutas de assets y del log de assets dentro de userData', () => {
+    const userDataDir = join(tmpdir(), 'datos', 'assets');
+    const paths = resolveDataPaths(userDataDir);
+    const root = resolve(userDataDir);
+
+    expect(paths.assetsDir).toBe(join(root, 'assets'));
+    expect(paths.assetsWorldsDir).toBe(join(root, 'assets', 'worlds'));
+    expect(paths.assetsTempDir).toBe(join(root, 'assets', '.tmp'));
+    expect(paths.orphanBackupsDir).toBe(join(root, 'backups', 'orphans'));
+    expect(paths.assetsLogFile).toBe(join(root, 'logs', 'assets.log'));
+  });
+
   it('rechaza una carpeta userData vacía, con NUL o relativa', () => {
     expect(() => resolveDataPaths('')).toThrow(DatabaseError);
     expect(() => resolveDataPaths('   ')).toThrow(DatabaseError);
@@ -80,6 +92,11 @@ describe('rutas de datos', () => {
       paths.preMigrationBackupsDir,
       paths.databaseFile,
       paths.startupLogFile,
+      paths.assetsDir,
+      paths.assetsWorldsDir,
+      paths.assetsTempDir,
+      paths.assetsLogFile,
+      paths.orphanBackupsDir,
     ]) {
       const relation = relative(normalizedRoot, candidate);
 
@@ -94,6 +111,18 @@ describe('rutas de datos', () => {
     const paths = resolveDataPaths(directory);
 
     ensureDataDirectories(paths);
+
+    for (const expected of [
+      paths.dataDir,
+      paths.logsDir,
+      paths.preMigrationBackupsDir,
+      paths.assetsDir,
+      paths.assetsWorldsDir,
+      paths.assetsTempDir,
+      paths.orphanBackupsDir,
+    ]) {
+      expect((await stat(expected)).isDirectory()).toBe(true);
+    }
 
     expect(isNewDatabase(paths.databaseFile)).toBe(true);
 

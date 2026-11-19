@@ -8,6 +8,10 @@
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 
 import { APP_ID, APP_NAME } from '../shared/app-info';
+import {
+  registerLocalAssetProtocol,
+  registerLocalAssetScheme,
+} from './assets/composition';
 import { createIpcHandlers } from './ipc/handlers';
 import { registerIpcHandlers } from './ipc/registry';
 import { closePersistence, initializePersistence } from './persistence';
@@ -20,6 +24,10 @@ import { createMainWindow } from './window';
 app.setName(APP_NAME);
 app.enableSandbox();
 app.setAppUserModelId(APP_ID);
+
+// El esquema debe registrarse antes de `whenReady`; el handler del protocolo se
+// instala más abajo, solo si la base arranca en estado `ready`.
+registerLocalAssetScheme();
 
 /**
  * Único punto que abre enlaces en el navegador del sistema. Los destinos ya
@@ -51,6 +59,12 @@ void app
       // ninguna vía de escritura activa.
       app.quit();
       return;
+    }
+
+    if (startup.status === 'ready') {
+      // Sin base no hay rutas de asset que resolver: en modo seguro el
+      // protocolo no se registra.
+      registerLocalAssetProtocol();
     }
 
     registerIpcHandlers(ipcMain, createIpcHandlers({ openExternal }));

@@ -509,7 +509,7 @@ describe('migraciones', () => {
     }
   });
 
-  it('el rollback de referencia deja la base vacía y sin versión', async () => {
+  it('los rollbacks de referencia dejan la base vacía y sin versión', async () => {
     const test = await createTestDatabase();
 
     try {
@@ -521,14 +521,29 @@ describe('migraciones', () => {
       );
       closeDatabase(first.client.sqlite);
 
-      const rollbackSql = await readFile(
+      const rollbackAssetsSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0001_assets.down.sql'),
+        'utf8',
+      );
+      const rollbackInitSql = await readFile(
         join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0000_init.down.sql'),
         'utf8',
       );
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
-        database.exec(rollbackSql);
+        database.exec(rollbackAssetsSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(1);
+        expect(
+          (
+            database
+              .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+              .all() as { name: string }[]
+          ).map((row) => row.name),
+        ).not.toContain('assets');
+
+        database.exec(rollbackInitSql);
 
         expect(database.pragma('user_version', { simple: true })).toBe(0);
         expect(
@@ -540,6 +555,199 @@ describe('migraciones', () => {
         ).toEqual([]);
       } finally {
         closeDatabase(database);
+      }
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('migra de 0000 a 0001 conservando los datos y creando la tabla assets', async () => {
+    const test = await createTestDatabase();
+    const migrationsDir = join(test.rootDir, 'migrations');
+
+    try {
+      await createMigrationFixture(migrationsDir, [
+        { tag: '0000_init', sql: INIT_MIGRATION_SQL },
+      ]);
+
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir,
+        }),
+      );
+      first.client.sqlite
+        .prepare(
+          'INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)',
+        )
+        .run('theme', '"dark"', 1_760_000_000_000);
+      closeDatabase(first.client.sqlite);
+
+      const upgraded = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+
+      try {
+        expect(upgraded.schemaVersion).toBe(2);
+        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.backup).not.toBeNull();
+        expect(
+          upgraded.client.sqlite.pragma('user_version', { simple: true }),
+        ).toBe(2);
+        expect(
+          upgraded.client.sqlite
+            .prepare('SELECT value FROM app_settings WHERE key = ?')
+            .get('theme'),
+        ).toEqual({ value: '"dark"' });
+        expect(
+          upgraded.client.sqlite
+            .prepare('SELECT count(*) AS total FROM schema_migrations')
+            .get(),
+        ).toEqual({ total: 2 });
+
+        const indexes = (
+          upgraded.client.sqlite
+            .prepare(
+              "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'assets'",
+            )
+            .all() as { name: string }[]
+        ).map((row) => row.name);
+
+        expect(indexes).toEqual(
+          expect.arrayContaining(['assets_world_idx', 'assets_hash_idx']),
+        );
+
+        const insert = upgraded.client.sqlite.prepare(
+          `INSERT INTO assets (id, world_id, kind, relative_path, mime, size, width, height, alt, hash, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        );
+        const values = [
+          '01900000-0000-7000-8000-000000000001',
+          '01900000-0000-7000-8000-000000000002',
+          'image',
+          'worlds/01900000-0000-7000-8000-000000000002/01900000-0000-7000-8000-000000000001.webp',
+          'image/webp',
+          128,
+          10,
+          10,
+          null,
+          'd'.repeat(64),
+          1_760_000_000_000,
+        ];
+
+        insert.run(...values);
+
+        expect(
+          upgraded.client.sqlite
+            .prepare('SELECT count(*) AS total FROM assets')
+            .get(),
+        ).toEqual({ total: 1 });
+
+        // CHECK de kind, tamaño y hash hexadecimal de 64 caracteres.
+        expect(() =>
+          insert.run(...[...values.slice(0, 2), 'video', ...values.slice(3)]),
+        ).toThrow();
+        expect(() =>
+          insert.run(...[...values.slice(0, 5), -1, ...values.slice(6)]),
+        ).toThrow();
+        expect(() =>
+          insert.run(
+            ...[...values.slice(0, 9), 'hash-corto', ...values.slice(10)],
+          ),
+        ).toThrow();
+        expect(() =>
+          insert.run(
+            ...[...values.slice(0, 9), 'G'.repeat(64), ...values.slice(10)],
+          ),
+        ).toThrow();
+      } finally {
+        closeDatabase(upgraded.client.sqlite);
+      }
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('el rollback de referencia de 0001 vuelve a la versión 1 sin tocar los datos', async () => {
+    const test = await createTestDatabase();
+
+    try {
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      first.client.sqlite
+        .prepare(
+          'INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)',
+        )
+        .run('locale', '"es-ES"', 1_760_000_000_000);
+      first.client.sqlite
+        .prepare(
+          `INSERT INTO assets (id, world_id, kind, relative_path, mime, size, hash, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000001',
+          '01900000-0000-7000-8000-000000000002',
+          'image',
+          'worlds/01900000-0000-7000-8000-000000000002/01900000-0000-7000-8000-000000000001.webp',
+          'image/webp',
+          10,
+          'e'.repeat(64),
+          1_760_000_000_000,
+        );
+      closeDatabase(first.client.sqlite);
+
+      const rollbackSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0001_assets.down.sql'),
+        'utf8',
+      );
+      const database = openDatabase({ file: test.paths.databaseFile });
+
+      try {
+        database.exec(rollbackSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(1);
+        expect(
+          (
+            database
+              .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+              .all() as { name: string }[]
+          ).map((row) => row.name),
+        ).not.toContain('assets');
+        expect(
+          database
+            .prepare('SELECT value FROM app_settings WHERE key = ?')
+            .get('locale'),
+        ).toEqual({ value: '"es-ES"' });
+        expect(
+          database
+            .prepare('SELECT count(*) AS total FROM schema_migrations')
+            .get(),
+        ).toEqual({ total: 1 });
+      } finally {
+        closeDatabase(database);
+      }
+
+      // Al reabrir, la migración 0001 se vuelve a aplicar con copia previa.
+      const reapplied = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+
+      try {
+        expect(reapplied.schemaVersion).toBe(2);
+        expect(reapplied.appliedMigrations).toBe(1);
+        expect(reapplied.backup).not.toBeNull();
+      } finally {
+        closeDatabase(reapplied.client.sqlite);
       }
     } finally {
       await test.cleanup();
