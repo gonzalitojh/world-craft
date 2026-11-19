@@ -1,7 +1,7 @@
 {
   "title": "Assets locales con protocolo wc-asset://",
   "description": "M0-06. Servicio de assets locales: guardar archivos en userData/assets/worlds/<worldId>/<assetId>.<ext> con rutas relativas y metadatos en SQLite, servir wc-asset://asset/<assetId> con validación de ruta, MIME y tamaño, normalizar imágenes a WebP con miniatura mediante sharp, y listar y purgar huérfanos solo con confirmación y copia recuperable. Depende de M0-03 (#63) y M0-04 (#64), fusionadas. La UI de subida y galería llega con las fichas (M1); esta issue entrega el servicio y el protocolo.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 66,
@@ -92,5 +92,12 @@
     "manual": "no aplica",
     "changelog": "CHANGELOG.md",
     "agents": null
+  },
+  "pr": {
+    "number": 107,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/107",
+    "title": "feat: añadir assets locales y protocolo wc-asset (#66)",
+    "branch": "feat/issue-66-local-assets-protocol",
+    "commit": "26d6732"
   }
 }
