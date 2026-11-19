@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import type { WorldCraftApi } from '../shared/contracts/world-craft-api';
 
 declare global {

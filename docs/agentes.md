@@ -128,7 +128,8 @@ issue → adopción (variante incluida) y task file → plan → implementación
 ## 5. Cómo invocar a los agentes
 
 - **Trabajo normal:** usa `sdd-master` como agente primario. Él decide qué
-  subagentes necesita.
+  subagentes necesita. `opencode.jsonc` lo fija como `default_agent`, así que una
+  sesión nueva arranca ya en él sin seleccionarlo a mano.
 - **Planificar:** pide `task-architect`.
 - **Implementar o corregir:** pide `tdd-ddd-architect`.
 - **Revisar calidad:** pide `qa-reviewer`.

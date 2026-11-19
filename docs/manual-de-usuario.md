@@ -78,9 +78,9 @@ arranque.
 
 Estas partes ya existen en el entorno de desarrollo:
 
-- **Barra lateral:** contiene el nombre de la aplicación, la navegación entre
-  **Inicio** y **Muestras**, y un botón para plegarla. Expandida ocupa 240 px y
-  plegada 64 px; al plegarla quedan los iconos.
+- **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
+  navegación entre **Inicio** y **Muestras**, y un botón para plegarla. Expandida
+  ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos.
 - **Barra superior:** muestra el nombre de la pantalla actual y el botón de
   tema.
 - **Área central:** el contenido de la pantalla. Es el destino del enlace

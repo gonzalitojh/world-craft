@@ -1,6 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
 
+  // Agente primario por defecto al abrir una sesión en este proyecto. Todo el
+  // trabajo entra por el flujo SDD de `sdd-master`, que decide qué subagentes
+  // necesita (ver `.opencode/agents/sdd-master.md` y `docs/agentes.md`). Cambiar
+  // de agente no invalida la caché de contexto; cambiar de modelo o variante sí.
+  "default_agent": "sdd-master",
+
   // Caché de contexto. El coste de una sesión depende sobre todo del prefijo
   // estable (system prompt, AGENTS.md, permisos) que se reenvía en cada turno
   // y en cada paso de cada subagente. Ese prefijo se lee de caché a
