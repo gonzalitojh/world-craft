@@ -1,7 +1,7 @@
 {
   "title": "Agente por defecto sdd-master y logotipo en el rail",
   "description": "Tarea local de configuración y UI: fija `sdd-master` como agente primario por defecto en `opencode.jsonc` (`default_agent`) y sustituye el SVG en línea del rail por el logotipo definitivo en `src/renderer/assets/world-craft-logo.svg`, mostrado como imagen con sus propios colores. Es una tarea interna pequeña: no crea issue.",
-  "status": "review",
+  "status": "published",
   "model_variant": "low",
   "acceptance_criteria": [
     "`opencode.jsonc` declara `default_agent: sdd-master` y sigue siendo JSONC válido.",
@@ -44,5 +44,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 109,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/109",
+    "title": "feat: añadir el logotipo y fijar sdd-master por defecto",
+    "branch": "chore/default-agent-and-logo",
+    "commit": "58511bc"
   }
 }
