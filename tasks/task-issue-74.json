@@ -1,7 +1,7 @@
 {
   "title": "Fichas: CRUD, imágenes, etiquetas y favoritos",
   "description": "Implementar la pantalla central de la enciclopedia del mundo: CRUD de fichas de cualquier tipo, campos personalizados validados, descripción enriquecida con enlaces internos, imagen principal y galería servidas por wc-asset://, etiquetas de color, favoritos, búsqueda y filtros por tipo, etiqueta y favorito, con autoguardado, creación rápida, aislamiento por mundo, dos temas, teclado y pruebas.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 74,
@@ -68,5 +68,12 @@
     "manual": "docs/manual-de-usuario.md actualizado: estado del desarrollo, navegación rápida, sección 5 de fichas, tipos, imágenes, etiquetas, favoritos, autoguardado, búsqueda, filtros, acción «Abrir enlace» y tabla de estado de funciones.",
     "changelog": "CHANGELOG.md actualizado en Añadido con fichas, descripción, autoguardado, imágenes, etiquetas, favoritos, filtros, gestión de tipos, migración 0004, pruebas y dependencias Tiptap.",
     "agents": "no aplica"
+  },
+  "pr": {
+    "number": 119,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/119",
+    "title": "feat(entities): fichas con imágenes, etiquetas y editor (#74)",
+    "branch": "feat/issue-74-entities-crud",
+    "commit": "df9a63d"
   }
 }
