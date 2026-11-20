@@ -324,8 +324,9 @@ mundo**, en los accesos rápidos de la página de un mundo.
 
 La descripción admite **negrita**, **cursiva**, títulos de nivel 1 a 3, listas con
 viñetas, listas numeradas, citas y **enlaces internos a otras fichas** del mismo
-mundo. Los enlaces se insertan con el botón de enlace; con `Ctrl` + clic se abre
-la ficha enlazada. No se pega HTML ni se permiten enlaces externos.
+mundo. Los enlaces se insertan con el botón de enlace; para abrir uno, coloca el
+cursor sobre él y pulsa **Abrir enlace** en la barra del editor, o usa `Ctrl` +
+clic. No se pega HTML ni se permiten enlaces externos.
 
 ### 5.4 Campos del tipo
 
