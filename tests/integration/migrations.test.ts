@@ -524,6 +524,10 @@ describe('migraciones', () => {
       );
       closeDatabase(first.client.sqlite);
 
+      const rollbackSearchSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0006_search.down.sql'),
+        'utf8',
+      );
       const rollbackRelationsSql = await readFile(
         join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0005_relations.down.sql'),
         'utf8',
@@ -555,6 +559,24 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
+        database.exec(rollbackSearchSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(6);
+        expect(
+          (
+            database
+              .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+              .all() as { name: string }[]
+          ).map((row) => row.name),
+        ).not.toContain('search_documents');
+        expect(
+          (
+            database
+              .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+              .all() as { name: string }[]
+          ).map((row) => row.name),
+        ).not.toContain('search_fts');
+
         database.exec(rollbackRelationsSql);
 
         expect(database.pragma('user_version', { simple: true })).toBe(5);
@@ -665,12 +687,12 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(6);
-        expect(upgraded.appliedMigrations).toBe(5);
+        expect(upgraded.schemaVersion).toBe(7);
+        expect(upgraded.appliedMigrations).toBe(6);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite.pragma('user_version', { simple: true }),
-        ).toBe(6);
+        ).toBe(7);
         expect(
           upgraded.client.sqlite
             .prepare('SELECT value FROM app_settings WHERE key = ?')
@@ -680,7 +702,7 @@ describe('migraciones', () => {
           upgraded.client.sqlite
             .prepare('SELECT count(*) AS total FROM schema_migrations')
             .get(),
-        ).toEqual({ total: 6 });
+        ).toEqual({ total: 7 });
 
         expect(
           upgraded.client.sqlite
@@ -820,8 +842,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(6);
-        expect(upgraded.appliedMigrations).toBe(3);
+        expect(upgraded.schemaVersion).toBe(7);
+        expect(upgraded.appliedMigrations).toBe(4);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -927,8 +949,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(6);
-        expect(upgraded.appliedMigrations).toBe(2);
+        expect(upgraded.schemaVersion).toBe(7);
+        expect(upgraded.appliedMigrations).toBe(3);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1056,8 +1078,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(6);
-        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.schemaVersion).toBe(7);
+        expect(upgraded.appliedMigrations).toBe(2);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1083,6 +1105,210 @@ describe('migraciones', () => {
             )
             .get(),
         ).toEqual({ name: 'relations' });
+      } finally {
+        closeDatabase(upgraded.client.sqlite);
+      }
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('aplica 0006 sobre mundos, fichas, etiquetas y relaciones existentes sin perder datos', async () => {
+    const test = await createTestDatabase();
+    const migrationsDir = join(test.rootDir, 'migrations');
+
+    try {
+      const assetsSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0001_assets.sql'),
+        'utf8',
+      );
+      const worldsSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0002_worlds.sql'),
+        'utf8',
+      );
+      const entityTypesSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0003_entity_types.sql'),
+        'utf8',
+      );
+      const entitiesSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0004_entities.sql'),
+        'utf8',
+      );
+      const relationsSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0005_relations.sql'),
+        'utf8',
+      );
+
+      await createMigrationFixture(migrationsDir, [
+        { tag: '0000_init', sql: INIT_MIGRATION_SQL },
+        { tag: '0001_assets', sql: assetsSql },
+        { tag: '0002_worlds', sql: worldsSql },
+        { tag: '0003_entity_types', sql: entityTypesSql },
+        { tag: '0004_entities', sql: entitiesSql },
+        { tag: '0005_relations', sql: relationsSql },
+      ]);
+
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir,
+        }),
+      );
+
+      const sqlite = first.client.sqlite;
+
+      sqlite
+        .prepare(
+          `INSERT INTO worlds (id, name, slug, summary, genres, status, language, settings, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000001',
+          'Las Mareas Grises',
+          'las-mareas-grises',
+          'Un archipiélago de niebla',
+          '["Fantasía"]',
+          'active',
+          'es',
+          '{}',
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      sqlite
+        .prepare(
+          `INSERT INTO entities (id, world_id, type_id, name, slug, aliases, summary, description_text, attributes, status, is_favorite, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000003',
+          '01900000-0000-7000-8000-000000000001',
+          '018f0000-0000-7000-8000-000000000001',
+          'Mara Viento',
+          'mara-viento',
+          '["La Cartógrafa"]',
+          'Capitana del puerto',
+          'Recorre las islas del norte con su cuaderno de mareas.',
+          '{}',
+          'active',
+          1,
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      sqlite
+        .prepare(
+          `INSERT INTO entities (id, world_id, type_id, name, slug, aliases, summary, description_text, attributes, status, is_favorite, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000004',
+          '01900000-0000-7000-8000-000000000001',
+          '018f0000-0000-7000-8000-000000000003',
+          'Puerto Sal',
+          'puerto-sal',
+          '[]',
+          'Puerto ballenero',
+          'Un puerto de sal y goletas.',
+          '{}',
+          'active',
+          0,
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      sqlite
+        .prepare(
+          'INSERT INTO tags (id, world_id, name, color, created_at) VALUES (?, ?, ?, ?, ?)',
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000005',
+          '01900000-0000-7000-8000-000000000001',
+          'Istari',
+          'moss',
+          1_760_000_000_000,
+        );
+      sqlite
+        .prepare('INSERT INTO entity_tags (entity_id, tag_id) VALUES (?, ?)')
+        .run(
+          '01900000-0000-7000-8000-000000000003',
+          '01900000-0000-7000-8000-000000000005',
+        );
+      sqlite
+        .prepare(
+          `INSERT INTO relations (id, world_id, source_id, target_id, type_id, notes, strength, metadata, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000006',
+          '01900000-0000-7000-8000-000000000001',
+          '01900000-0000-7000-8000-000000000003',
+          '01900000-0000-7000-8000-000000000004',
+          '018f0000-0000-7000-8000-000000000109',
+          'Guardiana del puerto',
+          3,
+          '{}',
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      closeDatabase(sqlite);
+
+      const upgraded = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+
+      try {
+        expect(upgraded.schemaVersion).toBe(7);
+        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.backup).not.toBeNull();
+
+        const upgradedSqlite = upgraded.client.sqlite;
+
+        expect(
+          upgradedSqlite
+            .prepare('SELECT name FROM entities WHERE id = ?')
+            .get('01900000-0000-7000-8000-000000000003'),
+        ).toEqual({ name: 'Mara Viento' });
+        expect(
+          upgradedSqlite
+            .prepare('SELECT name FROM worlds WHERE id = ?')
+            .get('01900000-0000-7000-8000-000000000001'),
+        ).toEqual({ name: 'Las Mareas Grises' });
+        expect(
+          upgradedSqlite
+            .prepare(
+              'SELECT kind, count(*) AS total FROM search_documents GROUP BY kind ORDER BY kind',
+            )
+            .all(),
+        ).toEqual([
+          { kind: 'entity', total: 2 },
+          { kind: 'relation', total: 1 },
+          { kind: 'world', total: 1 },
+        ]);
+        expect(
+          upgradedSqlite
+            .prepare(
+              'SELECT title, keywords FROM search_documents WHERE kind = ? AND source_id = ?',
+            )
+            .get('entity', '01900000-0000-7000-8000-000000000003'),
+        ).toEqual({
+          title: 'Mara Viento',
+          keywords: '["La Cartógrafa"] Istari',
+        });
+        expect(
+          upgradedSqlite
+            .prepare(
+              'SELECT d.kind FROM search_fts JOIN search_documents d ON d.rowid = search_fts.rowid WHERE search_fts MATCH ?',
+            )
+            .all('guardiana'),
+        ).toEqual([{ kind: 'relation' }]);
+        expect(
+          upgradedSqlite
+            .prepare(
+              'SELECT d.kind FROM search_fts JOIN search_documents d ON d.rowid = search_fts.rowid WHERE search_fts MATCH ? ORDER BY d.kind',
+            )
+            .all('mareas'),
+        ).toEqual([{ kind: 'entity' }, { kind: 'world' }]);
       } finally {
         closeDatabase(upgraded.client.sqlite);
       }
@@ -1123,6 +1349,10 @@ describe('migraciones', () => {
         );
       closeDatabase(first.client.sqlite);
 
+      const rollbackSearchSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0006_search.down.sql'),
+        'utf8',
+      );
       const rollbackRelationsSql = await readFile(
         join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0005_relations.down.sql'),
         'utf8',
@@ -1150,9 +1380,10 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
-        // El rollback de 0001 solo es válido después de deshacer 0005, 0004,
-        // 0003 y 0002, porque las relaciones, las fichas, `entity_types` y
-        // `worlds` referencian tablas anteriores.
+        // El rollback de 0001 solo es válido después de deshacer 0006, 0005,
+        // 0004, 0003 y 0002, porque las relaciones, las fichas, `entity_types`
+        // y `worlds` referencian tablas anteriores.
+        database.exec(rollbackSearchSql);
         database.exec(rollbackRelationsSql);
         database.exec(rollbackEntitiesSql);
         database.exec(rollbackEntityTypesSql);
@@ -1181,8 +1412,8 @@ describe('migraciones', () => {
         closeDatabase(database);
       }
 
-      // Al reabrir, las migraciones 0001, 0002, 0003, 0004 y 0005 se vuelven a
-      // aplicar con copia previa.
+      // Al reabrir, las migraciones 0001, 0002, 0003, 0004, 0005 y 0006 se
+      // vuelven a aplicar con copia previa.
       const reapplied = expectReady(
         await initializeDatabase({
           userDataDir: test.userDataDir,
@@ -1191,8 +1422,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(reapplied.schemaVersion).toBe(6);
-        expect(reapplied.appliedMigrations).toBe(5);
+        expect(reapplied.schemaVersion).toBe(7);
+        expect(reapplied.appliedMigrations).toBe(6);
         expect(reapplied.backup).not.toBeNull();
       } finally {
         closeDatabase(reapplied.client.sqlite);

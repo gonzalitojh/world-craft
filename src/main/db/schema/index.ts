@@ -13,6 +13,7 @@ import { assets } from './assets';
 import { entities, entityGallery, entityTags, tags } from './entities';
 import { entityTypes } from './entity-types';
 import { relationTypes, relations } from './relations';
+import { searchDocuments } from './search';
 import { activityLog, worlds } from './worlds';
 
 export {
@@ -24,6 +25,7 @@ export {
   entityTypes,
   relationTypes,
   relations,
+  searchDocuments,
   tags,
   worlds,
 };
@@ -56,4 +58,5 @@ export const schema = {
   entityGallery,
   relationTypes,
   relations,
+  searchDocuments,
 } as const;

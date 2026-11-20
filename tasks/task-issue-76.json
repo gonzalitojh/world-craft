@@ -1,0 +1,73 @@
+{
+  "title": "Búsqueda global FTS5 y paleta de comandos",
+  "description": "Implementar la búsqueda local con SQLite FTS5 sobre mundos, fichas y relaciones, con prefijos, tolerancia razonable a errores, filtros combinables por mundo, tipo, etiqueta y estado, resaltado seguro, recientes y favoritos, reconstrucción del índice y una paleta de comandos Ctrl+K para navegar, crear y ejecutar acciones, con teclado completo, dos temas, ventana de escritorio y pruebas de indexación, filtros y rendimiento.",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 76,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/76",
+    "title": "Búsqueda global FTS5 y paleta de comandos"
+  },
+  "acceptance_criteria": [
+    "La búsqueda encuentra contenido por título y cuerpo con prefijos y tolerancia razonable a errores.",
+    "Los filtros por mundo, tipo, etiqueta y estado se combinan correctamente.",
+    "El índice se actualiza al crear, editar y borrar y se puede reconstruir.",
+    "La paleta Ctrl+K funciona por teclado y no se abre dentro de campos de texto cuando no corresponde.",
+    "La búsqueda responde en menos de 150 ms con 10.000 fichas en el equipo de referencia.",
+    "Existen pruebas de indexación, filtros y rendimiento básico.",
+    "El manual explica la búsqueda y la paleta."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de componentes, de integración y build en verde.",
+    "E2E del flujo crítico ejecutado: buscar por prefijo y por error tipográfico, combinar filtros, abrir un resultado, recientes y favoritos, paleta Ctrl+K con teclado y reconstrucción del índice.",
+    "Migración 0006_search probada sobre una base en 0005 con mundos, tipos, fichas, etiquetas y relaciones, con preservación de datos y rollback de referencia verificado.",
+    "El índice cubre mundos, fichas y relaciones; los tipos map, manuscript y scene quedan reservados en el esquema para las migraciones de M2 (mapas) y M3 (manuscritos y escenas) sin inventar tablas que no existen.",
+    "La búsqueda usa FTS5 con unicode61, remove_diacritics, prefijos 2/3/4 y coincidencia por título y cuerpo; la tolerancia a errores usa el vocabulario FTS y Levenshtein acotado, nunca un servicio externo.",
+    "Los filtros por mundo, tipo de ficha, etiqueta y estado se combinan en SQL y se prueban por separado y en conjunto.",
+    "Las altas, ediciones, borrados lógicos, restauraciones y borrados físicos se reflejan en search_documents y search_fts mediante triggers, y rebuild reconstruye el índice completo.",
+    "La paleta Ctrl+K no secuestra el atajo dentro de input, textarea o contenteditable ni con un diálogo modal abierto; se opera con flechas, Enter, Escape, Inicio y Fin.",
+    "La búsqueda responde en menos de 150 ms con 10.000 fichas sintéticas en una prueba de integración reproducible.",
+    "El resaltado viaja como texto con marcadores, nunca como HTML; el renderer escapa todo y no usa dangerouslySetInnerHTML.",
+    "La ventana se comprueba a 1024, 1280 y 1600 px con contenido largo realista, sin scroll horizontal de página.",
+    "Los dos temas (Claro y Oscuro) se comprueban con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado completo, foco visible, combobox y listbox correctos, aria-live para resultados, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: canales en allowlist, Zod estricto, sin Node en el renderer, CSP y contenido no confiable.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen mundos, tipos, fichas, etiquetas ni relaciones.",
+    "Funcionamiento offline comprobado: buscar, navegar y reconstruir el índice no requiere red.",
+    "Manual de usuario actualizado con la búsqueda global, filtros, recientes, favoritos y paleta de comandos.",
+    "ADR 0023 creado con las decisiones de FTS5, documentos, triggers, tolerancia a errores, filtros y paleta.",
+    "Datos exportables e importables: search_documents es un índice reconstruible y no se exporta como dato de usuario.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-20. 1) Contratos compartidos en src/shared/contracts/search.ts: tipos de documento (world, entity, relation), estados, filtros por mundo, tipo, etiqueta y estado, hit con mundo, título, fragmento, marcadores de resaltado seguros, favorito y contexto; respuesta con total, tiempo y términos aproximados; sugerencias de recientes y favoritos; resultado de reconstrucción; guardas puras y API tipada. 2) Migración 0006_search aditiva: tabla search_documents con kind, source_id, context_id, related_id, world_id, title, body, keywords, entity_type_id, status, is_favorite y timestamps; FTS5 search_fts sobre title/body/keywords con unicode61, remove_diacritics 2 y prefijos 2/3/4; vocabulario search_vocabulary con fts5vocab; vistas search_world_documents, search_entity_documents y search_relation_documents; triggers de sincronización en worlds, entities, relations, relation_types, entity_tags y tags; rollback de referencia; extensión del esquema Drizzle solo con la tabla normal y snapshot/journal de Drizzle Kit. 3) Dominio src/main/search/: repositorio SQL parametrizado con MATCH por tokens entrecomillados y prefijo, bm25, highlight y snippet con marcadores, filtros combinables y total; expansión difusa acotada con el vocabulario y Levenshtein para errores tipográficos cuando no hay resultados; sugerencias por updated_at y favoritos; reconstrucción transaccional desde las vistas y rebuild de FTS5; servicio con validación de entrada y servicio no disponible en modo seguro. 4) IPC: canales search:query, search:suggestions y search:rebuild en la allowlist, esquemas Zod estrictos, handlers con errores traducidos, composición en el proceso principal y preload con guardas. 5) Renderer: página de búsqueda global con consulta, filtros por mundo, tipo de documento, tipo de ficha, etiqueta y estado, resultados resaltados, navegación por teclado, estados de carga, error y vacío con recientes y favoritos; paleta Ctrl+K con comandos de navegación, creación de mundo y ficha, cambio de tema, búsqueda y reconstrucción del índice, resultados rápidos y patrón combobox/listbox; acceso desde el rail y la barra superior. El atajo se ignora en campos editables y con un diálogo modal abierto. 6) Textos centralizados en src/renderer/messages/es.ts y estilos con tokens existentes para ambos temas y 1024/1280/1600. 7) Pruebas: unitarias de contratos, esquemas, consulta, vocabulario, handlers y API; integración de triggers, prefijos, diacríticos, errores tipográficos, filtros combinados, borrado/restauración, reconstrucción, migración 0006 y rendimiento con 10.000 fichas; componentes de página y paleta; E2E del flujo completo con temas, ventana y axe. 8) Documentación: ADR 0023, D-046 en el registro, manual (sección de búsqueda), CHANGELOG, persistencia, migraciones, esquema y arquitectura. Decisiones propuestas: indexar solo tablas que existen (mundos, fichas y relaciones) y reservar map/manuscript/scene en el CHECK para M2 (mapas) y M3 (manuscritos y escenas); los documentos de relación indexan etiquetas y notas, no los nombres de las fichas, que ya tienen su propio documento; recientes y favoritos se derivan de updated_at e is_favorite sin almacenar historial nuevo; el filtro de tipo y etiqueta se aplica a fichas; la reconstrucción se ofrece desde la paleta hasta que exista la pantalla de Ajustes.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: search, area: ui, variant: high y hito M1. Dependencias M1-01 (#72), M1-03 (#74) y M1-04 (#75) cerradas; #75 se fusionó en dev mediante la PR #120 (71df465). Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-76-search desde origin/dev. El plan y sus decisiones de indexación, filtros, recientes/favoritos, atajo y reconstrucción fueron aprobados por el usuario el 2026-11-20 antes de implementar. Implementado: contratos de búsqueda, migración 0006_search con search_documents, FTS5, vocabulario, vistas y triggers, dominio src/main/search con prefijos, tolerancia tipográfica, filtros, recientes, favoritos y rebuild, canales search:query/suggestions/rebuild en allowlist, handlers, composición, preload, página de búsqueda, paleta Ctrl+K, estilos para ambos temas y textos centralizados. Evidencia final (2026-11-21): pnpm lint OK; pnpm typecheck OK; prettier --check de todos los archivos tocados OK; pnpm test:unit 385 en verde y 4 omitidas; pnpm test:components 33 en verde; pnpm test:integration 134 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; Playwright 18 en verde. La prueba de integración mide 10.000 fichas con una consulta representativa por debajo de 150 ms y una consulta amplia acotada, y cubre indexación, prefijos, acentos, errores tipográficos, filtros combinados, borrado lógico y físico, restauración, reconstrucción y reparación de FTS, relaciones con extremos en papelera, recientes y favoritos. Migración 0006 probada sobre una base en 0005 con mundos, fichas, etiquetas y relaciones, con preservación y rollback de referencia. QA PASS y seguridad PASS registrados; documentación actualizada. Estado `review` (2026-11-21): rama feat/issue-76-search con commit local listo para la revisión del usuario; no se ha hecho push ni se ha abierto PR. La publicación queda pendiente de petición explícita."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA (2026-11-21) PASS tras corregir el hallazgo HIGH de formato y las recomendaciones. Evidencia final: typecheck, lint y prettier --check de todos los archivos tocados OK; 385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida); build, verify:build y db:check OK; Playwright 18 en verde. Criterios comprobados: prefijos, acentos, error tipográfico, filtros combinados, indexación al crear/editar/borrar/restaurar, relaciones con extremos en papelera, reconstrucción (incluida la reparación de un FTS vaciado), recientes y favoritos, 10.000 fichas con consulta representativa <150 ms y consulta amplia acotada, Ctrl+K dentro y fuera de campos y con diálogo abierto, combobox/listbox con scroll de la opción activa, error propio de la paleta, dos temas, 1024/1280/1600 y axe sin violaciones críticas ni graves. Hallazgos corregidos: formato de world-craft-api.test.ts, persistencia 3.3, coherencia del plan de pruebas, scrollIntoView en la paleta, triggers de etiquetas en D-046, E2E con diálogo modal, medición amplia de rendimiento, limpieza/restauración de documentos al mover un mundo a la papelera, estado de error de la paleta, aclaración del resaltado en el manual y claves i18n sin uso. Recomendación no bloqueante: reforzar en #77 la purga definitiva del índice al vaciar la papelera."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "LOW informativo: los marcadores de resaltado U+0001/U+0002 pueden colisionar con texto pegado que contenga esos controles; el renderer los pinta como texto y no hay XSS, el impacto es cosmético.",
+      "LOW informativo: `search:rebuild` está expuesto al renderer y solo reconstruye el índice en una transacción; es el comportamiento aprobado y no toca mundos, fichas ni relaciones.",
+      "LOW corregido: al mover un mundo a la papelera, sus documentos de fichas y relaciones se limpian y se repueblan al restaurar mediante `worlds_search_deleted_au`, con prueba de integración.",
+      "LOW corregido: `docs/persistencia.md` decía `user_version` 6 y enumeraba hasta `0005`; ahora refleja 7 y `0006_search`.",
+      "LOW corregido: el comentario de congelado de la API del preload ya incluye `relationTypes`, `relations` y `search`."
+    ],
+    "notes": "Security-champion (2026-11-21): PASS sin HIGH ni MEDIUM. Revisados contratos, migración 0006 y rollback, dominio de búsqueda, esquemas IPC, handlers, allowlist, preload, renderer, pruebas y documentación. Sin secretos, credenciales, datos personales ni dependencias nuevas. Electron intacto: contextIsolation, sandbox, nodeIntegration false, CSP y allowlist de canales. Los tres canales nuevos usan Zod estricto, UUIDv7, límites de consulta, `LIMIT`/`offset` acotados y parámetros enlazados; `MATCH` se construye con tokens entrecomillados y el vocabulario usa `LIKE` parametrizado. El resaltado viaja como texto y se pinta con React, sin `dangerouslySetInnerHTML`. La migración es aditiva, transaccional y con copia previa; el rollback deja `user_version` 6. Rebuild no toca contenido y el modo seguro devuelve `INTERNAL_ERROR` sin filtrar detalles."
+  },
+  "documentation": {
+    "adr": "docs/adr/0023-global-search-fts5-command-palette.md creado y añadido al índice con D-046 en docs/registro-decisiones.md.",
+    "manual": "docs/manual-de-usuario.md actualizado: estado del desarrollo, barra lateral y superior, teclado, sección 10 de búsqueda y paleta, y tabla de estado de funciones. También README, arquitectura, persistencia, esquema, migraciones y plan de pruebas. Verificación documental final (2026-11-21): se corrigieron las referencias de hito de mapas (M2) y manuscritos/escenas (M3), el recuento de pruebas y el listado de canales IPC de arquitectura, la lista de tablas implementadas y la cadena de migraciones del plan de pruebas, el alcance de #93/#94 y el matiz de los filtros por tipo y etiqueta en el manual.",
+    "changelog": "CHANGELOG.md actualizado en Añadido con búsqueda, paleta, migración 0006 y pruebas.",
+    "agents": "no aplica"
+  }
+}

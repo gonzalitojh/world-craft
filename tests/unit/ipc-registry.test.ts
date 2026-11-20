@@ -12,6 +12,7 @@ import {
   registerIpcHandlers,
 } from '@/main/ipc/registry';
 import { createUnavailableRelationsService } from '@/main/relations/service';
+import { createUnavailableSearchService } from '@/main/search/service';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
 import { createUnavailableWorldsService } from '@/main/worlds/service';
 import { IPC_CHANNELS, IPC_CHANNEL_LIST } from '@/shared/contracts/channels';
@@ -27,6 +28,7 @@ const createHandlers = () =>
     entityTypes: createUnavailableEntityTypesService(),
     entities: createUnavailableEntitiesService(),
     relations: createUnavailableRelationsService(),
+    search: createUnavailableSearchService(),
     assets: createUnavailableAssetsService(),
     pickImages: async () => [],
   });
@@ -213,6 +215,7 @@ describe('registerIpcHandlers', () => {
         entityTypes: createUnavailableEntityTypesService(),
         entities: createUnavailableEntitiesService(),
         relations: createUnavailableRelationsService(),
+        search: createUnavailableSearchService(),
         assets: createUnavailableAssetsService(),
         pickImages: async () => [],
       }),

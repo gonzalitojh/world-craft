@@ -6,8 +6,9 @@
 > **Decisiones:** ADR 0010 (testing), ADR 0012 (datos), ADR 0013 (CI),
 > ADR 0018 (empaquetado, actualizador y preservación), ADR 0019 (mundos),
 > ADR 0020 (tipos de entidad y campos personalizados), ADR 0021 (fichas,
-> galería, etiquetas y editor enriquecido) y ADR 0022 (relaciones tipadas,
-> etiquetas inversas y API del grafo).
+> galería, etiquetas y editor enriquecido), ADR 0022 (relaciones tipadas,
+> etiquetas inversas y API del grafo) y ADR 0023 (búsqueda global y paleta de
+> comandos).
 
 ## 1. Principios
 
@@ -51,21 +52,24 @@ Library, Playwright Electron y axe se incorporaron con el arranque de pruebas
 ### 3.2 Migraciones, copias y preservación (implementado)
 
 - Base nueva → `0000_init` + `0001_assets` + `0002_worlds` + `0003_entity_types`
-  + `0004_entities` + `0005_relations` → `user_version` 6, tablas del sistema,
-  `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`,
-  `entity_tags`, `entity_gallery`, `relation_types` y `relations`, y sin copia
-  previa (justificado: no hay datos que preservar).
+  + `0004_entities` + `0005_relations` + `0006_search` → `user_version` 7,
+  tablas del sistema, `assets`, `worlds`, `activity_log`, `entity_types`,
+  `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`,
+  `relations` y `search_documents`, y sin copia previa (justificado: no hay
+  datos que preservar).
 - Base existente en `0000` → esquema actual → `app_settings` intacto y tablas
   `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`,
-  `entity_tags`, `entity_gallery`, `relation_types` y `relations` creadas.
-- Base existente en `0002` con mundos y actividad → `0003`, `0004` y `0005`
+  `entity_tags`, `entity_gallery`, `relation_types`, `relations` y
+  `search_documents` creadas.
+- Base existente en `0002` con mundos y actividad → `0003` a `0006`
   conservan sus filas, siembran los 18 tipos del sistema y crean las tablas de
-  fichas y relaciones.
-- Base existente en `0003` con mundos y tipos personalizados → `0004` y `0005`
+  fichas, relaciones e índice de búsqueda.
+- Base existente en `0003` con mundos y tipos personalizados → `0004` a `0006`
   conservan sus filas y crean las tablas de fichas, etiquetas, galería, tipos de
-  relación y relaciones.
-- Base existente en `0004` con mundos, tipos y fichas → `0005` conserva sus filas,
-  crea las tablas de relaciones y siembra los 18 tipos del sistema.
+  relación, relaciones e índice de búsqueda.
+- Base existente en `0004` con mundos, tipos y fichas → `0005` y `0006`
+  conservan sus filas, crean las tablas de relaciones, siembran los 18 tipos del
+  sistema y crean el índice de búsqueda.
 - Base existente → migración → mismos datos y copia previa verificable.
 - Journal válido, secuencia sin huecos, etiqueta sin traversal y checksum
   SHA-256 normalizado.
@@ -118,7 +122,7 @@ componente, página o el shell introduce un texto visible hardcodeado. Los
 componentes leen el catálogo mediante `I18nProvider`, cubierto en
 `tests/components/i18n-provider.test.tsx`.
 
-Lo siguiente **sigue pendiente** y pertenece a #93 y a la revisión local:
+Lo siguiente **sigue pendiente** y pertenece a #93, #94 y a la revisión local:
 
 - Componentes con estados de reposo, hover, foco, error, deshabilitado y carga
   en una matriz visual real a 1024, 1280 y 1600 px.
@@ -133,9 +137,14 @@ Lo siguiente **sigue pendiente** y pertenece a #93 y a la revisión local:
 
 ### 3.5 Rendimiento
 
+Objetivos vigentes para el equipo de referencia; cada uno indica la issue que ya
+lo cubre cuando aplica.
+
 - Arranque en frío por debajo de 3 s en un equipo de referencia.
 - Apertura de un mundo con 1.000 fichas sin bloquear la UI.
-- Búsqueda con 10.000 documentos en menos de 200 ms.
+- Búsqueda con 10.000 documentos en menos de 150 ms (implementado en #76 con
+  dataset sintético; la revisión de equipo y la optimización fina son M5-02,
+  #94).
 - Mapa con 2.000 features y grafo con 500 nodos con respuesta fluida.
 - Copia y exportación sin bloquear la ventana: las copias automáticas se crean
   antes de abrir la ventana y la restauración ocurre en el diálogo de modo
@@ -161,7 +170,7 @@ Lo siguiente **sigue pendiente** y pertenece a #93 y a la revisión local:
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **371 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **385 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
@@ -524,11 +533,6 @@ en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
   Ejecuta axe en lista, ficha, diálogo de creación y gestor de tipos en ambos
   temas, sin violaciones críticas ni graves.
 
-**Comandos y tiempos (equipo de referencia, 2026-11-20).** `pnpm test` ejecuta
-371 unitarias (4 omitidas), 25 de componentes y 126 de integración (1 omitida) en
-unos 65 s; `pnpm test:e2e` compila y ejecuta 16 pruebas en unos 70 s. Los E2E
-son Windows-only, igual que la aplicación.
-
 ### 3.15 Relaciones tipadas y backlinks (implementado, #75)
 
 - **Unitarias:** `tests/unit/relations/validation.test.ts` cubre nombres,
@@ -557,6 +561,33 @@ son Windows-only, igual que la aplicación.
   con la etiqueta inversa, navega entre las dos fichas, rechaza un duplicado,
   crea un tipo personalizado y ejecuta axe en ambos temas.
 
+### 3.16 Búsqueda global y paleta de comandos (implementado, #76)
+
+- **Unitarias:** `tests/unit/search/` cubre tokenización, diacríticos, prefijos,
+  construcción del `MATCH`, Levenshtein, selección de expansiones, esquemas IPC,
+  handlers y guardas de la API; la prueba de i18n comprueba el catálogo nuevo.
+- **Integración:** `tests/integration/search/service.test.ts` usa una base real
+  para comprobar indexación de mundos, fichas y relaciones, prefijos, acentos,
+  errores tipográficos, filtros combinados, edición, borrado lógico,
+  restauración, borrado físico, relaciones con extremos en papelera,
+  reconstrucción del índice, recientes, favoritos y 10.000 fichas por debajo de
+  150 ms. `migrations.test.ts` prueba la migración `0006` desde `0005` con
+  preservación y el rollback de referencia.
+- **Componentes:** la página de búsqueda comprueba resultados resaltados,
+  filtros, navegación por flechas, términos aproximados y recientes/favoritos; la
+  paleta comprueba combobox/listbox, Enter, filtrado de comandos, resultados
+  rápidos, el error de la búsqueda y el desplazamiento de la opción activa.
+- **E2E:** `tests/e2e/search.spec.ts` crea un mundo y dos fichas, busca desde la
+  paleta y la página, comprueba prefijo y error tipográfico, filtros, recientes y
+  favoritos, que `Ctrl+K` no se abre en un campo ni con un diálogo modal, la
+  reconstrucción del índice y la apertura de resultados; repite 1024/1280/1600 px
+  y ejecuta axe en ambos temas sin violaciones críticas ni graves.
+
+**Comandos y tiempos (equipo de referencia, 2026-11-21).** `pnpm test` ejecuta
+385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida) en
+unos 80 s; `pnpm test:e2e` compila y ejecuta 18 pruebas en unos 90 s. Los E2E
+son Windows-only, igual que la aplicación.
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -584,7 +615,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 371 unitarias (4 omitidas), 25 de componentes y 126 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

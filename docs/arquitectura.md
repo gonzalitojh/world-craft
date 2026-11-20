@@ -1,7 +1,8 @@
 # Arquitectura de World Craft
 
 > **Estado:** vigente desde el 18/11/2026, tras el pivote a aplicación de
-> escritorio. Sustituye por completo la arquitectura web anterior.
+> escritorio. Actualizado el 20/11/2026 con M1-05 (#76): búsqueda global y
+> paleta de comandos. Sustituye por completo la arquitectura web anterior.
 > **Ámbito:** procesos, módulos, flujos, datos y límites de confianza.
 > **Fuentes:** [`docs/plan-desarrollo.md`](plan-desarrollo.md) §3,
 > [`docs/adr/`](adr/README.md) y el código de `src/`.
@@ -48,7 +49,7 @@ distinguen lo implementado de lo previsto.
 | Pieza | Estado | Dónde se decide |
 |---|---|---|
 | Electron + Vite + React + TypeScript | Implementado (M0-02, #62) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
-| SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 disponible en el binario, esquema en M1 | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
+| SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 implementado en #76 con `search_fts` y sus triggers | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
 | Instalador NSIS, actualizaciones y preservación de datos | Implementado (M0-08, #68): instalador local 0.1.0 y actualizador manual; release pública y actualización real en M5 | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
@@ -59,7 +60,8 @@ distinguen lo implementado de lo previsto.
 | Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; gestión visual con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
 | Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
-| Pruebas y calidad | Implementado: 371 unitarias (4 omitidas), 25 de componentes y 126 de integración (1 omitida) (#62-#75); E2E de shell, ventana, temas, axe, mundos y fichas/relaciones (#70, #72, #74, #75) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
+| Pruebas y calidad | Implementado: 385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida) (#62-#76); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones y búsqueda (#70, #72, #74, #75, #76) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -90,12 +92,12 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/updates/` | Máquina de estados del actualizador sin Electron, adaptador de electron-updater, allowlist de red y saneado de cabeceras, log JSONL y composición. | Node, electron-updater, `builder-util-runtime` |
 | `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags` y `assets`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search` y `assets`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72) y las fichas con imágenes, etiquetas y editor (#74) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `text-area-field`, `select-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, y componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `text-area-field`, `select-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75 y búsqueda de #76 (resaltado seguro, iconos y paleta de comandos); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
-| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
@@ -160,19 +162,21 @@ Reglas de dependencia:
   escritura en `userData`, SQLite y las migraciones se añadieron en #64
   (sección 2.3).
 
-### 2.2 Estado implementado del IPC (#63, #68, #72, #73 y #74)
+### 2.2 Estado implementado del IPC (#63, #68, #72, #73, #74, #75 y #76)
 
 - **Contrato compartido.** `src/shared/contracts/` contiene la allowlist
   `IPC_CHANNELS` (hoy `shell:openExternal`, los cinco canales de actualizaciones,
   los ocho de mundos, los cinco de tipos de entidad, los seis de fichas, los dos
-  de etiquetas y los dos de assets), el resultado discriminado `IpcResult` con
+  de etiquetas, los cuatro de tipos de relación, los cuatro de relaciones, los
+  tres de búsqueda y los dos de assets), el resultado discriminado `IpcResult` con
   los códigos `INVALID_INPUT`, `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y
   `UNTRUSTED_SENDER`, y `createWorldCraftApi({ invoke })`, que construye la API
   congelada del preload. Son módulos puros: no importan Electron, Node ni Zod.
 - **Preload nominativo.** Publica `appInfo`, `shell.openExternal(url)`, la API
   `updates` (desde #68), la API `worlds` (desde #72), la API `entityTypes`
-  (desde #73) y las APIs `entities`, `tags` y `assets` (desde #74). No expone
-  `ipcRenderer`, `require` ni un `invoke` genérico; el renderer solo puede
+  (desde #73), las APIs `entities`, `tags` y `assets` (desde #74), las APIs
+  `relationTypes` y `relations` (desde #75) y la API `search` (desde #76). No
+  expone `ipcRenderer`, `require` ni un `invoke` genérico; el renderer solo puede
   llamar a las funciones declaradas en el contrato.
 - **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
   canal de la allowlist, comprueba el remitente (`file:` empaquetado o loopback
@@ -458,8 +462,8 @@ Reglas de dependencia:
   tipos permite crear, duplicar, editar y borrar tipos personalizados con un
   constructor de campos.
 - **Pendiente.** La papelera visible y la restauración llegan con #77; la
-  búsqueda global con #76; la exportación completa con #78. El tipo de una ficha
-  no cambia después de crearla.
+  exportación completa con #78. El tipo de una ficha no cambia después de
+  crearla.
 
 ### 2.11 Estado implementado de las relaciones (#75)
 
@@ -488,6 +492,31 @@ Reglas de dependencia:
   eliminar con confirmación; un gestor administra los tipos personalizados.
 - **Exportación.** El modelo usa IDs y claves estables; #78 compondrá las
   relaciones en el ZIP del mundo.
+
+### 2.12 Estado implementado de la búsqueda (#76)
+
+- **Datos.** La migración `0006_search` crea `search_documents`, la tabla FTS5
+  `search_fts` (unicode61, sin diacríticos y prefijos 2/3/4), el vocabulario
+  `search_vocabulary`, las vistas `search_world_documents`,
+  `search_entity_documents` y `search_relation_documents` y los triggers de
+  sincronización, incluidos los de etiquetas. `user_version` pasa a 7; el índice
+  es reconstruible y no se exporta.
+- **Dominio.** `src/main/search/` no importa Electron. Tokeniza la consulta,
+  construye un `MATCH` con prefijos, usa `bm25`, `highlight` y `snippet`,
+  combina filtros en SQL, expande términos del vocabulario con Levenshtein
+  acotado cuando no hay coincidencia exacta, devuelve recientes y favoritos y
+  reconstruye el índice en una transacción.
+- **IPC.** Canales `search:query`, `search:suggestions` y `search:rebuild`, con
+  esquemas Zod estrictos, límites de consulta, `LIMIT` acotado y guardas en el
+  preload. En modo seguro se registra un servicio no disponible.
+- **Interfaz.** La página de búsqueda ofrece consulta, filtros combinables,
+  resultados resaltados con navegación por teclado y estados de carga, error y
+  vacío con recientes y favoritos. La paleta `Ctrl+K` usa combobox/listbox,
+  reúne comandos y resultados rápidos y se ignora en campos editables y con
+  diálogos abiertos.
+- **Rendimiento.** La prueba de integración con 10.000 fichas sintéticas mide la
+  consulta por debajo de 150 ms en el equipo de referencia; la optimización fina
+  es M5-02.
 
 ## 3. Flujo de una operación
 
@@ -530,7 +559,10 @@ mundos (`worlds:list`, `get`, `create`, `update`, `duplicate`, `setArchived`,
 `remove` y `listActivity`), los cinco de tipos de entidad (`entityTypes:list`,
 `create`, `update`, `duplicate` y `remove`), los seis de fichas
 (`entities:list`, `get`, `create`, `update`, `setFavorite` y `remove`), los dos
-de etiquetas (`tags:list` y `create`) y los dos de assets (`assets:list` e
+de etiquetas (`tags:list` y `create`), los cuatro de tipos de relación
+(`relationTypes:list`, `create`, `update` y `remove`), los cuatro de relaciones
+(`relations:list`, `create`, `update` y `remove`), los tres de búsqueda
+(`search:query`, `suggestions` y `rebuild`) y los dos de assets (`assets:list` e
 `import`). Una llamada a `shell:openExternal` recorre esta ruta:
 
 ```text
@@ -651,14 +683,17 @@ las copias manuales siguen previstas para M1.
   `activity_log`; `0003_entity_types` crea `entity_types` y siembra los tipos
   del sistema; `0004_entities` crea `entities`, `tags`, `entity_tags` y
   `entity_gallery`; `0005_relations` crea `relation_types` y `relations` y
-  siembra los tipos de relación del sistema. `PRAGMA user_version` guarda el
-  número de migraciones aplicadas (hoy 6).
+  siembra los tipos de relación del sistema; `0006_search` crea el índice FTS5,
+  sus vistas y triggers. `PRAGMA user_version` guarda el número de migraciones
+  aplicadas (hoy 7).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
   `monthly` (12), `pre-migration` (5) y `pre-restore` (sin poda). Cada copia
   lleva `manifest.json` v2, SHA-256 e integridad; solo contiene SQLite, no
   assets. La restauración se ofrece desde el diálogo de modo seguro de M0-07.
-- **FTS5** está disponible en el binario; la tabla `search_fts` y sus triggers
-  llegan con las tablas de dominio de M1.
+- **FTS5** está disponible en el binario; `search_fts` indexa mundos, fichas y
+  relaciones y se mantiene con triggers desde #76. Los tipos de mapa,
+  manuscrito y escena se añadirán a las vistas y triggers con sus migraciones de
+  M2 (mapas) y M3 (manuscritos y escenas).
 - **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\<assetId>.webp`
   con miniatura `.thumb.webp`, `.tmp/` para escrituras y `backups/orphans/` para
   la purga recuperable (implementado, #66).
@@ -767,8 +802,8 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 339 pruebas unitarias (4 omitidas por
-  symlinks en Windows sin modo desarrollador), 19 de componentes y 108 de
+- **Pruebas.** `pnpm test` ejecuta 385 pruebas unitarias (4 omitidas por
+  symlinks en Windows sin modo desarrollador), 33 de componentes y 134 de
   integración (1 omitida): scaffold (ventana, navegación, CSP e identidad),
   contrato IPC, router IPC, API del preload, enlaces externos, journal, checksum,
   rutas, UUIDv7, logger, modo seguro, tokens y contraste, servicio de assets
@@ -776,19 +811,23 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
   (manifiesto, rutas de restauración, buckets, rotación y recuperación),
   empaquetado (configuración, iconos y licencias), actualizador (contrato,
   servicio, red, log y textos), mundos (slug, validación, esquemas IPC y guardas),
-  tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC) e
-  instancia única; además, arranque, migraciones, copia, corrupción, versión
-  adelantada, base ajena, preservación, rollback de referencia, importación,
-  protocolo, repositorio y purga con SQLite real, CRUD, aislamiento, actividad y
-  atomicidad de mundos, CRUD, protección, aislamiento, duplicación y
-  transferencia de tipos, creación, restauración, rotación y restauración
-  interrumpida de copias, y preservación entre instalaciones. `pnpm test:e2e`
-  abre la aplicación real con Playwright Electron y un `userData` temporal:
-  shell, ventana a 1024, 1280 y 1600 px, temas, axe y CRUD de mundos con teclado
-  y textos largos. `pnpm build` y `pnpm verify:build` validan los
-  artefactos; `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y
-  Electron; `pnpm verify:package` valida el paquete y
-  `scripts/verify-install.ps1` prueba la instalación real.
+  tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC),
+  fichas (descripción, esquemas IPC, handlers y tarjetas), relaciones
+  (validación, catálogo, esquemas y handlers), búsqueda (consulta, esquemas,
+  handlers y API) e instancia única; además, arranque, migraciones, copia,
+  corrupción, versión adelantada, base ajena, preservación, rollback de
+  referencia, importación, protocolo, repositorio y purga con SQLite real, CRUD,
+  aislamiento, actividad y atomicidad de mundos, CRUD, protección, aislamiento,
+  duplicación y transferencia de tipos, CRUD, etiquetas, favoritos, galería y
+  filtros de fichas, relaciones y backlinks, indexación, prefijos, filtros,
+  reconstrucción y rendimiento de búsqueda, creación, restauración, rotación y
+  restauración interrumpida de copias, y preservación entre instalaciones.
+  `pnpm test:e2e` abre la aplicación real con Playwright Electron y un `userData`
+  temporal: shell, ventana a 1024, 1280 y 1600 px, temas, axe, CRUD de mundos,
+  fichas, relaciones y búsqueda con teclado y textos largos. `pnpm build` y
+  `pnpm verify:build` validan los artefactos; `pnpm verify:native` comprueba
+  better-sqlite3 y sharp en Node y Electron; `pnpm verify:package` valida el
+  paquete y `scripts/verify-install.ps1` prueba la instalación real.
 - **CI.** GitHub Actions: jobs `lint` (con `format:check`), `typecheck`, `test` y
   `build` (con `db:check` y `verify:build`) en `ubuntu-latest`; `package` en
   `windows-latest` con `verify:native`, `dist`, `verify:build`,

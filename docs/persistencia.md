@@ -1,14 +1,15 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01 a M1-04. La base local, las migraciones, el modo
+> 20/11/2026 con M0-08 y M1-01 a M1-05. La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
 > (#66), M0-07 (#67) y M0-08 (#68). Los mundos y su actividad, en M1-01 (#72);
 > los tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
-> imágenes, etiquetas y galería, en M1-03 (#74); y las relaciones tipadas con
-> backlinks, en M1-04 (#75). La interfaz de copias
+> imágenes, etiquetas y galería, en M1-03 (#74); las relaciones tipadas con
+> backlinks, en M1-04 (#75); y la búsqueda global con FTS5 y la paleta de
+> comandos, en M1-05 (#76). La interfaz de copias
 > de Ajustes y la papelera visible llegan en M1 y la release pública con
 > actualización real, en M5. Las secciones distinguen lo implementado de lo
 > previsto.
@@ -16,8 +17,8 @@
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
 > ADR 0012 (copias y recuperación), ADR 0016 (migraciones y modo seguro),
-> ADR 0019 (mundos del MVP) y ADR 0020 (tipos de entidad y campos
-> personalizados).
+> ADR 0019 (mundos del MVP), ADR 0020 (tipos de entidad y campos
+> personalizados) y ADR 0023 (búsqueda global FTS5).
 
 ## 1. Principio
 
@@ -133,14 +134,16 @@ no se crea `config.json`.
   migrar; si falla, modo seguro sin escritura.
 - `PRAGMA user_version` es el **número de migraciones aplicadas** (con
   `0000_init`, `0001_assets`, `0002_worlds`, `0003_entity_types`,
-  `0004_entities` y `0005_relations`, vale 6), no el prefijo de la etiqueta. La
-  tabla `schema_migrations` conserva el detalle y se contrasta con él.
+  `0004_entities`, `0005_relations` y `0006_search`, vale 7), no el prefijo de la
+  etiqueta. La tabla `schema_migrations` conserva el detalle y se contrasta con
+  él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
 - IDs UUIDv7 generados en el proceso principal (`src/main/db/ids.ts`) con
-  contador para mantener el orden dentro del mismo milisegundo. En M1-04 existen
+  contador para mantener el orden dentro del mismo milisegundo. En M1-05 existen
   las tablas del sistema, `assets`, `worlds`, `activity_log`, `entity_types`,
-  `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types` y
-  `relations`; el resto de tablas de contenido llega con sus issues.
+  `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`,
+  `relations` y `search_documents`; el resto de tablas de contenido llega en M2,
+  M3 y M4 con sus issues.
 
 ### 3.2 Acceso
 
@@ -161,13 +164,20 @@ de que exista una ventana con la que competir. En M0 no se copia al cerrar.
 
 ### 3.3 Búsqueda
 
-FTS5 está disponible en el binario de better-sqlite3 y `pnpm verify:native` lo
-comprueba en Node y Electron. El esquema de búsqueda (tokenizador `unicode61`,
-tabla virtual `search_fts(title, body)` y triggers sobre `search_documents`)
-llega con las tablas de dominio de M1. La aplicación reconstruirá los documentos
-cuando cambie una entidad, un mapa, una escena o una tabla de juego. Si FTS5 no
-estuviera disponible en un binario futuro, la app degradará a búsqueda `LIKE` y
-lo registrará.
+**Implementado en M1-05 (#76).** FTS5 está disponible en el binario de
+better-sqlite3 y `pnpm verify:native` lo comprueba en Node y Electron. La
+migración `0006_search` crea `search_documents`, la tabla virtual
+`search_fts(title, body, keywords)` con tokenizador `unicode61`, sin diacríticos
+y prefijos 2/3/4, el vocabulario `search_vocabulary` (`fts5vocab`) y las vistas y
+triggers que mantienen el índice al crear, editar, borrar o restaurar mundos,
+fichas, relaciones, etiquetas y tipos de relación. La consulta usa `MATCH` con
+prefijos, `bm25`, `highlight` y `snippet`; si no hay coincidencia exacta, prueba
+términos parecidos del propio vocabulario con una distancia de edición acotada.
+La reconstrucción sanea FTS5, elimina documentos obsoletos y vuelve a poblar el
+índice desde las vistas, sin tocar el contenido del usuario. FTS5 es una
+dependencia del binario, no un servicio externo; si un binario futuro no lo
+incluyera, la aplicación lo detectaría en las pruebas nativas y no se publicaría
+esa versión. El detalle está en el [ADR 0023](adr/0023-global-search-fts5-command-palette.md).
 
 ## 4. Assets
 
@@ -287,7 +297,8 @@ de huérfanos sigue sin canal ni interfaz.
 - La versión del esquema se guarda en `PRAGMA user_version` como **número de
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
   SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds`,
-  `0003_entity_types`, `0004_entities` y `0005_relations`, vale 6.
+  `0003_entity_types`, `0004_entities`, `0005_relations` y `0006_search`, vale
+  7.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -314,6 +325,13 @@ de huérfanos sigue sin canal ni interfaz.
   `drizzle/rollback/0005_relations.down.sql` y debe ejecutarse antes de los de
   `0004` y `0003` porque las aristas referencian fichas y tipos. La prueba de
   preservación migra una base en `0004` con un mundo, un tipo y una ficha.
+- `0006_search` es aditiva: crea `search_documents`, `search_fts`,
+  `search_vocabulary`, las vistas por tipo y los triggers de sincronización,
+  repuebla el índice desde los datos existentes y deja `user_version` 7. Su
+  rollback está en `drizzle/rollback/0006_search.down.sql` y debe ejecutarse antes
+  de los de `0005`, `0004` y `0003`. El índice es reconstruible y no se exporta:
+  la prueba de preservación migra una base en `0005` con mundos, fichas,
+  etiquetas y relaciones y comprueba que el contenido sigue intacto y buscable.
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o
