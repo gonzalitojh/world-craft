@@ -6,10 +6,11 @@
  * `listAll` y `count`; cualquier consulta nueva se añade aquí con su prueba de
  * integración.
  */
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import type { WorldCraftDatabase } from '../db/client';
 import { assets } from '../db/schema/assets';
+import { worlds } from '../db/schema/worlds';
 import type { AssetKind } from './constants';
 import { toAssetError } from './errors';
 
@@ -33,7 +34,9 @@ export interface AssetRepository {
   insert(record: AssetRecord): void;
   findById(id: string): AssetRecord | null;
   listAll(): readonly AssetRecord[];
+  listByWorld(worldId: string): readonly AssetRecord[];
   count(): number;
+  worldExists(worldId: string): boolean;
 }
 
 /** Crea el repositorio sobre la conexión compartida del proceso principal. */
@@ -91,6 +94,20 @@ export function createAssetRepository(
       }
     },
 
+    listByWorld(worldId) {
+      try {
+        return database
+          .select()
+          .from(assets)
+          .where(and(eq(assets.worldId, worldId), eq(assets.kind, 'image')))
+          .orderBy(desc(assets.createdAt), desc(assets.id))
+          .all()
+          .map(toRecord);
+      } catch (error) {
+        throw toAssetError(error, 'ASSET_DATABASE_FAILED');
+      }
+    },
+
     count() {
       try {
         const row = database
@@ -99,6 +116,20 @@ export function createAssetRepository(
           .get();
 
         return row?.total ?? 0;
+      } catch (error) {
+        throw toAssetError(error, 'ASSET_DATABASE_FAILED');
+      }
+    },
+
+    worldExists(worldId) {
+      try {
+        return (
+          database
+            .select({ id: worlds.id })
+            .from(worlds)
+            .where(and(eq(worlds.id, worldId), isNull(worlds.deletedAt)))
+            .get() !== undefined
+        );
       } catch (error) {
         throw toAssetError(error, 'ASSET_DATABASE_FAILED');
       }

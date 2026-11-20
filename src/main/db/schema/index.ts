@@ -10,10 +10,20 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import { assets } from './assets';
+import { entities, entityGallery, entityTags, tags } from './entities';
 import { entityTypes } from './entity-types';
 import { activityLog, worlds } from './worlds';
 
-export { activityLog, assets, entityTypes, worlds };
+export {
+  activityLog,
+  assets,
+  entities,
+  entityGallery,
+  entityTags,
+  entityTypes,
+  tags,
+  worlds,
+};
 
 /** Migraciones aplicadas sobre esta base. */
 export const schemaMigrations = sqliteTable('schema_migrations', {
@@ -37,4 +47,8 @@ export const schema = {
   worlds,
   activityLog,
   entityTypes,
+  entities,
+  tags,
+  entityTags,
+  entityGallery,
 } as const;

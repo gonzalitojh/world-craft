@@ -10,7 +10,7 @@
  * guarda como JSON y se valida al leer para que una fila manipulada no rompa la
  * interfaz.
  */
-import { and, asc, eq, isNull, or } from 'drizzle-orm';
+import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
 
 import {
   isEntityTypeColor,
@@ -21,6 +21,7 @@ import {
 } from '../../shared/contracts/entity-types';
 import { entityFieldTemplateSchema } from '../../shared/entity-types/fields';
 import type { WorldCraftDatabase } from '../db/client';
+import { entities } from '../db/schema/entities';
 import { entityTypes } from '../db/schema/entity-types';
 import { worlds } from '../db/schema/worlds';
 
@@ -60,6 +61,7 @@ export interface EntityTypeRepository {
   findByKey(worldId: string, key: string): EntityTypeRecord | null;
   listCustomByWorld(worldId: string): readonly EntityTypeRecord[];
   worldExists(worldId: string): boolean;
+  countEntitiesByType(typeId: string): number;
   insert(record: EntityTypeRecord): void;
   update(record: EntityTypeRecord): boolean;
   remove(id: string, worldId: string, deletedAt: number): boolean;
@@ -129,6 +131,18 @@ export function createEntityTypeRepository(
           .where(and(eq(worlds.id, worldId), isNull(worlds.deletedAt)))
           .get() !== undefined
       );
+    },
+
+    countEntitiesByType(typeId) {
+      // Incluye las fichas en papelera: si se restauran, deben encontrar su
+      // plantilla. La purga definitiva llega con #77.
+      const row = database
+        .select({ total: sql<number>`count(*)` })
+        .from(entities)
+        .where(eq(entities.typeId, typeId))
+        .get();
+
+      return row?.total ?? 0;
     },
 
     insert(record) {

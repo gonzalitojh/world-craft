@@ -40,7 +40,7 @@ indicados arriba.
 ### Textos incluidos en el instalador
 
 `pnpm licenses:sync` copia a `resources/licenses/` y el empaquetado publica en
-`licenses/` junto al ejecutable estos **5 textos completos**:
+`licenses/` junto al ejecutable estos **6 textos completos**:
 
 - `sharp-LICENSE.txt` — Apache-2.0 de sharp.
 - `img-sharp-win32-LICENSE.txt` — Apache-2.0 del paquete de plataforma de sharp;
@@ -48,8 +48,23 @@ indicados arriba.
 - `libvips-LICENSE.txt` — LGPL-3.0-or-later del binario libvips.
 - `gpl-3.0.txt` — texto de GPL-3.0 que acompaña a la LGPL.
 - `electron-updater-LICENSE.txt` — MIT de electron-updater.
+- `tiptap-LICENSE.txt` — MIT de Tiptap y ProseMirror.
 
 `pnpm verify:package` comprueba que los textos existen en el paquete.
+
+## Editor: Tiptap y ProseMirror
+
+| Componente | Versión | Licencia | Origen |
+|---|---|---|---|
+| `@tiptap/react` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
+| `@tiptap/starter-kit` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
+| `@tiptap/extension-link` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
+| `@tiptap/pm` (ProseMirror) | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
+
+Tiptap GmbH y los colaboradores de ProseMirror distribuyen estos paquetes bajo
+la licencia MIT. El texto completo se copia con `pnpm licenses:sync` en
+`resources/licenses/tiptap-LICENSE.txt` y se publica en `licenses/` junto al
+ejecutable. No se usan extensiones Pro ni servicios de colaboración.
 
 ## Resto de dependencias
 
@@ -64,6 +79,6 @@ desarrollo no se distribuyen con la aplicación.
 
 Este archivo se actualiza cuando cambia una dependencia de ejecución, cuando se
 actualiza sharp o libvips o cuando se incorpora un binario nuevo al instalador.
-El empaquetado incluye este archivo y los 5 textos de `resources/licenses/` junto
+El empaquetado incluye este archivo y los 6 textos de `resources/licenses/` junto
 a la aplicación; los cambios de versión deben reflejarse en ambos sitios en la
 misma tarea.

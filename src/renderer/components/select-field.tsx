@@ -21,6 +21,7 @@ export interface SelectFieldProps {
   readonly name?: string;
   readonly value?: string;
   readonly defaultValue?: string;
+  readonly autoFocus?: boolean;
   readonly onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
   readonly className?: string;
 }
@@ -42,6 +43,7 @@ export function SelectField({
   name,
   value,
   defaultValue,
+  autoFocus = false,
   onChange,
   className,
 }: SelectFieldProps) {
@@ -80,6 +82,7 @@ export function SelectField({
         className="wc-field__control wc-field__control--select"
         required={required}
         disabled={disabled}
+        autoFocus={autoFocus}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy.length > 0 ? describedBy : undefined}
       >

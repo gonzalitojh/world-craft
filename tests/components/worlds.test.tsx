@@ -302,6 +302,7 @@ describe('diálogo de duplicado', () => {
 describe('página de mundo', () => {
   it('muestra la ficha, el progreso, la actividad y los accesos previstos', () => {
     const world = makeWorld();
+    const onOpenEntities = vi.fn();
     const actions = {
       onOpen: noop,
       onEdit: vi.fn(),
@@ -320,6 +321,7 @@ describe('página de mundo', () => {
         onBack={noop}
         onRetry={noop}
         onRetryActivity={noop}
+        onOpenEntities={onOpenEntities}
       />,
     );
 
@@ -334,7 +336,12 @@ describe('página de mundo', () => {
     ).toBeInTheDocument();
     expect(
       screen.getAllByText(messages.worlds.detail.quickPlanned),
-    ).toHaveLength(4);
+    ).toHaveLength(3);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: messages.entities.list.title }),
+    );
+    expect(onOpenEntities).toHaveBeenCalled();
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -361,6 +368,7 @@ describe('página de mundo', () => {
         onBack={noop}
         onRetry={noop}
         onRetryActivity={noop}
+        onOpenEntities={noop}
       />,
     );
 

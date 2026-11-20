@@ -35,6 +35,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0018](0018-nsis-packaging-and-update-service.md) | Empaquetado NSIS, actualizador manual y preservación (#68) | Aceptado | D-041 |
 | [0019](0019-worlds-crud-mvp.md) | Mundos del MVP: CRUD, actividad y borrado lógico (#72) | Aceptado | D-042 |
 | [0020](0020-entity-types-custom-fields.md) | Tipos de entidad del sistema y campos personalizados (#73) | Aceptado | D-043 |
+| [0021](0021-entities-crud-gallery-tags-editor.md) | Fichas: modelo, galería, etiquetas y editor enriquecido (#74) | Aceptado | D-044 |
 
 ## 3. Relación con otros documentos
 
@@ -78,3 +79,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-20 | Se añade el ADR 0018 (empaquetado NSIS, actualizador manual y preservación, #68) y se anota su implementación en los ADR 0003, 0013, 0015 y 0016. |
 | 2026-11-20 | Se añade el ADR 0019 (mundos del MVP: CRUD, actividad y borrado lógico, #72). |
 | 2026-11-20 | Se añade el ADR 0020 (tipos de entidad del sistema y campos personalizados, #73). |
+| 2026-11-20 | Se añade el ADR 0021 (fichas, galería, etiquetas y editor enriquecido, #74). |

@@ -12,7 +12,30 @@
  * El proceso principal es la frontera de confianza y valida con Zod.
  */
 import { APP_NAME, APP_VERSION } from '../app-info';
+import {
+  isAssetImportResult,
+  isAssetList,
+  type AssetImportInput,
+  type WorldCraftAssetsApi,
+} from './assets';
 import { IPC_CHANNELS, type IpcChannel } from './channels';
+import {
+  isEntityDeleteResult,
+  isEntityDetail,
+  isEntityList,
+  isEntityTag,
+  isEntityTagList,
+  type EntityCreateInput,
+  type EntityDetail,
+  type EntityGetInput,
+  type EntityListInput,
+  type EntityRemoveInput,
+  type EntitySetFavoriteInput,
+  type EntityTagCreateInput,
+  type EntityUpdateInput,
+  type WorldCraftEntitiesApi,
+  type WorldCraftTagsApi,
+} from './entities';
 import {
   isEntityTypeDeleteResult,
   isEntityTypeList,
@@ -110,6 +133,9 @@ export interface WorldCraftApi {
   readonly updates: WorldCraftUpdatesApi;
   readonly worlds: WorldCraftWorldsApi;
   readonly entityTypes: WorldCraftEntityTypesApi;
+  readonly entities: WorldCraftEntitiesApi;
+  readonly tags: WorldCraftTagsApi;
+  readonly assets: WorldCraftAssetsApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -206,12 +232,16 @@ function isNullableEntityTypeSummary(
   return value === null || isEntityTypeSummary(value);
 }
 
+function isNullableEntityDetail(value: unknown): value is EntityDetail | null {
+  return value === null || isEntityDetail(value);
+}
+
 /**
  * Construye la API congelada del preload.
  *
- * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `worlds` y
- * `entityTypes` para que el renderer no pueda sustituirlos en tiempo de
- * ejecución.
+ * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `worlds`,
+ * `entityTypes`, `entities`, `tags` y `assets` para que el renderer no pueda
+ * sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -365,5 +395,59 @@ export function createWorldCraftApi(
       ),
   });
 
-  return Object.freeze({ appInfo, shell, updates, worlds, entityTypes });
+  const entities: WorldCraftEntitiesApi = Object.freeze({
+    list: (input: EntityListInput) =>
+      invokeWorldCommand(IPC_CHANNELS.entitiesList, input, isEntityList),
+    get: (input: EntityGetInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entitiesGet,
+        input,
+        isNullableEntityDetail,
+      ),
+    create: (input: EntityCreateInput) =>
+      invokeWorldCommand(IPC_CHANNELS.entitiesCreate, input, isEntityDetail),
+    update: (input: EntityUpdateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entitiesUpdate,
+        input,
+        isNullableEntityDetail,
+      ),
+    setFavorite: (input: EntitySetFavoriteInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entitiesSetFavorite,
+        input,
+        isNullableEntityDetail,
+      ),
+    remove: (input: EntityRemoveInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entitiesRemove,
+        input,
+        isEntityDeleteResult,
+      ),
+  });
+
+  const tags: WorldCraftTagsApi = Object.freeze({
+    list: (worldId: string) =>
+      invokeWorldCommand(IPC_CHANNELS.tagsList, { worldId }, isEntityTagList),
+    create: (input: EntityTagCreateInput) =>
+      invokeWorldCommand(IPC_CHANNELS.tagsCreate, input, isEntityTag),
+  });
+
+  const assets: WorldCraftAssetsApi = Object.freeze({
+    list: (worldId: string) =>
+      invokeWorldCommand(IPC_CHANNELS.assetsList, { worldId }, isAssetList),
+    import: (input: AssetImportInput) =>
+      invokeWorldCommand(IPC_CHANNELS.assetsImport, input, isAssetImportResult),
+  });
+
+  return Object.freeze({
+    appInfo,
+    shell,
+    updates,
+    worlds,
+    entityTypes,
+    entities,
+    tags,
+    assets,
+  });
 }

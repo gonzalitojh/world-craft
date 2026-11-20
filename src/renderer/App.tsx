@@ -8,13 +8,17 @@ import type {
   WorldSummary,
   WorldUpdateInput,
 } from '../shared/contracts/worlds';
+import type { EntityTypeSummary } from '../shared/contracts/entity-types';
 import { ToastRegion, type Toast, type ToastTone } from './components';
+import { EntityQuickCreateDialog } from './components/entities/entity-quick-create-dialog';
 import { WorldConfirmDialog } from './components/worlds/world-confirm-dialog';
 import { WorldDuplicateDialog } from './components/worlds/world-duplicate-dialog';
 import { WorldFormDialog } from './components/worlds/world-form-dialog';
 import type { WorldActivityState } from './components/worlds/world-activity-list';
 import type { WorldCardActions } from './components/worlds/world-card';
 import { useMessages } from './i18n/provider';
+import { EntitiesPage } from './pages/entities-page';
+import { EntityDetailPage } from './pages/entity-detail-page';
 import { HomePage, type WorldLibraryState } from './pages/home-page';
 import { SamplesPage } from './pages/samples-page';
 import { WorldPage } from './pages/world-page';
@@ -41,7 +45,7 @@ type DialogState =
  */
 export function App() {
   const messages = useMessages();
-  const { appInfo, worlds: api } = window.worldCraft;
+  const { appInfo, worlds: api, entities: entitiesApi } = window.worldCraft;
   const [view, setView] = useState<AppView>('home');
   const [theme, setTheme] = useState<ThemeMode>(DEFAULT_THEME);
   const [toasts, setToasts] = useState<readonly Toast[]>([]);
@@ -61,6 +65,16 @@ export function App() {
   >([]);
   const [selectedActivityState, setSelectedActivityState] =
     useState<WorldActivityState>('ready');
+
+  const [entityId, setEntityId] = useState<string | null>(null);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickKey, setQuickKey] = useState(0);
+  const [quickWorldId, setQuickWorldId] = useState<string | null>(null);
+  const [quickTypes, setQuickTypes] = useState<readonly EntityTypeSummary[]>(
+    [],
+  );
+  const [quickTypesLoading, setQuickTypesLoading] = useState(false);
+  const [quickPending, setQuickPending] = useState(false);
 
   const [dialog, setDialog] = useState<DialogState>(null);
   const [pending, setPending] = useState(false);
@@ -147,6 +161,34 @@ export function App() {
     void refreshLibrary();
   }, [refreshLibrary]);
 
+  useEffect(() => {
+    if (!quickOpen) {
+      return;
+    }
+
+    const targetWorldId =
+      quickWorldId ?? selectedWorldId ?? worlds[0]?.id ?? null;
+
+    if (targetWorldId === null) {
+      return;
+    }
+
+    let active = true;
+
+    void window.worldCraft.entityTypes.list(targetWorldId).then((result) => {
+      if (!active) {
+        return;
+      }
+
+      setQuickTypes(result.ok ? result.data : []);
+      setQuickTypesLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [quickOpen, quickWorldId, selectedWorldId, worlds]);
+
   const openWorld = useCallback(
     async (id: string) => {
       openRequest.current += 1;
@@ -156,6 +198,7 @@ export function App() {
       setSelectedState('loading');
       setSelectedActivity([]);
       setSelectedActivityState('loading');
+      setEntityId(null);
       setView('world');
 
       const [detail, activityList] = await Promise.all([
@@ -238,6 +281,15 @@ export function App() {
       setSelectedActivityState('error');
     }
   }, [api, selectedWorldId]);
+
+  const openEntities = useCallback(() => {
+    setView('entities');
+  }, []);
+
+  const openEntity = useCallback((id: string) => {
+    setEntityId(id);
+    setView('entity');
+  }, []);
 
   const openDialog = useCallback((next: Exclude<DialogState, null>) => {
     const active = document.activeElement;
@@ -505,6 +557,7 @@ export function App() {
       setSelectedState('ready');
       setSelectedActivity([]);
       setSelectedActivityState('ready');
+      setEntityId(null);
       setView('home');
     }
   }, [
@@ -517,6 +570,43 @@ export function App() {
     selectedWorldId,
     closeDialogAfterSuccess,
   ]);
+
+  const submitQuickCreate = useCallback(
+    async (input: {
+      readonly worldId: string;
+      readonly typeId: string;
+      readonly name: string;
+    }): Promise<boolean> => {
+      if (quickPending) {
+        return false;
+      }
+
+      setQuickPending(true);
+      const result = await entitiesApi.create(input);
+      setQuickPending(false);
+
+      if (!result.ok) {
+        notify('error', messages.entities.quick.error);
+        return false;
+      }
+
+      setQuickOpen(false);
+      notify('success', messages.entities.notices.created(result.data.name));
+      await refreshLibrary();
+      await openWorld(result.data.worldId);
+      openEntity(result.data.id);
+      return true;
+    },
+    [
+      entitiesApi,
+      messages,
+      notify,
+      openEntity,
+      openWorld,
+      quickPending,
+      refreshLibrary,
+    ],
+  );
 
   const cardActions: WorldCardActions = {
     onOpen: (world) => {
@@ -544,7 +634,8 @@ export function App() {
   };
 
   const title =
-    view === 'world' && selectedWorld !== null
+    (view === 'world' || view === 'entities' || view === 'entity') &&
+    selectedWorld !== null
       ? selectedWorld.name
       : messages.shell.views[view];
 
@@ -570,6 +661,13 @@ export function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         version={appInfo.version}
+        onQuickCreate={() => {
+          setQuickWorldId(selectedWorldId);
+          setQuickTypes([]);
+          setQuickTypesLoading(true);
+          setQuickKey((current) => current + 1);
+          setQuickOpen(true);
+        }}
       >
         {view === 'home' ? (
           <HomePage
@@ -613,11 +711,51 @@ export function App() {
             onRetryActivity={() => {
               void refreshSelectedActivity();
             }}
+            onOpenEntities={openEntities}
+          />
+        ) : view === 'entities' && selectedWorld !== null ? (
+          <EntitiesPage
+            world={selectedWorld}
+            onBack={() => {
+              setView('world');
+            }}
+            onOpenEntity={openEntity}
+            onNotify={notify}
+          />
+        ) : view === 'entity' && selectedWorld !== null && entityId !== null ? (
+          <EntityDetailPage
+            key={entityId}
+            world={selectedWorld}
+            entityId={entityId}
+            onBack={() => {
+              setView('entities');
+            }}
+            onOpenEntity={openEntity}
+            onNotify={notify}
           />
         ) : (
           <SamplesPage onNotify={notify} />
         )}
       </AppShell>
+
+      <EntityQuickCreateDialog
+        key={quickKey}
+        open={quickOpen}
+        worlds={worlds}
+        defaultWorldId={quickWorldId ?? selectedWorldId}
+        pending={quickPending}
+        types={quickTypes}
+        typesLoading={quickTypesLoading}
+        onWorldChange={(worldId) => {
+          setQuickWorldId(worldId);
+          setQuickTypes([]);
+          setQuickTypesLoading(true);
+        }}
+        onClose={() => {
+          setQuickOpen(false);
+        }}
+        onSubmit={submitQuickCreate}
+      />
 
       {dialog?.kind === 'create' || dialog?.kind === 'edit' ? (
         <WorldFormDialog

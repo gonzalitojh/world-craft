@@ -15,8 +15,10 @@
 > solo para desarrollo**. También existe una **base de datos local** que se crea
 > y se comprueba al arrancar, con **copias automáticas** y **restauración desde
 > modo seguro**. Ya se pueden crear, editar, duplicar, archivar y eliminar
-> mundos con su actividad; todavía no hay fichas, mapas, manuscritos, ajustes ni
-> papelera visible, y la preferencia de tema no se recuerda al reiniciar.
+> mundos con su actividad, y crear **fichas** de cualquier tipo con campos
+> personalizados, descripción enriquecida, imágenes, etiquetas y favoritos.
+> Todavía no hay mapas, manuscritos, ajustes ni papelera visible, y la
+> preferencia de tema no se recuerda al reiniciar.
 
 ## 1. Qué es World Craft
 
@@ -85,11 +87,13 @@ La aplicación crea y comprueba su base de datos local, guarda copias automátic
 sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
 La comprobación de actualizaciones es **manual y cancelable**; no se ejecuta sola.
 Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, y el
-dashboard muestra tus mundos, la actividad reciente y su preparación. Todavía no
-hay fichas, mapas, manuscritos, ajustes ni papelera visible, y la portada del
-mundo y la descripción enriquecida llegarán en actualizaciones posteriores.
-**No hay una release pública**: el instalador se genera y se prueba en local, y
-la publicación oficial llegará con M5.
+dashboard muestra tus mundos, la actividad reciente y su preparación. Dentro de
+cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción,
+imágenes, etiquetas y favoritos. Todavía no hay mapas, manuscritos, ajustes ni
+papelera visible, y la portada del mundo y la descripción enriquecida del mundo
+llegarán en actualizaciones posteriores. **No hay una release pública**: el
+instalador se genera y se prueba en local, y la publicación oficial llegará con
+M5.
 
 ## 3. La ventana
 
@@ -108,9 +112,13 @@ Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 - **Área central:** el contenido de la pantalla. Es el destino del enlace
   «Saltar al contenido principal» que aparece al empezar a usar el teclado.
 
-Siguen **previstas**, para cuando existan fichas, mapas y escritura:
+El botón **Nueva ficha** de la barra superior abre la creación rápida desde
+cualquier pantalla. Las fichas se abren desde la página de su mundo, no desde la
+barra lateral.
 
-- **Fichas, mapas, escritura, juego, búsqueda y ajustes** en la barra lateral.
+Siguen **previstas**, para cuando existan mapas y escritura:
+
+- **Mapas, escritura, juego, búsqueda y ajustes** en la barra lateral.
 - **Barra superior con búsqueda global**.
 - **Paneles** de detalles, filtros o propiedades.
 - **Barra de estado** con el guardado y los avisos.
@@ -147,8 +155,8 @@ pantalla de Ajustes llegará más adelante.
 
 La ventana se puede redimensionar y el tamaño mínimo es 1024×700. El diseño está
 preparado para que a 1024, 1280 y 1600 píxeles de ancho el contenido se adapte
-sin desplazamiento horizontal de página; la comprobación visual completa llegará
-con la fase de pruebas de la interfaz. Solo las tablas y el lienzo del mapa
+sin desplazamiento horizontal de página; el dashboard, los mundos, las fichas y
+el editor se comprueban en esos anchos. Solo las tablas y el lienzo del mapa
 podrán desplazarse dentro de su propio espacio. **Hoy la ventana aún no recuerda
 su tamaño ni su posición**: se abre con un tamaño inicial de 1280×800 y esa
 memoria llegará en una actualización posterior.
@@ -258,9 +266,9 @@ descripción, identificador, idioma y fechas de creación y actualización.
   la descripción o los géneros. Los campos que ya están completos se marcan como
   **Completado**.
 - **Actividad de este mundo:** solo las acciones de ese mundo, con su fecha.
-- **Accesos rápidos:** fichas, mapas, manuscrito y juego aparecen como
-  **Previsto** hasta que lleguen sus pantallas. Mientras tanto, la ficha del
-  mundo ya es editable.
+- **Accesos rápidos:** **Fichas del mundo** abre la lista de fichas. Mapas,
+  manuscrito y juego siguen como **Previsto** hasta que lleguen sus pantallas.
+  Mientras tanto, la ficha del mundo ya es editable.
 
 ### 4.5 Editar, duplicar, archivar y eliminar
 
@@ -287,24 +295,89 @@ disco sin avisar.
 - **Exportar e importar** un mundo completo en un archivo abierto.
 - **Papelera visible** para restaurar o vaciar definitivamente.
 
-## 5. Fichas y entidades (previsto)
+## 5. Fichas y entidades
 
 Las fichas son la base del mundo: personajes, lugares, organizaciones, objetos,
-criaturas, eventos y cualquier tipo que crees.
+criaturas, eventos y cualquier tipo que crees. Se abren desde **Fichas del
+mundo**, en los accesos rápidos de la página de un mundo.
 
-- **Tipos preparados:** personaje, lugar, ciudad, nación, cultura, raza,
+### 5.1 Crear una ficha
+
+1. Abre un mundo y pulsa **Fichas del mundo**.
+2. Pulsa **Nueva ficha** (o **Nueva ficha** en la barra superior desde cualquier
+   pantalla) y elige el mundo, el tipo y el nombre.
+3. Al crearla se abre la ficha para completar el resto: alias, resumen,
+   descripción, campos del tipo, imagen, galería, etiquetas y estado.
+
+### 5.2 Guardado y edición
+
+- El contenido se **autoguarda** poco después de dejar de escribir. La cabecera
+  de la ficha muestra **Guardando…**, **Guardado**, **Cambios sin guardar** o un
+  aviso si no se pudo guardar.
+- **Guardar ahora** fuerza el guardado en ese momento.
+- El nombre es obligatorio. Los campos marcados con `*` también.
+- Los valores inválidos se señalan en su campo y no se envían al guardado.
+- El **tipo no cambia** después de crear la ficha. Si necesitas otra plantilla,
+  crea una ficha nueva con ese tipo.
+
+### 5.3 Descripción enriquecida
+
+La descripción admite **negrita**, **cursiva**, títulos de nivel 1 a 3, listas con
+viñetas, listas numeradas, citas y **enlaces internos a otras fichas** del mismo
+mundo. Los enlaces se insertan con el botón de enlace; para abrir uno, coloca el
+cursor sobre él y pulsa **Abrir enlace** en la barra del editor, o usa `Ctrl` +
+clic. No se pega HTML ni se permiten enlaces externos.
+
+### 5.4 Campos del tipo
+
+Cada tipo puede tener campos de **texto**, **número**, **fecha**, **selección** o
+**referencia a otra ficha**. Los campos de referencia solo ofrecen fichas del
+mismo mundo y, si el tipo lo limita, del tipo de destino. Los valores se validan
+antes de guardar.
+
+### 5.5 Tipos personalizados
+
+El botón **Gestionar tipos** abre la lista de tipos del sistema y de los
+personalizados de ese mundo.
+
+- Los 18 tipos del sistema (personaje, lugar, ciudad, nación, cultura, raza,
   organización, religión, deidad, magia, objeto, criatura, idioma, evento,
-  conflicto, tecnología, flora y fauna y concepto. Los tipos ya están
-  preparados en la aplicación, pero todavía no hay pantalla para verlos, crear
-  tus propios tipos ni editarlos; llegarán con las fichas.
-- **Crear una ficha:** elige el tipo, ponle nombre y rellena los campos.
-- **Campos personalizados:** cada tipo puede tener sus propios campos de texto,
-  número, fecha, selección o referencia a otra ficha.
-- **Imagen:** añade una imagen principal; se guarda en tu equipo.
-- **Etiquetas:** clasifica fichas con etiquetas de color.
-- **Favoritos:** marca las fichas que más usas.
-- **Papelera:** las fichas borradas se pueden restaurar.
-- **Duplicar:** crea una copia para partir de una plantilla.
+  conflicto, tecnología, flora y fauna y concepto) no se editan ni se borran.
+- **Duplicar** un tipo crea una copia personalizada en el mundo para ajustar su
+  nombre, icono, color y campos.
+- Los tipos personalizados se pueden **crear**, **editar** y **borrar**. Un tipo
+  con fichas no se puede borrar ni puede perder campos o cambiar el tipo de un
+  campo existente hasta cambiar o mover esas fichas; se incluyen las fichas en
+  papelera para que una restauración futura encuentre su plantilla. Sí puedes
+  ajustar etiquetas, opciones, icono, color y añadir campos.
+- Los iconos y colores usan la paleta de la aplicación; el color nunca es el
+  único indicador: siempre acompaña al icono y al nombre.
+
+### 5.6 Imágenes y galería
+
+- **Imagen principal:** elige una imagen del mundo o añade una nueva. Se guarda
+  en tu equipo y se muestra sin salir de la aplicación.
+- **Galería:** añade varias imágenes, usa las miniaturas y elige cuál es la
+  principal. Puedes quitar una imagen de la galería sin borrar el archivo.
+- Las imágenes se guardan en la carpeta de datos de la aplicación. Al
+  actualizar o reinstalar no se borran.
+
+### 5.7 Etiquetas y favoritos
+
+- **Etiquetas:** crea etiquetas de color por mundo y asígnalas a las fichas. Se
+  pueden quitar de una ficha sin borrar la etiqueta.
+- **Favoritos:** la estrella marca las fichas que más usas.
+- En la lista puedes **buscar** por nombre, alias, resumen o descripción y
+  **filtrar** por tipo, etiqueta, favorito y estado.
+- Los filtros y las etiquetas nunca mezclan datos de otros mundos.
+
+### 5.8 Estado y borrado
+
+- Cada ficha puede estar **Activa**, en **Borrador** o **Archivada**.
+- **Mover a la papelera** pide confirmación. La ficha deja de aparecer en la
+  lista; la pantalla de papelera para restaurarla llegará con la siguiente
+  entrega. Hasta entonces, las copias de seguridad siguen siendo la red de
+  seguridad (sección 12).
 
 ## 6. Relaciones y grafo (previsto)
 
@@ -596,7 +669,8 @@ las funciones correspondientes.
 | Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
 | Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
-| Fichas y tipos | Prevista |
+| Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); papelera visible y restauración con #77 |
+| Gestión visual de tipos personalizados | Implementada (en desarrollo) |
 | Relaciones y grafo | Prevista |
 | Mapas | Prevista |
 | Escritura | Prevista |

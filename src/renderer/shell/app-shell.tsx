@@ -7,7 +7,8 @@ import { useMessages } from '../i18n/provider';
 import { cx } from '../lib/class-names';
 import type { ThemeMode } from '../theme';
 
-export type AppView = 'home' | 'worlds' | 'world' | 'samples';
+export type AppView =
+  'home' | 'worlds' | 'world' | 'entities' | 'entity' | 'samples';
 
 /** Vistas que aparecen en la navegación del rail. */
 export type AppNavView = 'home' | 'worlds' | 'samples';
@@ -21,6 +22,8 @@ export interface AppShellProps {
   readonly onToggleTheme: () => void;
   /** Versión visible al pie del rail; la pasa `App` desde el preload. */
   readonly version: string;
+  /** Abre la creación rápida de una ficha desde cualquier pantalla. */
+  readonly onQuickCreate?: (() => void) | undefined;
   readonly children: ReactNode;
 }
 
@@ -151,6 +154,7 @@ export function AppShell({
   theme,
   onToggleTheme,
   version,
+  onQuickCreate,
   children,
 }: AppShellProps) {
   const messages = useMessages();
@@ -278,6 +282,11 @@ export function AppShell({
           <header className="wc-topbar">
             <h1 className="wc-topbar__title">{title}</h1>
             <div className="wc-topbar__actions">
+              {onQuickCreate !== undefined ? (
+                <Button size="sm" onClick={onQuickCreate}>
+                  {messages.entities.quick.button}
+                </Button>
+              ) : null}
               <UpdatesControl />
               <Button
                 variant="secondary"

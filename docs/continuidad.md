@@ -1,18 +1,20 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08, M1-01 y M1-02. El modo seguro, la comprobación de
+> 20/11/2026 con M0-08 y M1-01 a M1-03. El modo seguro, la comprobación de
 > integridad y la copia pre-migración se implementaron en M0-04 (#64); las copias
 > automáticas con retención y la restauración desde el diálogo de modo seguro,
 > en M0-07 (#67); el instalador por usuario, la actualización manual y la
 > preservación en instalación, actualización y desinstalación, en M0-08 (#68); el
-> borrado lógico de mundos con su actividad, en M1-01 (#72); y los tipos de
-> entidad con sus plantillas, en M1-02 (#73). La interfaz de copias de Ajustes, la
+> borrado lógico de mundos con su actividad, en M1-01 (#72); los tipos de
+> entidad con sus plantillas, en M1-02 (#73); y las fichas con autoguardado,
+> imágenes, etiquetas y favoritos, en M1-03 (#74). La interfaz de copias de Ajustes, la
 > papelera visible y la purga llegan en M1; la release pública con actualización
 > real contra GitHub Releases, en M5.
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
-> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019 y ADR 0020. La
+> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020 y ADR 0021.
+> La
 > estructura de datos está en [`persistencia.md`](persistencia.md).
 
 ## 1. Objetivo
@@ -231,6 +233,17 @@ editan: para ajustar una plantilla se duplica el tipo en el mundo. El formato de
 transferencia solo incluye los tipos personalizados y se integra en la
 exportación completa del mundo en #78.
 
+**Implementado en M1-03 (#74):** las fichas se guardan en `entities` y usan
+borrado lógico con `deleted_at`; sus etiquetas y su galería se conservan al
+mover la ficha a la papelera y la restauración visible llega con #77. La imagen
+principal y la galería referencian filas de `assets` del mismo mundo y nunca
+copian archivos. El autoguardado envía una actualización completa tras 700 ms
+sin cambios y también se puede forzar; al desmontar la vista se intenta un
+último guardado. Un tipo con fichas vivas no se puede borrar, de modo que una
+ficha nunca queda apuntando a una plantilla eliminada. La migración
+`0004_entities` es aditiva, conserva mundos, tipos, actividad y assets, y su
+prueba de preservación migra una base en `0003` con un tipo personalizado.
+
 ## 7. Actualizaciones y desinstalación
 
 ### 7.1 Actualización (implementada en M0-08)
@@ -301,6 +314,7 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Migración con datos | Cada migración | Copia + preservación |
 | Migración fallida | Cada migración | Rollback, copia y modo seguro (pruebas de integración) |
 | Tipos al duplicar y borrar un mundo | M1-02 | Copia transaccional, aislamiento y conservación tras el borrado lógico (integración) |
+| Fichas, etiquetas y galería | M1-03 | CRUD, borrado lógico, aislamiento, referencias, filtros y preservación de la migración `0004` (integración) |
 | Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
 | Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
 | Copia automática y manifiesto v2 | M0-07 | Creación verificable, lectura de v1 y rechazo de bytes alterados (integración) |

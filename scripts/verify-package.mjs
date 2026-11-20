@@ -22,6 +22,7 @@ const REQUIRED_LICENSE_FILES = [
   'libvips-LICENSE.txt',
   'gpl-3.0.txt',
   'electron-updater-LICENSE.txt',
+  'tiptap-LICENSE.txt',
 ];
 
 const failures = [];

@@ -177,6 +177,23 @@ export function createEntityTypesService(
 
       const editable = normalizeEditableEntityType(input);
 
+      // Un tipo con fichas vivas no puede perder campos ni cambiar su tipo:
+      // los valores guardados quedarían huérfanos o dejarían de validar. Se
+      // permite añadir campos, cambiar etiquetas, opciones, icono o color.
+      if (repository.countEntitiesByType(existing.id) > 0) {
+        for (const previous of existing.fields) {
+          const next = editable.fields.find(
+            (field) => field.key === previous.key,
+          );
+
+          if (next === undefined || next.type !== previous.type) {
+            throw new EntityTypeInputError(
+              'El tipo tiene fichas: no puedes quitar un campo ni cambiar su tipo.',
+            );
+          }
+        }
+      }
+
       if (
         existing.name === editable.name &&
         existing.icon === editable.icon &&
@@ -251,6 +268,15 @@ export function createEntityTypesService(
 
       if (!repository.worldExists(input.worldId)) {
         return { deleted: false };
+      }
+
+      // Un tipo con fichas vivas no se borra: las fichas quedarían apuntando a
+      // una plantilla lógicamente eliminada. La interfaz ofrece borrar o
+      // cambiar esas fichas primero.
+      if (repository.countEntitiesByType(input.id) > 0) {
+        throw new EntityTypeInputError(
+          'El tipo todavía tiene fichas asociadas.',
+        );
       }
 
       return {

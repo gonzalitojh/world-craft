@@ -209,6 +209,35 @@ primera versión estable.
 - Pruebas de tipos de entidad (#73): unitarias de catálogo, plantillas, valores,
   claves y esquemas IPC, e integración de CRUD, protección del sistema,
   aislamiento, duplicación, transferencia, preservación y rollback.
+- CRUD de fichas (#74): crear, listar, abrir, editar, marcar como favorita y
+  mover a la papelera fichas de cualquier tipo del sistema o personalizado, con
+  nombre, alias, resumen, descripción, atributos, estado y fechas.
+- Descripción enriquecida (#74): editor Tiptap 3 con negrita, cursiva, títulos
+  1–3, listas, cita y enlaces internos a fichas; el contenido se guarda como
+  JSON de ProseMirror validado y texto plano para búsqueda, sin HTML crudo.
+- Autoguardado y creación rápida (#74): guardado con debounce de 700 ms, botón
+  «Guardar ahora», estado anunciado y creación de fichas desde cualquier
+  pantalla con mundo, tipo y nombre.
+- Imágenes y galería (#74): imagen principal y galería ordenada con miniaturas
+  `wc-asset://thumb`, importación por diálogo nativo, WebP y validación de que
+  el asset pertenece al mismo mundo; el renderer nunca recibe rutas.
+- Etiquetas, favoritos y filtros (#74): etiquetas de color por mundo, búsqueda
+  por nombre, alias, resumen o descripción y filtros por tipo, etiqueta,
+  favorito y estado, siempre aislados por mundo.
+- Gestión visual de tipos (#74): crear, duplicar, editar y borrar tipos
+  personalizados con constructor de campos; los tipos del sistema solo se
+  duplican y un tipo con fichas vivas no se puede borrar.
+- Migración `0004_entities` (#74): tablas `entities`, `tags`, `entity_tags` y
+  `entity_gallery` con FKs, `CHECK`, índices y rollback de referencia;
+  `user_version` 5. Conserva mundos, tipos, actividad y assets, con prueba de
+  preservación desde `0003`.
+- Pruebas de fichas (#74): unitarias de descripción, esquemas y handlers;
+  integración de CRUD, validación, referencias, etiquetas, favoritos, galería,
+  filtros, aislamiento y preservación; componentes de tarjeta y creación; E2E de
+  flujo completo, teclado, ventana 1024/1280/1600 y axe en ambos temas.
+- Dependencias del editor (#74): `@tiptap/react`, `@tiptap/starter-kit`,
+  `@tiptap/extension-link` y `@tiptap/pm` 3.34.0, todas MIT y justificadas por
+  el ADR 0007; se añade su aviso de licencia.
 
 ### Cambiado
 

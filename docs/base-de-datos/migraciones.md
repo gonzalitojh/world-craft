@@ -1,8 +1,8 @@
 # Migraciones de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M1-02 (#73): tabla `entity_types`, seed de los 18 tipos del
-> sistema y rollback de referencia.
+> 20/11/2026 con M1-03 (#74): tablas `entities`, `tags`, `entity_tags` y
+> `entity_gallery`, con rollback de referencia y `user_version` 5.
 > **Ámbito:** creación, aplicación, verificación y reversión de migraciones
 > SQLite. El esquema vigente está en [`esquema.md`](esquema.md).
 
@@ -45,8 +45,10 @@ migración `0001_assets` (M0-06, #66) crea la tabla `assets`. La migración
 `0002_worlds` (M1-01, #72) crea `worlds` y `activity_log` con sus índices,
 `CHECK` y claves foráneas. La migración `0003_entity_types` (M1-02, #73) crea
 `entity_types`, siembra los 18 tipos del sistema con IDs estables y deja el
-`user_version` en 4. El resto de tablas de contenido llega en M1 con
-migraciones `0004` y siguientes.
+`user_version` en 4. La migración `0004_entities` (M1-03, #74) crea `entities`,
+`tags`, `entity_tags` y `entity_gallery`, con FKs a `worlds`, `entity_types` y
+`assets`, y deja `user_version` en 5. El resto de tablas de contenido llega en
+M1 con migraciones `0005` y siguientes.
 
 ## 3. Flujo de una migración
 
@@ -168,6 +170,7 @@ drizzle/
   0001_assets.sql
   0002_worlds.sql
   0003_entity_types.sql
+  0004_entities.sql
   meta/
     _journal.json
   rollback/
@@ -175,15 +178,17 @@ drizzle/
     0001_assets.down.sql
     0002_worlds.down.sql
     0003_entity_types.down.sql
+    0004_entities.down.sql
 ```
 
 - Cuatro dígitos, secuencia sin huecos y etiqueta en `snake_case` e inglés.
 - Una migración por cambio coherente; no mezclar dominios no relacionados.
 - El journal y las instantáneas de `drizzle/meta/` se versionan.
 - `0000_init` crea solo las tablas del sistema, `0001_assets` la tabla `assets`,
-  `0002_worlds` los mundos y su actividad y `0003_entity_types` los tipos de
-  entidad con su seed. Las siguientes (`0004` en adelante) son previstas para
-  M1 y no se reservan nombres de antemano.
+  `0002_worlds` los mundos y su actividad, `0003_entity_types` los tipos de
+  entidad con su seed y `0004_entities` las fichas, etiquetas y galería. Las
+  siguientes (`0005` en adelante) son previstas para M1 y no se reservan nombres
+  de antemano.
 - `0002_worlds` crea `worlds` antes que `activity_log` para que la clave foránea
   de la actividad siempre encuentre su tabla. Su rollback deshace primero
   `activity_log`, después `worlds` y deja `user_version` en 2.
@@ -193,6 +198,11 @@ drizzle/
   `src/shared/entity-types/catalog.ts` y una prueba de integración lo comprueba.
   Su rollback elimina la tabla, sus índices y la fila de `schema_migrations`, y
   deja `user_version` en 3. La vía segura sigue siendo restaurar la copia previa.
+- `0004_entities` crea `entities`, `tags`, `entity_tags` y `entity_gallery` con
+  FKs a `worlds`, `entity_types` y `assets`, checks de estado y JSON, e índices
+  por mundo. Su rollback elimina solo esas tablas, sus índices y la fila de
+  `schema_migrations`, y deja `user_version` en 4. Debe ejecutarse antes del
+  rollback de `0003` porque las fichas referencian `entity_types`.
 
 ## 5. Pruebas
 
@@ -201,14 +211,15 @@ drizzle/
 | `journal` | Journal válido, secuencia sin huecos, etiquetas sin traversal y checksum normalizado. | Implementada (unitaria) |
 | `migrations` | Una base vacía llega a la última versión sin errores y es idempotente al reabrir. | Implementada (integración) |
 | `upgrade-0001` | Una base en `0000` migra a `0001_assets` conservando `app_settings` y creando `assets`, con `user_version` 2. | Implementada (integración) |
-| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log` y `entity_types`, con `user_version` 4. | Implementada (integración) |
-| `upgrade-0003` | Una base en `0002` con mundos y actividad migra a `0003` sin perder filas y con los 18 tipos del sistema. | Implementada (integración) |
+| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags` y `entity_gallery`, con `user_version` 5. | Implementada (integración) |
+| `upgrade-0003` | Una base en `0002` con mundos y actividad migra a `0003` y `0004` sin perder filas y con los 18 tipos del sistema. | Implementada (integración) |
+| `upgrade-0004` | Una base en `0003` con mundos y tipos personalizados migra a `0004` sin perder filas y crea las tablas de fichas, etiquetas y galería. | Implementada (integración) |
 | `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo. | Implementada (integración) |
 | `backup` | Copia previa con manifiesto, tamaño, SHA-256 e integridad; fallo de copia no migra. | Implementada (integración) |
 | `integrity` | `PRAGMA integrity_check` detecta corrupción y el arranque no escribe. | Implementada (integración) |
 | `foreign-db` | Una base con tablas propias sin `schema_migrations` se rechaza. | Implementada (integración) |
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
-| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0003_entity_types` deja `user_version` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
+| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0004_entities` deja `user_version` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
 | `backup-schedule` | Copias diaria, semanal y mensual al arrancar, sin duplicar el bucket, y rotación 7/4/12/5 sin podar pre-restore. | Implementada (unitaria e integración) |
 | `backup-restore` | Restauración verificada con copia pre-restore, rechazo de copia corrupta o futura, rollback y assets intactos. | Implementada (integración) |

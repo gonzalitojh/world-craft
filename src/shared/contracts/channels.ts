@@ -30,6 +30,16 @@ export const IPC_CHANNELS = {
   entityTypesUpdate: 'entityTypes:update',
   entityTypesDuplicate: 'entityTypes:duplicate',
   entityTypesRemove: 'entityTypes:remove',
+  entitiesList: 'entities:list',
+  entitiesGet: 'entities:get',
+  entitiesCreate: 'entities:create',
+  entitiesUpdate: 'entities:update',
+  entitiesSetFavorite: 'entities:setFavorite',
+  entitiesRemove: 'entities:remove',
+  tagsList: 'tags:list',
+  tagsCreate: 'tags:create',
+  assetsList: 'assets:list',
+  assetsImport: 'assets:import',
 } as const;
 
 /** Unión de todos los canales admitidos. */

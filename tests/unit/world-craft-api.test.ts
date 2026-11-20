@@ -75,6 +75,9 @@ describe('world-craft-api', () => {
       'updates',
       'worlds',
       'entityTypes',
+      'entities',
+      'tags',
+      'assets',
     ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
     expect(Object.keys(api.updates)).toEqual([
@@ -107,6 +110,9 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.updates)).toBe(true);
     expect(Object.isFrozen(api.worlds)).toBe(true);
     expect(Object.isFrozen(api.entityTypes)).toBe(true);
+    expect(Object.isFrozen(api.entities)).toBe(true);
+    expect(Object.isFrozen(api.tags)).toBe(true);
+    expect(Object.isFrozen(api.assets)).toBe(true);
 
     expect(() => {
       (api.appInfo as { version: string }).version = '9.9.9';
