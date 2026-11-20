@@ -13,6 +13,16 @@ import {
   type EntitySummary,
   type EntityTag,
 } from '../../shared/contracts/entities';
+import {
+  relationForwardLabel,
+  type RelationCreateInput,
+  type RelationEdge,
+  type RelationType,
+  type RelationTypeCreateInput,
+  type RelationTypeRemoveInput,
+  type RelationTypeUpdateInput,
+  type RelationUpdateInput,
+} from '../../shared/contracts/relations';
 import type { AssetSummary } from '../../shared/contracts/assets';
 import type { WorldDetail } from '../../shared/contracts/worlds';
 import type {
@@ -32,7 +42,10 @@ import { TextAreaField } from '../components/text-area-field';
 import { TextField } from '../components/text-field';
 import { EntityAttributesFields } from '../components/entities/entity-attributes-fields';
 import { EntityDescriptionEditor } from '../components/entities/entity-description-editor';
+import { EntityRelationDialog } from '../components/entities/entity-relation-dialog';
+import { EntityRelationsPanel } from '../components/entities/entity-relations-panel';
 import { EntityTagDialog } from '../components/entities/entity-tag-dialog';
+import { RelationTypeManager } from '../components/entities/relation-type-manager';
 import { TypeIcon } from '../components/entities/type-icon';
 import { useI18n } from '../i18n/provider';
 import { assetUrl } from '../lib/asset-url';
@@ -92,6 +105,23 @@ export function EntityDetailPage({
   const [mainPickerOpen, setMainPickerOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
   const [tagKey, setTagKey] = useState(0);
+  const [relationTypes, setRelationTypes] = useState<readonly RelationType[]>(
+    [],
+  );
+  const [relationTypesState, setRelationTypesState] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
+  const [relations, setRelations] = useState<readonly RelationEdge[]>([]);
+  const [relationState, setRelationState] = useState<
+    'loading' | 'ready' | 'error'
+  >('loading');
+  const [relationPending, setRelationPending] = useState(false);
+  const [relationDialog, setRelationDialog] = useState<{
+    readonly mode: 'create' | 'edit';
+    readonly relation: RelationEdge | null;
+  } | null>(null);
+  const [relationTypesOpen, setRelationTypesOpen] = useState(false);
+  const [relationReloadToken, setRelationReloadToken] = useState(0);
 
   const draftRef = useRef<Draft | null>(null);
   const typeRef = useRef<EntityTypeSummary | null>(null);
@@ -235,31 +265,58 @@ export function EntityDetailPage({
       window.worldCraft.tags.list(world.id),
       window.worldCraft.assets.list(world.id),
       window.worldCraft.entities.list({ worldId: world.id }),
-    ]).then(([detail, typeList, tagList, assetList, entityList]) => {
-      if (request !== requestRef.current) {
-        return;
-      }
+      window.worldCraft.relationTypes.list(world.id),
+      window.worldCraft.relations.list({
+        worldId: world.id,
+        filter: { entityId },
+      }),
+    ]).then(
+      ([
+        detail,
+        typeList,
+        tagList,
+        assetList,
+        entityList,
+        relationTypeList,
+        relationList,
+      ]) => {
+        if (request !== requestRef.current) {
+          return;
+        }
 
-      if (detail.ok && detail.data !== null) {
-        setEntity(detail.data);
-        setDraft(toDraft(detail.data));
-        skipAutosave.current = true;
-        setSaveState('saved');
-        setState('ready');
-      } else {
-        setState('error');
-      }
+        if (detail.ok && detail.data !== null) {
+          setEntity(detail.data);
+          setDraft(toDraft(detail.data));
+          skipAutosave.current = true;
+          setSaveState('saved');
+          setState('ready');
+        } else {
+          setState('error');
+        }
 
-      if (typeList.ok) setTypes(typeList.data);
-      if (tagList.ok) setTags(tagList.data);
-      if (assetList.ok) setAssets(assetList.data);
-      if (entityList.ok) {
-        setCandidates(
-          entityList.data.filter((candidate) => candidate.id !== entityId),
-        );
-      }
-    });
-  }, [entityId, reloadToken, world.id]);
+        if (typeList.ok) setTypes(typeList.data);
+        if (tagList.ok) setTags(tagList.data);
+        if (assetList.ok) setAssets(assetList.data);
+        if (entityList.ok) {
+          setCandidates(
+            entityList.data.filter((candidate) => candidate.id !== entityId),
+          );
+        }
+        if (relationTypeList.ok) {
+          setRelationTypes(relationTypeList.data);
+          setRelationTypesState('ready');
+        } else {
+          setRelationTypesState('error');
+        }
+        if (relationList.ok) {
+          setRelations(relationList.data);
+          setRelationState('ready');
+        } else {
+          setRelationState('error');
+        }
+      },
+    );
+  }, [entityId, reloadToken, relationReloadToken, world.id]);
 
   useEffect(() => {
     draftRef.current = draft;
@@ -401,6 +458,165 @@ export function EntityDetailPage({
     onNotify('success', messages.entities.tags.created(result.data.name));
     setTagOpen(false);
     return result.data;
+  };
+
+  const submitRelation = async (
+    input: RelationCreateInput | RelationUpdateInput,
+  ): Promise<boolean> => {
+    if (relationPending) {
+      return false;
+    }
+
+    setRelationPending(true);
+
+    if ('id' in input) {
+      const result = await window.worldCraft.relations.update(input);
+      setRelationPending(false);
+
+      if (!result.ok || result.data === null) {
+        onNotify('error', messages.entities.relations.error);
+        return false;
+      }
+
+      const updated = result.data;
+
+      setRelations((current) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry)),
+      );
+      setRelationDialog(null);
+      onNotify('success', messages.entities.relations.updated);
+      return true;
+    }
+
+    const result = await window.worldCraft.relations.create(input);
+    setRelationPending(false);
+
+    if (!result.ok) {
+      onNotify('error', messages.entities.relations.error);
+      return false;
+    }
+
+    setRelations((current) => [result.data, ...current]);
+    setRelationDialog(null);
+    onNotify(
+      'success',
+      messages.entities.relations.created(
+        relationForwardLabel(result.data),
+        result.data.target.name,
+      ),
+    );
+    return true;
+  };
+
+  const removeRelation = async (relation: RelationEdge): Promise<boolean> => {
+    if (relationPending) {
+      return false;
+    }
+
+    setRelationPending(true);
+    const result = await window.worldCraft.relations.remove({
+      worldId: world.id,
+      id: relation.id,
+    });
+    setRelationPending(false);
+
+    if (!result.ok || !result.data.deleted) {
+      onNotify('error', messages.entities.relations.deleteError);
+      return false;
+    }
+
+    setRelations((current) =>
+      current.filter((entry) => entry.id !== relation.id),
+    );
+    onNotify('success', messages.entities.relations.removed);
+    return true;
+  };
+
+  const createRelationType = async (
+    input: RelationTypeCreateInput,
+  ): Promise<RelationType | null> => {
+    if (relationPending) {
+      return null;
+    }
+
+    setRelationPending(true);
+    const result = await window.worldCraft.relationTypes.create(input);
+    setRelationPending(false);
+
+    if (!result.ok) {
+      return null;
+    }
+
+    setRelationTypes((current) => [...current, result.data]);
+    onNotify(
+      'success',
+      messages.entities.relations.types.created(result.data.name),
+    );
+    return result.data;
+  };
+
+  const updateRelationType = async (
+    input: RelationTypeUpdateInput,
+  ): Promise<RelationType | null> => {
+    if (relationPending) {
+      return null;
+    }
+
+    setRelationPending(true);
+    const result = await window.worldCraft.relationTypes.update(input);
+    setRelationPending(false);
+
+    if (!result.ok || result.data === null) {
+      return null;
+    }
+
+    const updated = result.data;
+
+    setRelationTypes((current) =>
+      current.map((entry) => (entry.id === updated.id ? updated : entry)),
+    );
+    setRelations((current) =>
+      current.map((entry) =>
+        entry.typeId === updated.id
+          ? {
+              ...entry,
+              typeName: updated.name,
+              typeInverseName: updated.inverseName,
+              typeColor: updated.color,
+            }
+          : entry,
+      ),
+    );
+    onNotify(
+      'success',
+      messages.entities.relations.types.updated(updated.name),
+    );
+    return updated;
+  };
+
+  const removeRelationType = async (
+    input: RelationTypeRemoveInput,
+  ): Promise<boolean> => {
+    if (relationPending) {
+      return false;
+    }
+
+    setRelationPending(true);
+    const result = await window.worldCraft.relationTypes.remove(input);
+    setRelationPending(false);
+
+    if (!result.ok || !result.data.deleted) {
+      return false;
+    }
+
+    const removedName =
+      relationTypes.find((entry) => entry.id === input.id)?.name ?? '';
+
+    setRelationTypes((current) =>
+      current.filter((entry) => entry.id !== input.id),
+    );
+    onNotify('success', messages.entities.relations.types.removed(removedName));
+    return true;
   };
 
   const deleteEntity = async (): Promise<void> => {
@@ -638,6 +854,30 @@ export function EntityDetailPage({
               }}
             />
           </section>
+
+          <EntityRelationsPanel
+            entityId={entityId}
+            relations={relations}
+            types={relationTypes}
+            candidates={candidates}
+            state={relationState}
+            pending={relationPending}
+            onAdd={() => {
+              setRelationDialog({ mode: 'create', relation: null });
+            }}
+            onEdit={(relation) => {
+              setRelationDialog({ mode: 'edit', relation });
+            }}
+            onRemove={removeRelation}
+            onManageTypes={() => {
+              setRelationTypesOpen(true);
+            }}
+            onOpenEntity={onOpenEntity}
+            onRetry={() => {
+              setRelationState('loading');
+              setRelationReloadToken((current) => current + 1);
+            }}
+          />
 
           <div className="wc-entity-save">
             <Button
@@ -922,6 +1162,43 @@ export function EntityDetailPage({
         }}
         onCreate={createTag}
       />
+
+      {relationDialog !== null ? (
+        <EntityRelationDialog
+          open
+          mode={relationDialog.mode}
+          worldId={world.id}
+          entityId={entityId}
+          relation={relationDialog.relation}
+          types={relationTypes}
+          candidates={candidates}
+          pending={relationPending}
+          onClose={() => {
+            setRelationDialog(null);
+          }}
+          onSubmit={submitRelation}
+        />
+      ) : null}
+
+      {relationTypesOpen ? (
+        <RelationTypeManager
+          open
+          worldId={world.id}
+          types={relationTypes}
+          state={relationTypesState}
+          pending={relationPending}
+          onClose={() => {
+            setRelationTypesOpen(false);
+          }}
+          onRetry={() => {
+            setRelationTypesState('loading');
+            setRelationReloadToken((current) => current + 1);
+          }}
+          onCreate={createRelationType}
+          onUpdate={updateRelationType}
+          onRemove={removeRelationType}
+        />
+      ) : null}
 
       <Dialog
         open={deleteOpen}

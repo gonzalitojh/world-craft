@@ -86,14 +86,16 @@ campos, insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
 La aplicación crea y comprueba su base de datos local, guarda copias automáticas,
 sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
 La comprobación de actualizaciones es **manual y cancelable**; no se ejecuta sola.
+Los datos se quedan en este equipo, en una carpeta propia que sobrevive a las
+actualizaciones de la aplicación.
 Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, y el
 dashboard muestra tus mundos, la actividad reciente y su preparación. Dentro de
 cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción,
-imágenes, etiquetas y favoritos. Todavía no hay mapas, manuscritos, ajustes ni
-papelera visible, y la portada del mundo y la descripción enriquecida del mundo
-llegarán en actualizaciones posteriores. **No hay una release pública**: el
-instalador se genera y se prueba en local, y la publicación oficial llegará con
-M5.
+imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. Todavía
+no hay ventana de grafo, mapas, manuscritos, ajustes ni papelera visible, y la
+portada del mundo y la descripción enriquecida del mundo llegarán en
+actualizaciones posteriores. **No hay una release pública**: el instalador se
+genera y se prueba en local, y la publicación oficial llegará con M5.
 
 ## 3. La ventana
 
@@ -379,14 +381,61 @@ personalizados de ese mundo.
   entrega. Hasta entonces, las copias de seguridad siguen siendo la red de
   seguridad (sección 12).
 
-## 6. Relaciones y grafo (previsto)
+## 6. Relaciones y grafo
 
-- **Relaciones:** conecta dos fichas con un tipo («aliado de», «vive en»,
-  «posee»). Cada relación puede tener nota e intensidad.
-- **Grafo:** visualiza las relaciones como un mapa de nodos.
-- **Filtros:** muestra solo ciertos tipos o etiquetas.
-- **Encuadre:** acerca, aleja y centra el grafo.
-- **Abrir ficha:** haz doble clic en un nodo para abrir su ficha.
+### 6.1 Relacionar fichas
+
+Una relación une dos fichas del mismo mundo y se lee desde las dos. Por ejemplo,
+«Mara Viento» puede ser **aliada de** «Puerto Sal», y en la ficha de Puerto Sal
+la misma relación aparece como **tiene como aliado a** Mara Viento.
+
+1. Abre una ficha y baja hasta la sección **Relaciones**.
+2. Pulsa **Añadir relación**.
+3. Elige el **tipo de relación** y la **ficha de destino**. Puedes buscar por
+   nombre o alias.
+4. Ajusta si quieres la **etiqueta directa**, la **etiqueta inversa**, la
+   **fuerza** de 1 a 5 y las **notas**. Si dejas las etiquetas vacías se usan las
+   del tipo.
+5. Pulsa **Crear relación**.
+
+Las relaciones de la ficha actual se muestran en **Desde esta ficha** con la
+etiqueta directa. En **Backlinks** aparecen las fichas que apuntan a esta, con la
+etiqueta inversa. En ambos casos puedes pulsar el nombre de la otra ficha para
+abrirla.
+
+### 6.2 Editar y eliminar relaciones
+
+- **Editar** permite cambiar el tipo, las etiquetas, las notas y la fuerza. El
+  origen y el destino no cambian; para invertirlos, crea la relación desde la
+  otra ficha.
+- **Eliminar** pide confirmación y quita la relación de las dos fichas. Las
+  fichas y sus datos no se borran.
+- No se permiten relaciones de una ficha consigo misma ni relaciones repetidas.
+  En los tipos simétricos, como «Relacionado con», tampoco se permite la misma
+  relación en el sentido contrario.
+- Solo se pueden relacionar fichas del mismo mundo. Las fichas que están en la
+  papelera no se ofrecen como origen ni como destino.
+
+### 6.3 Tipos de relación
+
+El botón **Tipos de relación** abre el gestor:
+
+- Los 18 tipos del sistema (relacionado con, aliado de, enemigo de, progenitor
+  de, hermano de, cónyuge de, miembro de, dirige, ubicado en, parte de, posee,
+  creó, participó en, adora a, causó, protege a, sirve a y conoce a) no se
+  editan ni se borran.
+- Puedes **crear tipos propios** con una etiqueta directa, una inversa y un
+  color. Por ejemplo, «Mentor de» / «Aprendiz de».
+- Un tipo personalizado se puede **editar** y **borrar** mientras no tenga
+  relaciones. Si está en uso, elimina antes esas relaciones.
+- El color nunca es el único indicador: siempre acompaña a la etiqueta.
+
+### 6.4 Grafo (previsto)
+
+La vista de grafo llegará en una etapa posterior. Mostrará las relaciones como
+un mapa de nodos, con zoom, filtros por tipo o etiqueta, encuadre y apertura de
+la ficha al seleccionar un nodo. Las relaciones que crees ahora se conservarán y
+aparecerán en esa vista.
 
 ## 7. Mapas (previsto)
 
@@ -671,7 +720,8 @@ las funciones correspondientes.
 | Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); papelera visible y restauración con #77 |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
-| Relaciones y grafo | Prevista |
+| Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); los metadatos quedan en la API |
+| Grafo | Previsto |
 | Mapas | Prevista |
 | Escritura | Prevista |
 | Juego | Prevista |

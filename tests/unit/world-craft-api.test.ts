@@ -77,6 +77,8 @@ describe('world-craft-api', () => {
       'entityTypes',
       'entities',
       'tags',
+      'relationTypes',
+      'relations',
       'assets',
     ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
@@ -112,6 +114,8 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.entityTypes)).toBe(true);
     expect(Object.isFrozen(api.entities)).toBe(true);
     expect(Object.isFrozen(api.tags)).toBe(true);
+    expect(Object.isFrozen(api.relationTypes)).toBe(true);
+    expect(Object.isFrozen(api.relations)).toBe(true);
     expect(Object.isFrozen(api.assets)).toBe(true);
 
     expect(() => {

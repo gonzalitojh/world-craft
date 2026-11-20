@@ -1,13 +1,15 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con la issue M1-03 (#74). La migración `0000_init` y las tablas
-> `schema_migrations` y `app_settings` están implementadas en M0-04 (#64); la
-> tabla `assets` en `0001_assets` (M0-06, #66); `worlds` y `activity_log` en
-> `0002_worlds` (M1-01, #72); `entity_types` en `0003_entity_types` (M1-02,
-> #73); y `entities`, `tags`, `entity_tags` y `entity_gallery` en
-> `0004_entities` (M1-03, #74). El resto de tablas de contenido y FTS5 llegan
-> en M1 con sus propias migraciones; hasta entonces figuran como previstas.
+> 20/11/2026 con las issues M1-03 (#74) y M1-04 (#75). La migración
+> `0000_init` y las tablas `schema_migrations` y `app_settings` están
+> implementadas en M0-04 (#64); la tabla `assets` en `0001_assets` (M0-06, #66);
+> `worlds` y `activity_log` en `0002_worlds` (M1-01, #72); `entity_types` en
+> `0003_entity_types` (M1-02, #73); `entities`, `tags`, `entity_tags` y
+> `entity_gallery` en `0004_entities` (M1-03, #74); y `relation_types` y
+> `relations` en `0005_relations` (M1-04, #75). El resto de tablas de contenido y
+> FTS5 llegan en M1 con sus propias migraciones; hasta entonces figuran como
+> previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -294,6 +296,8 @@ principal, pero el modelo no obliga a que esté allí.
 
 ### 4.4 `relation_types`
 
+**Implementada en `0005_relations` (M1-04, #75).**
+
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | TEXT | PK | UUIDv7. |
@@ -303,11 +307,20 @@ principal, pero el modelo no obliga a que esté allí.
 | `inverse_name` | TEXT | NOT NULL | Nombre inverso. |
 | `color` | TEXT | NOT NULL | Token de color. |
 | `is_system` | INTEGER | NOT NULL DEFAULT 0 | Tipo del sistema. |
+| `created_at` | INTEGER | NOT NULL | Creación. |
+| `updated_at` | INTEGER | NOT NULL | Actualización. |
 
 Índices: `relation_types_world_key_uq (world_id, key)`,
-`relation_types_system_key_uq (key) WHERE world_id IS NULL`.
+`relation_types_system_key_uq (key) WHERE world_id IS NULL` y
+`relation_types_world_idx (world_id, name)`.
+
+Reglas: `world_id` nulo exige `is_system = 1` y viceversa; la clave solo admite
+minúsculas, números y guiones simples. Los 18 tipos del sistema se siembran con
+IDs UUIDv7 fijos que coinciden con `src/shared/relations/catalog.ts`.
 
 ### 4.5 `relations`
+
+**Implementada en `0005_relations` (M1-04, #75).**
 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
@@ -328,7 +341,11 @@ principal, pero el modelo no obliga a que esté allí.
 `relations_world_target_idx (world_id, target_id)`,
 `relations_type_idx (type_id)`, `relations_unique (world_id, source_id, target_id, type_id)`.
 
-Regla: `source_id <> target_id` con `CHECK`.
+Regla: `source_id <> target_id` con `CHECK`; `metadata` debe ser un objeto JSON
+válido. La etiqueta efectiva es `label ?? name` del tipo y la inversa
+`inverse_label ?? inverse_name`; no se guardan dos filas por relación. El origen,
+el destino y el tipo se validan en el servicio contra el mismo mundo y contra las
+fichas vivas.
 
 ### 4.6 `tags` y `entity_tags`
 

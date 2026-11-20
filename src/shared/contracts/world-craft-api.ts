@@ -49,6 +49,25 @@ import {
 } from './entity-types';
 import { ipcErr, isIpcResult, type IpcResult } from './result';
 import {
+  isRelationDeleteResult,
+  isRelationEdge,
+  isRelationEdgeList,
+  isRelationType,
+  isRelationTypeDeleteResult,
+  isRelationTypeList,
+  type RelationCreateInput,
+  type RelationDeleteInput,
+  type RelationEdge,
+  type RelationListInput,
+  type RelationType,
+  type RelationTypeCreateInput,
+  type RelationTypeRemoveInput,
+  type RelationTypeUpdateInput,
+  type RelationUpdateInput,
+  type WorldCraftRelationsApi,
+  type WorldCraftRelationTypesApi,
+} from './relations';
+import {
   isUpdateSnapshot,
   UPDATE_STATE_CHANGED_CHANNEL,
   type UpdateSnapshot,
@@ -135,6 +154,8 @@ export interface WorldCraftApi {
   readonly entityTypes: WorldCraftEntityTypesApi;
   readonly entities: WorldCraftEntitiesApi;
   readonly tags: WorldCraftTagsApi;
+  readonly relationTypes: WorldCraftRelationTypesApi;
+  readonly relations: WorldCraftRelationsApi;
   readonly assets: WorldCraftAssetsApi;
 }
 
@@ -234,6 +255,14 @@ function isNullableEntityTypeSummary(
 
 function isNullableEntityDetail(value: unknown): value is EntityDetail | null {
   return value === null || isEntityDetail(value);
+}
+
+function isNullableRelationType(value: unknown): value is RelationType | null {
+  return value === null || isRelationType(value);
+}
+
+function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
+  return value === null || isRelationEdge(value);
 }
 
 /**
@@ -440,6 +469,52 @@ export function createWorldCraftApi(
       invokeWorldCommand(IPC_CHANNELS.assetsImport, input, isAssetImportResult),
   });
 
+  const relationTypes: WorldCraftRelationTypesApi = Object.freeze({
+    list: (worldId: string) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.relationTypesList,
+        { worldId },
+        isRelationTypeList,
+      ),
+    create: (input: RelationTypeCreateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.relationTypesCreate,
+        input,
+        isRelationType,
+      ),
+    update: (input: RelationTypeUpdateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.relationTypesUpdate,
+        input,
+        isNullableRelationType,
+      ),
+    remove: (input: RelationTypeRemoveInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.relationTypesRemove,
+        input,
+        isRelationTypeDeleteResult,
+      ),
+  });
+
+  const relations: WorldCraftRelationsApi = Object.freeze({
+    list: (input: RelationListInput) =>
+      invokeWorldCommand(IPC_CHANNELS.relationsList, input, isRelationEdgeList),
+    create: (input: RelationCreateInput) =>
+      invokeWorldCommand(IPC_CHANNELS.relationsCreate, input, isRelationEdge),
+    update: (input: RelationUpdateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.relationsUpdate,
+        input,
+        isNullableRelationEdge,
+      ),
+    remove: (input: RelationDeleteInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.relationsRemove,
+        input,
+        isRelationDeleteResult,
+      ),
+  });
+
   return Object.freeze({
     appInfo,
     shell,
@@ -448,6 +523,8 @@ export function createWorldCraftApi(
     entityTypes,
     entities,
     tags,
+    relationTypes,
+    relations,
     assets,
   });
 }

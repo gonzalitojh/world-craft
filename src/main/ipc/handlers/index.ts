@@ -8,12 +8,14 @@ import { IPC_CHANNELS } from '../../../shared/contracts/channels';
 import type { AssetsService } from '../../assets/service';
 import type { EntitiesService } from '../../entities/service';
 import type { EntityTypesService } from '../../entity-types/service';
+import type { RelationsService } from '../../relations/service';
 import type { UpdatesService } from '../../updates/service';
 import type { WorldsService } from '../../worlds/service';
 import type { IpcHandlers } from '../registry';
 import { createAssetIpcHandlers } from './assets';
 import { createEntityIpcHandlers } from './entities';
 import { createEntityTypeIpcHandlers } from './entity-types';
+import { createRelationIpcHandlers } from './relations';
 import { createShellOpenExternalHandler } from './shell';
 import { createUpdateIpcHandlers } from './updates';
 import { createWorldIpcHandlers } from './worlds';
@@ -25,6 +27,7 @@ export interface IpcDependencies {
   readonly worlds: WorldsService;
   readonly entityTypes: EntityTypesService;
   readonly entities: EntitiesService;
+  readonly relations: RelationsService;
   readonly assets: AssetsService;
   readonly pickImages: () => Promise<readonly string[]>;
 }
@@ -38,6 +41,7 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
     ...createWorldIpcHandlers(dependencies.worlds),
     ...createEntityTypeIpcHandlers(dependencies.entityTypes),
     ...createEntityIpcHandlers(dependencies.entities),
+    ...createRelationIpcHandlers(dependencies.relations),
     ...createAssetIpcHandlers({
       service: dependencies.assets,
       pickImages: dependencies.pickImages,

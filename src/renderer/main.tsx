@@ -10,6 +10,7 @@ import './styles/tokens/semantic.css';
 import './styles/tokens/scales.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/relations.css';
 
 const container = document.getElementById('root');
 

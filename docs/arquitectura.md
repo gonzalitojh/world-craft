@@ -58,7 +58,8 @@ distinguen lo implementado de lo previsto.
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
 | Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; gestión visual con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
-| Pruebas y calidad | Implementado: 352 unitarias (4 omitidas), 22 de componentes y 118 de integración (1 omitida) (#62-#74); E2E de shell, ventana, temas, axe, mundos y fichas (#70, #72, #74) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
+| Pruebas y calidad | Implementado: 371 unitarias (4 omitidas), 25 de componentes y 126 de integración (1 omitida) (#62-#75); E2E de shell, ventana, temas, axe, mundos y fichas/relaciones (#70, #72, #74, #75) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -460,6 +461,34 @@ Reglas de dependencia:
   búsqueda global con #76; la exportación completa con #78. El tipo de una ficha
   no cambia después de crearla.
 
+### 2.11 Estado implementado de las relaciones (#75)
+
+- **Datos.** La migración `0005_relations` crea `relation_types` y `relations`
+  con FKs a `worlds`, `entities` y `relation_types`, índices por mundo, origen,
+  destino y tipo, y `CHECK` de autorreferencia, fuerza 1–5, etiquetas, notas y
+  JSON de metadatos. `user_version` pasa a 6 y el rollback de referencia elimina
+  solo estas tablas.
+- **Catálogo.** `src/shared/relations/catalog.ts` define los 18 tipos del
+  sistema con IDs UUIDv7 fijos, clave estable, etiqueta directa, etiqueta
+  inversa y token de color. Una prueba compara el catálogo con el seed.
+- **Dominio.** `src/main/relations/` no importa Electron: resuelve etiquetas
+  efectivas, valida origen, destino y tipo contra el mismo mundo y las fichas
+  vivas, rechaza autorreferencias, duplicados exactos y el duplicado invertido
+  de tipos simétricos, protege los tipos del sistema y bloquea el borrado de
+  tipos personalizados en uso. Las aristas con fichas en papelera se ocultan,
+  no se destruyen.
+- **IPC.** Canales `relationTypes:list`, `create`, `update` y `remove`, y
+  `relations:list`, `create`, `update` y `remove`, con esquemas Zod estrictos y
+  guardas en el preload. En modo seguro se registra un servicio no disponible.
+- **API del grafo.** `relations:list` devuelve aristas con origen, destino y
+  tipo resueltos y filtros por ficha y tipo; la ficha consume la misma API con
+  `entityId` y M2-04 podrá pedir el mundo completo.
+- **Interfaz.** La ficha muestra relaciones salientes y backlinks con la
+  etiqueta que corresponde a cada lado. Cada arista permite navegar, editar y
+  eliminar con confirmación; un gestor administra los tipos personalizados.
+- **Exportación.** El modelo usa IDs y claves estables; #78 compondrá las
+  relaciones en el ZIP del mundo.
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -621,8 +650,9 @@ las copias manuales siguen previstas para M1.
   `app_settings`; `0001_assets` crea `assets`; `0002_worlds` crea `worlds` y
   `activity_log`; `0003_entity_types` crea `entity_types` y siembra los tipos
   del sistema; `0004_entities` crea `entities`, `tags`, `entity_tags` y
-  `entity_gallery`. `PRAGMA user_version` guarda el número de migraciones
-  aplicadas (hoy 5).
+  `entity_gallery`; `0005_relations` crea `relation_types` y `relations` y
+  siembra los tipos de relación del sistema. `PRAGMA user_version` guarda el
+  número de migraciones aplicadas (hoy 6).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
   `monthly` (12), `pre-migration` (5) y `pre-restore` (sin poda). Cada copia
   lleva `manifest.json` v2, SHA-256 e integridad; solo contiene SQLite, no

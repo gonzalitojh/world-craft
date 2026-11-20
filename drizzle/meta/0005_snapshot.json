@@ -1,0 +1,1442 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "f2ac616a-4731-4da3-9438-6020faea0cb0",
+  "prevId": "a8bad98c-167d-46f0-a729-0157bc9a7cb9",
+  "tables": {
+    "activity_log": {
+      "name": "activity_log",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "diff": {
+          "name": "diff",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'{}'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "activity_log_world_created_idx": {
+          "name": "activity_log_world_created_idx",
+          "columns": [
+            "world_id",
+            "\"created_at\" desc"
+          ],
+          "isUnique": false
+        },
+        "activity_log_created_idx": {
+          "name": "activity_log_created_idx",
+          "columns": [
+            "\"created_at\" desc"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "activity_log_world_id_worlds_id_fk": {
+          "name": "activity_log_world_id_worlds_id_fk",
+          "tableFrom": "activity_log",
+          "tableTo": "worlds",
+          "columnsFrom": [
+            "world_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "app_settings": {
+      "name": "app_settings",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "assets": {
+      "name": "assets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "relative_path": {
+          "name": "relative_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mime": {
+          "name": "mime",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "alt": {
+          "name": "alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "assets_world_idx": {
+          "name": "assets_world_idx",
+          "columns": [
+            "world_id"
+          ],
+          "isUnique": false
+        },
+        "assets_hash_idx": {
+          "name": "assets_hash_idx",
+          "columns": [
+            "hash"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "assets_kind_check": {
+          "name": "assets_kind_check",
+          "value": "\"assets\".\"kind\" in ('image', 'map', 'document', 'other')"
+        },
+        "assets_size_check": {
+          "name": "assets_size_check",
+          "value": "\"assets\".\"size\" >= 0"
+        },
+        "assets_hash_check": {
+          "name": "assets_hash_check",
+          "value": "length(\"assets\".\"hash\") = 64 AND \"assets\".\"hash\" NOT GLOB '*[^0-9a-f]*'"
+        }
+      }
+    },
+    "entities": {
+      "name": "entities",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type_id": {
+          "name": "type_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "aliases": {
+          "name": "aliases",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "description_text": {
+          "name": "description_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "image_asset_id": {
+          "name": "image_asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'{}'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'active'"
+        },
+        "is_favorite": {
+          "name": "is_favorite",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "entities_world_slug_uq": {
+          "name": "entities_world_slug_uq",
+          "columns": [
+            "world_id",
+            "slug"
+          ],
+          "isUnique": true
+        },
+        "entities_world_type_idx": {
+          "name": "entities_world_type_idx",
+          "columns": [
+            "world_id",
+            "type_id",
+            "deleted_at"
+          ],
+          "isUnique": false
+        },
+        "entities_name_idx": {
+          "name": "entities_name_idx",
+          "columns": [
+            "world_id",
+            "name"
+          ],
+          "isUnique": false
+        },
+        "entities_favorite_idx": {
+          "name": "entities_favorite_idx",
+          "columns": [
+            "world_id",
+            "is_favorite"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "entities_world_id_worlds_id_fk": {
+          "name": "entities_world_id_worlds_id_fk",
+          "tableFrom": "entities",
+          "tableTo": "worlds",
+          "columnsFrom": [
+            "world_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "entities_type_id_entity_types_id_fk": {
+          "name": "entities_type_id_entity_types_id_fk",
+          "tableFrom": "entities",
+          "tableTo": "entity_types",
+          "columnsFrom": [
+            "type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "entities_image_asset_id_assets_id_fk": {
+          "name": "entities_image_asset_id_assets_id_fk",
+          "tableFrom": "entities",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "image_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "entities_status_check": {
+          "name": "entities_status_check",
+          "value": "\"entities\".\"status\" in ('active', 'draft', 'archived')"
+        },
+        "entities_favorite_check": {
+          "name": "entities_favorite_check",
+          "value": "\"entities\".\"is_favorite\" in (0, 1)"
+        },
+        "entities_name_check": {
+          "name": "entities_name_check",
+          "value": "length(\"entities\".\"name\") between 1 and 120"
+        },
+        "entities_slug_check": {
+          "name": "entities_slug_check",
+          "value": "length(\"entities\".\"slug\") between 1 and 80 AND \"entities\".\"slug\" NOT GLOB '*[^a-z0-9-]*' AND \"entities\".\"slug\" GLOB '[a-z0-9]*' AND \"entities\".\"slug\" GLOB '*[a-z0-9]' AND \"entities\".\"slug\" NOT GLOB '*--*'"
+        },
+        "entities_aliases_check": {
+          "name": "entities_aliases_check",
+          "value": "json_valid(\"entities\".\"aliases\") AND json_type(\"entities\".\"aliases\") = 'array'"
+        },
+        "entities_attributes_check": {
+          "name": "entities_attributes_check",
+          "value": "json_valid(\"entities\".\"attributes\") AND json_type(\"entities\".\"attributes\") = 'object'"
+        },
+        "entities_description_check": {
+          "name": "entities_description_check",
+          "value": "\"entities\".\"description\" is null OR (json_valid(\"entities\".\"description\") AND json_type(\"entities\".\"description\") = 'object')"
+        }
+      }
+    },
+    "entity_gallery": {
+      "name": "entity_gallery",
+      "columns": {
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "entity_gallery_position_uq": {
+          "name": "entity_gallery_position_uq",
+          "columns": [
+            "entity_id",
+            "position"
+          ],
+          "isUnique": true
+        },
+        "entity_gallery_asset_idx": {
+          "name": "entity_gallery_asset_idx",
+          "columns": [
+            "asset_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "entity_gallery_entity_id_entities_id_fk": {
+          "name": "entity_gallery_entity_id_entities_id_fk",
+          "tableFrom": "entity_gallery",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "entity_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "entity_gallery_asset_id_assets_id_fk": {
+          "name": "entity_gallery_asset_id_assets_id_fk",
+          "tableFrom": "entity_gallery",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "entity_gallery_entity_id_asset_id_pk": {
+          "columns": [
+            "entity_id",
+            "asset_id"
+          ],
+          "name": "entity_gallery_entity_id_asset_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "entity_gallery_position_check": {
+          "name": "entity_gallery_position_check",
+          "value": "\"entity_gallery\".\"position\" >= 0"
+        }
+      }
+    },
+    "entity_tags": {
+      "name": "entity_tags",
+      "columns": {
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "entity_tags_tag_idx": {
+          "name": "entity_tags_tag_idx",
+          "columns": [
+            "tag_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "entity_tags_entity_id_entities_id_fk": {
+          "name": "entity_tags_entity_id_entities_id_fk",
+          "tableFrom": "entity_tags",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "entity_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "entity_tags_tag_id_tags_id_fk": {
+          "name": "entity_tags_tag_id_tags_id_fk",
+          "tableFrom": "entity_tags",
+          "tableTo": "tags",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "entity_tags_entity_id_tag_id_pk": {
+          "columns": [
+            "entity_id",
+            "tag_id"
+          ],
+          "name": "entity_tags_entity_id_tag_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "entity_types": {
+      "name": "entity_types",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fields": {
+          "name": "fields",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "is_system": {
+          "name": "is_system",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "entity_types_world_key_uq": {
+          "name": "entity_types_world_key_uq",
+          "columns": [
+            "world_id",
+            "key"
+          ],
+          "isUnique": true
+        },
+        "entity_types_system_key_uq": {
+          "name": "entity_types_system_key_uq",
+          "columns": [
+            "key"
+          ],
+          "isUnique": true,
+          "where": "\"entity_types\".\"world_id\" is null"
+        },
+        "entity_types_world_idx": {
+          "name": "entity_types_world_idx",
+          "columns": [
+            "world_id",
+            "deleted_at",
+            "name"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "entity_types_world_id_worlds_id_fk": {
+          "name": "entity_types_world_id_worlds_id_fk",
+          "tableFrom": "entity_types",
+          "tableTo": "worlds",
+          "columnsFrom": [
+            "world_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "entity_types_is_system_check": {
+          "name": "entity_types_is_system_check",
+          "value": "\"entity_types\".\"is_system\" in (0, 1)"
+        },
+        "entity_types_world_check": {
+          "name": "entity_types_world_check",
+          "value": "(\"entity_types\".\"world_id\" is null and \"entity_types\".\"is_system\" = 1) or (\"entity_types\".\"world_id\" is not null and \"entity_types\".\"is_system\" = 0)"
+        },
+        "entity_types_key_check": {
+          "name": "entity_types_key_check",
+          "value": "length(\"entity_types\".\"key\") between 1 and 60 AND \"entity_types\".\"key\" NOT GLOB '*[^a-z0-9-]*' AND \"entity_types\".\"key\" GLOB '[a-z0-9]*' AND \"entity_types\".\"key\" GLOB '*[a-z0-9]' AND \"entity_types\".\"key\" NOT GLOB '*--*'"
+        },
+        "entity_types_name_check": {
+          "name": "entity_types_name_check",
+          "value": "length(\"entity_types\".\"name\") between 1 and 80"
+        },
+        "entity_types_fields_check": {
+          "name": "entity_types_fields_check",
+          "value": "json_valid(\"entity_types\".\"fields\") AND json_type(\"entity_types\".\"fields\") = 'array'"
+        }
+      }
+    },
+    "relation_types": {
+      "name": "relation_types",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "inverse_name": {
+          "name": "inverse_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_system": {
+          "name": "is_system",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "relation_types_world_key_uq": {
+          "name": "relation_types_world_key_uq",
+          "columns": [
+            "world_id",
+            "key"
+          ],
+          "isUnique": true
+        },
+        "relation_types_system_key_uq": {
+          "name": "relation_types_system_key_uq",
+          "columns": [
+            "key"
+          ],
+          "isUnique": true,
+          "where": "\"relation_types\".\"world_id\" is null"
+        },
+        "relation_types_world_idx": {
+          "name": "relation_types_world_idx",
+          "columns": [
+            "world_id",
+            "name"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "relation_types_world_id_worlds_id_fk": {
+          "name": "relation_types_world_id_worlds_id_fk",
+          "tableFrom": "relation_types",
+          "tableTo": "worlds",
+          "columnsFrom": [
+            "world_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "relation_types_is_system_check": {
+          "name": "relation_types_is_system_check",
+          "value": "\"relation_types\".\"is_system\" in (0, 1)"
+        },
+        "relation_types_world_check": {
+          "name": "relation_types_world_check",
+          "value": "(\"relation_types\".\"world_id\" is null and \"relation_types\".\"is_system\" = 1) or (\"relation_types\".\"world_id\" is not null and \"relation_types\".\"is_system\" = 0)"
+        },
+        "relation_types_key_check": {
+          "name": "relation_types_key_check",
+          "value": "length(\"relation_types\".\"key\") between 1 and 60 AND \"relation_types\".\"key\" NOT GLOB '*[^a-z0-9-]*' AND \"relation_types\".\"key\" GLOB '[a-z0-9]*' AND \"relation_types\".\"key\" GLOB '*[a-z0-9]' AND \"relation_types\".\"key\" NOT GLOB '*--*'"
+        },
+        "relation_types_name_check": {
+          "name": "relation_types_name_check",
+          "value": "length(\"relation_types\".\"name\") between 1 and 80"
+        },
+        "relation_types_inverse_name_check": {
+          "name": "relation_types_inverse_name_check",
+          "value": "length(\"relation_types\".\"inverse_name\") between 1 and 80"
+        },
+        "relation_types_color_check": {
+          "name": "relation_types_color_check",
+          "value": "\"relation_types\".\"color\" in ('moss', 'ochre', 'danger', 'prussian')"
+        }
+      }
+    },
+    "relations": {
+      "name": "relations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type_id": {
+          "name": "type_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "inverse_label": {
+          "name": "inverse_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "strength": {
+          "name": "strength",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'{}'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "relations_unique": {
+          "name": "relations_unique",
+          "columns": [
+            "world_id",
+            "source_id",
+            "target_id",
+            "type_id"
+          ],
+          "isUnique": true
+        },
+        "relations_world_source_idx": {
+          "name": "relations_world_source_idx",
+          "columns": [
+            "world_id",
+            "source_id"
+          ],
+          "isUnique": false
+        },
+        "relations_world_target_idx": {
+          "name": "relations_world_target_idx",
+          "columns": [
+            "world_id",
+            "target_id"
+          ],
+          "isUnique": false
+        },
+        "relations_type_idx": {
+          "name": "relations_type_idx",
+          "columns": [
+            "type_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "relations_world_id_worlds_id_fk": {
+          "name": "relations_world_id_worlds_id_fk",
+          "tableFrom": "relations",
+          "tableTo": "worlds",
+          "columnsFrom": [
+            "world_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "relations_source_id_entities_id_fk": {
+          "name": "relations_source_id_entities_id_fk",
+          "tableFrom": "relations",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "relations_target_id_entities_id_fk": {
+          "name": "relations_target_id_entities_id_fk",
+          "tableFrom": "relations",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "target_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "relations_type_id_relation_types_id_fk": {
+          "name": "relations_type_id_relation_types_id_fk",
+          "tableFrom": "relations",
+          "tableTo": "relation_types",
+          "columnsFrom": [
+            "type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "relations_self_check": {
+          "name": "relations_self_check",
+          "value": "\"relations\".\"source_id\" <> \"relations\".\"target_id\""
+        },
+        "relations_strength_check": {
+          "name": "relations_strength_check",
+          "value": "\"relations\".\"strength\" between 1 and 5"
+        },
+        "relations_label_check": {
+          "name": "relations_label_check",
+          "value": "\"relations\".\"label\" is null or length(\"relations\".\"label\") between 1 and 80"
+        },
+        "relations_inverse_label_check": {
+          "name": "relations_inverse_label_check",
+          "value": "\"relations\".\"inverse_label\" is null or length(\"relations\".\"inverse_label\") between 1 and 80"
+        },
+        "relations_notes_check": {
+          "name": "relations_notes_check",
+          "value": "\"relations\".\"notes\" is null or length(\"relations\".\"notes\") <= 2000"
+        },
+        "relations_metadata_check": {
+          "name": "relations_metadata_check",
+          "value": "json_valid(\"relations\".\"metadata\") AND json_type(\"relations\".\"metadata\") = 'object'"
+        }
+      }
+    },
+    "schema_migrations": {
+      "name": "schema_migrations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "checksum": {
+          "name": "checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "tags": {
+      "name": "tags",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "world_id": {
+          "name": "world_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "tags_world_name_uq": {
+          "name": "tags_world_name_uq",
+          "columns": [
+            "world_id",
+            "name"
+          ],
+          "isUnique": true
+        },
+        "tags_world_idx": {
+          "name": "tags_world_idx",
+          "columns": [
+            "world_id",
+            "name"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "tags_world_id_worlds_id_fk": {
+          "name": "tags_world_id_worlds_id_fk",
+          "tableFrom": "tags",
+          "tableTo": "worlds",
+          "columnsFrom": [
+            "world_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tags_name_check": {
+          "name": "tags_name_check",
+          "value": "length(\"tags\".\"name\") between 1 and 40"
+        },
+        "tags_color_check": {
+          "name": "tags_color_check",
+          "value": "\"tags\".\"color\" in ('moss', 'ochre', 'danger', 'prussian')"
+        }
+      }
+    },
+    "worlds": {
+      "name": "worlds",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cover_asset_id": {
+          "name": "cover_asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "genres": {
+          "name": "genres",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'active'"
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'es'"
+        },
+        "settings": {
+          "name": "settings",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'{}'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "worlds_slug_uq": {
+          "name": "worlds_slug_uq",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        },
+        "worlds_status_idx": {
+          "name": "worlds_status_idx",
+          "columns": [
+            "status",
+            "deleted_at"
+          ],
+          "isUnique": false
+        },
+        "worlds_deleted_updated_idx": {
+          "name": "worlds_deleted_updated_idx",
+          "columns": [
+            "deleted_at",
+            "\"updated_at\" desc"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "worlds_cover_asset_id_assets_id_fk": {
+          "name": "worlds_cover_asset_id_assets_id_fk",
+          "tableFrom": "worlds",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "cover_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "worlds_status_check": {
+          "name": "worlds_status_check",
+          "value": "\"worlds\".\"status\" in ('active', 'archived')"
+        },
+        "worlds_language_check": {
+          "name": "worlds_language_check",
+          "value": "\"worlds\".\"language\" in ('es', 'en', 'it')"
+        },
+        "worlds_slug_check": {
+          "name": "worlds_slug_check",
+          "value": "length(\"worlds\".\"slug\") between 1 and 80 AND \"worlds\".\"slug\" NOT GLOB '*[^a-z0-9-]*'"
+        },
+        "worlds_name_check": {
+          "name": "worlds_name_check",
+          "value": "length(\"worlds\".\"name\") between 1 and 120"
+        },
+        "worlds_genres_check": {
+          "name": "worlds_genres_check",
+          "value": "json_valid(\"worlds\".\"genres\") AND json_type(\"worlds\".\"genres\") = 'array'"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {
+      "activity_log_world_created_idx": {
+        "columns": {
+          "\"created_at\" desc": {
+            "isExpression": true
+          }
+        }
+      },
+      "activity_log_created_idx": {
+        "columns": {
+          "\"created_at\" desc": {
+            "isExpression": true
+          }
+        }
+      },
+      "worlds_deleted_updated_idx": {
+        "columns": {
+          "\"updated_at\" desc": {
+            "isExpression": true
+          }
+        }
+      }
+    }
+  }
+}

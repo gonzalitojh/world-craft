@@ -33,6 +33,10 @@ import {
 import { createIpcHandlers } from './ipc/handlers';
 import { registerIpcHandlers } from './ipc/registry';
 import {
+  createRelationsService,
+  createUnavailableRelationsService,
+} from './relations/service';
+import {
   closePersistence,
   getDatabase,
   initializePersistence,
@@ -167,6 +171,13 @@ if (!hasSingleInstanceLock) {
               repository: createAssetRepository(database.orm),
               logger: createAssetsLogger(app.getPath('userData')),
             });
+      const relations =
+        database === null
+          ? createUnavailableRelationsService()
+          : createRelationsService({
+              database: database.orm,
+              sqlite: database.sqlite,
+            });
       const worlds =
         database === null
           ? createUnavailableWorldsService()
@@ -185,6 +196,7 @@ if (!hasSingleInstanceLock) {
           worlds,
           entityTypes,
           entities,
+          relations,
           assets,
           pickImages: pickImageFiles,
         }),

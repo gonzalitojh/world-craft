@@ -70,9 +70,9 @@ describe('arranque de la base de datos', () => {
         expect(database.pragma('foreign_keys', { simple: true })).toBe(1);
         expect(database.pragma('busy_timeout', { simple: true })).toBe(5000);
         // 0000_init + 0001_assets + 0002_worlds + 0003_entity_types +
-        // 0004_entities => user_version 5 (número de migraciones, no el
-        // prefijo de la etiqueta).
-        expect(database.pragma('user_version', { simple: true })).toBe(5);
+        // 0004_entities + 0005_relations => user_version 6 (número de
+        // migraciones, no el prefijo de la etiqueta).
+        expect(database.pragma('user_version', { simple: true })).toBe(6);
 
         const tables = (
           database
@@ -92,6 +92,8 @@ describe('arranque de la base de datos', () => {
             'tags',
             'entity_tags',
             'entity_gallery',
+            'relation_types',
+            'relations',
           ]),
         );
 
@@ -107,8 +109,8 @@ describe('arranque de la base de datos', () => {
         closeDatabase(database);
       }
 
-      expect(result.schemaVersion).toBe(5);
-      expect(result.appliedMigrations).toBe(5);
+      expect(result.schemaVersion).toBe(6);
+      expect(result.appliedMigrations).toBe(6);
       expect(result.newDatabase).toBe(true);
       expect(result.backup).toBeNull();
       expect(await readdir(test.paths.preMigrationBackupsDir)).toEqual([]);
@@ -153,7 +155,7 @@ describe('arranque de la base de datos', () => {
         expect(second.newDatabase).toBe(false);
         expect(second.appliedMigrations).toBe(0);
         expect(second.backup).toBeNull();
-        expect(second.schemaVersion).toBe(5);
+        expect(second.schemaVersion).toBe(6);
         expect(
           second.client.sqlite.pragma('journal_mode', { simple: true }),
         ).toBe('wal');
@@ -179,7 +181,7 @@ describe('arranque de la base de datos', () => {
       closeDatabase(first.client.sqlite);
 
       const database = openDatabase({ file: test.paths.databaseFile });
-      database.pragma('user_version = 6');
+      database.pragma('user_version = 7');
       closeDatabase(database);
 
       const result = expectSafeMode(
@@ -190,7 +192,7 @@ describe('arranque de la base de datos', () => {
         'DB_VERSION_AHEAD',
       );
 
-      expect(result.schemaVersion).toBe(6);
+      expect(result.schemaVersion).toBe(7);
     } finally {
       await test.cleanup();
     }

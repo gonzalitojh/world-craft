@@ -82,7 +82,9 @@ export function Dialog({
           {messages.components.dialog.close}
         </Button>
       </header>
-      <div className="wc-dialog__body">{children}</div>
+      <div className="wc-dialog__body" tabIndex={0}>
+        {children}
+      </div>
       {actions ? (
         <footer className="wc-dialog__actions">{actions}</footer>
       ) : null}

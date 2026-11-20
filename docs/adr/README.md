@@ -36,6 +36,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0019](0019-worlds-crud-mvp.md) | Mundos del MVP: CRUD, actividad y borrado lógico (#72) | Aceptado | D-042 |
 | [0020](0020-entity-types-custom-fields.md) | Tipos de entidad del sistema y campos personalizados (#73) | Aceptado | D-043 |
 | [0021](0021-entities-crud-gallery-tags-editor.md) | Fichas: modelo, galería, etiquetas y editor enriquecido (#74) | Aceptado | D-044 |
+| [0022](0022-relations-backlinks-graph-api.md) | Relaciones tipadas, etiquetas inversas y API del grafo (#75) | Aceptado | D-045 |
 
 ## 3. Relación con otros documentos
 
@@ -80,3 +81,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-20 | Se añade el ADR 0019 (mundos del MVP: CRUD, actividad y borrado lógico, #72). |
 | 2026-11-20 | Se añade el ADR 0020 (tipos de entidad del sistema y campos personalizados, #73). |
 | 2026-11-20 | Se añade el ADR 0021 (fichas, galería, etiquetas y editor enriquecido, #74). |
+| 2026-11-20 | Se añade el ADR 0022 (relaciones tipadas, etiquetas inversas y API del grafo, #75). |

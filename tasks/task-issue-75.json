@@ -1,0 +1,74 @@
+{
+  "title": "Relaciones tipadas y backlinks",
+  "description": "Implementar relaciones tipadas y dirigidas entre fichas del mismo mundo: tipos de relación del sistema y personalizados con etiqueta directa e inversa y color, CRUD de relaciones con notas, fuerza y metadatos, backlinks navegables en la ficha de destino, validación de duplicados, autorreferencias y aislamiento por mundo, y una API de datos preparada para el grafo de M2.",
+  "status": "published",
+  "model_variant": "high",
+  "issue": {
+    "number": 75,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/75",
+    "title": "Relaciones tipadas y backlinks"
+  },
+  "acceptance_criteria": [
+    "Se pueden crear y eliminar relaciones tipadas entre fichas del mismo mundo.",
+    "La etiqueta inversa se muestra correctamente en la ficha de destino.",
+    "No se permiten relaciones duplicadas, inválidas ni entre mundos distintos.",
+    "Los backlinks aparecen y navegan a la ficha correcta.",
+    "Existen pruebas de validación, inversas y aislamiento.",
+    "El manual explica cómo relacionar fichas."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de componentes, de integración y build en verde.",
+    "E2E del flujo crítico ejecutado: crear relación, ver la etiqueta inversa en la ficha de destino, navegar por el backlink, rechazar un duplicado y crear un tipo personalizado.",
+    "Migración 0005 probada sobre una base con mundos, actividad, tipos y fichas, con preservación de datos y rollback de referencia verificado.",
+    "Los tipos de relación del sistema coinciden literalmente con el catálogo en código y no se pueden editar ni borrar; los personalizados se aíslan por mundo.",
+    "No se admiten relaciones duplicadas, con origen igual a destino, con fichas o tipos de otro mundo, con fichas en la papelera o con tipos del sistema inexistentes.",
+    "La etiqueta directa y la inversa se resuelven con el override de la relación y, si falta, con el nombre del tipo; los backlinks muestran la etiqueta inversa.",
+    "La API de relaciones devuelve aristas con origen, destino y tipo resueltos y filtros por ficha y tipo, preparada para el grafo de M2-04.",
+    "La ventana se comprueba a 1024, 1280 y 1600 px con contenido largo realista, sin scroll horizontal de página.",
+    "Los dos temas (Claro y Oscuro) se comprueban con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado completo, foco visible, diálogos nativos, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: canales en allowlist, Zod estricto, sin Node en el renderer, CSP y contenido no confiable.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen mundos, tipos, fichas ni relaciones.",
+    "Funcionamiento offline comprobado: crear, consultar y navegar relaciones no requiere red.",
+    "Manual de usuario actualizado con cómo relacionar fichas, etiquetas directa e inversa, backlinks y tipos de relación.",
+    "ADR 0022 creado con las decisiones de modelo, validación, etiquetas inversas y API del grafo.",
+    "Datos exportables e importables: el modelo de relaciones queda preparado para la exportación de #78.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-20. 1) Contratos compartidos en src/shared/contracts/relations.ts: tipo de relación con clave, nombre directo, nombre inverso, color y bandera de sistema; límites de nombre, etiquetas, notas, fuerza 1-5 y metadatos; aristas con origen, destino y tipo resueltos; entradas de CRUD y filtros por ficha y tipo; guardas puras y API tipada. 2) Catálogo de tipos de relación del sistema en src/shared/relations/catalog.ts con IDs UUIDv7 fijos, claves estables, nombres directo e inverso en español y tokens de color de la paleta verificada. 3) Migración 0005_relations aditiva con relation_types y relations, índices únicos y de consulta, checks de fuerza, autorreferencia y JSON de metadatos, seed de los tipos del sistema y rollback de referencia; esquema Drizzle, journal y db:check. 4) Dominio en src/main/relations/: repositorio Drizzle aislado por mundo y servicio con IDs y reloj inyectables; CRUD de relaciones y de tipos personalizados, protección de los tipos del sistema, resolución de etiquetas efectivas, validación de duplicados, autorreferencias, mundo, estado de las fichas, pertenencia del tipo y metadatos, y listado de aristas para el grafo. 5) IPC: canales relationTypes:list/create/update/remove y relations:list/create/update/remove en la allowlist, esquemas Zod estrictos, handlers con traducción de errores, composición en el proceso principal, servicio no disponible en modo seguro y preload con guardas. 6) Renderer: sección de relaciones en la ficha con salientes, backlinks, etiqueta efectiva, fuerza, notas, acciones de editar y eliminar con confirmación y navegación a la ficha; diálogo de creación y edición con tipo, ficha destino buscable, etiquetas opcionales, notas y fuerza; gestor visual de tipos de relación con los del sistema en solo lectura y CRUD de los personalizados; estilos con tokens existentes para ambos temas y 1024/1280/1600. 7) Textos centralizados en src/renderer/messages/es.ts. 8) Pruebas: unitarias de contratos, validación, catálogo contra el seed, esquemas IPC y preload; integración de CRUD, etiqueta inversa, duplicados, autorreferencia, aislamiento por mundo, fichas en papelera, tipos del sistema y preservación de la migración; componentes de la sección y los diálogos; E2E de creación, backlink, navegación, duplicado rechazado, tipo personalizado, contenido largo, ventana, dos temas y axe. 9) Documentación: ADR 0022 y D-045, manual de usuario, CHANGELOG, docs/base-de-datos/esquema.md, docs/base-de-datos/migraciones.md, docs/persistencia.md y docs/calidad/plan-de-pruebas.md. 10) Publisher local: rama feat/issue-75-relations, commit y diff sin push.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: data, area: entities, variant: high y hito M1. Dependencia M1-03 (#74) fusionada en dev mediante la PR #119. Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-75-relations desde origin/dev. El plan, el borrado directo de relaciones, los metadatos solo en API y la ausencia de columna de simetría quedaron aprobados por el usuario el 2026-11-20 antes de implementar. Implementado: contratos y guardas de relaciones, catálogo de 18 tipos del sistema, migración 0005_relations con seed y rollback, dominio src/main/relations con CRUD, validación de duplicados, simetría, autorreferencias, aislamiento y tipos personalizados, canales relationTypes:* y relations:* en allowlist, handlers, composición, preload, panel de relaciones con salientes y backlinks, diálogo de creación/edición, gestor de tipos, estilos para ambos temas y textos centralizados. Evidencia local (2026-11-20): pnpm lint OK; pnpm typecheck OK; pnpm test:unit 371 en verde y 4 omitidas; pnpm test:components 25 en verde; pnpm test:integration 125 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; Playwright 16 en verde (relación, etiqueta inversa, backlink, navegación, duplicado rechazado, tipo personalizado, contenido largo, 1024/1280/1600, dos temas y axe sin violaciones críticas ni graves, incluidos los diálogos). Migración 0005 probada sobre una base en 0004 con mundo, tipo y ficha, con preservación y rollback de referencia; reinicio probado con la relación conservada. QA y seguridad PASS registrados. Nota de entorno: pnpm format:check sobre todo el repositorio marca archivos CRLF preexistentes; se aplicó Prettier solo a los archivos tocados. Estado published: commit local 221c23c y PR #120 creada contra dev, sin keywords de cierre."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA (2026-11-20) PASS tras corregir el estado del task file. Evidencia local: lint, typecheck, 371 unitarias (4 omitidas), 25 componentes, 126 de integración (125 en verde y 1 omitida), build, verify:build, db:check y 16 E2E. Criterios comprobados: creación y eliminación de relaciones del mismo mundo; etiqueta directa e inversa con override; backlinks con la etiqueta inversa y navegación a la ficha correcta; rechazo de duplicados exactos e invertidos de tipos simétricos, autorreferencias, fichas o tipos de otro mundo y fichas en papelera; tipos del sistema protegidos y personalizados en uso bloqueados; ventana 1024/1280/1600 con notas largas sin scroll horizontal; dos temas con contraste AA; axe con diálogo de relación y gestor de tipos abiertos; migración 0005 con preservación desde 0004 y rollback; reinicio con la relación conservada; manual y documentación coherentes. Hallazgos LOW corregidos: confirmación de borrado con foco y etiqueta según la dirección, texto neutro al editar, mensaje específico de salientes vacías, error y reintento de tipos de relación, foco inicial del selector, fuerza por defecto alineada con la API, contador de pruebas y comentario de migración, prueba de reinicio, axe en diálogos y ajuste del preview de etiquetas largas. Recomendación no bloqueante: #78 debe validar el mundo al importar relaciones y valorar paginación para grafos grandes."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "LOW informativo: las aristas unen las fichas por id y mundo en SQL; el servicio ya impedía crear aristas entre mundos. Se añadió la comprobación de mundo también en los joins como defensa en profundidad.",
+      "LOW informativo: `countRelationsByType` y `deleteType` no filtran por mundo; los IDs de tipo son únicos y el servicio comprueba antes la pertenencia, pero conviene recordarlo al importar en #78.",
+      "LOW informativo: los metadatos se validan y no se renderizan; el renderer nunca interpreta HTML."
+    ],
+    "notes": "Security-champion (2026-11-20): PASS sin HIGH ni MEDIUM. Revisados los contratos, catálogo, dominio, esquemas IPC, handlers, allowlist, preload, migración 0005 y rollback, componentes y documentación. Sin secretos, credenciales, datos personales ni dependencias nuevas. Electron intacto: contextIsolation, sandbox, nodeIntegration false, CSP y allowlist de canales. Los 8 canales nuevos usan Zod estricto, UUIDv7, validación de mundo y traducción de errores sin filtrar mensajes. La migración es aditiva, transaccional y con copia previa; el rollback deja user_version 5. Se añadió el filtro de mundo en los joins de origen y destino como defensa en profundidad."
+  },
+  "documentation": {
+    "adr": "docs/adr/0022-relations-backlinks-graph-api.md creado y añadido al índice con D-045 en docs/registro-decisiones.md.",
+    "manual": "docs/manual-de-usuario.md actualizado: estado del desarrollo, sección 6 de relaciones, etiquetas directa e inversa, backlinks, tipos de relación y tabla de estado de funciones.",
+    "changelog": "CHANGELOG.md actualizado en Añadido con relaciones, backlinks, API, tipos, migración 0005 y pruebas.",
+    "agents": "no aplica"
+  },
+  "pr": {
+    "number": 120,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/120",
+    "title": "feat(relations): relaciones tipadas, backlinks y API del grafo (#75)",
+    "branch": "feat/issue-75-relations",
+    "commit": "221c23c"
+  }
+}

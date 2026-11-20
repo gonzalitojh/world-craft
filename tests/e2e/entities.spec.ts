@@ -356,6 +356,199 @@ test('la creación rápida desde la barra superior abre la ficha en el mundo act
   await expect(page.getByText('Mara Viento')).toBeVisible();
 });
 
+test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rechaza duplicados', async ({
+  page,
+  electronApp,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+  await backToEntities(page);
+  await createEntity(page, { name: 'Puerto Sal', type: 'Ciudad' });
+  await backToEntities(page);
+
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+
+  const addRelation = async (
+    typeLabel: string,
+    targetLabel: string,
+    expectSuccess: boolean,
+    notes?: string,
+  ) => {
+    await page
+      .getByRole('button', { name: messages.entities.relations.add })
+      .click();
+    const dialog = page.getByRole('dialog');
+
+    await expectAxeWithoutSerious(page);
+
+    await dialog
+      .getByLabel(messages.entities.relations.typeLabel, { exact: false })
+      .selectOption({ label: typeLabel });
+    await dialog
+      .getByLabel(/^Ficha de destino/)
+      .selectOption({ label: targetLabel });
+
+    if (notes !== undefined) {
+      await dialog
+        .getByLabel(messages.entities.relations.notesLabel)
+        .fill(notes);
+    }
+
+    await dialog
+      .getByRole('button', {
+        name: messages.entities.relations.submitCreate,
+      })
+      .click();
+
+    if (expectSuccess) {
+      await expect(dialog).not.toBeVisible();
+      await dismissToasts(page);
+    } else {
+      await expect(
+        dialog.getByRole('alert').getByText(messages.entities.relations.error),
+      ).toBeVisible();
+      await dialog
+        .getByRole('button', { name: messages.entities.relations.cancel })
+        .click();
+      await dismissToasts(page);
+    }
+  };
+
+  await addRelation('Ubicado en / Contiene', 'Puerto Sal · Ciudad', true);
+
+  const panel = page.locator('.wc-page__section').filter({
+    has: page.getByRole('heading', {
+      level: 3,
+      name: messages.entities.relations.title,
+    }),
+  });
+
+  await expect(panel.getByText('Ubicado en')).toBeVisible();
+  await expect(
+    panel.getByRole('button', { name: 'Puerto Sal', exact: true }),
+  ).toBeVisible();
+
+  await addRelation('Ubicado en / Contiene', 'Puerto Sal · Ciudad', false);
+
+  await page
+    .getByRole('button', { name: messages.entities.relations.manageTypes })
+    .click();
+  const manager = page.getByRole('dialog');
+
+  await expectAxeWithoutSerious(page);
+
+  await manager
+    .getByRole('button', { name: messages.entities.relations.types.create })
+    .click();
+  await manager.getByLabel(/^Etiqueta directa/).fill('Mentor de');
+  await manager.getByLabel(/^Etiqueta inversa/).fill('Aprendiz de');
+  await manager
+    .getByRole('button', {
+      name: messages.entities.relations.types.createSubmit,
+    })
+    .click();
+  await expect(manager.getByText('Mentor de / Aprendiz de')).toBeVisible();
+  await manager
+    .getByRole('button', { name: messages.entities.relations.types.close })
+    .last()
+    .click();
+  await dismissToasts(page);
+
+  await addRelation(
+    'Mentor de / Aprendiz de',
+    'Puerto Sal · Ciudad',
+    true,
+    'Mareas y sal. '.repeat(25).trim(),
+  );
+  await expect(panel.getByText('Mentor de')).toBeVisible();
+
+  for (const width of [1024, 1280, 1600] as const) {
+    await electronApp.evaluate(
+      ({ BrowserWindow }, size) => {
+        const main = BrowserWindow.getAllWindows()[0];
+
+        if (main === undefined) {
+          throw new Error('No hay ventana principal.');
+        }
+
+        main.setContentSize(size.width, size.height);
+      },
+      { width, height: 700 },
+    );
+
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              resolve();
+            });
+          });
+        }),
+    );
+
+    await expectNoOverflow(page);
+  }
+
+  await panel
+    .getByRole('button', { name: 'Puerto Sal', exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
+  ).toBeVisible();
+
+  const backlinks = page.locator('.wc-page__section').filter({
+    has: page.getByRole('heading', {
+      level: 3,
+      name: messages.entities.relations.title,
+    }),
+  });
+
+  await expect(backlinks.getByText('Contiene')).toBeVisible();
+  await expect(backlinks.getByText('Aprendiz de')).toBeVisible();
+  await expect(
+    backlinks.getByRole('button', { name: 'Mara Viento', exact: true }).first(),
+  ).toBeVisible();
+
+  await backlinks
+    .getByRole('button', { name: 'Mara Viento', exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+
+  for (const theme of ['light', 'dark'] as const) {
+    const html = page.locator('html');
+    const currentTheme = await html.getAttribute('data-theme');
+
+    if (currentTheme !== theme) {
+      const currentLabel =
+        currentTheme === 'dark'
+          ? messages.shell.theme.currentDark
+          : messages.shell.theme.currentLight;
+
+      await page
+        .getByRole('button', {
+          name: messages.shell.theme.switchLabel(currentLabel),
+        })
+        .click();
+    }
+
+    await expect(html).toHaveAttribute('data-theme', theme);
+    await expectAxeWithoutSerious(page);
+  }
+});
+
 test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos temas', async ({
   page,
   electronApp,

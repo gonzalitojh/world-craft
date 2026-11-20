@@ -1,13 +1,14 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01 a M1-03. La base local, las migraciones, el modo
+> 20/11/2026 con M0-08 y M1-01 a M1-04. La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
 > (#66), M0-07 (#67) y M0-08 (#68). Los mundos y su actividad, en M1-01 (#72);
-> los tipos de entidad con sus plantillas, en M1-02 (#73); y las fichas con
-> imágenes, etiquetas y galería, en M1-03 (#74). La interfaz de copias
+> los tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
+> imágenes, etiquetas y galería, en M1-03 (#74); y las relaciones tipadas con
+> backlinks, en M1-04 (#75). La interfaz de copias
 > de Ajustes y la papelera visible llegan en M1 y la release pública con
 > actualización real, en M5. Las secciones distinguen lo implementado de lo
 > previsto.
@@ -131,15 +132,15 @@ no se crea `config.json`.
 - `PRAGMA integrity_check` al arrancar, antes de activar WAL y después de
   migrar; si falla, modo seguro sin escritura.
 - `PRAGMA user_version` es el **número de migraciones aplicadas** (con
-  `0000_init`, `0001_assets`, `0002_worlds`, `0003_entity_types` y
-  `0004_entities`, vale 5), no el prefijo de la etiqueta. La tabla
-  `schema_migrations` conserva el detalle y se contrasta con él.
+  `0000_init`, `0001_assets`, `0002_worlds`, `0003_entity_types`,
+  `0004_entities` y `0005_relations`, vale 6), no el prefijo de la etiqueta. La
+  tabla `schema_migrations` conserva el detalle y se contrasta con él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
 - IDs UUIDv7 generados en el proceso principal (`src/main/db/ids.ts`) con
-  contador para mantener el orden dentro del mismo milisegundo. En M1-03 existen
+  contador para mantener el orden dentro del mismo milisegundo. En M1-04 existen
   las tablas del sistema, `assets`, `worlds`, `activity_log`, `entity_types`,
-  `entities`, `tags`, `entity_tags` y `entity_gallery`; el resto de tablas de
-  contenido llega con sus issues.
+  `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types` y
+  `relations`; el resto de tablas de contenido llega con sus issues.
 
 ### 3.2 Acceso
 
@@ -286,7 +287,7 @@ de huérfanos sigue sin canal ni interfaz.
 - La versión del esquema se guarda en `PRAGMA user_version` como **número de
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
   SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds`,
-  `0003_entity_types` y `0004_entities`, vale 5.
+  `0003_entity_types`, `0004_entities` y `0005_relations`, vale 6.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -307,6 +308,12 @@ de huérfanos sigue sin canal ni interfaz.
   `drizzle/rollback/0004_entities.down.sql` y debe ejecutarse antes del de
   `0003_entity_types` porque las fichas referencian los tipos. La prueba de
   preservación migra una base en `0003` con un mundo y un tipo personalizado.
+- `0005_relations` es aditiva: crea `relation_types` y `relations`, siembra los
+  18 tipos de relación del sistema, conserva mundos, actividad, tipos, fichas y
+  assets y deja `user_version` 6. Su rollback está en
+  `drizzle/rollback/0005_relations.down.sql` y debe ejecutarse antes de los de
+  `0004` y `0003` porque las aristas referencian fichas y tipos. La prueba de
+  preservación migra una base en `0004` con un mundo, un tipo y una ficha.
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o
