@@ -7,6 +7,7 @@ import type { EntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
 import { createIpcRouter } from '@/main/ipc/registry';
+import { createUnavailableRelationsService } from '@/main/relations/service';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
 import { createUnavailableWorldsService } from '@/main/worlds/service';
 import { IPC_CHANNELS } from '@/shared/contracts/channels';
@@ -90,6 +91,7 @@ function createRoute(options?: {
       worlds: createUnavailableWorldsService(),
       entityTypes: createUnavailableEntityTypesService(),
       entities: options?.entities ?? createEntitiesService(),
+      relations: createUnavailableRelationsService(),
       assets: options?.assets ?? createAssetsService(),
       pickImages: options?.pickImages ?? (async () => []),
     }),

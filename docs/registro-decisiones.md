@@ -157,3 +157,19 @@ los tipos personalizados desde la interfaz.
 - Referencias: ADR 0021, ADR 0007, ADR 0017, ADR 0020, #76, #77, #78,
   `docs/manual-de-usuario.md`, `docs/base-de-datos/esquema.md` y
   `docs/calidad/plan-de-pruebas.md`.
+
+## 2026-11-20 — Relaciones tipadas y backlinks (M1-04)
+
+**Contexto.** La issue #75 necesita unir las fichas de #74 con relaciones
+tipadas, navegables y preparadas para el grafo de M2. Había que decidir cómo
+representar la dirección y la etiqueta inversa, dónde viven los tipos del
+sistema, cómo validar duplicados y aislamiento, qué borrar al eliminar una
+arista y cómo exponer el grafo sin acoplar la ficha a su detalle.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-045 | Relaciones tipadas, etiquetas inversas y API del grafo | Migración `0005_relations` aditiva con `relation_types` y `relations`; 18 tipos del sistema sembrados con `world_id NULL`, `is_system = 1` e IDs UUIDv7 fijos que coinciden con `src/shared/relations/catalog.ts`; tipos personalizados por mundo con clave única y color de la paleta cerrada; aristas dirigidas con origen, destino, tipo, etiquetas opcionales, notas, fuerza 1–5 y metadatos JSON; la etiqueta efectiva es el override o el nombre del tipo y la inversa se lee desde la ficha de destino; se rechazan autorreferencias, duplicados exactos, duplicados invertidos de tipos simétricos, fichas o tipos de otro mundo y fichas en la papelera; los tipos del sistema no se editan ni se borran y los personalizados en uso tampoco; las relaciones se borran de forma directa y confirmada, mientras las aristas de fichas en papelera se ocultan; `relations:list` expone aristas con origen, destino y tipo resueltos y filtros por ficha y tipo para M2-04. | El lore se recorre en ambos sentidos sin duplicar filas; la API sirve a los backlinks y al grafo futuro; los tipos personalizados se aíslan por mundo; la simetría se deduce de etiquetas iguales y necesitaría una columna si se vuelve ambigua; los metadatos se guardan pero aún no se editan en la interfaz; la papelera y la exportación de relaciones llegan con #77 y #78. ADR 0022. |
+
+- Referencias: ADR 0022, ADR 0019, ADR 0020, ADR 0021, #77, #78,
+  `docs/manual-de-usuario.md`, `docs/base-de-datos/esquema.md` y
+  `docs/calidad/plan-de-pruebas.md`.

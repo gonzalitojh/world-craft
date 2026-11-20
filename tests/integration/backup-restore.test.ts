@@ -583,7 +583,7 @@ describe('restauración de copias', () => {
 
       try {
         expect(startup.schemaVersion).toBe(TARGET_SCHEMA_VERSION);
-        expect(startup.appliedMigrations).toBe(4);
+        expect(startup.appliedMigrations).toBe(5);
         expect(startup.backup).not.toBeNull();
         expect(
           startup.client.sqlite

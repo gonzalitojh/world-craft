@@ -1765,8 +1765,11 @@
 
 .wc-tag-preview {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
+  min-width: 0;
   padding-block: var(--space-2);
+  overflow-wrap: anywhere;
 }
 
 .wc-type-color--moss {

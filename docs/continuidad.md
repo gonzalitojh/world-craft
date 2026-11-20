@@ -1,14 +1,15 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01 a M1-03. El modo seguro, la comprobación de
+> 20/11/2026 con M0-08 y M1-01 a M1-04. El modo seguro, la comprobación de
 > integridad y la copia pre-migración se implementaron en M0-04 (#64); las copias
 > automáticas con retención y la restauración desde el diálogo de modo seguro,
 > en M0-07 (#67); el instalador por usuario, la actualización manual y la
 > preservación en instalación, actualización y desinstalación, en M0-08 (#68); el
 > borrado lógico de mundos con su actividad, en M1-01 (#72); los tipos de
-> entidad con sus plantillas, en M1-02 (#73); y las fichas con autoguardado,
-> imágenes, etiquetas y favoritos, en M1-03 (#74). La interfaz de copias de Ajustes, la
+> entidad con sus plantillas, en M1-02 (#73); las fichas con autoguardado,
+> imágenes, etiquetas y favoritos, en M1-03 (#74); y las relaciones tipadas con
+> backlinks, en M1-04 (#75). La interfaz de copias de Ajustes, la
 > papelera visible y la purga llegan en M1; la release pública con actualización
 > real contra GitHub Releases, en M5.
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
@@ -244,6 +245,15 @@ ficha nunca queda apuntando a una plantilla eliminada. La migración
 `0004_entities` es aditiva, conserva mundos, tipos, actividad y assets, y su
 prueba de preservación migra una base en `0003` con un tipo personalizado.
 
+**Implementado en M1-04 (#75):** las relaciones viven en `relations`, con
+origen, destino y tipo resueltos por ID y sin duplicar filas. Las aristas que
+apuntan a una ficha en la papelera se ocultan de las listas, pero no se borran,
+para que una restauración futura las recupere; la decisión de limpiarlas o
+avisar llega con #77. Los tipos de relación personalizados se aíslan por mundo y
+no se pueden borrar mientras tengan aristas. La migración `0005_relations` es
+aditiva, conserva mundos, tipos, fichas y assets, y su prueba de preservación
+migra una base en `0004` con un mundo, un tipo y una ficha.
+
 ## 7. Actualizaciones y desinstalación
 
 ### 7.1 Actualización (implementada en M0-08)
@@ -315,6 +325,7 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Migración fallida | Cada migración | Rollback, copia y modo seguro (pruebas de integración) |
 | Tipos al duplicar y borrar un mundo | M1-02 | Copia transaccional, aislamiento y conservación tras el borrado lógico (integración) |
 | Fichas, etiquetas y galería | M1-03 | CRUD, borrado lógico, aislamiento, referencias, filtros y preservación de la migración `0004` (integración) |
+| Relaciones y backlinks | M1-04 | CRUD, etiquetas inversas, duplicados, simetría, aislamiento, papelera y preservación de la migración `0005` (integración y E2E) |
 | Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
 | Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
 | Copia automática y manifiesto v2 | M0-07 | Creación verificable, lectura de v1 y rechazo de bytes alterados (integración) |

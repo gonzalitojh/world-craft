@@ -12,6 +12,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { assets } from './assets';
 import { entities, entityGallery, entityTags, tags } from './entities';
 import { entityTypes } from './entity-types';
+import { relationTypes, relations } from './relations';
 import { activityLog, worlds } from './worlds';
 
 export {
@@ -21,6 +22,8 @@ export {
   entityGallery,
   entityTags,
   entityTypes,
+  relationTypes,
+  relations,
   tags,
   worlds,
 };
@@ -51,4 +54,6 @@ export const schema = {
   tags,
   entityTags,
   entityGallery,
+  relationTypes,
+  relations,
 } as const;

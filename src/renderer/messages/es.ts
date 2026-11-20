@@ -587,6 +587,123 @@ export const es = {
       invalid: 'Revisa los datos e inténtalo de nuevo.',
       notFound: 'La ficha ya no existe o se ha movido a la papelera.',
     },
+    relations: {
+      title: 'Relaciones',
+      lead: 'Une esta ficha con otras del mundo. Cada relación se lee con una etiqueta desde el origen y con su inversa desde el destino.',
+      outgoingTitle: 'Desde esta ficha',
+      incomingTitle: 'Backlinks',
+      incomingLead:
+        'Fichas que apuntan a esta; la etiqueta es la inversa de cada relación.',
+      empty:
+        'Todavía no hay relaciones. Une esta ficha con otra para empezar a tejer el mundo.',
+      outgoingEmpty: 'Esta ficha todavía no apunta a ninguna otra.',
+      incomingEmpty: 'Ninguna ficha apunta todavía a esta.',
+      add: 'Añadir relación',
+      manageTypes: 'Tipos de relación',
+      edit: 'Editar',
+      editNamed: (label: string, name: string): string =>
+        `Editar la relación «${label}» con ${name}`,
+      remove: 'Eliminar',
+      removeNamed: (label: string, name: string): string =>
+        `Eliminar la relación «${label}» con ${name}`,
+      removeTitle: (label: string, name: string): string =>
+        `¿Eliminar la relación «${label}» con ${name}?`,
+      removeBody:
+        'La relación desaparecerá de las dos fichas. Las fichas y sus datos no se borran.',
+      removeSubmit: 'Eliminar relación',
+      strength: (value: number): string => `Fuerza ${value} de 5`,
+      notesLabel: 'Notas',
+      typeLabel: 'Tipo de relación',
+      typeHint: (forward: string, inverse: string): string =>
+        `Directa: ${forward} · Inversa: ${inverse}`,
+      targetLabel: 'Ficha de destino',
+      targetPlaceholder: 'Elige una ficha',
+      searchLabel: 'Buscar ficha de destino',
+      searchPlaceholder: 'Nombre o alias',
+      noCandidates: 'No hay otras fichas en este mundo.',
+      noMatches: 'No hay fichas que coincidan con la búsqueda.',
+      labelLabel: 'Etiqueta directa',
+      labelHint: 'Opcional. Si la dejas vacía se usa el nombre del tipo.',
+      inverseLabelLabel: 'Etiqueta inversa',
+      inverseLabelHint: 'Opcional. Es la que se verá en la ficha de destino.',
+      strengthLabel: 'Fuerza',
+      strengthOptions: {
+        '1': '1 · Apenas relevante',
+        '2': '2 · Menor',
+        '3': '3 · Importante',
+        '4': '4 · Muy importante',
+        '5': '5 · Esencial',
+      },
+      createTitle: 'Añadir relación',
+      createLead:
+        'Elige el tipo y la ficha de destino. Podrás ajustar la etiqueta y la fuerza.',
+      editTitle: 'Editar relación',
+      editLead:
+        'Cambia el tipo, las etiquetas, las notas o la fuerza. El origen y el destino no cambian.',
+      submitCreate: 'Crear relación',
+      submitEdit: 'Guardar relación',
+      cancel: 'Cancelar',
+      created: (label: string, name: string): string =>
+        `Relación creada: ${label} ${name}.`,
+      updated: 'Relación guardada.',
+      removed: 'Relación eliminada.',
+      error: 'Revisa los datos de la relación e inténtalo de nuevo.',
+      deleteError: 'No se pudo eliminar la relación.',
+      loading: 'Cargando las relaciones…',
+      loadError: 'No se pudieron cargar las relaciones.',
+      retry: 'Volver a intentar',
+      backlinkHint: (name: string): string => `Se lee desde ${name}`,
+      relationWith: (name: string): string => `Relación con ${name}`,
+      types: {
+        title: 'Tipos de relación',
+        lead: 'Los tipos del sistema son iguales en todos los mundos y no se editan. Crea tipos propios para las relaciones que necesite tu historia.',
+        systemBadge: 'Del sistema',
+        customBadge: 'Personalizado',
+        readOnly: 'Solo lectura',
+        create: 'Crear tipo',
+        edit: 'Editar',
+        editNamed: (name: string): string =>
+          `Editar el tipo de relación ${name}`,
+        remove: 'Borrar',
+        removeNamed: (name: string): string =>
+          `Borrar el tipo de relación ${name}`,
+        removeTitle: (name: string): string =>
+          `¿Borrar el tipo de relación «${name}»?`,
+        removeBody:
+          'El tipo dejará de estar disponible para crear relaciones nuevas. Las relaciones existentes no se tocan.',
+        removeSubmit: 'Borrar tipo',
+        removeBlocked:
+          'No se puede borrar un tipo que todavía tiene relaciones. Elimina antes esas relaciones.',
+        nameLabel: 'Etiqueta directa',
+        inverseNameLabel: 'Etiqueta inversa',
+        keyLabel: 'Clave',
+        keyHint: 'Minúsculas, números y guiones. No cambia al editar.',
+        colorLabel: 'Color',
+        createTitle: 'Crear tipo de relación',
+        editTitle: (name: string): string =>
+          `Editar el tipo de relación «${name}»`,
+        createLead:
+          'Define cómo se lee la relación desde el origen y desde el destino.',
+        editLead: 'Ajusta las dos etiquetas y el color del tipo.',
+        save: 'Guardar tipo',
+        createSubmit: 'Crear tipo',
+        cancel: 'Cancelar',
+        created: (name: string): string => `Tipo de relación ${name} creado.`,
+        updated: (name: string): string =>
+          `Tipo de relación ${name} actualizado.`,
+        removed: (name: string): string => `Tipo de relación ${name} borrado.`,
+        error: 'Revisa los datos del tipo e inténtalo de nuevo.',
+        loading: 'Cargando los tipos de relación…',
+        errorLoad: 'No se pudieron cargar los tipos de relación.',
+        close: 'Cerrar',
+        colors: {
+          moss: 'Musgo',
+          ochre: 'Ocre',
+          danger: 'Cobre',
+          prussian: 'Azul prusia',
+        },
+      },
+    },
   },
   samples: {
     lead: 'Página de revisión del sistema de diseño. Aquí se ven los componentes base con sus estados y con contenido largo, para comprobar que nada se sale de su contenedor en los temas Claro y Oscuro.',

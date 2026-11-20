@@ -238,6 +238,25 @@ primera versión estable.
 - Dependencias del editor (#74): `@tiptap/react`, `@tiptap/starter-kit`,
   `@tiptap/extension-link` y `@tiptap/pm` 3.34.0, todas MIT y justificadas por
   el ADR 0007; se añade su aviso de licencia.
+- Relaciones tipadas (#75): tipos del sistema y personalizados con etiqueta
+  directa e inversa y color, CRUD de aristas con notas, fuerza y metadatos,
+  validación de duplicados, autorreferencias y aislamiento por mundo.
+- Backlinks y navegación (#75): la ficha de destino muestra la etiqueta inversa
+  y permite abrir la ficha de origen; las relaciones se editan y eliminan con
+  confirmación.
+- API de relaciones (#75): `relations:list` devuelve aristas con origen, destino
+  y tipo resueltos y filtros por ficha y tipo, preparada para el grafo de M2.
+- Gestión de tipos de relación (#75): 18 tipos del sistema en solo lectura y
+  tipos personalizados por mundo; un tipo en uso no se puede borrar.
+- Migración `0005_relations` (#75): tablas `relation_types` y `relations` con
+  FKs, `CHECK`, índices, seed del sistema y rollback de referencia;
+  `user_version` 6. Conserva mundos, tipos, fichas y assets, con prueba de
+  preservación desde `0004`.
+- Pruebas de relaciones (#75): unitarias de validación, esquemas y catálogo;
+  integración de CRUD, etiquetas inversas, duplicados, simetría, aislamiento,
+  papelera, tipos del sistema y preservación; componentes del panel y el diálogo;
+  E2E de creación, backlink, navegación, duplicado rechazado, tipo personalizado
+  y axe en ambos temas.
 
 ### Cambiado
 

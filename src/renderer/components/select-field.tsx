@@ -83,6 +83,7 @@ export function SelectField({
         required={required}
         disabled={disabled}
         autoFocus={autoFocus}
+        data-autofocus={autoFocus ? true : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy.length > 0 ? describedBy : undefined}
       >

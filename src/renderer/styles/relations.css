@@ -1,0 +1,138 @@
+/* Relaciones entre fichas: panel, formulario y gestor de tipos. */
+.wc-relation-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-relation-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.wc-relation-group {
+  margin-block-start: var(--space-4);
+  min-width: 0;
+}
+
+.wc-relation-group__title {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wc-relation-list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.wc-relation-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-relation-item__target {
+  min-width: 0;
+  font-weight: 600;
+  text-align: start;
+}
+
+.wc-relation-item__type {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.wc-relation-strength {
+  margin-inline-start: auto;
+  color: var(--accent-strong);
+  font-size: var(--text-sm);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.wc-relation-item__hint,
+.wc-relation-item__notes {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-item__notes {
+  color: var(--fg);
+  white-space: pre-wrap;
+}
+
+.wc-relation-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.wc-relation-form {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin-block-start: var(--space-3);
+}
+
+.wc-relation-type-list {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.wc-relation-type-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-type-item__labels {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.wc-relation-type-item__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.wc-relation-type-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}

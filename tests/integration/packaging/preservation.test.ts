@@ -89,7 +89,7 @@ describe('preservación de datos entre instalaciones', () => {
         throw new Error('Se esperaba una base migrada.');
       }
 
-      expect(migrated.appliedMigrations).toBe(4);
+      expect(migrated.appliedMigrations).toBe(5);
       expect(migrated.backup).not.toBeNull();
 
       const assetRelativePath =
@@ -164,7 +164,7 @@ describe('preservación de datos entre instalaciones', () => {
             .prepare('SELECT relative_path FROM assets WHERE id = ?')
             .get('01900000-0000-7000-8000-000000000001'),
         ).toEqual({ relative_path: assetRelativePath });
-        expect(database.pragma('user_version', { simple: true })).toBe(5);
+        expect(database.pragma('user_version', { simple: true })).toBe(6);
       } finally {
         closeDatabase(database);
       }
