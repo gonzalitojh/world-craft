@@ -1,12 +1,19 @@
 {
   "title": "Internacionalización centralizada y catálogo tipado",
   "description": "Centralizar los textos del renderer en un catálogo tipado, exponerlos con un proveedor de idioma, resolver el locale del perfil con un valor de reserva y aportar formatos de fechas, números, porcentajes, listas y plurales con Intl. Incluye una prueba que falla ante claves ausentes, hojas vacías o textos visibles hardcodeados, y deja la estructura preparada para añadir en.ts e it.ts sin tocar componentes.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 71,
     "url": "https://github.com/gonzalitojh/world-craft/issues/71",
     "title": "Internacionalización centralizada y catálogo tipado"
+  },
+  "pr": {
+    "number": 113,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/113",
+    "title": "feat: centralizar internacionalización con catálogo tipado (#71)",
+    "branch": "feat/issue-71-i18n-catalog",
+    "commit": "ea040cc"
   },
   "acceptance_criteria": [
     "Todos los textos del shell y de los componentes base salen del catálogo tipado.",
@@ -38,7 +45,7 @@
   "validation": {
     "result": "pending-user-review",
     "date": "2026-11-20",
-    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: ui, area: docs, variant: high y el hito M0. Dependencia M0-02 (#62) fusionada. Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-71-i18n-catalog desde origin/dev. Implementado: src/shared/contracts/locale.ts; src/renderer/messages/index.ts y translator.ts; src/renderer/i18n/create.ts, formats.ts y provider.tsx; catálogo es.ts exportado como es; shell, componentes, páginas, App, actualizador y main.tsx consumen I18nProvider. Pruebas nuevas: tests/unit/i18n/catalog.test.ts, formats.test.ts y no-hardcoded.test.ts; tests/components/i18n-provider.test.tsx; actualizada tests/unit/updates/status.test.ts. Evidencia local (2026-11-20): pnpm lint OK; pnpm typecheck (node, web y tests) OK; pnpm test:unit 293 en verde y 4 omitidas; pnpm test:components 9 en verde; pnpm test:integration 85 en verde y 1 omitida; pnpm build OK; pnpm test:e2e 9 en verde en 22,8 s; prettier --check de documentos y tsconfig OK. Manual de usuario: no aplica, es un cambio interno sin cambios visibles en pantallas ni textos. El locale del perfil queda pendiente de la pantalla de Ajustes; hasta entonces main.tsx usa DEFAULT_LOCALE y resolveLocale cae al idioma de reserva. No se hace push ni PR sin petición explícita."
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: ui, area: docs, variant: high y el hito M0. Dependencia M0-02 (#62) fusionada. Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-71-i18n-catalog desde origin/dev. Implementado: src/shared/contracts/locale.ts; src/renderer/messages/index.ts y translator.ts; src/renderer/i18n/create.ts, formats.ts y provider.tsx; catálogo es.ts exportado como es; shell, componentes, páginas, App, actualizador y main.tsx consumen I18nProvider. Pruebas nuevas: tests/unit/i18n/catalog.test.ts, formats.test.ts y no-hardcoded.test.ts; tests/components/i18n-provider.test.tsx; actualizada tests/unit/updates/status.test.ts. Evidencia local (2026-11-20): pnpm lint OK; pnpm typecheck (node, web y tests) OK; pnpm test:unit 293 en verde y 4 omitidas; pnpm test:components 9 en verde; pnpm test:integration 85 en verde y 1 omitida; pnpm build OK; pnpm test:e2e 9 en verde en 22,8 s; prettier --check de documentos y tsconfig OK. Manual de usuario: no aplica, es un cambio interno sin cambios visibles en pantallas ni textos. El locale del perfil queda pendiente de la pantalla de Ajustes; hasta entonces main.tsx usa DEFAULT_LOCALE y resolveLocale cae al idioma de reserva. Publicada con petición explícita del usuario: push de la rama y PR #113 contra dev, sin keywords de cierre; la issue se cierra al fusionar."
   },
   "qa": {
     "result": "PASS",
