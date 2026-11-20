@@ -54,6 +54,18 @@ export default tseslint.config(
     },
   },
   {
+    // electron-builder carga la configuración en CommonJS; `require` y
+    // `module.exports` son la interfaz que espera.
+    files: ['electron-builder.config.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { ...globals.node },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
     // La capa de datos, las copias y la lógica pura del modo seguro deben poder
     // probarse sin Electron. La composición (userData, diálogos, ciclo de vida)
     // vive en `src/main/persistence.ts`, `src/main/safe-mode-dialog.ts` y

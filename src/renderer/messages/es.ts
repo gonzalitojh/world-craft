@@ -175,4 +175,63 @@ export const messages = {
       },
     },
   },
+  updates: {
+    open: 'Actualizaciones',
+    openWithUpdate: (version: string): string =>
+      `Actualizaciones. Hay una versión nueva disponible: ${version}.`,
+    title: 'Actualizaciones de World Craft',
+    installedVersionLabel: 'Versión instalada',
+    lastCheckedLabel: 'Última comprobación',
+    lastChecked: (formatted: string): string =>
+      `Última comprobación: ${formatted}.`,
+    neverChecked: 'Todavía no se ha comprobado ninguna actualización.',
+    privacy:
+      'La comprobación consulta GitHub Releases y no envía el contenido de tus mundos, tus fichas ni datos personales.',
+    progressLabel: (percent: string): string =>
+      `Descarga de la actualización: ${percent} %.`,
+    percentValue: (percent: string): string => `${percent} %`,
+    statuses: {
+      unavailable: (reason: string): string =>
+        `Actualizaciones desactivadas. ${reason}`,
+      idle: 'Listo para buscar actualizaciones.',
+      checking: 'Buscando una versión nueva…',
+      upToDate: (version: string): string =>
+        `Ya tienes la última versión (${version}).`,
+      available: (version: string): string =>
+        `Hay una versión nueva disponible: ${version}.`,
+      downloading: (percent: string): string =>
+        `Descargando la actualización: ${percent} %.`,
+      downloaded: (version: string): string =>
+        `La versión ${version} está descargada y lista para instalarse.`,
+      installing: 'Instalando la actualización. La aplicación se reiniciará.',
+      error: (message: string): string => message,
+    },
+    reasons: {
+      notPackaged:
+        'Las actualizaciones solo están disponibles en la versión instalada.',
+      safeMode:
+        'La aplicación ha arrancado en modo seguro y las actualizaciones están desactivadas.',
+      notConfigured:
+        'La configuración de actualizaciones no está disponible en esta instalación.',
+      moduleMissing: 'El componente de actualizaciones no se ha podido cargar.',
+    },
+    errors: {
+      checkFailed:
+        'No se pudo comprobar si hay actualizaciones. Revisa la conexión e inténtalo de nuevo.',
+      downloadFailed:
+        'No se pudo descargar la actualización. Revisa el espacio libre y la conexión.',
+      installFailed:
+        'No se pudo iniciar la instalación. Cierra la aplicación y vuelve a intentarlo.',
+      invalidState: 'La acción no está disponible en este momento.',
+      transport:
+        'No se pudo comunicar con el proceso principal. Vuelve a intentarlo.',
+    },
+    actions: {
+      check: 'Buscar actualizaciones',
+      retry: 'Volver a intentar',
+      cancel: 'Cancelar',
+      download: 'Descargar actualización',
+      install: 'Reiniciar e instalar',
+    },
+  },
 } as const;

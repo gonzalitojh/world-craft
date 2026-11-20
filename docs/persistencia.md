@@ -1,12 +1,13 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 19/11/2026 con M0-07. La base local, las migraciones, el modo seguro, el
-> servicio de assets con `wc-asset://`, las copias automáticas, la rotación y la
-> restauración desde el diálogo de modo seguro están implementados en M0-04
-> (#64), M0-06 (#66) y M0-07 (#67). La interfaz de copias de Ajustes llega en
-> M1 y el instalador con #68. Las secciones distinguen lo implementado de lo
-> previsto.
+> 20/11/2026 con M0-08. La base local, las migraciones, el modo seguro, el
+> servicio de assets con `wc-asset://`, las copias automáticas, la rotación, la
+> restauración desde el diálogo de modo seguro, el instalador por usuario y la
+> actualización manual están implementados en M0-04 (#64), M0-06 (#66), M0-07
+> (#67) y M0-08 (#68). La interfaz de copias de Ajustes llega en M1 y la release
+> pública con actualización real, en M5. Las secciones distinguen lo
+> implementado de lo previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
@@ -70,11 +71,14 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │           ├─ world-craft.sqlite-journal  (si existía)
   │           └─ manifest.json
   ├─ exports\                   (previsto, M1)
-  └─ logs\
-      ├─ startup.log
-      ├─ startup.log.1
-      ├─ assets.log
-      └─ assets.log.1
+  ├─ logs\
+  │   ├─ startup.log
+  │   ├─ startup.log.1
+  │   ├─ assets.log
+  │   ├─ assets.log.1
+  │   ├─ updates.log
+  │   └─ updates.log.1
+  └─ .updaterId                 (opcional; electron-updater, sin datos del usuario)
 ```
 
 Mientras hay una restauración en curso —o si el proceso anterior murió a mitad—
@@ -97,6 +101,8 @@ arranque los detecta y **no crea una base vacía** (sección 7).
 | `exports/` | Exportaciones ZIP/JSON generadas por el usuario (previsto) | Sí |
 | `logs/startup.log` | Arranque y copias en JSONL, rotado a 256 KiB | Sí; no contiene contenido del usuario |
 | `logs/assets.log` | Eventos de assets en JSONL, rotado a 256 KiB | Sí; sin rutas, IDs ni contenido |
+| `logs/updates.log` | Eventos del actualizador en JSONL, rotado a 256 KiB (M0-08) | Sí; sin URLs, rutas, versiones ni contenido |
+| `.updaterId` | Identificador opcional de electron-updater para staging; no se usa con GitHub | Sí, con la app cerrada; no contiene datos del usuario |
 
 La app ofrecerá desde Ajustes «Abrir carpeta de datos», «Abrir copias» y «Abrir
 logs». Esas acciones abrirán el explorador de Windows sin exponer rutas al
@@ -239,14 +245,14 @@ las fichas (M1).
 - `sharp@^0.35.5` (Apache-2.0; `@img/sharp-*` Apache-2.0 AND LGPL-3.0-or-later;
   libvips LGPL-3.0-or-later) está externalizado en `electron.vite.config.ts`
   junto a `better-sqlite3` y verificado en Node y Electron con
-  `pnpm verify:native`. `THIRD-PARTY-NOTICES.md` recoge las licencias; #68 debe
-  desempaquetar sharp del asar e incluir los textos completos.
+  `pnpm verify:native`. `THIRD-PARTY-NOTICES.md` recoge las licencias; #68
+  desempaquetó sharp del asar e incluyó los 5 textos completos en `licenses/`.
 - Residuales aceptados y documentados en el
   [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md): ventanas TOCTOU de
   escritura temporal y de lectura, raíces creadas antes de validar su
   contención, `backups/orphans` sin validar como directorio real, ausencia de
-  symlinks de archivo en las pruebas de Windows sin modo desarrollador y avisos
-  de terceros incompletos hasta #68.
+  symlinks de archivo en las pruebas de Windows sin modo desarrollador. Los
+  avisos de terceros y el desempaquetado quedaron completados en #68.
 - La **exportación e importación** de assets con rutas relativas y checksums
   siguen previstas para M1 (sección 8).
 
@@ -482,10 +488,10 @@ confirmación.
 
 ### 7.5 Límites conocidos
 
-- **Sin `requestSingleInstanceLock`:** dos instancias podrían solapar una
-  restauración. Es deuda aceptada del [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)
-  y debe cerrarse antes de M1/#68; la copia pre-restauración, el marcador y la
-  reverificación reducen el riesgo.
+- **Instancia única resuelta en #68:** `requestSingleInstanceLock()` se adquiere
+  antes de abrir la base, de modo que dos procesos ya no pueden solapar una
+  restauración. Queda el caso de un `.restore.lock` obsoleto o ilegible, que se
+  puede borrar a mano con la app cerrada.
 - En M0 la restauración solo se ofrece cuando el arranque entra en modo seguro;
   no hay una acción para restaurar con la base sana hasta la pantalla de Ajustes
   de M1.
@@ -500,7 +506,7 @@ confirmación.
   reemplazo (no hay `fsync`).
 - El inventario de copias y la rotación listan las carpetas sin `realpath` ni
   comprobación de contención; la carpeta elegida en el diálogo sí se valida.
-  Endurecerlos y añadir una prueba de junction queda para antes de M1/#68.
+  Endurecerlos y añadir una prueba de junction queda para antes de M1.
 - Los assets existentes **no se sustituyen** al restaurar solo la base; las
   referencias huérfanas se gestionarán en M1.
 
@@ -539,10 +545,16 @@ según la elección del usuario. La app se reinicia en estado inicial.
 
 ## 9. Preservación en actualizaciones y desinstalación
 
-- El instalador NSIS escribirá en `%LOCALAPPDATA%\Programs\World Craft` y no
-  tocará `%APPDATA%\World Craft`. El instalador llega con #68; todavía no existe.
-- El desinstalador eliminará binarios y accesos directos; conservará `userData`
-  y lo indicará al terminar.
+**Implementado en M0-08 (#68).** El instalador y el actualizador nunca escriben
+en la carpeta de datos del usuario.
+
+- El instalador NSIS es por usuario y escribe en
+  `%LOCALAPPDATA%\Programs\World Craft`, sin administrador ni UAC, y no toca
+  `%APPDATA%\World Craft`. La versión 0.1.0 se generó en local y se probó con
+  `scripts/verify-install.ps1`.
+- El desinstalador elimina binarios y accesos directos; conserva `userData` y lo
+  indica antes de borrar los binarios. `deleteAppDataOnUninstall:false` está fijado de forma
+  explícita y el aviso solo se muestra en modo interactivo.
 - Cada arranque comprueba la integridad y la versión del esquema; si hay
   migraciones pendientes en una base existente, crea la copia previa y las
   aplica. Si termina en `ready`, crea además las copias automáticas que falten.
@@ -550,12 +562,25 @@ según la elección del usuario. La app se reinicia en estado inicial.
 - Una restauración desde el diálogo de modo seguro sustituye solo la base; los
   assets existentes quedan intactos. Las copias automáticas incluyen solo SQLite,
   no assets.
-- Una prueba automatizada instalará, actualizará y desinstalará en un entorno
-  temporal y verificará que la base y los assets siguen intactos. Llega con #68.
-- #68 debe desempaquetar `better-sqlite3` y `sharp` del asar y garantizar que las
-  dependencias de producción, `THIRD-PARTY-NOTICES.md` y `drizzle/` viajan en el
-  paquete. La externalización y la copia de migraciones ya se comprueban con
-  `pnpm verify:build`; `pnpm verify:native` comprueba sharp en Node y Electron.
+- La actualización es manual, consentida y cancelable: se comprueba desde el
+  botón «Actualizaciones», se descarga solo con permiso, se puede cancelar y solo
+  se instala desde `downloaded` con reinicio consentido. La app no se actualiza
+  sola ni al cerrar.
+- La prueba de integración
+  `tests/integration/packaging/preservation.test.ts` usa un `userData` temporal
+  con base, `app_settings`, un asset y una copia pre-migración, aplica una
+  migración de fixture y simula reinstalación y borrado de la carpeta de
+  instalación. La prueba real de instalación, actualización 0.1.0→0.1.1 y
+  desinstalación conservó **194 archivos** de `userData`, incluidas las copias
+  diarias creadas por los arranques de prueba, y dejó el registro solo en HKCU.
+- El paquete incluye `out/`, `package.json`, `LICENSE`,
+  `THIRD-PARTY-NOTICES.md` y `licenses/`, con `better-sqlite3` y `sharp`
+  desempaquetados del asar y podados a win32-x64. `pnpm verify:package` comprueba
+  el asar, los binarios, las licencias, el icono, la versión y los manifiestos;
+  `pnpm verify:native` comprueba los módulos en Node y Electron.
+- Residual: la actualización real contra una release pública de GitHub se prueba
+  en M5. En M0-08 no hay release publicada y el instalador sigue sin firma
+  (ADR 0015).
 
 ## 10. Logs y diagnóstico
 
@@ -569,6 +594,11 @@ según la elección del usuario. La app se reinicia en estado inicial.
 - El servicio de assets escribe `logs/assets.log` con el mismo formato y
   rotación: eventos `asset.import`, `asset.request`, `asset.orphans` y
   `asset.paths`, con códigos, estados y contadores, sin rutas ni IDs.
+- El actualizador escribe `logs/updates.log` con el mismo formato y rotación:
+  `update.composition`, `update.check`, `update.download`, `update.install` y
+  `update.command`, con resultado y motivo estables, sin URLs, rutas, versiones
+  ni contenido. La caché de descargas de electron-updater vive fuera de
+  `userData`, en `%LOCALAPPDATA%`, y no se incluye en las copias.
 - Si el log no se puede escribir, el arranque continúa: el diagnóstico nunca
   impide abrir la aplicación.
 - Los logs generales de la app, con nivel configurable, y la exportación de un

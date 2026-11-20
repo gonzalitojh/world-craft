@@ -32,6 +32,16 @@ el MVP.
 7. El instalador se distribuye sin firmar; el aviso de SmartScreen se documenta
    (ADR 0015).
 
+> **Implementación (M0-08, #68, 20/11/2026).** El instalador NSIS 0.1.0 se genera
+> en local y se prueba con `scripts/verify-install.ps1`; todavía **no hay una
+> release pública**, que llega con M5. La comprobación de actualizaciones quedó
+> **manual** (botón «Actualizaciones»), sin auto-check ni descarga en segundo
+> plano sin consentimiento, y la instalación solo se ofrece desde `downloaded`
+> con reinicio consentido; el interruptor para desactivarla llega con Ajustes en
+> M1. Se añadió el bloqueo de instancia única antes de abrir la base. El detalle
+> de configuración, partición de red, poda de binarios y CI está en el
+> [ADR 0018](0018-nsis-packaging-and-update-service.md).
+
 ## Alternativas consideradas
 
 | Alternativa | Motivo del descarte |

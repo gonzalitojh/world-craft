@@ -74,8 +74,9 @@ externas.
 >   app y no se podan; su recuperación es manual con la aplicación cerrada.
 > - **Assets intactos:** al restaurar solo la base, los assets existentes no se
 >   sustituyen; las referencias huérfanas se gestionan en M1.
-> - **Residuales documentados:** sin `requestSingleInstanceLock` el lock no es
->   una exclusión mutua estricta; un lock obsoleto o ilegible y la reutilización
+> - **Residuales documentados:** el lock de restauración no es una exclusión
+>   mutua estricta entre procesos; desde #68 el bloqueo de instancia única evita
+>   que dos procesos solapen la restauración. Un lock obsoleto o ilegible y la reutilización
 >   de PID pueden requerir borrar `data/.restore.lock` a mano; una base de 0
 >   bytes se considera nueva; una base válida con restos `.rollback*` o con el
 >   marcador obliga a modo seguro; la limpieza fallida de `.rollback*` puede
@@ -83,7 +84,7 @@ externas.
 >   pre-migración; un arranque con migraciones puede ejecutar hasta tres
 >   `integrity_check` (base viva antes de migrar, copia pre-migración y base viva
 >   después); el inventario y la rotación listan carpetas sin `realpath` ni
->   contención, a endurecer antes de M1/#68; y la durabilidad del marcador y de la
+>   contención, a endurecer antes de M1; y la durabilidad del marcador y de la
 >   copia protege frente a un cierre del proceso, no frente a un corte de
 >   energía. El detalle está en [`docs/persistencia.md`](../persistencia.md) y en
 >   el [ADR 0016](0016-sqlite-migrations-safe-mode.md).

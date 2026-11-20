@@ -30,6 +30,15 @@ bloquearse por un coste recurrente.
 6. Mientras no se apruebe, no se usan certificados de prueba en producción ni
    se pide al usuario que instale autoridades.
 
+> **Implementación (M0-08, #68, 20/11/2026).** El instalador 0.1.0 y `latest.yml`
+> se generan sin firma; `win.signExecutable`, `verifyUpdateCodeSignature` y
+> `forceCodeSigning` están en `false`, y el `app-update.yml` no declara
+> `publisherName`. No se añade firma Ed25519 a los manifiestos porque
+> electron-builder 26.18.0 no la soporta; la decisión se aplaza a M5. La
+> integridad actual se apoya en HTTPS, el SHA-512 de `latest.yml` y
+> `SHA256SUMS`. El manual explica SmartScreen y los checksums. El detalle está en
+> el [ADR 0018](0018-nsis-packaging-and-update-service.md).
+
 ## Alternativas consideradas
 
 | Alternativa | Motivo del descarte |

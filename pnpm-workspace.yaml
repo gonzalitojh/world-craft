@@ -8,6 +8,23 @@
 allowBuilds:
   electron: true
   esbuild: true
+  # Dependencia de electron-builder para el target Squirrel.Windows, que este
+  # proyecto no usa: compilamos NSIS. Se declara en falso para que pnpm no
+  # ejecute su script de instalación ni bloquee la instalación del paquete.
+  electron-winstaller: false
+
+# El producto se distribuye para Windows x64, pero el equipo de desarrollo
+# puede ser ARM64 y la CI ejecuta Linux. `current` mantiene las dependencias
+# nativas del sistema que ejecuta pnpm (necesario para `verify:native`, tests
+# de assets y `sharp` en Ubuntu); `win32` y `x64` añaden el destino de
+# empaquetado para poder generar el instalador x64 desde Windows ARM64.
+supportedArchitectures:
+  os:
+    - current
+    - win32
+  cpu:
+    - x64
+    - arm64
 
 # `electron` se fija a una versión recién publicada que la política local de
 # antigüedad de pnpm aún no considera madura; se excluye solo esa versión para

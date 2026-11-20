@@ -64,6 +64,23 @@ jobs:
       - run: pnpm build
       - run: pnpm verify:build
 
+  # No es required todavía: empaquetar NSIS en Windows es lento y la build de
+  # release completa llega con M5. Comprueba el instalador, los binarios
+  # nativos desempaquetados, latest.yml y los checksums sin publicar nada.
+  package:
+    name: package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm verify:native
+      - run: pnpm dist
+      - run: pnpm verify:build
+      - run: pnpm package:checksums
+      - run: pnpm verify:package -- --installer
+
   # No es required: un fallo de la acción de secretos no debe bloquear una PR
   # que no toca credenciales. Se revisa en la puerta de seguridad.
   gitleaks:

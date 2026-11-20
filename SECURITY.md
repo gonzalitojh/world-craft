@@ -35,7 +35,8 @@ Se revisan, entre otros:
 - Las migraciones de SQLite, las copias de seguridad, la restauración y el modo
   seguro.
 - La preservación de datos al actualizar, reinstalar o desinstalar.
-- El actualizador: origen de las releases y verificación de integridad.
+- El actualizador: origen de las releases, verificación de integridad, aislamiento
+  de red y ausencia de envío de contenido.
 - La sanitización de contenido rico y la validación de subidas.
 - Las dependencias y su cadena de suministro.
 - Los secretos usados en el desarrollo o en la firma opcional de código.
@@ -43,6 +44,33 @@ Se revisan, entre otros:
 Quedan fuera de alcance los ataques de denegación de servicio, la ingeniería
 social, el spam y los problemas que dependan de servicios de terceros y ya estén
 gestionados por sus proveedores.
+
+## Actualizador y distribución
+
+- La comprobación de actualizaciones es **manual** y opcional. No hay
+  auto-check; el interruptor y la frecuencia llegarán con Ajustes en M1.
+- El actualizador usa una partición propia (`electron-updater`) con caché
+  desactivada y solo permite HTTPS a `github.com`, `api.github.com` y subdominios
+  de `githubusercontent.com`. Rechaza credenciales embebidas y puertos no
+  estándar, elimina las cabeceras `x-user-staging-id`, `authorization`,
+  `private-token` y `cookie`, y deniega todos los permisos.
+- La descarga exige consentimiento, se cancela con `CancellationToken` y la
+  instalación solo se acepta desde el estado `downloaded`; la aplicación no se
+  actualiza ni se reinicia sola.
+- El actualizador no envía el contenido de los mundos ni datos personales. El
+  log `logs/updates.log` no incluye URLs, rutas, versiones ni contenido.
+- **El instalador y `latest.yml` no están firmados** (ADR 0015). La integridad
+  actual se apoya en HTTPS, el SHA-512 de `latest.yml` y `SHA256SUMS`; no hay
+  firma Ed25519 de manifiestos porque electron-builder 26.18.0 no la soporta. La
+  firma Authenticode es opcional y de pago, y requiere aprobación explícita.
+- La instalación es por usuario, no usa UAC y no escribe en HKLM; el
+  desinstalador conserva `userData`.
+- Residuales aceptados: sin firma Authenticode, SmartScreen puede avisar; la
+  cancelación de la comprobación no aborta el socket HTTP; `shell.openExternal`
+  mantiene la política de cualquier `https:` válido sin allowlist de dominios
+  (preexistente de #63, endurecimiento futuro); y las dos vulnerabilidades
+  moderadas detectadas en dependencias son de desarrollo y no llegan al
+  instalador. La actualización real contra una release pública se prueba en M5.
 
 ## Respuesta
 

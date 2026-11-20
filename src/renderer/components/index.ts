@@ -17,3 +17,5 @@ export {
   type ToastTone,
 } from './toast';
 export { Tooltip, type TooltipProps } from './tooltip';
+export { UpdatesControl } from './updates-control';
+export { UpdatesDialog, type UpdatesDialogProps } from './updates-dialog';

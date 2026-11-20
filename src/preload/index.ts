@@ -13,12 +13,25 @@ import {
   createWorldCraftApi,
   WORLD_CRAFT_API_KEY,
   type IpcInvoke,
+  type IpcSubscribe,
 } from '../shared/contracts/world-craft-api';
 
 const invoke: IpcInvoke = (channel, payload) =>
   ipcRenderer.invoke(channel, payload) as Promise<unknown>;
 
+const subscribe: IpcSubscribe = (channel, listener) => {
+  const handler = (_event: unknown, payload: unknown): void => {
+    listener(payload);
+  };
+
+  ipcRenderer.on(channel, handler);
+
+  return () => {
+    ipcRenderer.removeListener(channel, handler);
+  };
+};
+
 contextBridge.exposeInMainWorld(
   WORLD_CRAFT_API_KEY,
-  createWorldCraftApi({ invoke }),
+  createWorldCraftApi({ invoke, subscribe }),
 );

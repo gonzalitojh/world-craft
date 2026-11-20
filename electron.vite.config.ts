@@ -90,6 +90,10 @@ export default defineConfig(({ command }) => {
             /^drizzle-orm(\/.*)?$/,
             'sharp',
             /^@img\/.*$/,
+            // El actualizador mantiene su propio ciclo de vida y usa módulos
+            // de Electron; se carga desde node_modules, nunca empaquetado.
+            'electron-updater',
+            'builder-util-runtime',
           ],
           output: createCommonjsOutput(),
         },

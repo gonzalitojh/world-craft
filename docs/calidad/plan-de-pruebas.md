@@ -3,7 +3,8 @@
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
 > **Ámbito:** estrategia de pruebas, calidad, accesibilidad, rendimiento,
 > preservación de datos y verificación antes de publicar.
-> **Decisiones:** ADR 0010 (testing), ADR 0012 (datos) y ADR 0013 (CI).
+> **Decisiones:** ADR 0010 (testing), ADR 0012 (datos), ADR 0013 (CI) y
+> ADR 0018 (empaquetado, actualizador y preservación).
 
 ## 1. Principios
 
@@ -29,7 +30,7 @@
 | E2E | Playwright Electron | Arranque, ventana, flujos críticos, temas, accesibilidad. | `tests/e2e/` |
 | Manual | Checklist | Instalación, actualización, desinstalación y percepción visual. | Task file |
 
-`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-07).
+`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-08).
 `components/` y `e2e/` se crearán con sus issues y hasta entonces son contrato
 previsto.
 
@@ -115,34 +116,44 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
   seguro; las copias manuales y la exportación de M1 no deben bloquear la UI.
 - Sin fugas evidentes al abrir y cerrar editor, mapa y grafo varias veces.
 
-### 3.6 Distribución
+### 3.6 Distribución (implementado, #68)
 
-- Instalador NSIS instala, actualiza y desinstala.
-- `userData` sobrevive a las tres operaciones.
-- `latest.yml` y los artefactos de release son correctos.
-- La app arranca sin conexión.
-- SmartScreen se documenta y el checksum coincide.
+- El instalador NSIS 0.1.0 se genera con `pnpm dist` y se instala en
+  `%LOCALAPPDATA%\Programs\World Craft` sin UAC ni registro en HKLM.
+- Reinstalar y actualizar de 0.1.0 a 0.1.1 conserva la base, los assets y las
+  copias de `userData`.
+- Desinstalar elimina binarios y accesos directos y conserva
+  `%APPDATA%\World Craft`; el aviso de datos conservados solo aparece en modo
+  interactivo.
+- `latest.yml`, el blockmap y `SHA256SUMS` coinciden con el instalador generado.
+- La aplicación instalada arranca sin conexión; la comprobación de
+  actualizaciones es manual y falla de forma controlada sin red.
+- SmartScreen se documenta y el SHA-256 del instalador coincide con
+  `SHA256SUMS`.
+- La release pública y la actualización real contra GitHub Releases se prueban
+  en M5; hoy el instalador es local.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **216 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **282 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
   journal, checksum, rutas de datos, UUIDv7, logger, lógica del aviso de modo
-  seguro, tokens y contraste del sistema de diseño, servicio de assets y copias
+  seguro, tokens y contraste del sistema de diseño, servicio de assets, copias
   (manifiesto, rutas de restauración, buckets, rotación y composición de modo
-  seguro).
-- **84 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
+  seguro), instalador, actualizador, instancia única y licencias.
+- **85 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
   base ajena, checksum alterado, rollback del lote, preservación con copia,
   restauración manual heredada, fallo de copia, rollback de referencia, upgrade
-  a `0001_assets`, importación, protocolo, repositorio y purga con SQLite real, y
+  a `0001_assets`, importación, protocolo, repositorio y purga con SQLite real,
   creación, verificación, restauración, rotación y restauración interrumpida de
-  copias.
+  copias, y preservación de datos entre instalaciones.
 - **Comandos.** `pnpm test:unit`, `pnpm test:integration`, `pnpm test`,
-  `pnpm db:check`, `pnpm verify:native` y `pnpm verify:build`.
+  `pnpm db:check`, `pnpm verify:native`, `pnpm verify:build`, `pnpm dist:dir`,
+  `pnpm dist`, `pnpm package:checksums` y `pnpm verify:package`.
 - **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
   `out/renderer/index.html`, y copia `drizzle/` a `out/main/drizzle`; no genera
   instalador.
@@ -153,13 +164,14 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
   `sharp` están externalizados.
 - **Nativo.** `pnpm verify:native` carga `better-sqlite3` y `sharp` en Node y
   Electron, comprueba SQLite 3.54.1 con FTS5 y que sharp genera y lee un WebP
-  2×2. Hoy se ejecuta a mano; debe añadirse a la CI antes de #68.
+  2×2. Se ejecuta en el job `package` de Windows desde #68.
 - **Manual del scaffold.** DevTools sin `require` ni `process`, navegación
   externa bloqueada y arranque sin red. La comprobación visual de la ventana a
   1024, 1280 y 1600 px y de los dos temas con el shell de #65 queda pendiente
   para #70 y la revisión local.
-- **Pendiente.** E2E con Playwright (#70), auditoría de accesibilidad, temas y
-  ventana (#93), y pruebas del instalador y del asar (#68).
+- **Pendiente.** E2E con Playwright (#70) y auditoría de accesibilidad, temas y
+  ventana (#93). El instalador, el asar y el actualizador ya están cubiertos en
+  3.6 y 3.10.
 
 ### 3.8 Assets locales (implementado, #66)
 
@@ -258,8 +270,82 @@ Integración en `tests/integration/backup-create.test.ts`,
 Los fixtures usan `os.tmpdir()` y rutas sintéticas; no se tocan datos reales ni
 se incluyen rutas del desarrollador en logs o mensajes.
 
-Pendiente antes de M1/#68: endurecer el inventario y la rotación con `realpath` y
+Pendiente antes de M1: endurecer el inventario y la rotación con `realpath` y
 contención, y añadir una prueba de junction dentro de `backups/daily`.
+
+### 3.10 Empaquetado, actualizador y preservación (implementado, #68)
+
+**Unitarias de empaquetado** en `tests/unit/packaging/`:
+
+- **Configuración de electron-builder:** `appId`, `productName`, versión 0.1.0,
+  NSIS asistido, `perMachine:false`, `allowElevation:false`,
+  `deleteAppDataOnUninstall:false`, acceso directo solo en Inicio, sin firma,
+  `asarUnpack` de los módulos nativos, `npmRebuild:false`, `extraFiles` de
+  licencias y avisos, `afterPack` que escribe `app-update.yml` en las builds
+  `--dir` y poda los binarios que no son win32-x64.
+- **Iconos:** el ICO contiene los 7 tamaños esperados y se genera desde el
+  logotipo sin dependencias nuevas.
+- **Licencias:** los 5 textos completos (`sharp`, `@img/sharp-win32`, `libvips`,
+  GPL-3.0 y `electron-updater`) existen, tienen contenido y están enlazados desde
+  `THIRD-PARTY-NOTICES.md`.
+
+**Unitarias del actualizador** en `tests/unit/updates/` y
+`tests/unit/single-instance.test.ts`:
+
+- **Contrato:** fases, motivos, códigos de error y validación estructural del
+  snapshot; una fase incoherente se rechaza.
+- **Servicio:** no hay auto-check; la comprobación manual pasa por `checking` y
+  termina en `up-to-date`, `available` o `error`; el timeout y el `epoch`
+  descartan resultados tardíos; cancelar la comprobación vuelve a `idle`;
+  cancelar la descarga vuelve a `available`; la instalación solo se acepta desde
+  `downloaded`; las órdenes repetidas no rompen el estado; `dispose` cancela y
+  limpia.
+- **Red:** allowlist de `github.com`, `api.github.com` y subdominios de
+  `githubusercontent.com`; rechazo de HTTP, credenciales, puertos no estándar y
+  hosts ajenos; saneado de `x-user-staging-id`, `authorization`,
+  `private-token` y `cookie`; permisos denegados.
+- **Log:** eventos tipados, rotación a 256 KiB y ausencia de URLs, rutas,
+  versiones y contenido.
+- **Instancia única:** un segundo proceso no inicializa nada y el primero
+  enfoca su ventana.
+
+**Integración de preservación** en
+`tests/integration/packaging/preservation.test.ts`:
+
+- `userData` temporal con base, `app_settings`, un asset y una copia
+  pre-migración; se calculan hashes, se aplica una migración de fixture y se
+  simulan reinstalación y borrado de una carpeta de instalación temporal. La
+  base, el asset y la copia siguen intactos y la migración no pierde filas.
+
+**Verificación del paquete:**
+
+- `pnpm verify:package` comprueba `app.asar`, `app.asar.unpacked` con solo
+  `sharp-win32-x64` y `better-sqlite3` `win32-x64`, `app-update.yml` sin token ni
+  `publisherName`, `latest.yml` con SHA-512 y tamaño, `SHA256SUMS` con instalador,
+  blockmap y `latest.yml`, las licencias, el icono y `ProductVersion` 0.1.0.
+- La sonda nativa del paquete con `ELECTRON_RUN_AS_NODE` carga `better-sqlite3` y
+  `sharp` x64, confirma SQLite 3.54.1 con FTS5 y genera un WebP real.
+- **Prueba manual:** `scripts/verify-install.ps1` instala en silencio, comprueba
+  que no hay registro en HKLM, arranca la aplicación, reinstala o actualiza a
+  otra versión, desinstala y compara hashes de `data`, `assets` y `backups` antes
+  y después. Requiere `-AcceptInstallTest` y no se ejecuta en CI.
+- **Evidencia real (2026-11-20):** instalación, reinstalación y desinstalación
+  sin UAC, registro solo en HKCU, actualización 0.1.0→0.1.1 y **194 archivos de
+  `userData` intactos**, incluidas las copias diarias creadas por los arranques
+  de prueba. Instalador de 132.698.671 bytes con SHA-256
+  `4F293749704FB9C35A24163E0DC8E2350C244CFE6FA6062350E86C0B91DE53BF`;
+  `latest.yml` 0.1.0 con SHA-512
+  `Pp8LkuckrEIAIPqJr+SxFrUyva1cT6ppx86YSBxPhGRkciG4sfQuOioecEXavvUuqOZ97Qu675Eurl1fZD+8Fg==`
+  y `SHA256SUMS` con instalador, blockmap y `latest.yml`.
+
+**CI:** el job `package` corre en `windows-latest` con `verify:native`, `dist`,
+`verify:build`, `package:checksums` y `verify:package --installer`; no publica ni
+sube artefactos y **no es required hasta #69**.
+
+**Residuales:** la actualización real contra GitHub Releases se prueba en M5; el
+instalador y `latest.yml` van sin firma (ADR 0015); la cancelación de la
+comprobación no aborta el socket; axe/E2E siguen en #70/#93; la confirmación del
+job de Ubuntu y el paso de `package` a required corresponden a #69.
 
 ## 4. Cobertura
 
@@ -287,25 +373,29 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
-| `test` | Sí | `pnpm test`: 216 unitarias en verde (4 omitidas) + 84 de integración en verde (1 omitida). |
+| `test` | Sí | `pnpm test`: 282 unitarias en verde (4 omitidas) + 85 de integración en verde (1 omitida). |
 | `build` | No hasta #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
+| `package` | No hasta #69 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |
 | `audit` | No | `pnpm audit --audit-level=high`. |
 
-El repositorio ya ejecuta `lint`, `typecheck`, `test` y `build`, y el job `build`
-incluye `db:check`. `build` no es todavía required: añadirlo a la protección de
-`dev` corresponde a #69. `e2e` llegará con #70 y la auditoría de accesibilidad,
-temas y ventana con #93. `verify:native` no está en la CI y debe añadirse antes
-de #68. Los required checks se aplican en los rulesets `protect-dev` y
-`protect-main`. La CI no tiene credenciales ni datos de usuario.
+El repositorio ya ejecuta `lint`, `typecheck`, `test`, `build` y `package`, y el
+job `build` incluye `db:check`. `build` y `package` no son todavía required:
+añadirlos a la protección de `dev` corresponde a #69, que también debe confirmar
+el job de Ubuntu. `e2e` llegará con #70 y la auditoría de accesibilidad, temas y
+ventana con #93. `verify:native` se ejecuta en el job `package` de Windows desde
+#68. Los required checks se aplican en los rulesets `protect-dev` y
+`protect-main`. La CI no tiene credenciales ni datos de usuario; el job `package`
+no recibe `GH_TOKEN`.
 
 ## 7. Checklist de QA por issue
 
 - [ ] Criterios de aceptación cumplidos.
 - [ ] Tests nuevos o actualizados y en verde.
 - [ ] Typecheck, lint, `pnpm test`, `pnpm db:check`, build y `verify:build` en
-      verde; `verify:native` si se toca el módulo nativo.
+      verde; `verify:native` si se toca el módulo nativo; `verify:package` y
+      `verify-install.ps1` si se toca el empaquetado o el actualizador.
 - [ ] Ventana a 1024, 1280 y 1600 px.
 - [ ] Temas Claro y Oscuro, contraste AA.
 - [ ] Teclado, foco, axe y movimiento reducido.
@@ -317,16 +407,25 @@ de #68. Los required checks se aplican en los rulesets `protect-dev` y
 
 ## 8. Checklist de release
 
-- [ ] CI en verde en `dev`.
-- [ ] Instalador generado y probado en una máquina limpia.
-- [ ] Actualización desde la versión anterior probada.
-- [ ] Desinstalación conserva `userData`.
+- [ ] CI en verde en `dev`, incluido el job `package` de Windows.
+- [ ] `pnpm verify:native`, `pnpm dist`, `pnpm package:checksums` y
+      `pnpm verify:package --installer` en verde.
+- [ ] Instalador generado y probado en una máquina limpia con
+      `scripts/verify-install.ps1 -AcceptInstallTest`.
+- [ ] Actualización desde la versión anterior probada en local y, en M5, contra
+      GitHub Releases.
+- [ ] Desinstalación conserva `userData` y muestra el aviso.
 - [ ] Copia y restauración probadas.
+- [ ] Versión coherente entre `package.json`, `APP_VERSION`, `latest.yml` y
+      `ProductVersion`.
+- [ ] Licencias y `THIRD-PARTY-NOTICES.md` incluidos en el instalador.
 - [ ] Manual actualizado.
 - [ ] Changelog actualizado.
-- [ ] Checksums publicados.
-- [ ] SmartScreen documentado.
-- [ ] Release etiquetada y `latest.yml` correcto.
+- [ ] SHA-256 y `SHA256SUMS` publicados; `latest.yml` con SHA-512 correcto.
+- [ ] SmartScreen documentado; se comprueba que el instalador sigue sin firma
+      salvo que se haya aprobado lo contrario (ADR 0015).
+- [ ] Release etiquetada en GitHub Releases (M5) y `latest.yml` correcto.
+- [ ] Confirmado que el job `package` no recibe credenciales ni sube artefactos.
 
 ## 9. Cuándo se ejecuta cada nivel
 
@@ -347,3 +446,4 @@ de #68. Los required checks se aplican en los rulesets `protect-dev` y
 - [ADR 0013](../adr/0013-ci-releases.md)
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
+- [ADR 0018](../adr/0018-nsis-packaging-and-update-service.md)

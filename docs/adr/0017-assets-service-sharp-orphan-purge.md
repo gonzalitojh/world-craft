@@ -31,8 +31,8 @@ el procedimiento de purga recuperable.
    `better-sqlite3`, `drizzle-orm` y `@img/*`; `pnpm verify:native` comprueba
    que carga y genera un WebP en Node y Electron. Licencias: sharp Apache-2.0,
    `@img/sharp-*` Apache-2.0 AND LGPL-3.0-or-later y libvips LGPL-3.0-or-later,
-   documentadas en `THIRD-PARTY-NOTICES.md` y en el propio repositorio. #68 debe
-   desempaquetar sharp del asar e incluir los textos completos de las licencias
+   documentadas en `THIRD-PARTY-NOTICES.md` y en el propio repositorio. #68
+   desempaquetó sharp del asar e incluyó los textos completos de las licencias
    en el instalador.
 3. **Importación validada por contenido.** El formato se decide por magic bytes
    (PNG, JPEG, WebP, GIF y AVIF); SVG, BMP, TIFF y cualquier otro contenido se
@@ -123,7 +123,7 @@ el procedimiento de purga recuperable.
 - La re-codificación consume CPU en importaciones grandes y el WebP pierde el
   original; el archivo servido no es una copia del que eligió el usuario.
 - sharp añade un binario nativo grande al paquete y una obligación de avisos y
-  licencias que #68 debe completar.
+  licencias que #68 completó.
 - Quedan ventanas TOCTOU de escritura y de lectura que no se cierran del todo
   sin handles de directorio y borrado relativo al handle.
 - La FK de `world_id` no existe hasta M1: la integridad referencial de assets se
@@ -146,9 +146,9 @@ el procedimiento de purga recuperable.
 | Riesgo | Límite o coste | Mitigación | Seguimiento |
 |---|---|---|---|
 | Servicio de imagen de pago | No aplica: sharp y libvips son open source y locales | Sin cuentas, sin subida y sin cuotas | — |
-| Cumplimiento LGPL de libvips | El binario se distribuye sin modificar | `THIRD-PARTY-NOTICES.md`, avisos por paquete y textos completos en el instalador | #68 |
-| Tamaño del instalador por el binario nativo | sharp añade binarios de plataforma al paquete | Externalización, `asarUnpack` y verificación en Node y Electron | #68 |
-| Dependencia de un prebuild de sharp | Si falta el binario de Windows, la importación falla | `pnpm verify:native` en Node y Electron; contingencia de reconstrucción | #68 y CI |
+| Cumplimiento LGPL de libvips | El binario se distribuye sin modificar | `THIRD-PARTY-NOTICES.md`, avisos por paquete y textos completos en el instalador | Resuelto en #68 |
+| Tamaño del instalador por el binario nativo | sharp añade binarios de plataforma al paquete | Externalización, `asarUnpack` y verificación en Node y Electron | Resuelto en #68 |
+| Dependencia de un prebuild de sharp | Si falta el binario de Windows, la importación falla | `pnpm verify:native` en Node y Electron; contingencia de reconstrucción | Resuelto en #68; CI |
 | Telemetría o red implícita | No aplica: sharp no hace red | Sin claves, sin servicios y sin envío de datos | Revisión de seguridad |
 
 ## Riesgos residuales aceptados
@@ -175,14 +175,21 @@ alcance; deben revisarse al abrir la importación y la purga en M1.
   desarrollador (EPERM); las junctions sí se prueban y la lógica es común. La CI
   en Linux o el modo desarrollador deben cubrirlas.
 - **Avisos de terceros:** `THIRD-PARTY-NOTICES.md` remite a las licencias de
-  `node_modules`; #68 debe incluir los textos completos en el instalador.
+  `node_modules`; #68 incluyó los textos completos en el instalador.
+
+> **Implementación (M0-08, #68, 20/11/2026).** Se cerraron las obligaciones de
+> empaquetado: sharp y `@img/*` se desempaquetan del asar, el paquete se poda a
+> `sharp-win32-x64` y `better-sqlite3` `win32-x64`, y los 5 textos completos se
+> copian a `resources/licenses/` y a `licenses/` junto al ejecutable.
+> `pnpm verify:package` lo comprueba. El detalle está en el
+> [ADR 0018](0018-nsis-packaging-and-update-service.md).
 
 ## Plan de revisión
 
 Se revisa al abrir la importación y la purga por IPC en M1, con la migración que
 reconstruye `assets` para añadir la FK y con la posible deduplicación por hash.
 También se reabre si cambia el formato servible, si sharp o libvips cambian de
-licencia o de prebuild, y antes de #68 para cerrar el empaquetado y los avisos.
+licencia o de prebuild; el empaquetado y los avisos se cerraron en #68.
 Cualquier cambio de protocolo, formato o límites exige un ADR nuevo.
 
 ## Referencias

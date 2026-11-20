@@ -130,7 +130,11 @@ pnpm dev              # ventana de Electron en desarrollo
 pnpm build            # compila main, preload y renderer en out/
 pnpm start            # previsualiza el build de producción
 pnpm verify:build     # valida artefactos, CSP, migraciones y externalización
-pnpm verify:native    # comprueba better-sqlite3 en Node y Electron
+pnpm verify:native    # comprueba better-sqlite3 y sharp en Node y Electron
+pnpm dist:dir         # carpeta desempaquetada en release/ (Windows)
+pnpm dist             # instalador NSIS en release/ (Windows)
+pnpm package:checksums # genera SHA256SUMS
+pnpm verify:package   # valida asar, binarios nativos, licencias y manifiestos
 pnpm clean            # borra out/ y otros artefactos locales
 pnpm db:generate      # genera una migración
 pnpm db:check         # valida el journal y las instantáneas
@@ -145,21 +149,41 @@ pnpm format:check
 `pnpm build` escribe `out/main/index.cjs`, `out/preload/index.cjs` y
 `out/renderer/index.html`, y copia `drizzle/` a `out/main/drizzle`; **no genera
 un instalador**. `pnpm start` compila y abre el build de producción (se puede
-omitir la compilación con `--skipBuild`). `test:e2e` y los comandos de
-empaquetado se añadirán con sus issues y no se documentan como disponibles antes
-de tiempo.
+omitir la compilación con `--skipBuild`). `test:e2e` llegará con #70.
 
 - `lint`, `typecheck` y `test` son **required checks**: una PR no se fusiona si
   fallan.
 - El job `build` (`pnpm db:check`, `pnpm build` y `pnpm verify:build`) ya se
   ejecuta en la CI, pero no es required hasta la issue #69.
-- `pnpm verify:native` se ejecuta a mano; debe añadirse a la CI antes de #68.
+- El job `package` (`verify:native`, `dist`, `verify:build`,
+  `package:checksums` y `verify:package --installer`) corre en `windows-latest`,
+  **no es required hasta #69**, no publica y no sube artefactos.
+- `pnpm verify:native` se ejecuta en el job `package`; también se puede lanzar a
+  mano antes de tocar módulos nativos.
 - `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear.
 - En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
   (por ejemplo `pnpm.cmd typecheck`).
 - Para corregir el formato: `pnpm format`. En Windows, `format:check` puede fallar
   por finales de línea CRLF de archivos antiguos; comprueba solo los archivos que
   has tocado.
+
+## Empaquetado local
+
+- Los comandos `dist:dir`, `dist`, `package:checksums` y `verify:package` son
+  **Windows-only**, escriben en `release/` y usan `--publish never`. `release/`
+  está ignorada por git: no se añade al repositorio ni a la PR.
+- **No se publica ni se sube nada sin una petición explícita del usuario.** El
+  modo por defecto es local: rama, commit y diff. El instalador generado no se
+  adjunta a la PR ni se publica desde una tarea normal.
+- La instalación real se prueba a mano con
+  `scripts/verify-install.ps1 -AcceptInstallTest`; instala, actualiza y
+  desinstala en la máquina y compara hashes de `userData`.
+- El job `package` de la CI no recibe `GH_TOKEN`, no publica y no sube
+  artefactos. La release completa se hace en M5.
+- La versión debe coincidir entre `package.json`, `APP_VERSION`, `latest.yml` y
+  `ProductVersion`; el test de identidad lo comprueba.
+- El instalador se distribuye sin firma (ADR 0015). No se añaden certificados de
+  prueba ni claves al repositorio.
 
 ## Dependencias
 

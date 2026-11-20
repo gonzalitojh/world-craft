@@ -71,7 +71,7 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
    de `main`; `drizzle/` se copia a `out/main/drizzle` y `pnpm verify:build`
    comprueba el journal, la migración inicial y la externalización. Desempaquetar
    el módulo nativo del asar y empaquetar las dependencias de producción
-   corresponde a #68.
+   se completó en #68.
 
 > **Actualización (M0-07, #67, 19/11/2026).** La poda de copias pre-migración y
 > la restauración guiada ya están implementadas. Se conservan las **5 copias
@@ -83,9 +83,17 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 > restauraciones interrumpidas sin crear una base vacía y añade
 > `DB_RESTORE_INVALID`, `DB_RESTORE_FAILED`, `DB_RESTORE_INTERRUPTED` y
 > `DB_RESTORE_ROLLBACK_FAILED`. La interfaz de Ajustes sigue prevista para M1 y
-> el bloqueo de instancia única sigue pendiente antes de M1/#68. El detalle está
+> el bloqueo de instancia única seguía pendiente antes de #68. El detalle está
 > en el [ADR 0012](0012-backup-restore-recovery.md) y en
 > [`docs/persistencia.md`](../persistencia.md).
+
+> **Actualización (M0-08, #68, 20/11/2026).** Se cierran las dos deudas de
+> empaquetado e instancia: `better-sqlite3` y `sharp` se desempaquetan del asar,
+> `npmRebuild` queda desactivado y la poda deja solo los binarios win32-x64; y
+> `app.requestSingleInstanceLock()` se adquiere antes de la base, del IPC y de la
+> ventana, con `second-instance` enfocando la instancia existente. La base y el
+> modo seguro no cambian. El detalle está en el
+> [ADR 0018](0018-nsis-packaging-and-update-service.md).
 
 ## Alternativas consideradas
 
@@ -123,9 +131,9 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 - En M0-04 el diálogo nativo no permitía restaurar: solo abrir la carpeta,
   continuar en modo seguro o salir. Desde M0-07 ofrece restaurar una copia
   verificada con confirmación y copia previa.
-- No hay `app.requestSingleInstanceLock`; dos instancias podrían competir por
-  inspeccionar o migrar. SQLite serializa y la transacción revierte, pero debe
-  cerrarse antes de M1 y preferiblemente antes de #68.
+- En M0-04 no había `app.requestSingleInstanceLock`; dos instancias podían
+  competir por inspeccionar o migrar. SQLite serializa y la transacción revierte.
+  La deuda se cerró en #68 (véase la actualización de esta página).
 - `@types/better-sqlite3` va por detrás del runtime; es deuda de mantenimiento,
   no un fallo funcional.
 
@@ -145,18 +153,18 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 
 | Riesgo | Límite o coste | Mitigación | Seguimiento |
 |---|---|---|---|
-| Módulo nativo incompatible con Electron | Cambio de ABI en una versión futura | Node-API 10, versión fijada y `pnpm verify:native`; `electron-rebuild` como contingencia | #68 y actualizaciones de Electron |
+| Módulo nativo incompatible con Electron | Cambio de ABI en una versión futura | Node-API 10, versión fijada y `pnpm verify:native`; `electron-rebuild` como contingencia | Empaquetado resuelto en #68; actualizaciones de Electron |
 | Corrupción de la base | Fallo de disco o cierre abrupto | `integrity_check` antes de WAL, WAL, copia previa, modo seguro y restauración desde modo seguro (M0-07) | M5 para el aviso de disco |
 | Migración con error | SQL inválido o estado manipulado | Lote transaccional, checksum, copia y rechazo de bases ajenas | Cada migración |
 | Copias sin retención | Crecimiento de disco | Retención 7/4/12/5 y poda implementadas en M0-07 | #67 |
-| Dos instancias a la vez | Condición de carrera al migrar | SQLite serializa y la transacción revierte; falta el bloqueo de instancia | Antes de M1 y de #68 |
-| Empaquetado del binario nativo | Asar impide cargar `.node` | Externalización verificada; desempaquetado en #68 | #68 |
+| Dos instancias a la vez | Condición de carrera al migrar | SQLite serializa y la transacción revierte; bloqueo de instancia implementado | Resuelto en #68 |
+| Empaquetado del binario nativo | Asar impide cargar `.node` | Externalización verificada; desempaquetado y poda x64 | Resuelto en #68 |
 
 ## Plan de revisión
 
-Se revisó al cerrar M0-07 (restauración guiada y retención de copias), se revisa
-al implementar #68 (empaquetado y asar), al añadir las tablas de dominio de M1 y
-si Drizzle Kit cambia el formato del journal. Cualquier cambio de motor, de
+Se revisó al cerrar M0-07 (restauración guiada y retención de copias) y al
+implementar #68 (empaquetado, asar e instancia única); se revisa al añadir las
+tablas de dominio de M1 y si Drizzle Kit cambia el formato del journal. Cualquier cambio de motor, de
 formato de migración o de estrategia de copia exige un ADR nuevo.
 
 ## Referencias
