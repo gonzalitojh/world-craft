@@ -41,6 +41,7 @@ const markSchema = z.discriminatedUnion('type', [
         target: z.string().max(20).nullable().optional(),
         rel: z.string().max(40).nullable().optional(),
         class: z.string().max(40).nullable().optional(),
+        title: z.string().max(80).nullable().optional(),
       }),
     })
     .transform((mark) => ({

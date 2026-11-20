@@ -73,6 +73,10 @@ export function EntityDescriptionEditor({
   const editor = useEditor({
     extensions,
     editable: !disabled,
+    // Las marcas activas cambian al mover el cursor, no solo al editar: el
+    // toolbar debe repintarse para que «Abrir enlace» y los estados
+    // `aria-pressed` sean fiables sin tocar el documento.
+    shouldRerenderOnTransaction: true,
     // El contrato usa readonly para el renderer; Tiptap espera su JSON mutable.
     content: (document ?? EMPTY_DOCUMENT) as never,
     editorProps: {

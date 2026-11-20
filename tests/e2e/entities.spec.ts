@@ -294,10 +294,35 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
     'href',
     /^wc-entity:\/\/[0-9a-f-]{36}$/,
   );
+  await waitForSaved(page);
   await internalLink.click();
   await page
     .getByRole('button', { name: messages.entities.editor.linkOpen })
     .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
+  ).toBeVisible();
+
+  // Regresión: al volver a abrir la ficha en frío, el enlace ya existe y el
+  // toolbar debe habilitar «Abrir enlace» solo con colocar el cursor dentro.
+  await backToEntities(page);
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  const coldLink = page
+    .locator('.wc-editor__content a')
+    .filter({ hasText: 'Puerto Sal' })
+    .first();
+
+  await coldLink.click();
+  const openLink = page.getByRole('button', {
+    name: messages.entities.editor.linkOpen,
+  });
+
+  await expect(openLink).toBeEnabled();
+  await openLink.click();
   await expect(
     page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
   ).toBeVisible();

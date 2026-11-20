@@ -36,6 +36,7 @@ describe('descripción enriquecida de una ficha', () => {
                     target: null,
                     rel: null,
                     class: null,
+                    title: null,
                   },
                 },
               ],
