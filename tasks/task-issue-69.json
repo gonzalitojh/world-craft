@@ -1,12 +1,19 @@
 {
   "title": "CI de escritorio: checks, secretos y dependencias",
   "description": "Cerrar la CI de escritorio: ejecutar lint, format:check, typecheck, test y build en cada PR y push a dev y main, mantener gitleaks y audit como checks no bloqueantes revisados en la puerta de seguridad, exigir los required checks correctos en protect-dev y protect-main y documentar la caché, los límites gratuitos y la ruta de la build de Windows de M5.",
-  "status": "review",
+  "status": "published",
   "model_variant": "low",
   "issue": {
     "number": 69,
     "url": "https://github.com/gonzalitojh/world-craft/issues/69",
     "title": "CI de escritorio: checks, secretos y dependencias"
+  },
+  "pr": {
+    "number": 111,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/111",
+    "title": "chore: cerrar la CI de escritorio (#69)",
+    "branch": "chore/issue-69-ci-desktop",
+    "commit": "4cde919"
   },
   "acceptance_criteria": [
     "Una PR ejecuta los jobs lint, typecheck y test y los tres pasan con el scaffold.",
@@ -37,7 +44,7 @@
   "validation": {
     "result": "pending-user-review",
     "date": "2026-11-20",
-    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: chore, priority: p1, size: s, area: infra, variant: low y hito M0. Dependencia M0-02 (#62) fusionada en dev. Sin needs-decision. Variante recomendada y usada: low. Rama chore/issue-69-ci-desktop desde origin/dev; commit local sin push ni PR. Rulesets protect-dev y protect-main actualizados de forma idempotente con scripts/set-branch-protection.ps1: checks lint, typecheck, test y build, bypass solo del propietario en main. La revisión real de la PR y sus jobs queda para la publicación explícita; las mismas comprobaciones se ejecutaron en local."
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: chore, priority: p1, size: s, area: infra, variant: low y hito M0. Dependencia M0-02 (#62) fusionada en dev. Sin needs-decision. Variante recomendada y usada: low. Rama chore/issue-69-ci-desktop desde origin/dev; commit 4cde919 y PR #111 contra dev creada con petición explícita del usuario, sin keywords de cierre. Rulesets protect-dev y protect-main actualizados de forma idempotente con scripts/set-branch-protection.ps1: checks lint, typecheck, test y build, bypass solo del propietario en main. La revisión real de la PR y sus jobs queda para la publicación explícita; las mismas comprobaciones se ejecutaron en local."
   },
   "qa": {
     "result": "PASS",
