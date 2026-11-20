@@ -52,7 +52,7 @@ implementado de lo previsto.
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Implementado: 282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida) (#62–#70); E2E de shell, ventana, temas y axe (#70) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 313 unitarias (4 omitidas), 19 de componentes y 96 de integración (1 omitida) (#62–#72); E2E de shell, ventana, temas, axe y mundos (#70, #72) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -65,8 +65,8 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, copias de seguridad con restauración y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
-| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal` y actualizaciones; nunca un `invoke` genérico. | API de Electron limitada. |
+| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, copias de seguridad con restauración y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones y mundos; nunca un `invoke` genérico. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
@@ -76,28 +76,29 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/backup/` | Copias y restauración puros: manifiesto v2, creación online, verificación, inventario, rotación, programación por arranque, lock, marcador pendiente y reemplazo con rollback. No importa Electron (regla ESLint); la composición vive en `persistence.ts` y `safe-mode-recovery.ts`. | Node, better-sqlite3, Zod |
 | `src/main/logging/` | Escritura JSONL con rotación compartida por el log de arranque, el de assets y el del actualizador. | Node |
 | `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
+| `src/main/worlds/` | Dominio de mundos puro: normalización y slugs, repositorio Drizzle con filtros por `world_id` y `deleted_at`, servicio de CRUD y actividad, y errores de entrada. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
 | `src/main/updates/` | Máquina de estados del actualizador sin Electron, adaptador de electron-updater, allowlist de red y saneado de cabeceras, log JSONL y composición. | Node, electron-updater, `builder-util-runtime` |
 | `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal` y `updates`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, mensajes tipados, tema y estilos; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`) y control/diálogo de actualizaciones de #68; `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates` y `worlds`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
+| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos y su dashboard están implementados en #72. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `text-area-field`, `select-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68 y tarjetas, diálogos de mundo y lista de actividad de #72; `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
-| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (estado vacío) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
-| `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. Prevista. | API tipada, shared |
+| `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
 | `src/renderer/i18n/` | Composición del idioma: `create.ts` (`createI18n`), `provider.tsx` (`I18nProvider`, `useI18n`, `useMessages`) y `formats.ts` (fechas, números, listas y plurales con `Intl`). | Mensajes, `src/shared/` |
 | `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
-| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador y contrato de idioma (`locale.ts`). | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos) y de instancia única. | `src/` |
-| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
-| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
-| `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas y axe con `userData` temporal e isolado. | `src/` |
+| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`) y contrato de mundos (`worlds.ts`) con guardas estructurales. | — |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación) y de instancia única. | `src/` |
+| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; CRUD, aislamiento y actividad de mundos; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
+| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados, formularios y tarjetas de mundo, y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
+| `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas, axe, CRUD de mundos, teclado y textos largos con `userData` temporal e aislado. | `src/` |
 | `resources/` | `icon.ico`, `icon.png`, `installer.nsh` y `licenses/` generados o versionados para electron-builder. | — |
 | `scripts/` | Verificación de build, nativo, paquete, checksums, iconos, licencias, instalación manual y limpieza. | Node, PowerShell |
 | `release/` | Salida de electron-builder (instalador, blockmap, `latest.yml`, `SHA256SUMS`); ignorada por git. | — |
@@ -148,19 +149,19 @@ Reglas de dependencia:
   escritura en `userData`, SQLite y las migraciones se añadieron en #64
   (sección 2.3).
 
-### 2.2 Estado implementado del IPC (#63 y #68)
+### 2.2 Estado implementado del IPC (#63, #68 y #72)
 
 - **Contrato compartido.** `src/shared/contracts/` contiene la allowlist
-  `IPC_CHANNELS` (hoy `shell:openExternal` y los cinco canales de
-  actualizaciones), el resultado discriminado `IpcResult` con los códigos
+  `IPC_CHANNELS` (hoy `shell:openExternal`, los cinco canales de actualizaciones
+  y los ocho de mundos), el resultado discriminado `IpcResult` con los códigos
   `INVALID_INPUT`, `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y
   `createWorldCraftApi({ invoke })`,
   que construye la API congelada del preload. Son módulos puros: no importan
   Electron, Node ni Zod.
-- **Preload nominativo.** Publica `appInfo`, `shell.openExternal(url)` y la API
-  `updates` (desde #68). No expone `ipcRenderer`, `require` ni un `invoke`
-  genérico; el renderer solo puede llamar a las funciones declaradas en el
-  contrato.
+- **Preload nominativo.** Publica `appInfo`, `shell.openExternal(url)`, la API
+  `updates` (desde #68) y la API `worlds` (desde #72). No expone `ipcRenderer`,
+  `require` ni un `invoke` genérico; el renderer solo puede llamar a las
+  funciones declaradas en el contrato.
 - **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
   canal de la allowlist, comprueba el remitente (`file:` empaquetado o loopback
   de desarrollo), valida la entrada con Zod (`zod@^4.6.7`, declarado en
@@ -171,9 +172,10 @@ Reglas de dependencia:
   cualquier excepción `INTERNAL_ERROR`, sin mensaje, stack, rutas ni valores
   recibidos.
 - **Salida validada sin Zod.** El preload no valida reglas de dominio: comprueba
-  la forma de `IpcResult` de manera estructural (`isIpcResult`) y degrada
-  cualquier respuesta inesperada a `INTERNAL_ERROR`, para no empaquetar Zod en
-  preload ni renderer.
+  la forma de `IpcResult` de manera estructural (`isIpcResult`), valida los
+  snapshots del actualizador y las entidades de mundo con guardas puras, y
+  degrada cualquier respuesta inesperada a `INTERNAL_ERROR`, para no empaquetar
+  Zod en preload ni renderer.
 - **Enlaces externos.** `src/main/security/external-links.ts` decide qué URL se
   abre: solo `https:`, sin credenciales, sin espacios ni controles, con longitud
   máxima de 2048 y rechazo de loopback y redes privadas. Se abre la URL ya
@@ -352,6 +354,33 @@ Reglas de dependencia:
   URLs, rutas, versiones ni contenido. La caché de descargas vive en
   `%LOCALAPPDATA%`, fuera de `userData`.
 
+### 2.8 Estado implementado de los mundos (#72)
+
+- **Datos.** La migración `0002_worlds` crea `worlds` y `activity_log` con
+  `CHECK` de estado, idioma, nombre, slug y géneros, índice único de slug e
+  índices de estado y actividad. El borrado es lógico con `deleted_at` y la
+  portada es una FK opcional a `assets` (`RESTRICT`).
+- **Dominio.** `src/main/worlds/` no importa Electron: `slug.ts` genera y
+  deduplica identificadores, `validation.ts` recorta y valida campos,
+  `repository.ts` es la única capa con Drizzle y `service.ts` orquesta
+  timestamps, IDs inyectables y actividad. Cada mutación y su fila de
+  `activity_log` se agrupan en una transacción de better-sqlite3. La lista filtra
+  `deleted_at`, la actividad se resuelve con `JOIN` y nunca se mezclan filas de
+  dos mundos.
+- **IPC.** Canales `worlds:list`, `get`, `create`, `update`, `duplicate`,
+  `setArchived`, `remove` y `listActivity`, con esquemas Zod estrictos. Un error
+  de dominio se traduce a `INVALID_INPUT`; el resto, a `INTERNAL_ERROR`. En modo
+  seguro se registra un servicio no disponible que falla de forma estable.
+- **UI.** El shell navega entre Inicio, Mundos y Muestras; Inicio es el dashboard
+  con resumen, tarjetas, actividad global etiquetada por mundo y accesos rápidos.
+  La página de un mundo muestra su ficha, progreso de preparación, actividad
+  aislada y secciones previstas. Los diálogos de crear/editar, duplicar,
+  archivar/restaurar y eliminar validan antes de enviar y piden confirmación.
+- **Decisiones pendientes.** La portada se guarda y se muestra si existe, pero su
+  selector llega con #115; la descripción es texto plano hasta #114; la papelera
+  visible y la purga llegan con #77; la FK `assets.world_id` se completará con
+  #116.
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -446,31 +475,37 @@ contrato del preload. Los errores nunca cruzan IPC como excepciones crudas: se
 convierten en `{ ok: false, error: { code } }`. La importación y la purga por
 IPC (`assets:import`, `assets:list` y `assets:purgeOrphans`) se definirán en M1.
 
-### 3.4 Flujos de dominio previstos
+### 3.4 Flujos de dominio
 
-Los flujos siguientes son el **objetivo** una vez existan las tablas de M1 y las
-issues de cada módulo; todavía no tienen canales ni consultas.
+El flujo de **mundos** ya está implementado en #72 y sirve de patrón:
 
 ```text
-Lectura
+Lectura de mundos
+  renderer → window.worldCraft.worlds.list()
+    → preload: función nominativa → ipcRenderer.invoke('worlds:list', {})
+    → main: remitente → allowlist → Zod → servicio → repositorio Drizzle
+    → guarda estructural en el preload → lista o error tipado
+
+Mutación de mundos
+  renderer → window.worldCraft.worlds.create(input)
+    → preload → main: Zod estricto → servicio (slug, validación, timestamps)
+    → transacción SQLite (worlds + activity_log) → WorldDetail
+    → el renderer refresca la biblioteca y la actividad
+```
+
+Los flujos de fichas, relaciones, mapas, manuscrito y juego son el **objetivo**
+una vez existan sus tablas e issues; todavía no tienen canales ni consultas.
+
+```text
+Lectura de fichas (previsto)
   renderer → window.worldCraft.entities.list({ worldId })
     → preload: función nominativa → ipcRenderer.invoke('entities:list', payload)
     → main: remitente → allowlist → Zod → consulta Drizzle/SQLite → IpcResult
     → renderer: pinta datos o error tipado
 
-Mutación
-  renderer → window.worldCraft.entities.create(input)
-    → preload → main: Zod → transacción SQLite → activity_log
-    → invalida caché de UI y refresca la vista
-
-Exportación
+Exportación (previsto)
   renderer → window.worldCraft.backup.exportWorld(worldId)
     → main: consulta → ZIP temporal → dialog.save → IpcResult
-
-Actualización
-  main: electron-updater consulta GitHub Releases (opcional)
-    → descarga → aviso al usuario → instala al reiniciar
-    → userData no se toca
 ```
 
 ## 4. Persistencia y datos
@@ -487,8 +522,9 @@ las copias manuales siguen previstas para M1.
 - **Drizzle ORM** para el esquema y las consultas tipadas. Drizzle Kit solo
   genera y revisa migraciones; el runner propio las aplica.
 - **Migraciones** en `drizzle/`: `0000_init` crea `schema_migrations` y
-  `app_settings`; `0001_assets` crea `assets`. `PRAGMA user_version` guarda el
-  número de migraciones aplicadas (hoy 2).
+  `app_settings`; `0001_assets` crea `assets`; `0002_worlds` crea `worlds` y
+  `activity_log`. `PRAGMA user_version` guarda el número de migraciones
+  aplicadas (hoy 3).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
   `monthly` (12), `pre-migration` (5) y `pre-restore` (sin poda). Cada copia
   lleva `manifest.json` v2, SHA-256 e integridad; solo contiene SQLite, no
@@ -601,21 +637,23 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 282 pruebas unitarias (4 omitidas por
-  symlinks en Windows sin modo desarrollador), 7 de componentes y 85 de
+- **Pruebas.** `pnpm test` ejecuta 313 pruebas unitarias (4 omitidas por
+  symlinks en Windows sin modo desarrollador), 19 de componentes y 96 de
   integración (1 omitida): scaffold (ventana, navegación, CSP e identidad),
   contrato IPC, router IPC, API del preload, enlaces externos, journal, checksum,
   rutas, UUIDv7, logger, modo seguro, tokens y contraste, servicio de assets
   (URL, rutas, formatos, importación, huérfanos, protocolo y log), copias
   (manifiesto, rutas de restauración, buckets, rotación y recuperación),
   empaquetado (configuración, iconos y licencias), actualizador (contrato,
-  servicio, red, log y textos) e instancia única; además, arranque, migraciones,
-  copia, corrupción, versión adelantada, base ajena, preservación, rollback de
-  referencia, importación, protocolo, repositorio y purga con SQLite real,
-  creación, restauración, rotación y restauración interrumpida de copias, y
-  preservación entre instalaciones. `pnpm test:e2e` abre la aplicación real con
-  Playwright Electron y un `userData` temporal: shell, ventana a 1024, 1280 y
-  1600 px, temas y axe. `pnpm build` y `pnpm verify:build` validan los
+  servicio, red, log y textos), mundos (slug, validación, esquemas IPC y guardas)
+  e instancia única; además, arranque, migraciones, copia, corrupción, versión
+  adelantada, base ajena, preservación, rollback de referencia, importación,
+  protocolo, repositorio y purga con SQLite real, CRUD, aislamiento, actividad y
+  atomicidad de mundos, creación, restauración, rotación y restauración
+  interrumpida de copias, y preservación entre instalaciones. `pnpm test:e2e`
+  abre la aplicación real con Playwright Electron y un `userData` temporal:
+  shell, ventana a 1024, 1280 y 1600 px, temas, axe y CRUD de mundos con teclado
+  y textos largos. `pnpm build` y `pnpm verify:build` validan los
   artefactos; `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y
   Electron; `pnpm verify:package` valida el paquete y
   `scripts/verify-install.ps1` prueba la instalación real.

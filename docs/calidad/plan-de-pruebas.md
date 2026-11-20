@@ -47,11 +47,11 @@ Library, Playwright Electron y axe se incorporaron con el arranque de pruebas
 
 ### 3.2 Migraciones, copias y preservación (implementado)
 
-- Base nueva → `0000_init` + `0001_assets` → `user_version` 2, tablas del
-  sistema y `assets`, y sin copia previa (justificado: no hay datos que
-  preservar).
-- Base existente en `0000` → `0001_assets` → `app_settings` intacto y tabla
-  `assets` creada.
+- Base nueva → `0000_init` + `0001_assets` + `0002_worlds` → `user_version` 3,
+  tablas del sistema, `assets`, `worlds` y `activity_log`, y sin copia previa
+  (justificado: no hay datos que preservar).
+- Base existente en `0000` → esquema actual → `app_settings` intacto y tablas
+  `assets`, `worlds` y `activity_log` creadas.
 - Base existente → migración → mismos datos y copia previa verificable.
 - Journal válido, secuencia sin huecos, etiqueta sin traversal y checksum
   SHA-256 normalizado.
@@ -176,8 +176,8 @@ Lo siguiente **sigue pendiente** y pertenece a #93 y a la revisión local:
   instalador.
 - **Verificación.** `pnpm verify:build` comprueba la existencia y tamaño de los
   artefactos, que la CSP de producción va antes de los scripts, que no contiene
-  `unsafe-*` ni URLs remotas, que el journal y las migraciones (`0000_init` y
-  `0001_assets`) están en el build y que `better-sqlite3`, `drizzle-orm` y
+  `unsafe-*` ni URLs remotas, que el journal y todas las migraciones del build
+  están copiados y que `better-sqlite3`, `drizzle-orm` y
   `sharp` están externalizados.
 - **Nativo.** `pnpm verify:native` carga `better-sqlite3` y `sharp` en Node y
   Electron, comprueba SQLite 3.54.1 con FTS5 y que sharp genera y lee un WebP
@@ -232,8 +232,9 @@ Integración en `tests/integration/assets/` con SQLite real:
   `CHECK` con código estable y persistencia al reabrir.
 - Purga: referenciados conservados, copia verificable del huérfano, ausentes
   informados sin borrar, temporales purgados e idempotencia.
-- Migración: `0000` → `0001_assets` conservando `app_settings`, `user_version` 2,
-  y rollback de referencia de `0001` y `0000`.
+- Migración: `0000` → esquema actual conservando `app_settings`, `user_version`
+  3, y tablas `assets`, `worlds` y `activity_log`; rollback de referencia de
+  `0002`, `0001` y `0000`.
 
 Las pruebas de symlink de archivo se omiten en Windows sin modo desarrollador
 (EPERM); las junctions sí se ejecutan. Los residuales están en el
@@ -386,7 +387,7 @@ aplicación y borra la carpeta. Una fuga de aislamiento detiene la prueba: no se
 leen ni escriben `%APPDATA%`, la base, los assets ni las copias del usuario.
 
 - **Shell:** identidad y versión, ventana visible con mínimo 1024×700, carga del
-  renderer desde `file://`, navegación Inicio/Muestras con `aria-current` y
+  renderer desde `file://`, navegación Inicio/Mundos/Muestras con `aria-current` y
   conmutación de los dos temas.
 - **Ventana:** a 1024, 1280 y 1600 px no hay scroll horizontal de página
   (`scrollWidth <= clientWidth` en `html` y `body`) con el contenido largo de la
@@ -405,9 +406,40 @@ leen ni escriben `%APPDATA%`, la base, los assets ni las copias del usuario.
 `userData` temporal viven en `tests/e2e/fixtures/electron-app.ts` y la auditoría
 en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
 
+### 3.12 Mundos: CRUD, dashboard y aislamiento (implementado, #72)
+
+- **Unitarias:** `tests/unit/worlds/slug.test.ts` cubre acentos, recorte,
+  rechazo de nombres sin letras, normalización de slugs, sufijos y límite de
+  longitud. `validation.test.ts` cubre nombre, resumen, descripción con saltos
+  de línea, deduplicación de géneros, límites e idiomas. `schemas.test.ts`
+  comprueba que los esquemas IPC rechazan propiedades extra, IDs que no son
+  UUIDv7, idiomas no admitidos, exceso de géneros y límites de longitud.
+- **Integración:** `tests/integration/worlds/service.test.ts` usa una base real y
+  un reloj/ID deterministas para probar creación normalizada y actividad, slugs
+  únicos, renombrado estable, actualizaciones sin cambios, duplicado sin
+  compartir identidad ni portada, archivo/restauración, borrado lógico, orden de
+  la lista, límites de actividad, validación y preservación al reabrir la base.
+  El aislamiento se comprueba con dos mundos: cada consulta por `world_id` solo
+  devuelve sus filas y la consulta global resuelve el nombre correcto.
+- **Componentes:** `tests/components/worlds.test.tsx` cubre la tarjeta, el
+  cambio Archivar/Restaurar, el formulario (nombre obligatorio, envío
+  normalizado, límite de géneros y edición precargada), el diálogo de duplicado,
+  la página de mundo (progreso, actividad y accesos previstos) y los filtros de
+  la lista.
+- **E2E:** `tests/e2e/worlds.spec.ts` recorre crear, editar, duplicar, archivar,
+  restaurar y eliminar con confirmaciones; comprueba el foco al abrir y cerrar
+  el diálogo con teclado y `Escape`; y revisa axe en los dos temas y la ausencia
+  de scroll horizontal a 1024, 1280 y 1600 px con un nombre y un resumen sin
+  espacios.
+- **Migración:** `0002_worlds` conserva `app_settings` y `assets`, crea `worlds`
+  y `activity_log` con `user_version` 3, índices para la lista y el feed global
+  de actividad, y tiene rollback de referencia probado. La atomicidad de cada
+  mutación con su actividad se prueba con un trigger temporal que fuerza un fallo
+  en `activity_log` y comprueba que el mundo no queda escrito a medias.
+
 **Comandos y tiempos (equipo de referencia, 2026-11-20).** `pnpm test` ejecuta
-282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida) en
-unos 40 s; `pnpm test:e2e` compila y ejecuta 9 pruebas en unos 21 s. Los E2E son
+313 unitarias (4 omitidas), 19 de componentes y 96 de integración (1 omitida) en
+unos 50 s; `pnpm test:e2e` compila y ejecuta 12 pruebas en unos 30 s. Los E2E son
 Windows-only, igual que la aplicación.
 
 ## 4. Cobertura
@@ -437,7 +469,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 313 unitarias (4 omitidas), 19 de componentes y 96 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

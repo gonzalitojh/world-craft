@@ -9,6 +9,7 @@ import {
   registerIpcHandlers,
 } from '@/main/ipc/registry';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
+import { createUnavailableWorldsService } from '@/main/worlds/service';
 import { IPC_CHANNELS, IPC_CHANNEL_LIST } from '@/shared/contracts/channels';
 
 const createHandlers = () =>
@@ -18,6 +19,7 @@ const createHandlers = () =>
       reason: 'not-packaged',
       currentVersion: '0.1.0',
     }),
+    worlds: createUnavailableWorldsService(),
   });
 
 type RegisteredListener = (
@@ -198,6 +200,7 @@ describe('registerIpcHandlers', () => {
           reason: 'not-packaged',
           currentVersion: '0.1.0',
         }),
+        worlds: createUnavailableWorldsService(),
       }),
     );
 

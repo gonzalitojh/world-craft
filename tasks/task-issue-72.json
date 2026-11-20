@@ -1,0 +1,64 @@
+{
+  "title": "Mundos: CRUD, dashboard y estados",
+  "description": "Implementar el primer CRUD completo de contenido: listar, crear, editar, archivar, restaurar, duplicar y eliminar mundos con validación y confirmación, con aislamiento por mundo, registro de actividad, dashboard con accesos rápidos, progreso, actividad reciente y estados vacíos, y una interfaz de escritorio navegable por teclado en los dos temas.",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 72,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/72",
+    "title": "Mundos: CRUD, dashboard y estados"
+  },
+  "acceptance_criteria": [
+    "Se pueden crear, editar, archivar, duplicar y eliminar mundos con validación y confirmación.",
+    "El dashboard muestra actividad reciente y accesos rápidos sin mezclar datos de otros mundos.",
+    "Los nombres y resúmenes largos no rompen el layout a 1024 px.",
+    "El flujo es navegable por teclado y funciona en los dos temas.",
+    "Existen pruebas de CRUD, aislamiento y validación.",
+    "El manual explica la creación y gestión de mundos."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de componentes, de integración y build en verde.",
+    "E2E del flujo crítico de mundos ejecutado: crear, editar, duplicar, archivar, restaurar y eliminar.",
+    "Ventana comprobada a 1024, 1280 y 1600 px con nombres y resúmenes largos, sin scroll horizontal de página.",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, diálogos nativos, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: contexto aislado, canales IPC en allowlist, validación Zod, CSP y sin contenido remoto.",
+    "Preservación de datos verificada: la migración 0002 conserva los datos existentes y tiene rollback documentado y probado.",
+    "Funcionamiento offline: el CRUD de mundos es local y no requiere red.",
+    "Manual de usuario actualizado con la creación y gestión de mundos.",
+    "ADR 0019 creado con las decisiones del modelo de mundos del MVP.",
+    "Seguridad revisada: sin secretos, credenciales ni dependencias nuevas.",
+    "Datos exportables e importables: el modelo queda preparado; la exportación completa llega con la issue de exportación.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-20. 1) Migración 0002_worlds con las tablas worlds y activity_log, sus índices, checks y claves foráneas; rollback de referencia en drizzle/rollback/0002_worlds.down.sql; journal y snapshot generados con pnpm db:generate; sin tocar assets, cuya FK a worlds se pospone a la issue de integridad de assets (#116). 2) Contratos compartidos en src/shared/contracts/worlds.ts (tipos, límites, estados, idiomas, acciones de actividad) y canales worlds:* en la allowlist. 3) Dominio en src/main/worlds/: slug y validación puros, repositorio Drizzle con filtros por world_id y deleted_at, servicio con timestamps e ID inyectables, registro en activity_log y errores tipados. 4) Esquemas Zod en src/main/ipc/schemas/worlds.ts, handlers worlds:* y composición con la base en src/main/index.ts; en modo seguro el servicio responde con error estable. 5) Preload: worldCraft.worlds con guardas estructurales de las respuestas. 6) Renderer: navegación Inicio/Mundos/Muestras, dashboard con tarjetas, actividad reciente, accesos rápidos previstos, progreso del mundo y estados vacío/carga/error; página de mundo; diálogos de crear, editar, duplicar, archivar/restaurar y eliminar con confirmación; componentes nuevos de área de texto y selector; catálogo es.ts completo y estilos con tokens. 7) Pruebas unitarias (slug, validación, esquemas IPC y guardas), de integración (CRUD, aislamiento, actividad, unicidad, preservación y rollback), de componentes (formulario y tarjeta) y E2E (flujo completo, teclado, temas, 1024/1280/1600 y axe). 8) Documentación: manual de usuario, esquema de base de datos, migraciones, arquitectura, sistema de diseño, plan de pruebas, ADR 0019, continuidad, persistencia, README y CHANGELOG. 9) Verificar lint, format de lo tocado, typecheck, test:unit, test:components, test:integration, build, verify:build, E2E, JSON válidos, enlaces y git diff --check; sin push ni PR sin petición explícita. Decisiones acordadas: la portada se guarda y se muestra si existe, pero su selector llega con la galería de imágenes (#115); la descripción es texto plano hasta el editor de M3 (#114); el idioma del mundo se elige entre es, en e it; el borrado es lógico con confirmación y la papelera visible llega con #77; la FK assets.world_id se completa con #116.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p0, size: l, area: worlds, area: ui, variant: high y hito M1. Dependencias M0-03 (#63), M0-04 (#64) y M0-05 (#65) fusionadas en dev. Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-72-worlds-crud desde origin/dev. El plan y las cuatro decisiones de alcance quedaron aprobados por el usuario antes de implementar; además se crearon las issues de seguimiento #114 (descripción enriquecida), #115 (portada) y #116 (integridad de assets). Implementado: migración 0002_worlds (worlds y activity_log), rollback 0002, esquema Drizzle, contratos compartidos, dominio src/main/worlds/, schemas y handlers IPC, composición con la base, API worlds del preload con guardas, navegación Inicio/Mundos/Muestras, dashboard, lista con búsqueda y filtros, página de mundo, diálogos de CRUD, componentes text-area-field y select-field, catálogo es.ts y estilos con tokens. Evidencia local (2026-11-20): pnpm lint OK; pnpm typecheck OK; pnpm test:unit 313 en verde y 4 omitidas; pnpm test:components 19 en verde; pnpm test:integration 96 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; pnpm exec playwright test 12 en verde (flujo de mundos, teclado, 1024/1280/1600, dos temas y axe sin críticos). Correcciones tras el primer QA: foco devuelto al disparador con desmontaje síncrono y pruebas E2E de foco tras guardar, cancelar y cerrar; nombre accesible de eliminar según WCAG 2.5.3; índices worlds_deleted_updated_idx y activity_log_created_idx; prueba de atomicidad con fallo del trigger de actividad; descarte de respuestas obsoletas al abrir mundos; foco inicial en el primer campo. QA repetido sobre el árbol congelado: PASS. No hay defectos de código nuevos. Nota operativa: la migración 0002 se regeneró con los índices nuevos antes de publicarse; cualquier userData creado con una versión anterior de esta rama entrará en DB_MIGRATION_CHECKSUM_MISMATCH, así que para probarla hay que usar un userData temporal o restaurar una copia previa. Puerta de seguridad: PASS sin hallazgos HIGH. Se corrigieron el encabezado obsoleto del manual y el texto muerto home.createSoon; el resto fueron notas informativas. Publicación local (2026-11-20): commit preparado en la rama feat/issue-72-worlds-crud con QA PASS y seguridad PASS; queda en review para la revisión del usuario, sin push ni PR. Se corrigió además la referencia del plan: la FK de worlds se pospone a la issue de integridad de assets (#116), no a la papelera (#77)."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA local (2026-11-20) repetido sobre feat/issue-72-worlds-crud. PASS. Los dos bloqueantes del primer informe están resueltos y verificados en la aplicación real: (1) el foco vuelve al disparador tras Guardar cambios, Cancelar, la X y Escape, y a #wc-main tras crear o eliminar; (2) el nombre accesible de eliminar empieza por «Eliminar» y axe deja de marcar label-content-name-mismatch. Axe se ejecutó en 10 estados (vacío, alta, dashboard, lista, ficha y confirmaciones) en Claro y Oscuro con wcag2a/2aa/21a/21aa: cero violaciones de cualquier impacto. Layout extremo (nombre 120, resumen 280 sin espacios, descripción 4.000 sin espacios, slug 80 y 8 géneros de 40) sin scroll horizontal a 1024, 1280 y 1600 en Inicio, Mundos y ficha. Índices nuevos presentes en SQL, esquema, snapshot y rollback; db:check OK. Token de petición en openWorld/refreshSelected/refreshSelectedActivity sin fugas entre mundos. Foco inicial en el primer campo de crear/duplicar. Canales en allowlist, Zod estricto, guardas de preload, CSP intacta y renderer sin Node/SQLite. Evidencia: lint y typecheck OK; 313 unitarias (4 omitidas), 19 componentes y 96 integración (1 omitida); build, verify:build y db:check OK; Playwright 12/12."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "MEDIUM corregido: el encabezado del manual decía que aún no había mundos; actualizado al CRUD entregado.",
+      "LOW corregido: se retiró home.createSoon, un texto que anunciaba la creación como futura y ya no se usa.",
+      "LOW informativo: la ruta C:\\Users\\cartografa\\... de la página de muestras es sintética y ficticia; no es una ruta real.",
+      "LOW informativo: worlds:list no pagina; en local y monousuario no hay riesgo remoto y queda anotado para cuando el catálogo crezca."
+    ],
+    "notes": "Security-champion (2026-11-20): PASS sin hallazgos HIGH. Escaneados 35 archivos modificados y 28 nuevos, sin .env ni bases/assets de usuario trackeados, sin cambios en package.json/pnpm-lock y cero dependencias nuevas. Electron intacto (contextIsolation, nodeIntegration false, sandbox, webSecurity, CSP estricta con img-src self/data/wc-asset); el renderer no toca Node, fs ni SQLite. Los 8 canales worlds:* están en la allowlist, con strictObject, UUIDv7, límites de longitud, idioma enum y errores estables; el preload solo expone funciones nominativas y el modo seguro usa un servicio no disponible. Migración 0002 aditiva con copia pre-migración, rollback correcto, FK de portada RESTRICT, borrado lógico, actividad aislada y mutación + actividad en una transacción. Sin SQL concatenado, sin dangerouslySetInnerHTML, portada solo por wc-asset:// y respuestas obsoletas descartadas. Nota operativa: la migración se regeneró antes de publicarse; para probar la rama hay que usar un userData temporal o una copia previa porque un userData con la versión anterior entraría en DB_MIGRATION_CHECKSUM_MISMATCH."
+  },
+  "documentation": {
+    "adr": "docs/adr/0019-worlds-crud-mvp.md creado y añadido al índice con D-042 en docs/registro-decisiones.md; ADR 0012, 0016 y 0017 referenciados desde el esquema y la continuidad.",
+    "manual": "docs/manual-de-usuario.md actualizado: estado del desarrollo, navegación Inicio/Mundos/Muestras, teclado y foco de diálogos, dashboard, sección 4 de creación y gestión de mundos y tabla de estado de funciones.",
+    "changelog": "CHANGELOG.md actualizado en Añadido y Cambiado con el CRUD, dashboard, migración, pruebas, navegación y manual.",
+    "agents": "no aplica"
+  }
+}

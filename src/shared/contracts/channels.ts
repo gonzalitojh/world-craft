@@ -17,6 +17,14 @@ export const IPC_CHANNELS = {
   updatesCancel: 'updates:cancel',
   updatesDownload: 'updates:download',
   updatesInstall: 'updates:install',
+  worldsList: 'worlds:list',
+  worldsGet: 'worlds:get',
+  worldsCreate: 'worlds:create',
+  worldsUpdate: 'worlds:update',
+  worldsDuplicate: 'worlds:duplicate',
+  worldsSetArchived: 'worlds:setArchived',
+  worldsRemove: 'worlds:remove',
+  worldsListActivity: 'worlds:listActivity',
 } as const;
 
 /** Unión de todos los canales admitidos. */

@@ -4,13 +4,33 @@ import { describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../src/renderer/i18n/provider';
 import { HomePage } from '../../src/renderer/pages/home-page';
 
+const actions = {
+  onOpen: vi.fn(),
+  onEdit: vi.fn(),
+  onDuplicate: vi.fn(),
+  onArchiveToggle: vi.fn(),
+  onDelete: vi.fn(),
+};
+
+function renderHome() {
+  return render(
+    <I18nProvider locale="es">
+      <HomePage
+        worlds={[]}
+        activity={[]}
+        state="ready"
+        actions={actions}
+        onCreate={vi.fn()}
+        onSeeAll={vi.fn()}
+        onRetry={vi.fn()}
+      />
+    </I18nProvider>,
+  );
+}
+
 describe('I18nProvider', () => {
   it('los componentes leen textos y formatos del proveedor', () => {
-    render(
-      <I18nProvider locale="es">
-        <HomePage onCreateWorld={vi.fn()} />
-      </I18nProvider>,
-    );
+    renderHome();
 
     expect(
       screen.getByRole('heading', {
@@ -25,7 +45,15 @@ describe('I18nProvider', () => {
   it('rechaza un locale no soportado y usa el idioma de reserva', () => {
     render(
       <I18nProvider>
-        <HomePage onCreateWorld={vi.fn()} />
+        <HomePage
+          worlds={[]}
+          activity={[]}
+          state="ready"
+          actions={actions}
+          onCreate={vi.fn()}
+          onSeeAll={vi.fn()}
+          onRetry={vi.fn()}
+        />
       </I18nProvider>,
     );
 
