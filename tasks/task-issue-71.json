@@ -1,0 +1,65 @@
+{
+  "title": "Internacionalización centralizada y catálogo tipado",
+  "description": "Centralizar los textos del renderer en un catálogo tipado, exponerlos con un proveedor de idioma, resolver el locale del perfil con un valor de reserva y aportar formatos de fechas, números, porcentajes, listas y plurales con Intl. Incluye una prueba que falla ante claves ausentes, hojas vacías o textos visibles hardcodeados, y deja la estructura preparada para añadir en.ts e it.ts sin tocar componentes.",
+  "status": "published",
+  "model_variant": "high",
+  "issue": {
+    "number": 71,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/71",
+    "title": "Internacionalización centralizada y catálogo tipado"
+  },
+  "pr": {
+    "number": 113,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/113",
+    "title": "feat: centralizar internacionalización con catálogo tipado (#71)",
+    "branch": "feat/issue-71-i18n-catalog",
+    "commit": "ea040cc"
+  },
+  "acceptance_criteria": [
+    "Todos los textos del shell y de los componentes base salen del catálogo tipado.",
+    "Una clave ausente falla en typecheck o en las pruebas, no en tiempo de ejecución.",
+    "Fechas, números y plurales usan Intl y respetan el locale del perfil.",
+    "No hay cadenas visibles hardcodeadas en componentes.",
+    "La documentación explica cómo añadir un idioma y qué falta traducir."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de componentes, de integración y build en verde.",
+    "E2E del flujo crítico ejecutado: shell, navegación, temas y axe.",
+    "Ventana comprobada a 1024, 1280 y 1600 px sin scroll horizontal por el E2E.",
+    "Los dos temas comprobados con axe y sin elementos invisibles.",
+    "Accesibilidad revisada: textos de aria-label y aria-live desde el catálogo, axe sin errores críticos.",
+    "Seguridad Electron revisada: sin cambios en main, preload, IPC, CSP ni contenido remoto.",
+    "Preservación de datos: no aplica, no hay migraciones ni cambios en userData.",
+    "Funcionamiento offline: el catálogo y los formatos son locales y no requieren red.",
+    "Manual de usuario: no aplica, el cambio es interno y no altera lo que el usuario hace.",
+    "ADR 0009 actualizado con la implementación de M0-11.",
+    "Seguridad revisada: sin secretos, credenciales ni dependencias nuevas.",
+    "Datos exportables e importables: no aplica, no cambia el modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "1) Añadir src/shared/contracts/locale.ts con SUPPORTED_LOCALES, Locale, DEFAULT_LOCALE, resolveLocale e INTL_LOCALES. 2) Derivar MessageCatalog de es.ts en src/renderer/messages/index.ts, conservar claves y firmas pero ensanchar los textos a string y registrar CATALOGS como Record<Locale, MessageCatalog>. 3) Implementar MessagePath, MessageArguments y createTranslator en translator.ts, además de formatMessage y collectMessagePaths. 4) Crear src/renderer/i18n/formats.ts con fechas, números, porcentajes, listas, plurales y Collator; create.ts para componer idioma, catálogo, traductor y formatos; provider.tsx con I18nProvider, useI18n y useMessages. 5) Migrar el shell, los componentes base, HomePage, SamplesPage, App, el control y el diálogo de actualizaciones y updates/status al proveedor; montar I18nProvider en main.tsx. 6) Añadir pruebas de catálogo, formatos, cadenas hardcodeadas con el AST de TypeScript y provider de componentes; actualizar la prueba de estados del actualizador. 7) Actualizar internacionalizacion.md, ADR 0009, arquitectura, plan de pruebas y changelog. 8) Ejecutar lint, typecheck, unitarias, componentes, integración, build y E2E; validar JSON, enlaces y git diff --check. Sin push ni PR sin petición explícita.",
+  "validation": {
+    "result": "pending-user-review",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: ui, area: docs, variant: high y el hito M0. Dependencia M0-02 (#62) fusionada. Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-71-i18n-catalog desde origin/dev. Implementado: src/shared/contracts/locale.ts; src/renderer/messages/index.ts y translator.ts; src/renderer/i18n/create.ts, formats.ts y provider.tsx; catálogo es.ts exportado como es; shell, componentes, páginas, App, actualizador y main.tsx consumen I18nProvider. Pruebas nuevas: tests/unit/i18n/catalog.test.ts, formats.test.ts y no-hardcoded.test.ts; tests/components/i18n-provider.test.tsx; actualizada tests/unit/updates/status.test.ts. Evidencia local (2026-11-20): pnpm lint OK; pnpm typecheck (node, web y tests) OK; pnpm test:unit 293 en verde y 4 omitidas; pnpm test:components 9 en verde; pnpm test:integration 85 en verde y 1 omitida; pnpm build OK; pnpm test:e2e 9 en verde en 22,8 s; prettier --check de documentos y tsconfig OK. Manual de usuario: no aplica, es un cambio interno sin cambios visibles en pantallas ni textos. El locale del perfil queda pendiente de la pantalla de Ajustes; hasta entonces main.tsx usa DEFAULT_LOCALE y resolveLocale cae al idioma de reserva. Publicada con petición explícita del usuario: push de la rama y PR #113 contra dev, sin keywords de cierre; la issue se cierra al fusionar."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA local (2026-11-20) sobre feat/issue-71-i18n-catalog. Se comprobó que ningún componente importa messages/es directamente y que todos usan useMessages o useI18n. La prueba de cadenas hardcodeadas recorre con la API de TypeScript el AST de components, pages, shell y App.tsx: ignora atributos técnicos, comentarios y puntuación, y falla con un literal real en el ejemplo negativo. La prueba de catálogo verifica 100+ hojas no vacías, funciones con parámetros, @ts-expect-error para una clave inexistente, fallback de locale y que un catálogo traducido funciona sin cambiar el traductor. Formatos: fecha, fecha y hora, número, porcentaje fraccionario, lista, plurales y Collator con es-ES. Los E2E de shell, navegación, temas, ventana 1024/1280/1600 y axe siguen en verde. El cambio no altera la UI visible: mismas pantallas y textos en español."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Security-champion (checklist proporcional, 2026-11-20): PASS sin hallazgos HIGH. Revisado el diff completo: no hay secretos, credenciales, correos, rutas de usuario ni datos personales. No se tocan Electron, preload, IPC, CSP, protocolo de assets, migraciones ni userData; el renderer sigue sin acceso a Node y el catálogo es local y offline. No hay dependencias nuevas: la prueba de hardcodeadas usa typescript, ya presente como devDependency. No se escribe en disco ni se envía información de uso."
+  },
+  "documentation": {
+    "adr": "docs/adr/0009-centralized-i18n.md actualizado con la implementación de M0-11 (#71), los archivos reales y el pendiente de persistir el locale.",
+    "manual": "no aplica",
+    "changelog": "CHANGELOG.md actualizado en Añadido con el catálogo tipado, el proveedor y las pruebas de i18n.",
+    "agents": "no aplica"
+  }
+}

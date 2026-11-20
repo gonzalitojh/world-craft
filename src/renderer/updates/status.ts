@@ -1,15 +1,20 @@
 /**
  * Textos y acción principal del panel de actualizaciones.
  *
- * Separado del componente para poder probar todos los estados sin DOM. Los
- * códigos del servicio se traducen aquí; nunca se muestra un mensaje interno.
+ * Separado del componente para poder probar todos los estados sin DOM. Recibe
+ * el idioma activo: los códigos del servicio se traducen aquí y nunca se
+ * muestra un mensaje interno.
  */
 import type { UpdateSnapshot } from '../../shared/contracts/updates';
-import { messages } from '../messages/es';
-import { formatPercent } from './format';
+import type { I18n } from '../i18n/create';
 
 /** Texto visible para el estado actual. */
-export function getUpdateStatusMessage(snapshot: UpdateSnapshot): string {
+export function getUpdateStatusMessage(
+  snapshot: UpdateSnapshot,
+  i18n: I18n,
+): string {
+  const { messages, formats } = i18n;
+
   switch (snapshot.phase) {
     case 'unavailable': {
       switch (snapshot.unavailableReason) {
@@ -45,7 +50,7 @@ export function getUpdateStatusMessage(snapshot: UpdateSnapshot): string {
       );
     case 'downloading':
       return messages.updates.statuses.downloading(
-        formatPercent(snapshot.progressPercent ?? 0),
+        formats.formatPercent((snapshot.progressPercent ?? 0) / 100),
       );
     case 'downloaded':
       return messages.updates.statuses.downloaded(
@@ -81,20 +86,21 @@ export function getUpdateStatusMessage(snapshot: UpdateSnapshot): string {
 /** Etiqueta del botón principal, o `null` si la fase no admite acción. */
 export function getUpdatePrimaryAction(
   snapshot: UpdateSnapshot,
+  i18n: I18n,
 ): string | null {
   switch (snapshot.phase) {
     case 'idle':
     case 'up-to-date':
-      return messages.updates.actions.check;
+      return i18n.messages.updates.actions.check;
     case 'checking':
     case 'downloading':
-      return messages.updates.actions.cancel;
+      return i18n.messages.updates.actions.cancel;
     case 'available':
-      return messages.updates.actions.download;
+      return i18n.messages.updates.actions.download;
     case 'downloaded':
-      return messages.updates.actions.install;
+      return i18n.messages.updates.actions.install;
     case 'error':
-      return messages.updates.actions.retry;
+      return i18n.messages.updates.actions.retry;
     default:
       return null;
   }

@@ -1,6 +1,5 @@
 import type { UpdateSnapshot } from '../../shared/contracts/updates';
-import { messages } from '../messages/es';
-import { formatLastChecked, formatPercent } from '../updates/format';
+import { useI18n } from '../i18n/provider';
 import {
   getUpdatePrimaryAction,
   getUpdateStatusMessage,
@@ -38,10 +37,18 @@ export function UpdatesDialog({
   onDownload,
   onInstall,
 }: UpdatesDialogProps) {
-  const lastChecked = formatLastChecked(snapshot.lastCheckedAt);
-  const percent = formatPercent(snapshot.progressPercent ?? 0);
-  const message = getUpdateStatusMessage(snapshot);
-  const actionLabel = getUpdatePrimaryAction(snapshot);
+  const i18n = useI18n();
+  const { messages } = i18n;
+  const lastCheckedAt = snapshot.lastCheckedAt;
+  const lastChecked =
+    lastCheckedAt !== null && !Number.isNaN(new Date(lastCheckedAt).getTime())
+      ? i18n.formats.formatDateTime(lastCheckedAt)
+      : null;
+  const percent = i18n.formats.formatPercent(
+    (snapshot.progressPercent ?? 0) / 100,
+  );
+  const message = getUpdateStatusMessage(snapshot, i18n);
+  const actionLabel = getUpdatePrimaryAction(snapshot, i18n);
   const downloadProgress = snapshot.progressPercent ?? 0;
   const isError = commandError !== null || snapshot.phase === 'error';
 

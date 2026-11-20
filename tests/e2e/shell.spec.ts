@@ -1,5 +1,5 @@
 import { APP_VERSION } from '../../src/shared/app-info';
-import { messages } from '../../src/renderer/messages/es';
+import { es as messages } from '../../src/renderer/messages/es';
 
 import { expect, test } from './fixtures/electron-app';
 

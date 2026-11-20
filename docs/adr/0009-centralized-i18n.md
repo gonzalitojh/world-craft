@@ -1,9 +1,9 @@
 # ADR 0009 — Internacionalización centralizada y tipada
 
-- **Estado:** aceptado
+- **Estado:** aceptado e implementado (M0-11, #71)
 - **Fecha de la decisión:** 2026-11-18
 - **Fecha del documento:** 2026-11-18
-- **Issue:** pivote a escritorio (catálogo nuevo)
+- **Issue:** pivote a escritorio (catálogo nuevo) y #71 (catálogo tipado, proveedor y formatos)
 - **Decisiones del registro:** D-029
 - **Decisores:** usuario / agentes
 - **Supersede:** ADR 0012 de la etapa web
@@ -21,12 +21,34 @@ aplica en el renderer.
 1. Catálogo único en `src/renderer/messages/es.ts`, con claves tipadas.
 2. El traductor acepta solo claves existentes; una clave ausente rompe el
    typecheck.
-3. El locale se guarda en `config.json` y se pasa al renderer por el preload.
+3. El locale se guarda en los ajustes locales y se pasa al renderer por el
+   preload.
 4. Fechas, números, listas y plurales usan `Intl`.
 5. No se usa una librería de i18n pesada en el MVP.
 6. Los textos de `aria-label`, `alt` y errores también están en el catálogo.
 7. Añadir un idioma es copiar el catálogo, traducirlo y añadirlo al tipo
    `Locale`; no se tocan los componentes.
+
+## Implementación (M0-11, #71)
+
+- `src/shared/contracts/locale.ts` define `SUPPORTED_LOCALES`, `Locale`,
+  `DEFAULT_LOCALE`, `resolveLocale()` y `toIntlLocale()`.
+- `src/renderer/messages/index.ts` deriva `MessageCatalog` del español, ensancha
+  los textos a `string` y registra `CATALOGS` como
+  `Record<Locale, MessageCatalog>`.
+- `src/renderer/messages/translator.ts` expone `MessagePath`,
+  `MessageArguments` y `createTranslator()`: las claves y los parámetros se
+  validan en typecheck. `collectMessagePaths()` alimenta la prueba de catálogo.
+- `src/renderer/i18n/create.ts` compone idioma, catálogo, traductor y formatos;
+  `provider.tsx` los publica con `I18nProvider`, `useI18n()` y `useMessages()`.
+- `src/renderer/i18n/formats.ts` centraliza fechas, números, porcentajes,
+  listas, plurales y ordenación con `Intl`.
+- Shell, componentes base, páginas y actualizador consumen el proveedor; no
+  importan `es.ts` directamente.
+- La prueba `no-hardcoded` recorre el AST de JSX y falla ante textos o
+  atributos visibles literales.
+- Pendiente: persistir el locale del perfil y ofrecer el selector de Ajustes.
+  Hasta entonces `main.tsx` monta el proveedor con `DEFAULT_LOCALE`.
 
 ## Alternativas consideradas
 
@@ -60,7 +82,7 @@ aplica en el renderer.
 | Temas (Claro/Oscuro) | No aplica. |
 | Accesibilidad | Etiquetas, errores y `aria-live` traducidos. |
 | Seguridad y privacidad | Sin servicios de traducción en línea. |
-| Datos y preservación | El locale vive en `config.json`. |
+| Datos y preservación | El locale vive en los ajustes locales; aún no se persiste. |
 | Coste | 0 €/mes. |
 | Portabilidad de datos | El idioma no afecta a los datos. |
 
@@ -79,4 +101,5 @@ mantener. En ese caso se valora una librería con carga dinámica, con ADR nuevo
 - [`docs/internacionalizacion.md`](../internacionalizacion.md)
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D14
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-029
+- Issue #71, catálogo tipado, proveedor y formatos con `Intl`.
 - Documentación de `Intl` consultada el 18/11/2026.

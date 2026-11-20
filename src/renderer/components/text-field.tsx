@@ -1,7 +1,7 @@
 import { useId, type ChangeEvent } from 'react';
 
 import { cx } from '../lib/class-names';
-import { messages } from '../messages/es';
+import { useMessages } from '../i18n/provider';
 
 export interface TextFieldProps {
   /** Etiqueta visible; nunca se sustituye por un placeholder. */
@@ -50,6 +50,7 @@ export function TextField({
   onChange,
   className,
 }: TextFieldProps) {
+  const messages = useMessages();
   const generatedId = useId();
   const fieldId = id ?? `wc-field-${generatedId}`;
   const hintId = `${fieldId}-hint`;
