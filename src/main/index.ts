@@ -17,12 +17,20 @@ import {
 } from './assets/composition';
 import { createIpcHandlers } from './ipc/handlers';
 import { registerIpcHandlers } from './ipc/registry';
-import { closePersistence, initializePersistence } from './persistence';
+import {
+  closePersistence,
+  getDatabase,
+  initializePersistence,
+} from './persistence';
 import { registerNavigationGuards } from './security/navigation';
 import { registerSessionGuards } from './security/session';
 import { acquireSingleInstance } from './single-instance';
 import { composeUpdates, type UpdatesComposition } from './updates/composition';
 import { createUnavailableUpdatesService } from './updates/service';
+import {
+  createUnavailableWorldsService,
+  createWorldsService,
+} from './worlds/service';
 import { createMainWindow, focusMainWindow, getMainWindow } from './window';
 
 // El nombre debe fijarse antes de llamar a `app.getPath('userData')`: define la
@@ -121,9 +129,22 @@ if (!hasSingleInstanceLock) {
         }
       });
 
+      const database = startup.status === 'ready' ? getDatabase() : null;
+      const worlds =
+        database === null
+          ? createUnavailableWorldsService()
+          : createWorldsService({
+              database: database.orm,
+              sqlite: database.sqlite,
+            });
+
       registerIpcHandlers(
         ipcMain,
-        createIpcHandlers({ openExternal, updates: updatesService }),
+        createIpcHandlers({
+          openExternal,
+          updates: updatesService,
+          worlds,
+        }),
       );
 
       createMainWindow();

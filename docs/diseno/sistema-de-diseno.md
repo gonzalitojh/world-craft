@@ -172,7 +172,9 @@ exportan desde su `index.ts`.
 | Componente | Archivo | Qué cubre |
 |---|---|---|
 | Botón | `button.tsx` | Variantes primaria, secundaria, fantasma y destructiva; tamaño normal y pequeño; carga con `aria-busy`; deshabilitado. |
-| Campo de texto | `text-field.tsx` | Etiqueta visible, ayuda y error con `aria-describedby`, `aria-invalid`, lectura y deshabilitado. |
+| Campo de texto | `text-field.tsx` | Etiqueta visible, ayuda y error con `aria-describedby`, `aria-invalid`, lectura, deshabilitado y longitud máxima. |
+| Área de texto | `text-area-field.tsx` | Misma semántica que el campo de texto; alto mínimo y redimensionado solo vertical para no romper la ventana. |
+| Selector | `select-field.tsx` | `<select>` nativo con etiqueta, ayuda, error y opciones tipadas; hereda teclado y contraste del sistema. |
 | Insignia | `badge.tsx` | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. |
 | Tarjeta | `card.tsx` | Superficie con título y tono; nivel de encabezado configurable. |
 | Estado vacío | `empty-state.tsx` | Título, descripción y acción opcional; explica qué hacer. |
@@ -185,16 +187,34 @@ exportan desde su `index.ts`.
 con contenido largo (nombres sin espacios y rutas). Es una **página de
 desarrollo** para revisar el sistema de diseño, no una función de producto.
 
-Siguen **previstos**: área de texto, selector, casilla y radio, panel lateral,
-menú, tabla y árbol. Se añadirán cuando las pantallas de M1 los necesiten.
+Siguen **previstos**: casilla y radio, panel lateral, menú, tabla y árbol. Se
+añadirán cuando las pantallas de M1 y M2 los necesiten.
 
-### 5.2 Dominio
+### 5.2 Dominio de mundos (implementado, #72)
+
+Estos componentes ya existen en `src/renderer/components/worlds/` y se usan en
+el dashboard, la lista y la página de un mundo:
+
+| Componente | Archivo | Uso |
+|---|---|---|
+| Tarjeta de mundo | `world-card.tsx` | Portada o inicial, nombre, estado, resumen, géneros, fecha y acciones con el nombre del mundo en su etiqueta accesible. |
+| Diálogo de mundo | `world-form-dialog.tsx` | Crear y editar con validación por campo, ayuda, longitud máxima y nota de portada prevista. |
+| Diálogo de duplicado | `world-duplicate-dialog.tsx` | Nombre propuesto y explicación de que la portada no se copia. |
+| Confirmación | `world-confirm-dialog.tsx` | Archivar, restaurar y mover a la papelera; el texto explica qué ocurre y si hay recuperación. |
+| Actividad | `world-activity-list.tsx` | Acción, mundo y fecha con `Intl`; estados de carga, error y vacío. |
+
+Las páginas `home-page.tsx`, `worlds-page.tsx` y `world-page.tsx` componen esos
+elementos. La rejilla de tarjetas usa `repeat(auto-fit, minmax(18rem, 1fr))` y
+la ficha del mundo una columna de portada de 10 rem; ambas caben a 1024 px sin
+desplazamiento horizontal. Los títulos y resúmenes usan `overflow-wrap` y los
+hijos flexibles `min-width: 0`.
+
+### 5.3 Componentes de dominio previstos
 
 Estos componentes **todavía no existen**: llegarán con las pantallas de M1 y M2.
 
 | Componente | Uso |
 |---|---|
-| Tarjeta de ficha | Nombre, tipo, imagen, resumen, etiquetas y acciones. |
 | Cabecera de ficha | Imagen, nombre, tipo, favorito y menú. |
 | Editor de campos | Campos del sistema y personalizados. |
 | Selector de relaciones | Buscar fichas y elegir tipo. |

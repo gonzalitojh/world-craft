@@ -6,14 +6,17 @@
  */
 import { IPC_CHANNELS } from '../../../shared/contracts/channels';
 import type { UpdatesService } from '../../updates/service';
+import type { WorldsService } from '../../worlds/service';
 import type { IpcHandlers } from '../registry';
 import { createShellOpenExternalHandler } from './shell';
 import { createUpdateIpcHandlers } from './updates';
+import { createWorldIpcHandlers } from './worlds';
 
 /** Dependencias externas que los handlers necesitan del proceso principal. */
 export interface IpcDependencies {
   readonly openExternal: (url: string) => Promise<void>;
   readonly updates: UpdatesService;
+  readonly worlds: WorldsService;
 }
 
 /** Construye el mapa de handlers con las dependencias del proceso principal. */
@@ -22,5 +25,6 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
     [IPC_CHANNELS.shellOpenExternal]:
       createShellOpenExternalHandler(dependencies),
     ...createUpdateIpcHandlers(dependencies.updates),
+    ...createWorldIpcHandlers(dependencies.worlds),
   };
 }

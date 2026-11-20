@@ -14,12 +14,12 @@ TypeScript estricto, el IPC tipado, una base SQLite con migraciones,
 comprobación de integridad y modo seguro, el sistema de diseño con su shell de
 escritorio y un instalador NSIS por usuario con actualizaciones manuales.
 `pnpm dev` abre una ventana segura con la barra lateral, el tema Claro/Oscuro
-conmutable y una página de inicio con estado vacío; `pnpm build` compila los tres
-procesos en `out/` y `pnpm dist` genera
+conmutable, el dashboard de mundos y el CRUD de mundos con actividad; `pnpm build`
+compila los tres procesos en `out/` y `pnpm dist` genera
 `release/world-craft-0.1.0-setup.exe`. **Todavía no hay una release pública**:
 el instalador se genera y se prueba en local, y la publicación oficial, la
-actualización real contra GitHub Releases y las funciones de producto (mundos,
-fichas, mapas y escritura) llegan con las fases siguientes.
+actualización real contra GitHub Releases y el resto de funciones de producto
+(fichas, mapas y escritura) llegan con las fases siguientes.
 
 El inventario de lo eliminado y las cuentas externas que hay que cerrar están en
 [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md). El plan aprobado,
@@ -34,6 +34,7 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Estilos | CSS propio con tokens en tres capas (paleta, semántica y escalas), sin Tailwind ni shadcn | Implementado (#65) |
 | Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Implementado (#64) |
 | Migraciones | Runner propio sobre el journal de Drizzle y copia previa | Implementado (#64) |
+| Mundos | CRUD, dashboard y actividad sobre `worlds` y `activity_log` | Implementado (#72); portada con #115 |
 | Búsqueda | SQLite FTS5 | Disponible en el binario; esquema previsto (M1) |
 | Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); UI en M1 |
 | Editor | Tiptap 3 | Previsto (M3) |

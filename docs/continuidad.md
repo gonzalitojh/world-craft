@@ -1,13 +1,14 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08. El modo seguro, la comprobación de integridad y la copia
-> pre-migración se implementaron en M0-04 (#64); las copias automáticas con
+> 20/11/2026 con M0-08 y M1-01. El modo seguro, la comprobación de integridad y la
+> copia pre-migración se implementaron en M0-04 (#64); las copias automáticas con
 > retención y la restauración desde el diálogo de modo seguro, en M0-07 (#67); el
 > instalador por usuario, la actualización manual y la preservación en
-> instalación, actualización y desinstalación, en M0-08 (#68). La interfaz de
-> copias de Ajustes llega en M1 y la release pública con actualización real
-> contra GitHub Releases, en M5.
+> instalación, actualización y desinstalación, en M0-08 (#68); y el borrado lógico
+> de mundos con su actividad, en M1-01 (#72). La interfaz de copias de Ajustes, la
+> papelera visible y la purga llegan en M1; la release pública con actualización
+> real contra GitHub Releases, en M5.
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
 > **Decisiones:** ADR 0012, ADR 0016 y ADR 0018. La estructura de datos está en
@@ -35,7 +36,7 @@ quiere, en una unidad externa.
 | Desinstalación | Desinstalador | Conserva `userData` y avisa en modo interactivo (M0-08) | Todos |
 | Segunda instancia | Lock de instancia única | El proceso nuevo sale y la instancia existente enfoca su ventana (M0-08) | Todos |
 | Sin conexión al actualizar | Comprobación manual | Error controlado; la app sigue funcionando con la versión instalada (M0-08) | Todos |
-| Borrado accidental de un mundo | Papelera | Restaurar desde papelera (previsto, M1) | Mundo y assets |
+| Borrado accidental de un mundo | Borrado lógico con confirmación | La fila conserva `deleted_at` y desaparece de las vistas; la restauración visible llega con la papelera (M1-01, #72; M1-06, #77) | Mundo y assets |
 | Borrado definitivo | Confirmación | Copia recuperable previa (previsto) | Copia |
 | Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
 | Archivo de asset perdido | Al abrir | El protocolo devuelve 404 y lo registra; aviso y placeholder en M1 (M0-06) | Metadatos |
@@ -212,6 +213,13 @@ cerrar la app y borrar ese archivo a mano; no es un archivo con datos.
   assets no referenciados.
 - Borrar un mundo mueve su carpeta de assets a cuarentena y conserva una copia
   de la base; la purga definitiva es una acción separada.
+
+**Implementado en M1-01 (#72):** borrar un mundo es un borrado lógico con
+`deleted_at`; deja de aparecer en Inicio, Mundos y la actividad, y la fila se
+conserva. La pantalla de papelera, la restauración y la purga con copia llegan
+con M1-06 (#77); hasta entonces, las copias de seguridad son la vía de
+recuperación documentada. Archivar es reversible desde la propia lista y no
+borra nada.
 
 ## 7. Actualizaciones y desinstalación
 

@@ -1,10 +1,11 @@
 # Esquema de base de datos
 
-> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio). La migración
-> `0000_init` y las tablas `schema_migrations` y `app_settings` están
-> implementadas en M0-04 (#64); la tabla `assets` está implementada en
-> `0001_assets` (M0-06, #66). Las tablas de dominio y FTS5 llegan en M1 con sus
-> propias migraciones; hasta entonces figuran como previstas.
+> **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
+> 20/11/2026 con la issue M1-01 (#72). La migración `0000_init` y las tablas
+> `schema_migrations` y `app_settings` están implementadas en M0-04 (#64); la
+> tabla `assets` en `0001_assets` (M0-06, #66); y `worlds` y `activity_log` en
+> `0002_worlds` (M1-01, #72). El resto de tablas de contenido y FTS5 llegan en
+> M1 con sus propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -28,8 +29,8 @@
 
 ## 2. Diagrama
 
-Modelo objetivo (las tablas de contenido llegan en M1; implementadas hoy
-`schema_migrations`, `app_settings` y `assets`):
+Modelo objetivo (implementadas hoy `schema_migrations`, `app_settings`,
+`assets`, `worlds` y `activity_log`):
 
 ```text
 worlds
@@ -69,9 +70,10 @@ CREATE TABLE `schema_migrations` (
 ```
 
 La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
-guarda el **número de migraciones aplicadas**: con `0000_init` vale 1 y con
-`0001_assets`, 2; no es el prefijo de la etiqueta. El runner contrasta ese valor
-con `schema_migrations` y entra en modo seguro si no coinciden.
+guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
+`0001_assets` vale 2 y con `0002_worlds` vale 3; no es el prefijo de la etiqueta.
+El runner contrasta ese valor con `schema_migrations` y entra en modo seguro si
+no coinciden.
 
 ### 3.1 `schema_migrations`
 
@@ -91,29 +93,71 @@ con `schema_migrations` y entra en modo seguro si no coinciden.
 
 ## 4. Mundos y contenido
 
-**Previstas para M1**, salvo `assets`, que ya existe en `0001_assets` (M0-06,
-#66). Las demás tablas de esta sección describen el modelo objetivo; ninguna
-existe todavía en `0000_init`.
+**Implementadas:** `worlds` y `activity_log` en `0002_worlds` (M1-01, #72) y
+`assets` en `0001_assets` (M0-06, #66). Las demás tablas de esta sección
+describen el modelo objetivo y todavía no existen; llegarán con sus issues de
+M1 y M2.
 
 ### 4.1 `worlds`
+
+Implementada en `0002_worlds` (M1-01, #72). SQL real:
+
+```sql
+CREATE TABLE `worlds` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`slug` text NOT NULL,
+	`summary` text,
+	`description` text,
+	`cover_asset_id` text,
+	`genres` text DEFAULT '[]' NOT NULL,
+	`status` text DEFAULT 'active' NOT NULL,
+	`language` text DEFAULT 'es' NOT NULL,
+	`settings` text DEFAULT '{}' NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`archived_at` integer,
+	`deleted_at` integer,
+	FOREIGN KEY (`cover_asset_id`) REFERENCES `assets`(`id`) ON UPDATE no action ON DELETE restrict,
+	CONSTRAINT "worlds_status_check" CHECK("worlds"."status" in ('active', 'archived')),
+	CONSTRAINT "worlds_language_check" CHECK("worlds"."language" in ('es', 'en', 'it')),
+	CONSTRAINT "worlds_slug_check" CHECK(length("worlds"."slug") between 1 and 80 AND "worlds"."slug" NOT GLOB '*[^a-z0-9-]*'),
+	CONSTRAINT "worlds_name_check" CHECK(length("worlds"."name") between 1 and 120),
+	CONSTRAINT "worlds_genres_check" CHECK(json_valid("worlds"."genres") AND json_type("worlds"."genres") = 'array')
+);
+```
 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | TEXT | PK | UUIDv7. |
-| `name` | TEXT | NOT NULL | Nombre visible. |
-| `slug` | TEXT | NOT NULL, UNIQUE | Identificador estable. |
-| `summary` | TEXT | NULL | Sinopsis breve. |
-| `description` | TEXT | NULL | JSON ProseMirror. |
-| `cover_asset_id` | TEXT | FK `assets(id)`, NULL | Portada. |
-| `genres` | TEXT | NOT NULL DEFAULT `'[]'` | JSON de géneros. |
-| `status` | TEXT | NOT NULL DEFAULT `'active'` | `active`, `archived`. |
-| `settings` | TEXT | NOT NULL DEFAULT `'{}'` | Preferencias del mundo. |
+| `name` | TEXT | NOT NULL, CHECK 1–120 | Nombre visible. |
+| `slug` | TEXT | NOT NULL, UNIQUE | Identificador estable; minúsculas, números y guiones. |
+| `summary` | TEXT | NULL | Sinopsis breve de una línea. |
+| `description` | TEXT | NULL | Texto plano hasta que llegue el editor compartido (#114). |
+| `cover_asset_id` | TEXT | FK `assets(id)` `RESTRICT`, NULL | Portada; el selector llega con #115. |
+| `genres` | TEXT | NOT NULL DEFAULT `'[]'`, CHECK JSON array | Géneros como JSON; máximo 8, validado por la app. |
+| `status` | TEXT | NOT NULL DEFAULT `'active'`, CHECK | `active`, `archived`. |
+| `language` | TEXT | NOT NULL DEFAULT `'es'`, CHECK | Idioma del contenido: `es`, `en`, `it`. |
+| `settings` | TEXT | NOT NULL DEFAULT `'{}'` | Preferencias del mundo; JSON validado. |
 | `created_at` | INTEGER | NOT NULL | Creación. |
 | `updated_at` | INTEGER | NOT NULL | Actualización. |
 | `archived_at` | INTEGER | NULL | Archivo. |
-| `deleted_at` | INTEGER | NULL | Papelera. |
+| `deleted_at` | INTEGER | NULL | Papelera lógica. |
 
-Índices: `worlds_slug_uq (slug)`, `worlds_status_idx (status, deleted_at)`.
+Índices: `worlds_slug_uq (slug)`, `worlds_status_idx (status, deleted_at)` y
+`worlds_deleted_updated_idx (deleted_at, updated_at DESC)`.
+
+Reglas de la issue M1-01:
+
+- El `slug` es único en toda la base, también para mundos archivados o en
+  papelera; la aplicación añade `-2`, `-3`… si hace falta y nunca reutiliza un
+  identificador.
+- La portada es una referencia opcional a un asset; la copia de un mundo no
+  comparte portada. La galería y su selector llegan con #115.
+- El borrado es lógico (`deleted_at`) y la papelera visible con restauración y
+  purga llega con M1-06 (#77).
+- Los géneros y el nombre se validan en el proceso principal además de en la
+  interfaz; el `CHECK` de SQLite es la última barrera.
 
 ### 4.2 `entity_types`
 
@@ -264,10 +308,12 @@ Reglas:
   tiene fila propia y se deriva del archivo principal.
 - `hash` cubre el archivo servido, no el original; por eso el índice sirve para
   verificar y para una futura deduplicación, que en M0 no se aplica.
-- **FK diferida.** `worlds` no existe en `0000`/`0001`; la migración de M1
-  reconstruirá `assets` (tabla nueva, copia, `DROP` y `RENAME`) para añadir
-  `world_id → worlds(id) ON DELETE RESTRICT`, dejando en cuarentena las filas
-  sin mundo antes de activar la restricción. No se edita `0001_assets`.
+- **FK diferida.** `worlds` ya existe desde `0002_worlds` y `worlds.cover_asset_id`
+  referencia `assets(id)` con `RESTRICT`, pero `assets.world_id` sigue sin clave
+  foránea. La issue M1-11 (#116) reconstruirá `assets` (tabla nueva, copia,
+  `DROP` y `RENAME`) para añadir `world_id → worlds(id) ON DELETE RESTRICT`,
+  dejando en cuarentena las filas sin mundo antes de activar la restricción. No
+  se edita `0001_assets`.
 
 ### 4.8 `maps`
 
@@ -385,17 +431,36 @@ Reglas:
 
 ### 4.12 `activity_log`
 
-| Columna | Tipo | Restricciones |
-|---|---|---|
-| `id` | TEXT | PK |
-| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
-| `action` | TEXT | NOT NULL |
-| `entity_type` | TEXT | NOT NULL |
-| `entity_id` | TEXT | NULL |
-| `diff` | TEXT | NOT NULL DEFAULT `'{}'` |
-| `created_at` | INTEGER | NOT NULL |
+Implementada en `0002_worlds` (M1-01, #72). SQL real:
 
-Índice: `activity_log_world_created_idx (world_id, created_at DESC)`.
+```sql
+CREATE TABLE `activity_log` (
+	`id` text PRIMARY KEY NOT NULL,
+	`world_id` text NOT NULL,
+	`action` text NOT NULL,
+	`entity_type` text NOT NULL,
+	`entity_id` text,
+	`diff` text DEFAULT '{}' NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`world_id`) REFERENCES `worlds`(`id`) ON UPDATE no action ON DELETE no action
+);
+```
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo de la acción. |
+| `action` | TEXT | NOT NULL | `world.created`, `world.updated`, `world.archived`, `world.restored`, `world.duplicated` o `world.deleted`. |
+| `entity_type` | TEXT | NOT NULL | `world` en M1-01; fichas, mapas y escenas en sus issues. |
+| `entity_id` | TEXT | NULL | Entidad afectada; el mundo en las acciones de mundo. |
+| `diff` | TEXT | NOT NULL DEFAULT `'{}'` | JSON con los campos cambiados o el origen de un duplicado. |
+| `created_at` | INTEGER | NOT NULL | Momento de la acción. |
+
+Índices: `activity_log_world_created_idx (world_id, created_at DESC)` y
+`activity_log_created_idx (created_at DESC)`. Las consultas globales del
+dashboard hacen `JOIN` con `worlds` y excluyen los mundos en papelera; las
+consultas por mundo filtran por `world_id`, de modo que nunca se mezcla
+actividad de dos mundos.
 
 ### 4.13 `search_documents` y `search_fts`
 

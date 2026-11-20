@@ -172,6 +172,21 @@ primera versión estable.
   tipados, formatos con `Intl` y recorrido del AST de JSX que falla ante textos
   visibles hardcodeados. El locale del perfil queda pendiente de Ajustes; hasta
   entonces se usa el idioma de reserva `es`.
+- CRUD de mundos (#72): crear, listar, abrir, editar, duplicar, archivar,
+  restaurar y mover a la papelera con validación, slug único, confirmación y
+  aislamiento por mundo. Incluye los campos nombre, identificador, resumen,
+  descripción, géneros, estado e idioma; la portada se guarda y se muestra si
+  existe, pero su selector llega con #115.
+- Dashboard de Inicio (#72): resumen de mundos activos y archivados, tarjetas de
+  los mundos recientes, actividad reciente etiquetada por mundo y accesos
+  rápidos. La página de cada mundo muestra su ficha, el progreso de preparación,
+  la actividad aislada y las secciones previstas.
+- Migración `0002_worlds` (#72): tablas `worlds` y `activity_log` con índices,
+  `CHECK` y claves foráneas, rollback de referencia y `user_version` 3. Conserva
+  `app_settings` y `assets` y está cubierta por pruebas de preservación.
+- Pruebas de mundos (#72): unitarias de slug y validación, integración de CRUD,
+  aislamiento y actividad, componentes de tarjeta, formulario y página, y E2E de
+  crear/editar/duplicar/archivar/restaurar/eliminar, teclado, temas y ventana.
 
 ### Cambiado
 
@@ -208,6 +223,11 @@ primera versión estable.
   límites gratuitos y la ruta de la build de Windows están documentados.
 - `pnpm typecheck` cubre también las pruebas con `tsconfig.tests.json` y
   `pnpm test` incluye las pruebas de componentes (#70).
+
+- La navegación del rail pasa a **Inicio, Mundos y Muestras** (#72). Inicio es
+  el dashboard cuando hay mundos y el estado vacío cuando no los hay; la barra
+  superior muestra el nombre del mundo abierto. El botón «Crear mundo» ya abre el
+  formulario real.
 
 ### Eliminado
 

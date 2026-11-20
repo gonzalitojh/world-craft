@@ -22,6 +22,8 @@ export const es = {
     navigationLabel: 'Navegación principal',
     views: {
       home: 'Inicio',
+      worlds: 'Mundos',
+      world: 'Mundo',
       samples: 'Muestras',
     },
     collapse: 'Plegar menú lateral',
@@ -39,8 +41,6 @@ export const es = {
     emptyDescription:
       'Un mundo reúne las fichas, las relaciones, los mapas y el manuscrito de tu historia. Cuando crees el primero aparecerá aquí, con su portada, su descripción y los accesos a cada sección.',
     emptyAction: 'Crear mundo',
-    createSoon:
-      'La creación de mundos llegará en una próxima versión. Mientras tanto, la página de muestras enseña el sistema de diseño completo.',
     nextStepsTitle: 'Qué podrás hacer cuando exista el primer mundo',
     nextSteps: [
       'Escribir fichas de personajes, lugares y organizaciones con sus campos y etiquetas.',
@@ -49,6 +49,231 @@ export const es = {
       'Redactar el manuscrito por libros, capítulos y escenas, con contador de palabras.',
     ],
     note: 'Tus datos se quedan en este equipo, en una carpeta propia que sobrevive a las actualizaciones de la aplicación.',
+  },
+  worlds: {
+    status: {
+      active: 'Activo',
+      archived: 'Archivado',
+    },
+    actions: {
+      create: 'Crear mundo',
+    },
+    languages: {
+      es: 'Español',
+      en: 'Inglés',
+      it: 'Italiano',
+    },
+    dashboard: {
+      lead: 'Desde aquí ves tus mundos, lo último que ha pasado en ellos y los accesos para seguir trabajando.',
+      worldsTitle: 'Tus mundos',
+      worldsLead:
+        'Cada mundo reúne sus fichas, mapas, manuscritos y partidas. Abre uno para ver su ficha completa.',
+      activityTitle: 'Actividad reciente',
+      activityLead:
+        'Lo último que ha pasado en todos tus mundos, sin mezclar su contenido.',
+      activityEmpty: 'Todavía no hay actividad registrada.',
+      quickTitle: 'Accesos rápidos',
+      quickCreate: 'Crear un mundo nuevo',
+      quickCreateDescription:
+        'Empieza un mundo desde cero con su nombre, su resumen y sus géneros.',
+      quickManage: 'Gestionar los mundos',
+      quickManageDescription:
+        'Busca, archiva, duplica o elimina los mundos que ya tienes.',
+      statsTitle: 'Resumen',
+      statWorlds: 'Mundos',
+      statActive: 'Activos',
+      statArchived: 'Archivados',
+      seeAll: 'Ver todos los mundos',
+      loading: 'Cargando tus mundos…',
+      errorTitle: 'No se pudieron cargar los mundos',
+      errorDescription:
+        'La aplicación no pudo leer la lista de mundos. Vuelve a intentarlo; tus datos siguen guardados en este equipo.',
+      retry: 'Volver a intentar',
+    },
+    list: {
+      lead: 'Todos los mundos de este equipo. Puedes buscar por nombre o resumen y filtrar por estado.',
+      searchLabel: 'Buscar mundos',
+      searchPlaceholder: 'Nombre o resumen',
+      statusLabel: 'Estado',
+      statusAll: 'Todos',
+      statusActive: 'Activos',
+      statusArchived: 'Archivados',
+      count: {
+        one: '{count} mundo',
+        other: '{count} mundos',
+      },
+      resultsTitle: 'Resultados de mundos',
+      emptyTitle: 'Todavía no hay ningún mundo',
+      emptyDescription:
+        'Crea el primer mundo para empezar a reunir fichas, mapas y manuscritos en un mismo lugar.',
+      emptyFilterTitle: 'Ningún mundo coincide con el filtro',
+      emptyFilterDescription:
+        'Prueba con otro texto o cambia el filtro de estado para ver más mundos.',
+      clearFilters: 'Quitar filtros',
+      loading: 'Cargando la lista de mundos…',
+      errorTitle: 'No se pudo cargar la lista de mundos',
+      errorDescription:
+        'La aplicación no pudo leer la lista. Vuelve a intentarlo; tus datos siguen guardados.',
+      retry: 'Volver a intentar',
+    },
+    card: {
+      open: 'Abrir',
+      openNamed: (name: string): string => `Abrir el mundo «${name}»`,
+      edit: 'Editar',
+      editNamed: (name: string): string => `Editar el mundo «${name}»`,
+      duplicate: 'Duplicar',
+      duplicateNamed: (name: string): string => `Duplicar el mundo «${name}»`,
+      archive: 'Archivar',
+      archiveNamed: (name: string): string => `Archivar el mundo «${name}»`,
+      restore: 'Restaurar',
+      restoreNamed: (name: string): string => `Restaurar el mundo «${name}»`,
+      delete: 'Eliminar',
+      deleteNamed: (name: string): string =>
+        `Eliminar el mundo «${name}» (se moverá a la papelera)`,
+      updated: (date: string): string => `Actualizado el ${date}`,
+      noSummary: 'Sin resumen todavía.',
+    },
+    detail: {
+      back: 'Volver a Inicio',
+      loading: 'Cargando el mundo…',
+      errorTitle: 'No se pudo cargar el mundo',
+      errorDescription:
+        'Puede que el mundo se haya movido a la papelera o que la lectura haya fallado. Vuelve a Inicio e inténtalo de nuevo.',
+      errorBack: 'Volver a Inicio',
+      noSummary: 'Sin resumen todavía.',
+      noDescription:
+        'Este mundo todavía no tiene descripción. Puedes añadirla con el botón Editar.',
+      metadataTitle: 'Datos del mundo',
+      created: (date: string): string => `Creado el ${date}`,
+      updated: (date: string): string => `Actualizado el ${date}`,
+      language: (language: string): string =>
+        `Idioma del contenido: ${language}`,
+      slug: (slug: string): string => `Identificador: ${slug}`,
+      progressTitle: 'Preparación del mundo',
+      progressLead:
+        'Completa la ficha del mundo para que sea fácil reconocerlo en la lista y en las exportaciones.',
+      progressValue: (done: number, total: number): string =>
+        `${done} de ${total} campos completados`,
+      progressPercent: (percent: string): string =>
+        `Preparación de la ficha: ${percent}`,
+      progressDone: 'Completado',
+      progressPending: 'Pendiente',
+      fields: {
+        name: 'Nombre',
+        summary: 'Resumen',
+        description: 'Descripción',
+        genres: 'Géneros',
+        language: 'Idioma',
+      },
+      activityTitle: 'Actividad de este mundo',
+      activityLead:
+        'Solo se muestran las acciones de este mundo. El contenido de otros mundos no aparece aquí.',
+      activityEmpty: 'Todavía no hay actividad en este mundo.',
+      activityError: 'No se pudo cargar la actividad de este mundo.',
+      quickTitle: 'Accesos rápidos',
+      quickLead:
+        'Las demás secciones del mundo llegarán con las próximas versiones. Mientras tanto, la ficha del mundo ya funciona.',
+      quickPlanned: 'Previsto',
+      quick: {
+        entities: {
+          title: 'Fichas',
+          description:
+            'Personajes, lugares, organizaciones y objetos del mundo.',
+        },
+        maps: {
+          title: 'Mapas',
+          description: 'Mapas por capas y vínculos entre lugares y fichas.',
+        },
+        manuscripts: {
+          title: 'Manuscrito',
+          description: 'Libros, capítulos y escenas con contador de palabras.',
+        },
+        game: {
+          title: 'Juego',
+          description: 'Dados, tablas de inspiración y sesiones del mundo.',
+        },
+      },
+    },
+    form: {
+      createTitle: 'Crear un mundo',
+      editTitle: (name: string): string => `Editar «${name}»`,
+      nameLabel: 'Nombre del mundo',
+      namePlaceholder: 'Por ejemplo, Las Mareas Grises',
+      nameRequired: 'Escribe un nombre para el mundo.',
+      slugLabel: 'Identificador',
+      slugHint:
+        'Se usa en rutas y exportaciones. En un mundo nuevo, si lo dejas vacío se genera a partir del nombre. En uno existente se conserva salvo que escribas otro.',
+      slugInvalid:
+        'Usa solo minúsculas, números y guiones simples; por ejemplo, mareas-grises.',
+      summaryLabel: 'Resumen',
+      summaryHint:
+        'Una o dos frases para reconocer el mundo en la lista. Máximo 280 caracteres.',
+      descriptionLabel: 'Descripción',
+      descriptionHint: 'Máximo 4.000 caracteres.',
+      genresLabel: 'Géneros',
+      genresHint:
+        'Separa los géneros con comas. Máximo 8, de 40 caracteres cada uno.',
+      genresInvalid:
+        'Usa como máximo 8 géneros de 40 caracteres cada uno, separados por comas.',
+      languageLabel: 'Idioma del mundo',
+      coverNote:
+        'La portada se podrá elegir cuando exista la galería de imágenes del mundo.',
+      submitCreate: 'Crear mundo',
+      submitEdit: 'Guardar cambios',
+      cancel: 'Cancelar',
+      formError: 'Revisa los datos del formulario. El mundo no se ha guardado.',
+    },
+    duplicate: {
+      title: 'Duplicar mundo',
+      body: (name: string): string =>
+        `Se creará un mundo nuevo a partir de «${name}». La portada no se copia.`,
+      nameLabel: 'Nombre del mundo nuevo',
+      defaultName: (name: string): string => `${name} — copia`,
+      submit: 'Duplicar',
+      cancel: 'Cancelar',
+    },
+    confirm: {
+      archiveTitle: (name: string): string => `Archivar «${name}»`,
+      archiveBody:
+        'El mundo se ocultará de la lista de activos, pero no se borrará nada. Podrás restaurarlo cuando quieras.',
+      archiveSubmit: 'Archivar',
+      restoreTitle: (name: string): string => `Restaurar «${name}»`,
+      restoreBody:
+        'El mundo volverá a la lista de mundos activos y seguirá con todo su contenido.',
+      restoreSubmit: 'Restaurar',
+      deleteTitle: (name: string): string => `Eliminar «${name}»`,
+      deleteBody:
+        'El mundo se moverá a la papelera y dejará de aparecer en Inicio y Mundos. Podrás recuperarlo desde la papelera cuando esté disponible.',
+      deleteSubmit: 'Mover a la papelera',
+      cancel: 'Cancelar',
+    },
+    notices: {
+      created: (name: string): string => `Se ha creado el mundo «${name}».`,
+      updated: (name: string): string =>
+        `Se han guardado los cambios de «${name}».`,
+      duplicated: (name: string): string => `Se ha creado el mundo «${name}».`,
+      archived: (name: string): string => `Se ha archivado «${name}».`,
+      restored: (name: string): string => `Se ha restaurado «${name}».`,
+      deleted: (name: string): string =>
+        `«${name}» se ha movido a la papelera.`,
+      failed:
+        'No se pudo completar la acción. Tus datos siguen guardados; vuelve a intentarlo.',
+      notFound:
+        'El mundo ya no existe o se ha movido a la papelera. Actualiza la lista.',
+      invalid: 'Revisa los datos del formulario e inténtalo de nuevo.',
+    },
+    activity: {
+      loading: 'Cargando la actividad…',
+      retry: 'Volver a intentar',
+      actions: {
+        created: 'Mundo creado',
+        updated: 'Mundo actualizado',
+        archived: 'Mundo archivado',
+        restored: 'Mundo restaurado',
+        duplicated: 'Mundo duplicado',
+        deleted: 'Mundo movido a la papelera',
+      },
+    },
   },
   samples: {
     lead: 'Página de revisión del sistema de diseño. Aquí se ven los componentes base con sus estados y con contenido largo, para comprobar que nada se sale de su contenedor en los temas Claro y Oscuro.',

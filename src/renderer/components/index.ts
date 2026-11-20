@@ -8,7 +8,13 @@ export {
 export { Card, type CardProps, type CardTone } from './card';
 export { Dialog, type DialogProps } from './dialog';
 export { EmptyState, type EmptyStateProps } from './empty-state';
+export {
+  SelectField,
+  type SelectFieldProps,
+  type SelectOption,
+} from './select-field';
 export { Tabs, type TabItem, type TabsProps } from './tabs';
+export { TextAreaField, type TextAreaFieldProps } from './text-area-field';
 export { TextField, type TextFieldProps } from './text-field';
 export {
   ToastRegion,

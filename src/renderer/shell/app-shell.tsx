@@ -7,11 +7,16 @@ import { useMessages } from '../i18n/provider';
 import { cx } from '../lib/class-names';
 import type { ThemeMode } from '../theme';
 
-export type AppView = 'home' | 'samples';
+export type AppView = 'home' | 'worlds' | 'world' | 'samples';
+
+/** Vistas que aparecen en la navegación del rail. */
+export type AppNavView = 'home' | 'worlds' | 'samples';
 
 export interface AppShellProps {
   readonly view: AppView;
-  readonly onViewChange: (view: AppView) => void;
+  /** Título de la barra superior; puede ser el nombre de un mundo. */
+  readonly title: string;
+  readonly onViewChange: (view: AppNavView) => void;
   readonly theme: ThemeMode;
   readonly onToggleTheme: () => void;
   /** Versión visible al pie del rail; la pasa `App` desde el preload. */
@@ -33,6 +38,25 @@ function HomeIcon() {
       focusable="false"
     >
       <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1Z" />
+    </svg>
+  );
+}
+
+function WorldsIcon() {
+  return (
+    <svg
+      className="wc-nav-item__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="8" />
+      <path d="M4 12h16M12 4a13 13 0 0 1 0 16a13 13 0 0 1 0-16Z" />
     </svg>
   );
 }
@@ -122,6 +146,7 @@ function SunIcon() {
  */
 export function AppShell({
   view,
+  title,
   onViewChange,
   theme,
   onToggleTheme,
@@ -132,6 +157,11 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false);
   const navItems = [
     { id: 'home', label: messages.shell.views.home, icon: <HomeIcon /> },
+    {
+      id: 'worlds',
+      label: messages.shell.views.worlds,
+      icon: <WorldsIcon />,
+    },
     {
       id: 'samples',
       label: messages.shell.views.samples,
@@ -190,7 +220,11 @@ export function AppShell({
                 type="button"
                 className="wc-nav-item"
                 title={collapsed ? item.label : undefined}
-                aria-current={view === item.id ? 'page' : undefined}
+                aria-current={
+                  view === item.id || (view === 'world' && item.id === 'worlds')
+                    ? 'page'
+                    : undefined
+                }
                 onClick={() => {
                   onViewChange(item.id);
                 }}
@@ -242,7 +276,7 @@ export function AppShell({
 
         <div className="wc-shell__workspace">
           <header className="wc-topbar">
-            <h1 className="wc-topbar__title">{messages.shell.views[view]}</h1>
+            <h1 className="wc-topbar__title">{title}</h1>
             <div className="wc-topbar__actions">
               <UpdatesControl />
               <Button

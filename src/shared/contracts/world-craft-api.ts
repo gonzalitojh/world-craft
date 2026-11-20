@@ -19,6 +19,19 @@ import {
   UPDATE_STATE_CHANGED_CHANNEL,
   type UpdateSnapshot,
 } from './updates';
+import {
+  isWorldActivityList,
+  isWorldDeleteResult,
+  isWorldDetail,
+  isWorldSummaryList,
+  type WorldActivityFilter,
+  type WorldCraftWorldsApi,
+  type WorldCreateInput,
+  type WorldDetail,
+  type WorldDuplicateInput,
+  type WorldSetArchivedInput,
+  type WorldUpdateInput,
+} from './worlds';
 
 /** Clave global donde el preload publica la API. */
 export const WORLD_CRAFT_API_KEY = 'worldCraft' as const;
@@ -84,6 +97,7 @@ export interface WorldCraftApi {
   readonly appInfo: AppInfo;
   readonly shell: WorldCraftShellApi;
   readonly updates: WorldCraftUpdatesApi;
+  readonly worlds: WorldCraftWorldsApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -145,10 +159,40 @@ function toUpdateSnapshotResult(value: unknown): IpcResult<UpdateSnapshot> {
 }
 
 /**
+ * Normaliza la respuesta de un canal de mundos con su guarda de forma.
+ *
+ * El proceso principal es de confianza, pero el preload no reenvía una
+ * respuesta manipulada o de otra versión: si no encaja, se degrada a
+ * `INTERNAL_ERROR`.
+ */
+function toGuardedResult<T>(
+  value: unknown,
+  guard: (data: unknown) => data is T,
+): IpcResult<T> {
+  if (!isIpcResult(value)) {
+    return ipcErr('INTERNAL_ERROR');
+  }
+
+  if (!value.ok) {
+    return value;
+  }
+
+  if (!guard(value.data)) {
+    return ipcErr('INTERNAL_ERROR');
+  }
+
+  return { ok: true, data: value.data };
+}
+
+function isNullableWorldDetail(value: unknown): value is WorldDetail | null {
+  return value === null || isWorldDetail(value);
+}
+
+/**
  * Construye la API congelada del preload.
  *
- * Se congelan el objeto raíz, `appInfo`, `shell` y `updates` para que el
- * renderer no pueda sustituirlos en tiempo de ejecución.
+ * Se congelan el objeto raíz, `appInfo`, `shell`, `updates` y `worlds` para que
+ * el renderer no pueda sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -218,5 +262,56 @@ export function createWorldCraftApi(
     },
   });
 
-  return Object.freeze({ appInfo, shell, updates });
+  const invokeWorldCommand = async <T>(
+    channel: IpcChannel,
+    payload: unknown,
+    guard: (data: unknown) => data is T,
+  ): Promise<IpcResult<T>> => {
+    try {
+      return toGuardedResult(await options.invoke(channel, payload), guard);
+    } catch {
+      return ipcErr('INTERNAL_ERROR');
+    }
+  };
+
+  const worlds: WorldCraftWorldsApi = Object.freeze({
+    list: () =>
+      invokeWorldCommand(IPC_CHANNELS.worldsList, {}, isWorldSummaryList),
+    get: (id: string) =>
+      invokeWorldCommand(IPC_CHANNELS.worldsGet, { id }, isNullableWorldDetail),
+    create: (input: WorldCreateInput) =>
+      invokeWorldCommand(IPC_CHANNELS.worldsCreate, input, isWorldDetail),
+    update: (input: WorldUpdateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.worldsUpdate,
+        input,
+        isNullableWorldDetail,
+      ),
+    duplicate: (input: WorldDuplicateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.worldsDuplicate,
+        input,
+        isNullableWorldDetail,
+      ),
+    setArchived: (input: WorldSetArchivedInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.worldsSetArchived,
+        input,
+        isNullableWorldDetail,
+      ),
+    remove: (id: string) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.worldsRemove,
+        { id },
+        isWorldDeleteResult,
+      ),
+    listActivity: (filter?: WorldActivityFilter) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.worldsListActivity,
+        filter ?? {},
+        isWorldActivityList,
+      ),
+  });
+
+  return Object.freeze({ appInfo, shell, updates, worlds });
 }

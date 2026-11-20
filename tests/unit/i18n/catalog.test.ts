@@ -72,6 +72,8 @@ describe('catálogo de mensajes', () => {
         ...es.shell,
         views: {
           home: 'Home',
+          worlds: 'Worlds',
+          world: 'World',
           samples: 'Samples',
         },
       },

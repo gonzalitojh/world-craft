@@ -7,9 +7,9 @@ export interface TextFieldProps {
   /** Etiqueta visible; nunca se sustituye por un placeholder. */
   readonly label: string;
   /** Texto de ayuda asociado al campo. */
-  readonly hint?: string;
+  readonly hint?: string | undefined;
   /** Error asociado al campo; marca el control como inválido. */
-  readonly error?: string;
+  readonly error?: string | undefined;
   readonly required?: boolean;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
@@ -19,6 +19,8 @@ export interface TextFieldProps {
   readonly type?: 'text' | 'search' | 'email' | 'url';
   readonly placeholder?: string;
   readonly autoComplete?: string;
+  readonly autoFocus?: boolean;
+  readonly maxLength?: number;
   readonly value?: string;
   readonly defaultValue?: string;
   readonly onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -45,6 +47,8 @@ export function TextField({
   type = 'text',
   placeholder,
   autoComplete,
+  autoFocus = false,
+  maxLength,
   value,
   defaultValue,
   onChange,
@@ -89,6 +93,9 @@ export function TextField({
         readOnly={readOnly}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        autoFocus={autoFocus}
+        data-autofocus={autoFocus ? 'true' : undefined}
+        maxLength={maxLength}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy.length > 0 ? describedBy : undefined}
       />
@@ -98,7 +105,7 @@ export function TextField({
         </p>
       ) : null}
       {error ? (
-        <p className="wc-field__error" id={errorId}>
+        <p className="wc-field__error" id={errorId} role="alert">
           {error}
         </p>
       ) : null}

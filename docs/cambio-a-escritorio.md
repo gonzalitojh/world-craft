@@ -259,7 +259,8 @@ Se crean estos hitos, que reciben los números 9–15:
 El catálogo nuevo tiene 41 issues, numeradas #61–#101. La issue #61 es el
 propio pivote y queda en `status: needs-review`; el resto empieza en
 `status: todo`. Las cuatro del hito Backlog llevan `future`; #99 y #101 llevan
-además `needs-decision`.
+además `needs-decision`. Durante M1-01 se añadieron las issues de seguimiento
+#114–#116 (portada del mundo, descripción enriquecida e integridad de assets).
 
 | Número | Código | Título | Hito |
 |---|---|---|---|
@@ -282,6 +283,9 @@ además `needs-decision`.
 | #77 | M1-06 | Papelera y versiones de contenido | M1 · Núcleo local |
 | #78 | M1-07 | Exportación e importación de mundos | M1 · Núcleo local |
 | #79 | M1-08 | Ajustes de datos, carpetas y borrado completo | M1 · Núcleo local |
+| #114 | M1-09 | Descripción enriquecida de mundos con el editor compartido | M1 · Núcleo local |
+| #115 | M1-10 | Portada del mundo: selector de imagen y encuadre | M1 · Núcleo local |
+| #116 | M1-11 | Integridad de assets: clave foránea a mundos y cuarentena | M1 · Núcleo local |
 | #80 | M2-01 | Spike: MapLibre GL, Terra Draw y exportación SVG | M2 · Mapas y grafo |
 | #81 | M2-02 | Editor de mapas vectorial | M2 · Mapas y grafo |
 | #82 | M2-03 | Marcadores y vínculos mapa-ficha | M2 · Mapas y grafo |

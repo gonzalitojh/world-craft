@@ -51,6 +51,10 @@ export function Dialog({
       const active = document.activeElement;
       previousFocusRef.current = active instanceof HTMLElement ? active : null;
       dialog.showModal();
+
+      // El primer campo marcado toma el foco; si no hay ninguno, se conserva
+      // el primer elemento enfocable que elija el navegador.
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
       return;
     }
 

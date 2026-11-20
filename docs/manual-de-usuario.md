@@ -10,12 +10,13 @@
 > Hoy el proyecto ya tiene un **instalador local para Windows** que se instala
 > por usuario, sin permisos de administrador, y una **comprobación manual de
 > actualizaciones** integrada en la barra superior. La ventana incluye barra
-> lateral con navegación, tema Claro/Oscuro conmutable, una página de inicio con
-> estado vacío y una **página de muestras solo para desarrollo**. También existe
-> una **base de datos local** que se crea y se comprueba al arrancar, con
-> **copias automáticas** y **restauración desde modo seguro**. Todavía no hay
-> mundos, fichas ni ajustes, y la preferencia de tema no se recuerda al
-> reiniciar.
+> lateral con navegación, tema Claro/Oscuro conmutable, una página de inicio que
+> es el **dashboard de mundos** (o su estado vacío) y una **página de muestras
+> solo para desarrollo**. También existe una **base de datos local** que se crea
+> y se comprueba al arrancar, con **copias automáticas** y **restauración desde
+> modo seguro**. Ya se pueden crear, editar, duplicar, archivar y eliminar
+> mundos con su actividad; todavía no hay fichas, mapas, manuscritos, ajustes ni
+> papelera visible, y la preferencia de tema no se recuerda al reiniciar.
 
 ## 1. Qué es World Craft
 
@@ -83,10 +84,12 @@ campos, insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
 La aplicación crea y comprueba su base de datos local, guarda copias automáticas,
 sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
 La comprobación de actualizaciones es **manual y cancelable**; no se ejecuta sola.
-Por ahora **no se puede crear un mundo**, guardar contenido ni cambiar ajustes.
-El botón «Crear mundo» de la página de inicio todavía avisa de que la función
-llegará en una próxima versión. **No hay una release pública**: el instalador se
-genera y se prueba en local, y la publicación oficial llegará con M5.
+Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, y el
+dashboard muestra tus mundos, la actividad reciente y su preparación. Todavía no
+hay fichas, mapas, manuscritos, ajustes ni papelera visible, y la portada del
+mundo y la descripción enriquecida llegarán en actualizaciones posteriores.
+**No hay una release pública**: el instalador se genera y se prueba en local, y
+la publicación oficial llegará con M5.
 
 ## 3. La ventana
 
@@ -95,19 +98,20 @@ genera y se prueba en local, y la publicación oficial llegará con M5.
 Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
-  navegación entre **Inicio** y **Muestras**, y un botón para plegarla. Expandida
-  ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos.
-- **Barra superior:** muestra el nombre de la pantalla actual, el botón
-  **Actualizaciones** y el botón de tema. El botón de actualizaciones abre un
-  diálogo para buscar, descargar e instalar versiones nuevas (sección 3.6).
+  navegación entre **Inicio**, **Mundos** y **Muestras**, y un botón para
+  plegarla. Expandida ocupa 240 px y plegada 64 px; al plegarla quedan el
+  logotipo y los iconos.
+- **Barra superior:** muestra el nombre de la pantalla actual —o el del mundo
+  abierto—, el botón **Actualizaciones** y el botón de tema. El botón de
+  actualizaciones abre un diálogo para buscar, descargar e instalar versiones
+  nuevas (sección 3.6).
 - **Área central:** el contenido de la pantalla. Es el destino del enlace
   «Saltar al contenido principal» que aparece al empezar a usar el teclado.
 
-Siguen **previstas**, para cuando existan mundos y fichas:
+Siguen **previstas**, para cuando existan fichas, mapas y escritura:
 
-- **Mundos y fichas** en la barra lateral, además de mapas, escritura, juego,
-  búsqueda y ajustes.
-- **Barra superior con el nombre del mundo** y la búsqueda.
+- **Fichas, mapas, escritura, juego, búsqueda y ajustes** en la barra lateral.
+- **Barra superior con búsqueda global**.
 - **Paneles** de detalles, filtros o propiedades.
 - **Barra de estado** con el guardado y los avisos.
 
@@ -123,7 +127,8 @@ de lo que verá quien use la aplicación.
 - En las pestañas, usa las flechas izquierda y derecha para cambiar de pestaña;
   `Inicio` y `Fin` van a la primera y a la última.
 - En un diálogo, el foco se queda dentro mientras está abierto y `Escape` lo
-  cierra.
+  cierra. Al cerrarlo, el foco vuelve al control que lo abrió o, si ya no existe,
+  al contenido principal.
 - Las ayudas emergentes (tooltip) aparecen al pasar el ratón o al llegar con el
   teclado, y se ocultan con `Escape`.
 - El foco siempre se ve, en los dos temas.
@@ -151,10 +156,16 @@ memoria llegará en una actualización posterior.
 ### 3.5 Qué se ve al abrir
 
 La aplicación abre en **Inicio**. Mientras no exista ningún mundo, la pantalla
-explica que todavía no hay ninguno, ofrece el botón «Crear mundo» (que de momento
-avisa de que la creación llegará más adelante) y resume lo que se podrá hacer con
-el primer mundo: fichas, relaciones, mapas y manuscrito. Un aviso recuerda que
-los datos se quedan en tu equipo.
+explica que todavía no hay ninguno, ofrece el botón **Crear mundo** y resume lo
+que se podrá hacer con el primer mundo: fichas, relaciones, mapas y manuscrito.
+Un aviso recuerda que los datos se quedan en tu equipo. Al pulsar **Crear mundo**
+se abre un formulario para ponerle nombre, resumen, descripción, géneros e
+idioma (sección 4).
+
+Cuando ya hay mundos, **Inicio** se convierte en el dashboard: muestra un
+resumen con el número de mundos activos y archivados, tarjetas con los mundos
+actualizados recientemente, la actividad reciente de todos tus mundos con el
+nombre de cada uno y accesos rápidos para crear o gestionar mundos.
 
 La base de datos local se crea y se comprueba sola al arrancar; si hubiera un
 problema, la aplicación avisa antes de abrir la ventana (sección 15).
@@ -192,15 +203,89 @@ Si la comprobación o la descarga fallan, el diálogo muestra un aviso y puedes
 volver a intentarlo. Un fallo de actualización no toca tus datos: la base, los
 assets y las copias siguen en `%APPDATA%\World Craft` (sección 12).
 
-## 4. Mundos (previsto)
+## 4. Mundos
 
-- **Crear un mundo:** ponle nombre, sinopsis y, si quieres, una portada.
-- **Abrir un mundo:** selecciónalo en la barra lateral.
-- **Editar:** cambia nombre, sinopsis, géneros y portada.
-- **Archivar:** oculta el mundo de la lista sin borrarlo.
-- **Borrar:** lo mueve a la papelera; puedes restaurarlo.
-- **Exportar:** genera un archivo ZIP con los datos y los archivos del mundo.
-- **Importar:** añade un mundo desde un ZIP exportado.
+Un mundo reúne todo lo que pertenece a una misma historia: sus fichas, mapas,
+manuscritos y partidas. Todo lo que crees dentro de un mundo queda aislado de
+los demás; la actividad y las listas nunca mezclan datos de otro mundo.
+
+### 4.1 Crear un mundo
+
+1. En **Inicio**, pulsa **Crear mundo**. También puedes hacerlo desde **Mundos**.
+2. Rellena el **nombre** (obligatorio), el **resumen** y la **descripción**. El
+   resumen es una o dos frases para reconocer el mundo en la lista; la
+   descripción admite varias líneas.
+3. Añade **géneros** separados por comas (por ejemplo, `Fantasía, Aventura`;
+   máximo 8).
+4. Elige el **idioma del contenido** del mundo: español, inglés o italiano.
+5. El **identificador** es opcional. Si lo dejas vacío se genera a partir del
+   nombre; si ya existe, la aplicación añade un número para no repetirlo.
+6. Pulsa **Crear mundo**. El mundo se abre en su propia página y aparece un aviso
+   de confirmación.
+
+La **portada** todavía no se puede elegir: su selector llegará con la galería de
+imágenes del mundo. El formulario lo indica para no prometer una función que aún
+no existe.
+
+### 4.2 El dashboard de Inicio
+
+Cuando ya hay mundos, **Inicio** muestra:
+
+- Un **resumen** con el total de mundos y cuántos están activos o archivados.
+- Tus **mundos recientes** como tarjetas con su nombre, resumen, géneros,
+  estado y fecha de actualización. Cada tarjeta permite abrir, editar, duplicar,
+  archivar o restaurar y eliminar.
+- La **actividad reciente** de todos tus mundos. Cada línea indica qué ocurrió,
+  en qué mundo y cuándo, de modo que no se atribuye una acción al mundo
+  equivocado.
+- **Accesos rápidos** para crear un mundo nuevo o ir a la lista completa.
+
+### 4.3 La lista de Mundos
+
+**Mundos** muestra todas las tarjetas. Puedes:
+
+- **Buscar** por nombre, identificador o resumen.
+- **Filtrar** por estado: todos, activos o archivados.
+- Ver cuántos mundos coinciden con el filtro.
+- Quitar los filtros con un botón cuando no haya resultados.
+
+### 4.4 La página de un mundo
+
+Al abrir un mundo ves su ficha completa: nombre, estado, resumen, géneros,
+descripción, identificador, idioma y fechas de creación y actualización.
+
+- **Preparación del mundo:** una barra de progreso indica si faltan el resumen,
+  la descripción o los géneros. Los campos que ya están completos se marcan como
+  **Completado**.
+- **Actividad de este mundo:** solo las acciones de ese mundo, con su fecha.
+- **Accesos rápidos:** fichas, mapas, manuscrito y juego aparecen como
+  **Previsto** hasta que lleguen sus pantallas. Mientras tanto, la ficha del
+  mundo ya es editable.
+
+### 4.5 Editar, duplicar, archivar y eliminar
+
+- **Editar:** cambia el nombre, el identificador, el resumen, la descripción, los
+  géneros o el idioma. El mundo se actualiza al guardar y queda registrado en la
+  actividad.
+- **Duplicar:** crea un mundo nuevo con el contenido editable del original y un
+  nombre propuesto. La portada no se copia porque pertenece al mundo original.
+- **Archivar:** oculta el mundo de la lista de activos sin borrar nada. Puedes
+  verlo con el filtro **Archivados** y restaurarlo cuando quieras.
+- **Eliminar:** pide confirmación y mueve el mundo a la papelera. Deja de
+  aparecer en Inicio y Mundos; la pantalla de papelera para restaurarlo llegará
+  en una actualización posterior. Hasta entonces, las copias de seguridad siguen
+  siendo la red de seguridad (sección 12).
+
+Todas las acciones destructivas piden confirmación y ninguna borra archivos del
+disco sin avisar.
+
+### 4.6 Lo que llegará después
+
+- **Portada del mundo:** elegir una imagen local y verla en la ficha.
+- **Descripción enriquecida:** formato básico, enlaces internos y texto listo
+  para buscar.
+- **Exportar e importar** un mundo completo en un archivo abierto.
+- **Papelera visible** para restaurar o vaciar definitivamente.
 
 ## 5. Fichas y entidades (previsto)
 
@@ -489,15 +574,22 @@ las funciones correspondientes.
 | Instancia única | Implementada; abrir la aplicación de nuevo enfoca la ventana existente |
 | Aviso de SmartScreen y checksums | Documentado; el instalador sigue sin firma (ADR 0015) |
 | Componentes base (botones, campos, avisos, diálogos...) | Implementados (en desarrollo) |
-| Página de inicio con estado vacío | Implementada (en desarrollo); «Crear mundo» avisa de que llegará |
+| Página de inicio con estado vacío | Implementada (en desarrollo); el botón abre el formulario de creación |
 | Página de muestras | Solo en desarrollo; no es una función de producto |
+| Dashboard con resumen, mundos recientes y actividad | Implementado (en desarrollo); sin mezclar datos entre mundos |
+| Lista de mundos con búsqueda y filtro por estado | Implementada (en desarrollo) |
+| CRUD de mundos: crear, editar, duplicar y archivar/restaurar | Implementado (en desarrollo); con validación y confirmación |
+| Borrado lógico de mundos con confirmación | Implementado (en desarrollo); la papelera visible llega con #77 |
+| Página de mundo con preparación y actividad aislada | Implementada (en desarrollo) |
+| Portada del mundo | Prevista (#115) |
+| Descripción enriquecida de mundos | Prevista (#114) |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
 | Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
 | Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12 |
 | Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
-| Mundos | Prevista |
+| Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
 | Fichas y tipos | Prevista |
 | Relaciones y grafo | Prevista |
 | Mapas | Prevista |

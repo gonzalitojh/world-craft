@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0018.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0019.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -110,3 +110,20 @@ el instalador 0.1.0; la actualización contra GitHub Releases se completará en 
 
 - Referencias: ADR 0018, ADR 0003, ADR 0013, ADR 0015, ADR 0016,
   `docs/arquitectura.md`, `docs/continuidad.md` y `docs/persistencia.md`.
+
+## 2026-11-20 — Mundos del MVP implementados (M1-01)
+
+**Contexto.** La issue #72 abre el contenido de M1 con el primer CRUD completo.
+El mundo es la raíz de fichas, mapas, manuscritos y partidas; había que fijar el
+modelo, el borrado, la actividad, la portada, la descripción y el idioma sin
+adelantar formatos ni funciones que dependen de issues posteriores. Las
+decisiones de alcance se acordaron con el usuario y se crearon las issues de
+seguimiento #114 (descripción enriquecida), #115 (portada) y #116 (integridad de
+assets).
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-042 | Mundos del MVP | `worlds` como raíz con `slug` único global, borrado lógico (`deleted_at`), archivo (`status`/`archived_at`) e idioma `es`/`en`/`it`; `activity_log` por mundo con `diff` JSON; migración `0002_worlds` aditiva con `user_version` 3 y rollback; dominio puro en `src/main/worlds/` con transacciones que agrupan cada mutación y su actividad; ocho canales IPC con Zod estricto y guardas en el preload; dashboard, lista con búsqueda/filtro, página de mundo con progreso y actividad aislada; portada nullable a `assets` sin selector hasta #115; descripción en texto plano hasta #114; papelera visible y purga en #77; FK `assets.world_id` en #116. | El identificador de un mundo nunca se reutiliza; archivar es reversible y eliminar conserva la fila; la actividad global etiqueta cada acción con su mundo y excluye la papelera; el dashboard y la ficha caben a 1024 px en ambos temas; los datos existentes (`app_settings` y `assets`) se conservan al migrar; la portada y la descripción rica no bloquean el MVP. ADR 0019. |
+
+- Referencias: ADR 0019, #114, #115, #116, #77, `docs/manual-de-usuario.md`,
+  `docs/base-de-datos/esquema.md` y `docs/calidad/plan-de-pruebas.md`.
