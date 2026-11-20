@@ -87,9 +87,11 @@ Los checks de calidad y de datos son:
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm test             # unitarias + integración
+pnpm test             # unitarias + componentes + integración
 pnpm test:unit
+pnpm test:components
 pnpm test:integration
+pnpm test:e2e         # compila y abre la app real con Playwright Electron (Windows)
 pnpm db:generate      # genera una migración con Drizzle Kit
 pnpm db:check         # valida el journal y las instantáneas
 pnpm format           # corrige el formato

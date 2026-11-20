@@ -21,7 +21,9 @@ PR sin credenciales ni datos de usuario y sin consumir minutos de pago.
 2. Jobs **bloqueantes actuales**: `lint` (con `format:check`), `typecheck` y
    `test`. El job `build` se añade con el scaffold de Electron y entonces pasa
    a bloqueante.
-3. Jobs **no bloqueantes**: `gitleaks`, `audit` y `e2e` (Playwright Electron).
+3. Jobs **no bloqueantes**: `gitleaks` y `audit`. El job `e2e` (Playwright
+   Electron) no se ejecuta en las PRs: se lanza en local y en el workflow de
+   release de M5 en Windows (ver implementación de #70).
 4. Permisos `contents: read`, `concurrency` para cancelar ejecuciones antiguas y
    una acción compuesta de setup.
 5. **Dependabot** semanal para npm y GitHub Actions, agrupado por minor y patch,
@@ -49,6 +51,13 @@ PR sin credenciales ni datos de usuario y sin consumir minutos de pago.
 > hay secretos de servicios web. Los límites gratuitos y la ruta para añadir la
 > build de Windows en M5 están en
 > [`docs/calidad/plan-de-pruebas.md`](../calidad/plan-de-pruebas.md), §6.1.
+>
+> **Implementación (M0-10, #70, 20/11/2026).** El job bloqueante `test` incluye
+> también las pruebas de componentes. No se añade un job `e2e` a las PRs: los
+> E2E de Playwright Electron son Windows-only y se ejecutan en local antes de
+> `review` y en el workflow de release de M5. Estrategia y comandos en
+> [`docs/calidad/plan-de-pruebas.md`](../calidad/plan-de-pruebas.md), §3.11
+> y §6.
 
 ## Alternativas consideradas
 

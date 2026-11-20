@@ -140,16 +140,21 @@ pnpm db:generate      # genera una migración
 pnpm db:check         # valida el journal y las instantáneas
 pnpm lint
 pnpm typecheck
-pnpm test             # unitarias + integración
+pnpm test             # unitarias + componentes + integración
 pnpm test:unit
+pnpm test:components
 pnpm test:integration
+pnpm test:e2e         # compila y abre la app real con Playwright Electron (Windows)
 pnpm format:check
 ```
 
 `pnpm build` escribe `out/main/index.cjs`, `out/preload/index.cjs` y
 `out/renderer/index.html`, y copia `drizzle/` a `out/main/drizzle`; **no genera
 un instalador**. `pnpm start` compila y abre el build de producción (se puede
-omitir la compilación con `--skipBuild`). `test:e2e` llegará con #70.
+omitir la compilación con `--skipBuild`). `pnpm test:e2e` compila antes y abre
+la aplicación real con Playwright Electron en Windows usando un `userData`
+temporal en `os.tmpdir()`: no toca los datos del usuario y no se ejecuta en la
+CI de cada PR (se lanza en local antes de `review` y en la release de M5).
 
 - `lint`, `typecheck`, `test` y `build` son **required checks**: una PR no se
   fusiona si fallan. `build` ejecuta `pnpm db:check`, `pnpm build` y

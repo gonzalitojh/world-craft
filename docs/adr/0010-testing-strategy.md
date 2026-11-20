@@ -31,6 +31,17 @@ reales.
 8. La cobertura se exige alta en migraciones, backups, importación e IPC; no se
    persigue un porcentaje global.
 
+> **Implementación (M0-10, #70, 20/11/2026).** Vitest cubre dominio, esquema,
+> IPC y utilidades; Testing Library con `jsdom` cubre componentes en
+> `tests/components/`; Playwright Electron abre la aplicación real con un
+> `userData` temporal en `tests/e2e/`; axe-core audita el shell en Claro y
+> Oscuro. La CI de cada PR ejecuta unitarias, componentes e integración; los E2E
+> se ejecutan en local antes de `review` y en el workflow de release de M5.
+> `@axe-core/playwright` no se usa porque necesita `browserContext.newPage()`,
+> que Electron no soporta; se inyecta `axe-core` con `page.evaluate`. El detalle
+> está en [`docs/calidad/plan-de-pruebas.md`](../calidad/plan-de-pruebas.md),
+> §3.11.
+
 ## Alternativas consideradas
 
 | Alternativa | Motivo del descarte |

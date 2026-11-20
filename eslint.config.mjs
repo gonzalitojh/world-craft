@@ -54,6 +54,15 @@ export default tseslint.config(
     },
   },
   {
+    // Solo las pruebas que mezclan Node y navegador necesitan ambos globals:
+    // componentes (jsdom) y E2E (`page.evaluate`). Las unitarias y de
+    // integración siguen con globals de Node.
+    files: ['tests/components/**/*.{ts,tsx}', 'tests/e2e/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
+  {
     // electron-builder carga la configuración en CommonJS; `require` y
     // `module.exports` son la interfaz que espera.
     files: ['electron-builder.config.cjs'],
