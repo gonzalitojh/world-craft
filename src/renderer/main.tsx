@@ -2,7 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './App';
-import { messages } from './messages/es';
+import { I18nProvider } from './i18n/provider';
+import { DEFAULT_LOCALE, getCatalog } from './messages';
 import { applyTheme, DEFAULT_THEME } from './theme';
 import './styles/tokens/palette.css';
 import './styles/tokens/semantic.css';
@@ -19,10 +20,12 @@ if (container === null) {
 // El tema se fija antes del primer render para que los tokens semánticos ya
 // estén resueltos; `App` lo mantiene sincronizado en cada cambio.
 applyTheme(DEFAULT_THEME);
-document.title = messages.app.title;
+document.title = getCatalog(DEFAULT_LOCALE).app.title;
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <I18nProvider locale={DEFAULT_LOCALE}>
+      <App />
+    </I18nProvider>
   </StrictMode>,
 );

@@ -5,7 +5,7 @@ import {
   type UpdateSnapshot,
 } from '../../shared/contracts/updates';
 import type { IpcResult } from '../../shared/contracts/result';
-import { messages } from '../messages/es';
+import { useMessages } from '../i18n/provider';
 import { Button } from './button';
 import { UpdatesDialog } from './updates-dialog';
 
@@ -19,6 +19,7 @@ import { UpdatesDialog } from './updates-dialog';
  * quedarse en silencio.
  */
 export function UpdatesControl() {
+  const messages = useMessages();
   const updatesApi = window.worldCraft.updates;
   const { version } = window.worldCraft.appInfo;
   const [open, setOpen] = useState(false);
@@ -65,7 +66,7 @@ export function UpdatesControl() {
 
       setCommandError(messages.updates.errors.transport);
     },
-    [],
+    [messages],
   );
 
   const close = useCallback(() => {

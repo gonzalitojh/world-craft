@@ -3,8 +3,8 @@ import { useState, type ReactNode } from 'react';
 import logoUrl from '../assets/world-craft-logo.svg';
 import { Button } from '../components/button';
 import { UpdatesControl } from '../components/updates-control';
+import { useMessages } from '../i18n/provider';
 import { cx } from '../lib/class-names';
-import { messages } from '../messages/es';
 import type { ThemeMode } from '../theme';
 
 export type AppView = 'home' | 'samples';
@@ -112,11 +112,6 @@ function SunIcon() {
   );
 }
 
-const NAV_ITEMS = [
-  { id: 'home', label: messages.shell.views.home, icon: <HomeIcon /> },
-  { id: 'samples', label: messages.shell.views.samples, icon: <SamplesIcon /> },
-] as const;
-
 /**
  * Shell de escritorio sin router.
  *
@@ -133,7 +128,16 @@ export function AppShell({
   version,
   children,
 }: AppShellProps) {
+  const messages = useMessages();
   const [collapsed, setCollapsed] = useState(false);
+  const navItems = [
+    { id: 'home', label: messages.shell.views.home, icon: <HomeIcon /> },
+    {
+      id: 'samples',
+      label: messages.shell.views.samples,
+      icon: <SamplesIcon />,
+    },
+  ] as const;
   const themeLabel =
     theme === 'dark'
       ? messages.shell.theme.currentDark
@@ -180,7 +184,7 @@ export function AppShell({
             id="wc-navigation"
             aria-label={messages.shell.navigationLabel}
           >
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 type="button"

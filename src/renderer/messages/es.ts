@@ -2,14 +2,15 @@
  * Mensajes visibles del renderer.
  *
  * Todo el texto de interfaz pasa por aquí para que esté centralizado, tipado y
- * preparado para añadir más idiomas sin tocar los componentes (ADR 0009). El
- * traductor con `Intl`, plurales y formatos llega con la issue #71; hasta
- * entonces los mensajes con parámetros son funciones puras.
+ * preparado para añadir más idiomas sin tocar los componentes (ADR 0009). Este
+ * archivo es la fuente del tipo `MessageCatalog`; el traductor, el proveedor y
+ * los formatos con `Intl` viven en `index.ts`, `translator.ts` y
+ * `src/renderer/i18n/`. Los mensajes con parámetros son funciones puras.
  *
  * Convención de ejemplo: los textos de la página de muestras describen un
  * mundo ficticio plausible («Las Mareas Grises»), nunca datos reales.
  */
-export const messages = {
+export const es = {
   app: {
     title: 'World Craft',
   },
@@ -188,8 +189,8 @@ export const messages = {
     privacy:
       'La comprobación consulta GitHub Releases y no envía el contenido de tus mundos, tus fichas ni datos personales.',
     progressLabel: (percent: string): string =>
-      `Descarga de la actualización: ${percent} %.`,
-    percentValue: (percent: string): string => `${percent} %`,
+      `Descarga de la actualización: ${percent}.`,
+    percentValue: (percent: string): string => percent,
     statuses: {
       unavailable: (reason: string): string =>
         `Actualizaciones desactivadas. ${reason}`,
@@ -200,7 +201,7 @@ export const messages = {
       available: (version: string): string =>
         `Hay una versión nueva disponible: ${version}.`,
       downloading: (percent: string): string =>
-        `Descargando la actualización: ${percent} %.`,
+        `Descargando la actualización: ${percent}.`,
       downloaded: (version: string): string =>
         `La versión ${version} está descargada y lista para instalarse.`,
       installing: 'Instalando la actualización. La aplicación se reiniciará.',

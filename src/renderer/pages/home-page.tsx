@@ -2,7 +2,7 @@ import { useId } from 'react';
 
 import { Button } from '../components/button';
 import { EmptyState } from '../components/empty-state';
-import { messages } from '../messages/es';
+import { useMessages } from '../i18n/provider';
 
 export interface HomePageProps {
   /** Acción de «Crear mundo»; de momento anuncia que llegará más adelante. */
@@ -17,6 +17,7 @@ export interface HomePageProps {
  * existe.
  */
 export function HomePage({ onCreateWorld }: HomePageProps) {
+  const messages = useMessages();
   const sectionTitleId = useId();
 
   return (

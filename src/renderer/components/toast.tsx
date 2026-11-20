@@ -1,4 +1,4 @@
-import { messages } from '../messages/es';
+import { useMessages } from '../i18n/provider';
 import { Button } from './button';
 
 export type ToastTone = 'info' | 'success' | 'error';
@@ -23,18 +23,17 @@ export interface ToastRegionProps {
  * una etiqueta oculta («Información», «Éxito», «Error») además del color del
  * borde.
  */
-export function ToastRegion({
-  toasts,
-  onDismiss,
-  label = messages.components.toast.regionLabel,
-}: ToastRegionProps) {
+export function ToastRegion({ toasts, onDismiss, label }: ToastRegionProps) {
+  const messages = useMessages();
+  const regionLabel = label ?? messages.components.toast.regionLabel;
+
   return (
     <div
       className="wc-toast-region"
       role="status"
       aria-live="polite"
       aria-atomic="false"
-      aria-label={label}
+      aria-label={regionLabel}
     >
       <ul className="wc-toast-list">
         {toasts.map((toast) => (

@@ -6,6 +6,7 @@
  * la lógica de los diálogos (ADR 0009).
  */
 import type { DatabaseErrorCode } from '../db/errors';
+import { DEFAULT_LOCALE, toIntlLocale } from '../../shared/contracts/locale';
 
 export interface MainMessages {
   readonly safeMode: {
@@ -69,10 +70,13 @@ export interface MainMessages {
 
 // El MVP está en español; cuando exista el locale del perfil esta fecha usará
 // el mismo formateador centralizado que el resto de la interfaz.
-const backupDateFormatter = new Intl.DateTimeFormat('es-ES', {
-  dateStyle: 'long',
-  timeStyle: 'short',
-});
+const backupDateFormatter = new Intl.DateTimeFormat(
+  toIntlLocale(DEFAULT_LOCALE),
+  {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  },
+);
 
 /** Formatea la fecha de una copia con el locale del MVP. */
 export function formatBackupDate(createdAt: string): string {

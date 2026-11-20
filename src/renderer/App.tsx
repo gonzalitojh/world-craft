@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ToastRegion, type Toast, type ToastTone } from './components';
-import { messages } from './messages/es';
+import { useMessages } from './i18n/provider';
 import { HomePage } from './pages/home-page';
 import { SamplesPage } from './pages/samples-page';
 import { AppShell, type AppView } from './shell/app-shell';
@@ -17,6 +17,7 @@ import { applyTheme, DEFAULT_THEME, type ThemeMode } from './theme';
  * pintado.
  */
 export function App() {
+  const messages = useMessages();
   const { appInfo } = window.worldCraft;
   const [view, setView] = useState<AppView>('home');
   const [theme, setTheme] = useState<ThemeMode>(DEFAULT_THEME);

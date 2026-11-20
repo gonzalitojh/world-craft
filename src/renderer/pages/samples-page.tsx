@@ -12,23 +12,12 @@ import {
   type BadgeTone,
   type ToastTone,
 } from '../components';
-import { messages } from '../messages/es';
+import { useMessages } from '../i18n/provider';
 
 export interface SamplesPageProps {
   /** Publica un aviso en la región global de `App`. */
   readonly onNotify: (tone: ToastTone, message: string) => void;
 }
-
-const BADGE_TONES: ReadonlyArray<{
-  readonly tone: BadgeTone;
-  readonly label: string;
-}> = [
-  { tone: 'neutral', label: messages.samples.badges.neutral },
-  { tone: 'accent', label: messages.samples.badges.accent },
-  { tone: 'success', label: messages.samples.badges.success },
-  { tone: 'warning', label: messages.samples.badges.warning },
-  { tone: 'danger', label: messages.samples.badges.danger },
-];
 
 interface SectionProps {
   readonly title: string;
@@ -61,6 +50,17 @@ function Section({ title, description, children }: SectionProps) {
  * catálogo y describen un mundo ficticio plausible.
  */
 export function SamplesPage({ onNotify }: SamplesPageProps) {
+  const messages = useMessages();
+  const badgeTones: ReadonlyArray<{
+    readonly tone: BadgeTone;
+    readonly label: string;
+  }> = [
+    { tone: 'neutral', label: messages.samples.badges.neutral },
+    { tone: 'accent', label: messages.samples.badges.accent },
+    { tone: 'success', label: messages.samples.badges.success },
+    { tone: 'warning', label: messages.samples.badges.warning },
+    { tone: 'danger', label: messages.samples.badges.danger },
+  ];
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -127,7 +127,7 @@ export function SamplesPage({ onNotify }: SamplesPageProps) {
         description={messages.samples.badges.lead}
       >
         <div className="wc-row">
-          {BADGE_TONES.map((badge) => (
+          {badgeTones.map((badge) => (
             <Badge key={badge.tone} tone={badge.tone}>
               {badge.label}
             </Badge>

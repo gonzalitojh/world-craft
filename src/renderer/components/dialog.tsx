@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 import { cx } from '../lib/class-names';
-import { messages } from '../messages/es';
+import { useMessages } from '../i18n/provider';
 import { Button } from './button';
 
 export interface DialogProps {
@@ -31,6 +31,7 @@ export function Dialog({
   actions,
   className,
 }: DialogProps) {
+  const messages = useMessages();
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const titleId = useId();

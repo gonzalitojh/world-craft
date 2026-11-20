@@ -164,6 +164,14 @@ primera versión estable.
   `playwright.config.ts`, `tsconfig.tests.json` y fixtures compartidos. La CI
   ejecuta unitarias, componentes e integración; los E2E, Windows-only, se
   ejecutan en local antes de `review` y en el workflow de release de M5.
+- Internacionalización centralizada (#71): catálogo tipado con registro por
+  idioma, proveedor `I18nProvider`, hooks `useI18n`/`useMessages` y formatos de
+  fechas, números, porcentajes, listas y plurales con `Intl`. El shell, los
+  componentes base, las páginas y el actualizador leen del proveedor.
+- Pruebas de i18n (#71): catálogo sin hojas vacías, claves y parámetros
+  tipados, formatos con `Intl` y recorrido del AST de JSX que falla ante textos
+  visibles hardcodeados. El locale del perfil queda pendiente de Ajustes; hasta
+  entonces se usa el idioma de reserva `es`.
 
 ### Cambiado
 

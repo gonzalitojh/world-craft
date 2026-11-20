@@ -95,8 +95,16 @@ deshabilitado se lea sin opacidad, que exista `prefers-reduced-motion` y que
 el test y en el informe de #65.
 
 Desde #70, `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell real en
-los dos temas y falla ante violaciones críticas (detalle en 3.11). Lo siguiente
-**sigue pendiente** y pertenece a #93 y a la revisión local:
+los dos temas y falla ante violaciones críticas (detalle en 3.11).
+
+Desde #71, la internacionalización se prueba en `tests/unit/i18n/`: catálogo sin
+hojas vacías, claves y parámetros tipados, `Intl` para fechas, números,
+porcentajes, listas y plurales, y un recorrido del AST de JSX que falla si un
+componente, página o el shell introduce un texto visible hardcodeado. Los
+componentes leen el catálogo mediante `I18nProvider`, cubierto en
+`tests/components/i18n-provider.test.tsx`.
+
+Lo siguiente **sigue pendiente** y pertenece a #93 y a la revisión local:
 
 - Componentes con estados de reposo, hover, foco, error, deshabilitado y carga
   en una matriz visual real a 1024, 1280 y 1600 px.

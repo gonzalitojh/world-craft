@@ -51,7 +51,7 @@ implementado de lo previsto.
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base y shell (#65); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
-| i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
+| i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
 | Pruebas y calidad | Implementado: 282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida) (#62–#70); E2E de shell, ventana, temas y axe (#70) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
@@ -84,18 +84,19 @@ Electron separa tres procesos con permisos distintos:
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal` y `updates`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
 | `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`) y control/diálogo de actualizaciones de #68; `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
-| `src/renderer/updates/` | Textos de estado, acción principal y formatos del panel de actualizaciones, probados sin DOM. | `src/shared/` |
+| `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
 | `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (estado vacío) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. Prevista. | API tipada, shared |
-| `src/renderer/messages/` | Catálogo tipado del renderer (hoy `es.ts`). | — |
+| `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
+| `src/renderer/i18n/` | Composición del idioma: `create.ts` (`createI18n`), `provider.tsx` (`I18nProvider`, `useI18n`, `useMessages`) y `formats.ts` (fechas, números, listas y plurales con `Intl`). | Mensajes, `src/shared/` |
 | `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
-| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload y contrato del actualizador. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos) y de instancia única. | `src/` |
+| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador y contrato de idioma (`locale.ts`). | — |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos) y de instancia única. | `src/` |
 | `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
-| `tests/components/` | Testing Library y `jsdom`: botón, pestañas y patrones de teclado y estados. | `src/renderer/` |
+| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
 | `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas y axe con `userData` temporal e isolado. | `src/` |
 | `resources/` | `icon.ico`, `icon.png`, `installer.nsh` y `licenses/` generados o versionados para electron-builder. | — |
 | `scripts/` | Verificación de build, nativo, paquete, checksums, iconos, licencias, instalación manual y limpieza. | Node, PowerShell |
@@ -112,7 +113,8 @@ Reglas de dependencia:
 3. **Preload no contiene reglas de negocio.** Solo traduce llamadas a canales
    IPC concretos.
 4. **Los textos visibles viven en `src/renderer/messages/`.** No se escriben
-   cadenas de interfaz en componentes.
+   cadenas de interfaz en componentes; se leen con `useMessages()` o
+   `useI18n()`.
 5. **Los tokens viven en `src/renderer/styles/tokens/`.** Solo `palette.css`
    declara colores literales; los componentes usan roles semánticos, nunca la
    paleta cruda ni variantes `dark:`. Para fondo y texto base el renderer usa
