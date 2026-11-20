@@ -54,6 +54,15 @@ export interface WorldsServiceOptions {
   readonly sqlite: SqliteDatabase;
   readonly now?: () => number;
   readonly generateId?: () => string;
+  /**
+   * Copia el contenido del mundo duplicado dentro de la misma transacción.
+   * La composición principal lo usa para copiar los tipos personalizados.
+   */
+  readonly onDuplicate?: (
+    sourceWorldId: string,
+    targetWorldId: string,
+    at: number,
+  ) => void;
 }
 
 /** Crea el servicio sobre la base compartida del proceso principal. */
@@ -228,6 +237,7 @@ export function createWorldsService(
 
       return write(() => {
         repository.insert(copy);
+        options.onDuplicate?.(source.id, copy.id, at);
         logActivity(copy.id, 'world.duplicated', { sourceId: source.id }, at);
 
         return toDetail(copy);

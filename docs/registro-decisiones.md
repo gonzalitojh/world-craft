@@ -127,3 +127,17 @@ assets).
 
 - Referencias: ADR 0019, #114, #115, #116, #77, `docs/manual-de-usuario.md`,
   `docs/base-de-datos/esquema.md` y `docs/calidad/plan-de-pruebas.md`.
+
+## 2026-11-20 — Tipos de entidad del sistema y campos personalizados (M1-02)
+
+**Contexto.** La issue #73 necesita tipos con plantillas de campos distintas sin
+migrar el esquema por cada campo. Había que decidir dónde viven los tipos del
+sistema, cómo se protegen, cómo se validan las plantillas y los valores, cómo se
+aíslan por mundo y cómo se transfieren con la exportación futura.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-043 | Tipos de entidad y campos personalizados | Los 18 tipos del sistema se siembran en la migración `0003_entity_types` como filas con `world_id NULL`, `is_system = 1` e IDs UUIDv7 fijos que coinciden con `src/shared/entity-types/catalog.ts`; los personalizados pertenecen a un mundo, usan claves únicas, iconos Lucide y tokens de color cerrados, y usan borrado lógico con `deleted_at`; la plantilla se guarda como JSON y se valida con Zod (texto, número, fecha, selección y referencia), y `validateEntityFieldValues` devuelve errores por `fieldKey`; los tipos del sistema no se editan ni se borran y se pueden duplicar en un mundo; duplicar un mundo copia sus tipos en la misma transacción; el formato `entity-types.v1` exporta e importa solo los tipos personalizados, sin IDs internos, y #78 lo compondrá en el ZIP del mundo. | Añadir campos no exige migrar el esquema; una importación no arrastra IDs ni datos de otro mundo; el catálogo y el seed se comparan en una prueba; el color nunca es el único indicador y usa la paleta verificada en ambos temas; la gestión visual de tipos y las fichas llegan con #74; la papelera visible de tipos y la purga, con #77. ADR 0020. |
+
+- Referencias: ADR 0020, #74, #77, #78, `docs/base-de-datos/esquema.md`,
+  `docs/base-de-datos/migraciones.md` y `docs/calidad/plan-de-pruebas.md`.

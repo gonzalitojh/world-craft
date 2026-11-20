@@ -15,6 +15,10 @@ import {
   registerLocalAssetProtocol,
   registerLocalAssetScheme,
 } from './assets/composition';
+import {
+  createEntityTypesService,
+  createUnavailableEntityTypesService,
+} from './entity-types/service';
 import { createIpcHandlers } from './ipc/handlers';
 import { registerIpcHandlers } from './ipc/registry';
 import {
@@ -130,12 +134,21 @@ if (!hasSingleInstanceLock) {
       });
 
       const database = startup.status === 'ready' ? getDatabase() : null;
+      const entityTypes =
+        database === null
+          ? createUnavailableEntityTypesService()
+          : createEntityTypesService({
+              database: database.orm,
+              sqlite: database.sqlite,
+            });
       const worlds =
         database === null
           ? createUnavailableWorldsService()
           : createWorldsService({
               database: database.orm,
               sqlite: database.sqlite,
+              onDuplicate: (sourceWorldId, targetWorldId, at) =>
+                entityTypes.copyFromWorld(sourceWorldId, targetWorldId, at),
             });
 
       registerIpcHandlers(
@@ -144,6 +157,7 @@ if (!hasSingleInstanceLock) {
           openExternal,
           updates: updatesService,
           worlds,
+          entityTypes,
         }),
       );
 

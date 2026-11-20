@@ -1,8 +1,8 @@
 # Migraciones de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 19/11/2026 con M0-07 (#67): poda de copias pre-migración y restauración desde
-> el diálogo de modo seguro.
+> 20/11/2026 con M1-02 (#73): tabla `entity_types`, seed de los 18 tipos del
+> sistema y rollback de referencia.
 > **Ámbito:** creación, aplicación, verificación y reversión de migraciones
 > SQLite. El esquema vigente está en [`esquema.md`](esquema.md).
 
@@ -43,8 +43,10 @@
 Todo esto está implementado en M0-04 (#64) y cubierto por las pruebas. La
 migración `0001_assets` (M0-06, #66) crea la tabla `assets`. La migración
 `0002_worlds` (M1-01, #72) crea `worlds` y `activity_log` con sus índices,
-`CHECK` y claves foráneas. El resto de tablas de contenido llega en M1 con
-migraciones `0003` y siguientes.
+`CHECK` y claves foráneas. La migración `0003_entity_types` (M1-02, #73) crea
+`entity_types`, siembra los 18 tipos del sistema con IDs estables y deja el
+`user_version` en 4. El resto de tablas de contenido llega en M1 con
+migraciones `0004` y siguientes.
 
 ## 3. Flujo de una migración
 
@@ -165,23 +167,32 @@ drizzle/
   0000_init.sql
   0001_assets.sql
   0002_worlds.sql
+  0003_entity_types.sql
   meta/
     _journal.json
   rollback/
     0000_init.down.sql
     0001_assets.down.sql
     0002_worlds.down.sql
+    0003_entity_types.down.sql
 ```
 
 - Cuatro dígitos, secuencia sin huecos y etiqueta en `snake_case` e inglés.
 - Una migración por cambio coherente; no mezclar dominios no relacionados.
 - El journal y las instantáneas de `drizzle/meta/` se versionan.
-- `0000_init` crea solo las tablas del sistema, `0001_assets` la tabla `assets` y
-  `0002_worlds` los mundos y su actividad. Las siguientes (`0003` en adelante)
-  son previstas para M1 y no se reservan nombres de antemano.
+- `0000_init` crea solo las tablas del sistema, `0001_assets` la tabla `assets`,
+  `0002_worlds` los mundos y su actividad y `0003_entity_types` los tipos de
+  entidad con su seed. Las siguientes (`0004` en adelante) son previstas para
+  M1 y no se reservan nombres de antemano.
 - `0002_worlds` crea `worlds` antes que `activity_log` para que la clave foránea
   de la actividad siempre encuentre su tabla. Su rollback deshace primero
   `activity_log`, después `worlds` y deja `user_version` en 2.
+- `0003_entity_types` crea `entity_types` y siembra los 18 tipos del sistema en
+  la misma migración. El seed usa IDs UUIDv7 fijos y una marca de tiempo
+  simbólica (`2026-11-20`) para no mostrar 1970; debe coincidir con
+  `src/shared/entity-types/catalog.ts` y una prueba de integración lo comprueba.
+  Su rollback elimina la tabla, sus índices y la fila de `schema_migrations`, y
+  deja `user_version` en 3. La vía segura sigue siendo restaurar la copia previa.
 
 ## 5. Pruebas
 
@@ -190,13 +201,14 @@ drizzle/
 | `journal` | Journal válido, secuencia sin huecos, etiquetas sin traversal y checksum normalizado. | Implementada (unitaria) |
 | `migrations` | Una base vacía llega a la última versión sin errores y es idempotente al reabrir. | Implementada (integración) |
 | `upgrade-0001` | Una base en `0000` migra a `0001_assets` conservando `app_settings` y creando `assets`, con `user_version` 2. | Implementada (integración) |
-| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds` y `activity_log`, con `user_version` 3. | Implementada (integración) |
+| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log` y `entity_types`, con `user_version` 4. | Implementada (integración) |
+| `upgrade-0003` | Una base en `0002` con mundos y actividad migra a `0003` sin perder filas y con los 18 tipos del sistema. | Implementada (integración) |
 | `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo. | Implementada (integración) |
 | `backup` | Copia previa con manifiesto, tamaño, SHA-256 e integridad; fallo de copia no migra. | Implementada (integración) |
 | `integrity` | `PRAGMA integrity_check` detecta corrupción y el arranque no escribe. | Implementada (integración) |
 | `foreign-db` | Una base con tablas propias sin `schema_migrations` se rechaza. | Implementada (integración) |
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
-| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0002_worlds` deja `user_version` 2, `0001_assets` la deja en 1 y `0000_init` en 0. | Implementada (integración) |
+| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0003_entity_types` deja `user_version` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
 | `backup-schedule` | Copias diaria, semanal y mensual al arrancar, sin duplicar el bucket, y rotación 7/4/12/5 sin podar pre-restore. | Implementada (unitaria e integración) |
 | `backup-restore` | Restauración verificada con copia pre-restore, rechazo de copia corrupta o futura, rollback y assets intactos. | Implementada (integración) |
@@ -209,9 +221,12 @@ instantáneas antes del build.
 
 ## 6. Datos iniciales
 
-- El catálogo del sistema (tipos de entidad, tipos de relación y tablas de
-  juego) se guarda como JSON versionado y se inserta con un seed idempotente.
-- El seed no sobrescribe personalizaciones del usuario.
+- El catálogo del sistema se versiona en código y se siembra en su migración:
+  los 18 tipos de entidad están en `src/shared/entity-types/catalog.ts` y en
+  `0003_entity_types`. Los tipos de relación y las tablas de juego definirán su
+  seed idempotente con sus migraciones.
+- El seed no sobrescribe personalizaciones del usuario. Una migración ya
+  aplicada no se edita: cualquier cambio de catálogo exige una migración nueva.
 - Las tablas del sistema se marcan `is_system = 1`; el usuario puede
   duplicarlas, no editarlas.
 - El contenido de ejemplo de un mundo se crea solo si el usuario lo pide.

@@ -3,8 +3,9 @@
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio).
 > **Ámbito:** estrategia de pruebas, calidad, accesibilidad, rendimiento,
 > preservación de datos y verificación antes de publicar.
-> **Decisiones:** ADR 0010 (testing), ADR 0012 (datos), ADR 0013 (CI) y
-> ADR 0018 (empaquetado, actualizador y preservación).
+> **Decisiones:** ADR 0010 (testing), ADR 0012 (datos), ADR 0013 (CI),
+> ADR 0018 (empaquetado, actualizador y preservación), ADR 0019 (mundos) y
+> ADR 0020 (tipos de entidad y campos personalizados).
 
 ## 1. Principios
 
@@ -47,11 +48,13 @@ Library, Playwright Electron y axe se incorporaron con el arranque de pruebas
 
 ### 3.2 Migraciones, copias y preservación (implementado)
 
-- Base nueva → `0000_init` + `0001_assets` + `0002_worlds` → `user_version` 3,
-  tablas del sistema, `assets`, `worlds` y `activity_log`, y sin copia previa
-  (justificado: no hay datos que preservar).
+- Base nueva → `0000_init` + `0001_assets` + `0002_worlds` + `0003_entity_types`
+  → `user_version` 4, tablas del sistema, `assets`, `worlds`, `activity_log` y
+  `entity_types`, y sin copia previa (justificado: no hay datos que preservar).
 - Base existente en `0000` → esquema actual → `app_settings` intacto y tablas
-  `assets`, `worlds` y `activity_log` creadas.
+  `assets`, `worlds`, `activity_log` y `entity_types` creadas.
+- Base existente en `0002` con mundos y actividad → `0003` conserva sus filas y
+  siembra los 18 tipos del sistema.
 - Base existente → migración → mismos datos y copia previa verificable.
 - Journal válido, secuencia sin huecos, etiqueta sin traversal y checksum
   SHA-256 normalizado.
@@ -147,25 +150,28 @@ Lo siguiente **sigue pendiente** y pertenece a #93 y a la revisión local:
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **282 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **339 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
   journal, checksum, rutas de datos, UUIDv7, logger, lógica del aviso de modo
   seguro, tokens y contraste del sistema de diseño, servicio de assets, copias
   (manifiesto, rutas de restauración, buckets, rotación y composición de modo
-  seguro), instalador, actualizador, instancia única y licencias.
-- **7 pruebas de componentes en verde** en `tests/components/`: botón nativo
-  (nombre accesible, `onClick`, `loading`, variantes) y pestañas (selección,
-  panel activo, flechas, Inicio/Fin y clic). Usan Testing Library y `jsdom`.
-- **85 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
+  seguro), instalador, actualizador, instancia única, licencias, mundos y tipos
+  de entidad.
+- **19 pruebas de componentes en verde** en `tests/components/`: botón nativo,
+  pestañas, proveedor de i18n y tarjetas, formularios, diálogos y página de
+  mundos. Usan Testing Library y `jsdom`.
+- **108 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
   base ajena, checksum alterado, rollback del lote, preservación con copia,
   restauración manual heredada, fallo de copia, rollback de referencia, upgrade
-  a `0001_assets`, importación, protocolo, repositorio y purga con SQLite real,
-  creación, verificación, restauración, rotación y restauración interrumpida de
-  copias, y preservación de datos entre instalaciones.
+  a `0001_assets` y `0003_entity_types`, CRUD, aislamiento, actividad y
+  duplicado de mundos, CRUD, protección y transferencia de tipos de entidad,
+  importación, protocolo, repositorio y purga con SQLite real, creación,
+  verificación, restauración, rotación y restauración interrumpida de copias, y
+  preservación de datos entre instalaciones.
 - **Comandos.** `pnpm test` (unitarias, componentes e integración),
   `pnpm test:unit`, `pnpm test:components`, `pnpm test:integration`,
   `pnpm test:e2e`, `pnpm db:check`, `pnpm verify:native`, `pnpm verify:build`,
@@ -233,8 +239,8 @@ Integración en `tests/integration/assets/` con SQLite real:
 - Purga: referenciados conservados, copia verificable del huérfano, ausentes
   informados sin borrar, temporales purgados e idempotencia.
 - Migración: `0000` → esquema actual conservando `app_settings`, `user_version`
-  3, y tablas `assets`, `worlds` y `activity_log`; rollback de referencia de
-  `0002`, `0001` y `0000`.
+  4, y tablas `assets`, `worlds`, `activity_log` y `entity_types`; rollback de
+  referencia de `0003`, `0002`, `0001` y `0000`.
 
 Las pruebas de symlink de archivo se omiten en Windows sin modo desarrollador
 (EPERM); las junctions sí se ejecutan. Los residuales están en el
@@ -432,15 +438,44 @@ en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
   de scroll horizontal a 1024, 1280 y 1600 px con un nombre y un resumen sin
   espacios.
 - **Migración:** `0002_worlds` conserva `app_settings` y `assets`, crea `worlds`
-  y `activity_log` con `user_version` 3, índices para la lista y el feed global
+  y `activity_log` (con `user_version` 3; 4 al aplicar `0003_entity_types`),
+  índices para la lista y el feed global
   de actividad, y tiene rollback de referencia probado. La atomicidad de cada
   mutación con su actividad se prueba con un trigger temporal que fuerza un fallo
   en `activity_log` y comprueba que el mundo no queda escrito a medias.
 
+### 3.13 Tipos de entidad y campos personalizados (implementado, #73)
+
+- **Unitarias:** `tests/unit/entity-types/catalog.test.ts` comprueba los 18 tipos,
+  IDs UUIDv7 únicos, iconos y colores admitidos y que todas las plantillas validan.
+  `fields.test.ts` cubre los cinco tipos de campo, claves repetidas, opciones
+  duplicadas, rangos invertidos, propiedades desconocidas, límites y los errores
+  de valor por `fieldKey`. `keys.test.ts` cubre slugs, claves reservadas y
+  deduplicación; `schemas.test.ts`, los payloads IPC estrictos; y
+  `handlers.test.ts`, la traducción de la protección del sistema a
+  `INVALID_INPUT` y la delegación de los cinco canales.
+- **Integración:** `tests/integration/entity-types/service.test.ts` usa una base
+  real con reloj e IDs deterministas para probar la lista de sistema y
+  personalizados, creación normalizada, claves explícitas y generadas, protección
+  de los tipos del sistema, aislamiento entre dos mundos, actualización y borrado,
+  duplicación de tipos del sistema y propios, exportación e importación
+  versionadas, colisiones y rechazo atómico de un bloque inválido, copia de tipos
+  al duplicar un mundo, borrado lógico con `deleted_at`, conservación tras el
+  borrado del mundo y comparación exacta entre el catálogo en código y el seed de
+  la migración.
+- **Migración:** `0003_entity_types` crea la tabla con sus `CHECK`, índices
+  único por mundo, único parcial del sistema y de lista, siembra 18 filas con
+  `created_at` fijo y deja `user_version` en 4.
+  La prueba de preservación migra una base en `0002` con mundos y actividad y
+  confirma que no se pierde ninguna fila. El rollback de referencia deja
+  `user_version` en 3 y elimina solo `entity_types`.
+- **Sin UI en esta issue:** la gestión visual de tipos y las fichas llegan con
+  #74, así que no hay nuevas comprobaciones de ventana, temas, axe o E2E visual.
+
 **Comandos y tiempos (equipo de referencia, 2026-11-20).** `pnpm test` ejecuta
-313 unitarias (4 omitidas), 19 de componentes y 96 de integración (1 omitida) en
-unos 50 s; `pnpm test:e2e` compila y ejecuta 12 pruebas en unos 30 s. Los E2E son
-Windows-only, igual que la aplicación.
+339 unitarias (4 omitidas), 19 de componentes y 108 de integración (1 omitida) en
+unos 50 s; `pnpm test:e2e` compila y ejecuta 12 pruebas en unos 40 s. Los E2E
+son Windows-only, igual que la aplicación.
 
 ## 4. Cobertura
 
@@ -469,7 +504,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 313 unitarias (4 omitidas), 19 de componentes y 96 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 339 unitarias (4 omitidas), 19 de componentes y 108 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

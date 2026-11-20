@@ -187,6 +187,28 @@ primera versión estable.
 - Pruebas de mundos (#72): unitarias de slug y validación, integración de CRUD,
   aislamiento y actividad, componentes de tarjeta, formulario y página, y E2E de
   crear/editar/duplicar/archivar/restaurar/eliminar, teclado, temas y ventana.
+- Tipos de entidad del sistema (#73): catálogo en código con 18 tipos
+  (personaje, lugar, ciudad, nación, cultura, raza, organización, religión,
+  deidad, magia, objeto, criatura, idioma, evento, conflicto, tecnología,
+  flora/fauna y concepto), icono, token de color y plantilla de campos.
+- Tipos personalizados por mundo (#73): CRUD, claves únicas, aislamiento,
+  iconos y colores de la paleta, plantillas con campos de texto, número, fecha,
+  selección y referencia, y duplicación de tipos del sistema para ajustarlos sin
+  tocarlos.
+- Validación compartida de campos (#73): Zod valida la plantilla y los valores
+  variables, con un código de error asociado a la clave de cada campo.
+- Migración `0003_entity_types` (#73): tabla `entity_types`, índices único y
+  parcial, seed de los 18 tipos del sistema, rollback de referencia y
+  `user_version` 4. Conserva mundos y actividad y está cubierta por pruebas de
+  preservación.
+- Transferencia de tipos (#73): formato `entity-types.v1` para exportar e
+  importar solo los tipos personalizados de un mundo, con round-trip, rechazo de
+  colisiones y preparación para la exportación completa de #78.
+- Duplicado de mundos (#73): la copia incluye los tipos personalizados en la
+  misma transacción y el borrado lógico los conserva.
+- Pruebas de tipos de entidad (#73): unitarias de catálogo, plantillas, valores,
+  claves y esquemas IPC, e integración de CRUD, protección del sistema,
+  aislamiento, duplicación, transferencia, preservación y rollback.
 
 ### Cambiado
 

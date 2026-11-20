@@ -1,0 +1,63 @@
+﻿{
+  "title": "Tipos de entidad del sistema y campos personalizados",
+  "description": "Crear el catálogo de tipos de entidad del sistema y el modelo de tipos personalizados por mundo, con plantillas de campos tipados validadas por Zod, protección de los tipos del sistema, aislamiento por mundo, duplicación de tipos a un mundo, exportación e importación de tipos y pruebas de esquema, validación, aislamiento y preservación. La interfaz de fichas y la gestión visual de tipos llegan con M1-03 (#74).",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 73,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/73",
+    "title": "Tipos de entidad del sistema y campos personalizados"
+  },
+  "acceptance_criteria": [
+    "Los tipos del sistema existen y no se pueden borrar ni alterar de forma destructiva.",
+    "Se pueden crear tipos personalizados con campos de texto, número, fecha, selección y referencia.",
+    "Los valores inválidos se rechazan con errores asociados al campo.",
+    "Los tipos y campos se aíslan por mundo y se exportan con él.",
+    "Existen pruebas de esquema, validación y protección de tipos del sistema."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de integración y build en verde.",
+    "Migración 0003 probada sobre una base con mundos y actividad existentes, con preservación de datos y rollback de referencia verificado.",
+    "Los tipos del sistema y el catálogo en código coinciden literalmente con el seed de la migración.",
+    "La plantilla de campos y los valores se validan con Zod y los errores de valor se asocian a la clave del campo.",
+    "Los tipos personalizados se aíslan por mundo, se duplican con el mundo y se exportan e importan en un formato JSON versionado.",
+    "Los tipos del sistema no se pueden editar ni borrar desde la API y se pueden duplicar por mundo.",
+    "Seguridad Electron revisada: sin canales fuera de la allowlist, validación Zod estricta, sin acceso del renderer a Node ni SQLite y sin contenido remoto.",
+    "Preservación de datos verificada: la migración conserva mundos y actividad, y el borrado de tipos no toca otras tablas.",
+    "Manual de usuario actualizado marcando los tipos y campos como previstos, sin presentarlos como disponibles.",
+    "ADR 0020 creado con las decisiones de tipos de entidad, campos, protección del sistema y transferencia.",
+    "Datos exportables e importables: el modelo y el formato de transferencia de tipos quedan definidos y probados para M1-07 (#78).",
+    "Sin servicios de pago ni dependencias nuevas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan aprobado por el usuario el 2026-11-20. 1) Contratos compartidos en src/shared/contracts/entity-types.ts: tipos de campo (texto, número, fecha, selección y referencia), límites, iconos Lucide admitidos, tokens de color y guardas puras. 2) Catálogo del sistema en src/shared/entity-types/catalog.ts con los 18 tipos (personaje, lugar, ciudad, nación, cultura, raza, organización, religión, deidad, magia, objeto, criatura, idioma, evento, conflicto, tecnología, flora/fauna y concepto), IDs UUIDv7 fijos, icono, color y plantilla de campos por defecto en código. 3) Validación compartida con Zod en src/shared/entity-types/fields.ts: esquema de plantilla (claves únicas, opciones válidas y límites) y validateEntityFieldValues con errores por clave de campo, reutilizable por main y por la UI de #74. 4) Migración 0003_entity_types con la tabla entity_types (id, world_id nullable con FK a worlds, key, name, icon, color, fields JSON, is_system, created_at, updated_at y deleted_at), índices únicos y checks, seed de los 18 tipos del sistema y rollback de referencia; journal y snapshot con pnpm db:generate. 5) Dominio en src/main/entity-types/: errores, repositorio con aislamiento por mundo, servicio con normalización, slug, timestamps e IDs inyectables, protección de tipos del sistema, duplicación de tipos a un mundo y transferencia JSON versionada para exportar e importar tipos. 6) IPC: canales entityTypes:list, create, update, duplicate y remove en la allowlist, esquemas Zod estrictos, handlers, composición en el proceso principal y servicio no disponible en modo seguro; preload con guardas de forma. 7) Mundos: duplicar un mundo copia sus tipos personalizados y el borrado lógico no toca los tipos. 8) Pruebas: unitarias de catálogo, plantilla, valores, slugs, esquemas IPC y API/preload; integración de CRUD, aislamiento, protección del sistema, duplicación, transferencia y preservación de la migración; actualización de las pruebas que fijan la versión de esquema 3 a 4. 9) Documentación: esquema de base de datos, migraciones, arquitectura, continuidad, plan de pruebas, manual, CHANGELOG y ADR 0020. 10) Verificar lint, typecheck, test:unit, test:components, test:integration, build, verify:build, db:check, JSON válidos, enlaces y git diff --check. Sin UI nueva: la gestión visual de tipos y fichas llega con #74; por eso la ventana, los temas y axe no cambian en esta issue.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p0, size: l, area: data, area: entities, variant: high y hito M1. Dependencia M1-01 (#72) fusionada en dev mediante la PR #117. Sin needs-decision. Variante recomendada y usada: high. El plan y la decisión de no añadir UI en esta issue quedaron aprobados por el usuario antes de implementar. Implementado: contratos y guardas de tipos de entidad, catálogo de 18 tipos en código, validación Zod de plantillas y valores con errores por fieldKey, migración 0003_entity_types con seed y rollback, dominio src/main/entity-types/ con CRUD, protección, aislamiento, duplicación y transferencia entity-types.v1, canales entityTypes:* en allowlist, handlers, composición y preload, copia de tipos al duplicar un mundo y borrado lógico de tipos. Evidencia local (2026-11-20): pnpm typecheck OK; pnpm lint OK; pnpm test:unit 339 en verde y 4 omitidas; pnpm test:components 19 en verde; pnpm test:integration 108 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; pnpm exec playwright test 12 en verde. Migración probada sobre una base en 0002 con mundos y actividad, con preservación y rollback; catálogo en código comparado con el seed de la base. No hay UI nueva: la ventana, los temas y axe se mantienen en verde con los E2E existentes. Nota de entorno: pnpm format:check sobre todo el repositorio marca los archivos CRLF de Windows; se aplicó Prettier solo a los archivos tocados y git diff --check no reporta errores."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA (2026-11-20) PASS sin bloqueantes. Comprobado: typecheck, lint, 339 unitarias (4 omitidas), 19 componentes, 108 integración (1 omitida), build, verify:build, db:check, 12 E2E, Prettier en archivos nuevos, JSON válidos y git diff --check sin errores (solo avisos CRLF). Criterios: los 18 tipos del sistema coinciden con el catálogo y no tienen vía de mutación (servicio, repositorio y CHECK de coherencia entre `world_id` e `is_system`); los cinco tipos de campo se validan; los valores devuelven error por fieldKey; el aislamiento por mundo se comprueba; la exportación/importación está probada con round-trip, colisiones, versión, propiedades extra, claves repetidas y atomicidad. Migración 0003 conserva mundos y actividad, rollback deja user_version 3 y se reaplica. Hallazgos LOW corregidos: docs/persistencia.md se actualizó a user_version 4 y entity_types; el recuento de integración de arquitectura se alineó; isIsoDate acepta años 0–99 con prueba; se añadieron aserciones de ausencia de IDs y casos de transferencia inválida; update/remove rechazan mundos en papelera; el CHECK de clave se endureció (sin guiones inicial/final ni dobles); el seed usa una fecha simbólica de 2026-11-20. Nota informativa: el seed y el CHECK se endurecieron antes de publicar 0003, por lo que no hay migración adicional."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "LOW informativo: los valores de tipo reference solo se validan por forma y longitud; la existencia, el mundo y el tipo del destino se comprobarán al guardar fichas en #74.",
+      "LOW informativo: los CHECK de SQLite no validan icon, color ni la estructura interna de la plantilla; toda escritura pasa por Zod y el servicio, y #78 revalidará la importación.",
+      "LOW corregido: la sección 3.7 del plan de pruebas conservaba 282/7/85; actualizada a los recuentos reales.",
+      "LOW corregido: README y arquitectura no incluían worlds ni entityTypes en el resumen del preload y los canales reales; actualizados.",
+      "LOW informativo preexistente: shell.openExternal acepta cualquier https válido sin allowlist de dominios; decisión aprobada en ADR 0004 y fuera de este cambio."
+    ],
+    "notes": "Security-champion (2026-11-20): PASS sin hallazgos HIGH ni MEDIUM. Sin secretos, credenciales, correos reales ni artefactos de datos en el diff; sin .env trackeados; package.json y pnpm-lock.yaml sin cambios y cero dependencias nuevas. Electron intacto (contextIsolation, nodeIntegration false, sandbox, webSecurity, CSP estricta, DevTools deshabilitadas en producción). Los cinco canales entityTypes:* están en la allowlist, con strictObject, UUIDv7, límites y errores estables; el preload solo expone funciones nominativas con guardas y el modo seguro usa un servicio no disponible. Migración 0003 estática, aditiva, con FK, checks, índices, seed alineado con el catálogo y rollback que solo elimina entity_types. Protección del sistema en servicio, repositorio y CHECK de coherencia entre `world_id` e `is_system`; create/importTypes/copyFromWorld siempre insertan isSystem false. Transferencia con versión literal, límites, claves únicas y del sistema rechazadas, propiedades extra rechazadas, IDs nuevos y transacción. Falsos positivos comprobados: WORLD_CRAFT_API_KEY es el nombre público de la API y las rutas de pruebas son sintéticas. gitleaks no está instalado en local; se revisó el contenido de todos los archivos de texto con patrones de secretos y no se encontró nada real."
+  },
+  "documentation": {
+    "adr": "docs/adr/0020-entity-types-custom-fields.md creado y añadido al índice con D-043 en docs/registro-decisiones.md.",
+    "manual": "docs/manual-de-usuario.md actualizado en la sección prevista de fichas: los 18 tipos y los cinco tipos de campo se presentan como preparados, sin afirmar que ya exista pantalla.",
+    "changelog": "CHANGELOG.md actualizado en Añadido con catálogo, CRUD, validación, migración, transferencia, duplicado de mundos y pruebas.",
+    "agents": "no aplica"
+  }
+}

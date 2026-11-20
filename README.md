@@ -35,6 +35,7 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Implementado (#64) |
 | Migraciones | Runner propio sobre el journal de Drizzle y copia previa | Implementado (#64) |
 | Mundos | CRUD, dashboard y actividad sobre `worlds` y `activity_log` | Implementado (#72); portada con #115 |
+| Tipos de entidad | 18 tipos del sistema, tipos personalizados y campos tipados en JSON | Implementado (#73); UI de fichas con #74 |
 | Búsqueda | SQLite FTS5 | Disponible en el binario; esquema previsto (M1) |
 | Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); UI en M1 |
 | Editor | Tiptap 3 | Previsto (M3) |
@@ -110,8 +111,9 @@ release pública llega con M5.
 ## Seguridad del scaffold
 
 - El renderer no accede a Node, al sistema de archivos ni a Electron. El preload
-  congela y expone solo `window.worldCraft` (`appInfo`, `shell.openExternal` y
-  `updates`); todo canal IPC está en una allowlist y valida la entrada con Zod.
+  congela y expone solo `window.worldCraft` (`appInfo`, `shell.openExternal`,
+  `updates`, `worlds` y `entityTypes`); todo canal IPC está en una allowlist y
+  valida la entrada con Zod.
 - Una única instancia: abrir la aplicación de nuevo enfoca la ventana existente y
   no toca la base, el IPC ni el actualizador.
 - `contextIsolation`, `sandbox`, `nodeIntegration: false`, `webSecurity: true` y
