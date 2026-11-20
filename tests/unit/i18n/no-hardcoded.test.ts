@@ -66,9 +66,7 @@ function findHardcodedStrings(filePath: string): readonly string[] {
   };
 
   const isVisibleLiteral = (node: ts.Node | undefined): boolean =>
-    node !== undefined &&
-    ts.isStringLiteral(node) &&
-    isVisibleText(node.text);
+    node !== undefined && ts.isStringLiteral(node) && isVisibleText(node.text);
 
   const isVisibleText = (text: string): boolean =>
     /\p{L}/u.test(text) && text.trim().length > 0;
