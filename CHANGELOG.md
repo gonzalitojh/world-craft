@@ -123,6 +123,38 @@ primera versión estable.
   creación, corrupción, restauración, rollback, restauración interrumpida,
   preservación de assets y modo seguro. El total pasa a 216 unitarias en verde
   (4 omitidas) y 84 de integración en verde (1 omitida).
+- Instalador NSIS por usuario (#68): versión 0.1.0, `appId`
+  `com.gonzalitojh.worldcraft`, instalación en
+  `%LOCALAPPDATA%\Programs\World Craft` sin UAC, acceso directo solo en el menú
+  Inicio y desinstalación que conserva `%APPDATA%\World Craft`. El artefacto
+  local es `release/world-craft-0.1.0-setup.exe` (132.698.671 bytes); la release
+  pública llega con M5.
+- Configuración de empaquetado en `electron-builder.config.cjs` y `resources/`
+  (#68): icono ICO de 7 tamaños, `installer.nsh`, paquete x64 con
+  `better-sqlite3` y `sharp` desempaquetados del asar, poda de binarios no x64,
+  `app-update.yml` sin token y licencias completas en `licenses/`.
+- Scripts `icons`, `licenses:sync`, `dist:dir`, `dist`, `package:checksums` y
+  `verify:package` (#68), más `scripts/verify-install.ps1` para la prueba manual
+  de instalación, actualización y desinstalación.
+- Actualizaciones manuales desde la barra superior (#68): botón
+  «Actualizaciones», diálogo con versión instalada, última comprobación, estados
+  y progreso; comprobación con timeout, descarga con consentimiento y
+  cancelación real, instalación solo desde `downloaded` y reinicio consentido.
+  Sin auto-check y sin envío de contenido; el interruptor y la frecuencia llegan
+  con Ajustes en M1.
+- Instancia única (#68): abrir World Craft de nuevo enfoca la ventana existente y
+  el segundo proceso no toca la base, el IPC ni el actualizador.
+- Preservación de datos entre instalaciones (#68): prueba de integración con
+  SQLite, assets y copias temporales, y prueba real de instalación,
+  actualización 0.1.0→0.1.1 y desinstalación con 194 archivos de `userData`
+  intactos y registro solo en HKCU.
+- Job `package` no bloqueante en `windows-latest` (#68): `verify:native`,
+  `dist`, `verify:build`, `package:checksums` y `verify:package --installer`, sin
+  publicar ni subir artefactos.
+- Pruebas del empaquetado y del actualizador (#68): configuración NSIS, iconos,
+  licencias, contrato y estados del actualizador, red, log, textos e instancia
+  única, más preservación entre instalaciones. El total pasa a 282 unitarias en
+  verde (4 omitidas) y 85 de integración en verde (1 omitida).
 
 ### Cambiado
 
@@ -143,6 +175,16 @@ primera versión estable.
 - Las copias pre-migración ya no crecen sin límite: se conservan las 5 más
   recientes, y los eventos `backup.schedule` y `backup.restore` se registran sin
   rutas, nombres, tamaños, SHA, identificadores ni contenido (#67).
+- World Craft ya se puede instalar y abrir como aplicación de escritorio local.
+  El instalador se genera y se prueba en el repositorio, pero **no hay release
+  pública**; la publicación oficial y la actualización real contra GitHub
+  Releases llegan con M5 (#68).
+- El arranque adquiere el lock de instancia única antes de `whenReady` y compone
+  el actualizador después de la persistencia; la ventana no se crea hasta que el
+  arranque y las copias automáticas terminan (#68).
+- El paquete deja de ser solo `out/`: incluye `LICENSE`,
+  `THIRD-PARTY-NOTICES.md` y `licenses/`, externaliza los módulos nativos y los
+  poda a Windows x64 (#68).
 
 ### Eliminado
 
@@ -178,6 +220,19 @@ primera versión estable.
 - Copias y restauración sin secretos ni datos sensibles en logs o avisos: los
   mensajes están centralizados y no incluyen rutas, nombres, tamaños, SHA ni
   contenido (#67).
+- Actualizador aislado en la partición `electron-updater` con caché desactivada
+  (#68): solo HTTPS a GitHub y sus descargas, sin credenciales ni puertos no
+  estándar, eliminación de `x-user-staging-id`, `authorization`, `private-token`
+  y `cookie`, permisos denegados y log `logs/updates.log` sin URLs, rutas,
+  versiones ni contenido. No se envía contenido del usuario (#68).
+- Instalador por usuario sin UAC y con `deleteAppDataOnUninstall:false` (#68):
+  actualizar, reinstalar o desinstalar no borra la base, los assets ni las
+  copias. El desinstalador avisa de que los datos se conservan.
+- El instalador y `latest.yml` se distribuyen sin firma, coherente con el ADR
+  0015; no hay firma Ed25519 de manifiestos en electron-builder 26.18.0 y se
+  decide en M5. La integridad se apoya en HTTPS, SHA-512 y `SHA256SUMS`.
+- Instancia única antes de abrir la base (#68): se cierra el riesgo de dos
+  procesos migrando o restaurando a la vez.
 
 ## Cómo se escribe una entrada
 

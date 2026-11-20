@@ -8,7 +8,17 @@ import {
   defineIpcHandler,
   registerIpcHandlers,
 } from '@/main/ipc/registry';
+import { createUnavailableUpdatesService } from '@/main/updates/service';
 import { IPC_CHANNELS, IPC_CHANNEL_LIST } from '@/shared/contracts/channels';
+
+const createHandlers = () =>
+  createIpcHandlers({
+    openExternal: async () => {},
+    updates: createUnavailableUpdatesService({
+      reason: 'not-packaged',
+      currentVersion: '0.1.0',
+    }),
+  });
 
 type RegisteredListener = (
   event: { readonly senderFrame: { readonly url: string } | null },
@@ -35,9 +45,7 @@ const trustedEvent = {
 };
 
 describe('createIpcRouter', () => {
-  const route = createIpcRouter(
-    createIpcHandlers({ openExternal: async () => {} }),
-  );
+  const route = createIpcRouter(createHandlers());
 
   it('ejecuta el handler con una entrada válida y la envuelve en un resultado', async () => {
     const result = await route(IPC_CHANNELS.shellOpenExternal, {
@@ -89,6 +97,7 @@ describe('createIpcRouter', () => {
 
   it('convierte una excepción del handler en INTERNAL_ERROR sin filtrar detalles', async () => {
     const router = createIpcRouter({
+      ...createHandlers(),
       [IPC_CHANNELS.shellOpenExternal]: defineIpcHandler({
         schema: z.strictObject({ url: z.string() }),
         handle: () => {
@@ -113,6 +122,7 @@ describe('createIpcRouter', () => {
 
   it('convierte un rechazo asíncrono en INTERNAL_ERROR', async () => {
     const router = createIpcRouter({
+      ...createHandlers(),
       [IPC_CHANNELS.shellOpenExternal]: defineIpcHandler({
         schema: z.strictObject({ url: z.string() }),
         handle: () => Promise.reject(new Error('boom')),
@@ -135,9 +145,35 @@ describe('createIpcRouter', () => {
 
 describe('createIpcHandlers', () => {
   it('registra exactamente los canales de la allowlist', () => {
-    const handlers = createIpcHandlers({ openExternal: async () => {} });
+    const handlers = createHandlers();
 
     expect(Object.keys(handlers).sort()).toEqual([...IPC_CHANNEL_LIST].sort());
+  });
+
+  it('atiende las órdenes de actualizaciones con un objeto vacío estricto', async () => {
+    const route = createIpcRouter(createHandlers());
+
+    for (const channel of [
+      IPC_CHANNELS.updatesGetState,
+      IPC_CHANNELS.updatesCheck,
+      IPC_CHANNELS.updatesCancel,
+      IPC_CHANNELS.updatesDownload,
+      IPC_CHANNELS.updatesInstall,
+    ]) {
+      const result = await route(channel, {});
+
+      expect(result).toMatchObject({
+        ok: true,
+        data: { phase: 'unavailable', unavailableReason: 'not-packaged' },
+      });
+    }
+
+    await expect(
+      route(IPC_CHANNELS.updatesCheck, { version: '9.9.9' }),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'INVALID_INPUT' },
+    });
   });
 });
 
@@ -145,10 +181,7 @@ describe('registerIpcHandlers', () => {
   it('registra en ipcMain solo los canales de la allowlist', () => {
     const { ipcMain, listeners } = createFakeIpcMain();
 
-    registerIpcHandlers(
-      ipcMain,
-      createIpcHandlers({ openExternal: async () => {} }),
-    );
+    registerIpcHandlers(ipcMain, createHandlers());
 
     expect([...listeners.keys()].sort()).toEqual([...IPC_CHANNEL_LIST].sort());
   });
@@ -157,7 +190,16 @@ describe('registerIpcHandlers', () => {
     const { ipcMain, listeners } = createFakeIpcMain();
     const openExternal = vi.fn(async () => {});
 
-    registerIpcHandlers(ipcMain, createIpcHandlers({ openExternal }));
+    registerIpcHandlers(
+      ipcMain,
+      createIpcHandlers({
+        openExternal,
+        updates: createUnavailableUpdatesService({
+          reason: 'not-packaged',
+          currentVersion: '0.1.0',
+        }),
+      }),
+    );
 
     const listener = listeners.get(IPC_CHANNELS.shellOpenExternal);
     expect(listener).toBeDefined();
@@ -171,10 +213,7 @@ describe('registerIpcHandlers', () => {
   it('rechaza un remitente que no es la ventana de la aplicación', async () => {
     const { ipcMain, listeners } = createFakeIpcMain();
 
-    registerIpcHandlers(
-      ipcMain,
-      createIpcHandlers({ openExternal: async () => {} }),
-    );
+    registerIpcHandlers(ipcMain, createHandlers());
 
     const listener = listeners.get(IPC_CHANNELS.shellOpenExternal);
 
@@ -195,10 +234,7 @@ describe('registerIpcHandlers', () => {
   it('acepta el renderer empaquetado y el servidor de desarrollo en loopback', async () => {
     const { ipcMain, listeners } = createFakeIpcMain();
 
-    registerIpcHandlers(
-      ipcMain,
-      createIpcHandlers({ openExternal: async () => {} }),
-    );
+    registerIpcHandlers(ipcMain, createHandlers());
 
     const listener = listeners.get(IPC_CHANNELS.shellOpenExternal);
 

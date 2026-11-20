@@ -22,6 +22,36 @@ const DARK_WINDOW_BACKGROUND = '#1b1917';
 
 let mainWindow: BrowserWindow | null = null;
 
+/** Devuelve la ventana principal si sigue viva; si no, `null`. */
+export function getMainWindow(): BrowserWindow | null {
+  if (mainWindow === null || mainWindow.isDestroyed()) {
+    return null;
+  }
+
+  return mainWindow;
+}
+
+/**
+ * Restaura, muestra y enfoca la ventana principal.
+ *
+ * La usa el evento `second-instance`: al abrir la aplicación una segunda vez,
+ * la instancia existente trae su ventana al frente en lugar de crear otra.
+ */
+export function focusMainWindow(): void {
+  const window = getMainWindow();
+
+  if (window === null) {
+    return;
+  }
+
+  if (window.isMinimized()) {
+    window.restore();
+  }
+
+  window.show();
+  window.focus();
+}
+
 /** Crea (o recrea) la ventana principal y carga el renderer. */
 export function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow(

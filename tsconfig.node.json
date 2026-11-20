@@ -28,6 +28,8 @@
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
     "src/shared/**/*.ts",
+    "src/renderer/updates/**/*.ts",
+    "src/renderer/messages/es.ts",
     "tests/**/*.ts",
     "electron.vite.config.ts",
     "drizzle.config.ts",

@@ -11,8 +11,12 @@ export const APP_NAME = 'World Craft';
 /** Identificador estable para el instalador y `app.setAppUserModelId`. */
 export const APP_ID = 'com.gonzalitojh.worldcraft';
 
-/** Versión del proyecto antes del primer release. */
-export const APP_VERSION = '0.0.0';
+/**
+ * Versión visible y empaquetada. Debe coincidir con `package.json`; el test
+ * `app-info.test.ts` lo comprueba para que `latest.yml`, ProductVersion y la
+ * interfaz no diverjan.
+ */
+export const APP_VERSION = '0.1.0';
 
 /** Ventana mínima admitida, en píxeles. */
 export const MIN_WINDOW_WIDTH = 1024;

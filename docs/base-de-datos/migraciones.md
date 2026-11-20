@@ -236,11 +236,11 @@ instantáneas antes del build.
 - `pnpm verify:build` comprueba que existen el journal y las migraciones, que la
   secuencia es válida y que las dependencias nativas no se han empaquetado.
 - La CI ejecuta `pnpm db:check` antes de `pnpm build`.
-- #68 debe desempaquetar `better-sqlite3` y `sharp` del asar y garantizar que las
-  dependencias de producción, `THIRD-PARTY-NOTICES.md` y las migraciones viajan
-  en el paquete.
-- `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y Electron; hoy
-  se ejecuta a mano y debe añadirse a la CI antes de #68.
+- #68 desempaquetó `better-sqlite3` y `sharp` del asar y garantiza que las
+  dependencias de producción, `THIRD-PARTY-NOTICES.md`, `licenses/` y las
+  migraciones viajan en el paquete; `pnpm verify:package` lo comprueba.
+- `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y Electron; se
+  ejecuta en el job `package` de Windows desde #68.
 
 ## 9. Qué no se hace
 

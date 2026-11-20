@@ -215,6 +215,48 @@ function checkExternalizedDependencies(mainBundle) {
 }
 
 /**
+ * Comprueba que electron-updater y su runtime no viajan dentro del bundle.
+ *
+ * El actualizador conserva su propio ciclo de vida y usa la sesión de Electron;
+ * debe cargarse desde `node_modules` y quedar como dependencia, nunca inlineado
+ * en los chunks de `out/main`. El adaptador se carga con `import()` dinámico,
+ * así que se aceptan tanto `require()` como `import()`.
+ */
+async function checkUpdaterNotBundled(mainBundles) {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+  const bundleText = mainBundles.join('\n');
+
+  for (const dependency of ['electron-updater', 'builder-util-runtime']) {
+    const version = packageJson.dependencies?.[dependency];
+
+    if (typeof version !== 'string' || version.length === 0) {
+      fail(`${dependency} no está declarado como dependencia de ejecución.`);
+    }
+  }
+
+  for (const dependency of ['electron-updater', 'builder-util-runtime']) {
+    const externalized = new RegExp(
+      `(?:require\\(["']${dependency}["']\\)|import\\(["']${dependency}["']\\))`,
+    ).test(bundleText);
+
+    if (!externalized) {
+      fail(`${dependency} no está externalizado en out/main.`);
+    }
+  }
+
+  for (const marker of [
+    'node_modules/electron-updater',
+    'node_modules\\\\electron-updater',
+    'electron-updater/out/AppUpdater',
+    'builder-util-runtime/out/',
+  ]) {
+    if (bundleText.includes(marker)) {
+      fail('El actualizador está empaquetado dentro de out/main.');
+    }
+  }
+}
+
+/**
  * Comprueba que sharp es una dependencia de ejecución y no viaja empaquetado.
  *
  * `src/main/assets/image.ts` importa sharp, pero hoy ese módulo no es
@@ -251,6 +293,11 @@ async function checkSharpNotBundled(mainBundle) {
 
 const html = await checkArtifact('out/renderer/index.html');
 const mainBundle = await checkArtifact('out/main/index.cjs');
+const mainBundles = await Promise.all(
+  (await collectFiles('out/main').catch(() => []))
+    .filter((file) => file.endsWith('.cjs') || file.endsWith('.js'))
+    .map((file) => readFile(file, 'utf8')),
+);
 
 for (const artifact of REQUIRED_ARTIFACTS) {
   if (
@@ -264,6 +311,7 @@ for (const artifact of REQUIRED_ARTIFACTS) {
 await checkDrizzleMigrations();
 checkExternalizedDependencies(mainBundle);
 await checkSharpNotBundled(mainBundle);
+await checkUpdaterNotBundled(mainBundles);
 
 if (html !== null) {
   checkContentSecurityPolicy(html);
@@ -299,5 +347,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  'verify:build correcto: artefactos presentes, CSP estricta, sin URLs remotas, migraciones copiadas y módulos nativos externalizados.',
+  'verify:build correcto: artefactos presentes, CSP estricta, sin URLs remotas, migraciones copiadas y módulos nativos y actualizador externalizados.',
 );

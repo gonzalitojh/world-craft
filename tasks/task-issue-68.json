@@ -1,0 +1,95 @@
+{
+  "title": "Instalador NSIS, actualizaciones y preservación de datos",
+  "description": "M0-08. Empaquetado instalable de World Craft para Windows: electron-builder con target NSIS por usuario en LOCALAPPDATA y sin privilegios de administrador; appId, versión, iconos, artefactos y metadatos del instalador y del desinstalador; electron-updater contra GitHub Releases con latest.yml y comprobación opcional y cancelable que no envía contenido del usuario; pruebas de instalación, actualización, reinstalación y desinstalación sobre una carpeta userData con datos; y documentación del aviso de SmartScreen mientras el instalador no esté firmado (ADR 0015). Depende de M0-02 (#62) y M0-04 (#64), ya fusionadas en dev. La build de release en CI se completa en M5. Requiere revisión de seguridad y de datos.",
+  "status": "review",
+  "model_variant": "max",
+  "issue": {
+    "number": 68,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/68",
+    "title": "Instalador NSIS, actualizaciones y preservación de datos"
+  },
+  "acceptance_criteria": [
+    "El instalador NSIS se genera y se instala sin permisos de administrador.",
+    "Actualizar, reinstalar y desinstalar no borran ni corrompen la base, los assets ni las copias de userData.",
+    "La comprobación de actualizaciones es opcional, cancelable y no envía contenido del usuario.",
+    "Existe una prueba automatizada o documentada de preservación de datos entre versiones.",
+    "El manual explica la instalación, el aviso de SmartScreen y cómo actualizar."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "E2E del flujo crítico ejecutado o justificado como no aplicable.",
+    "Ventana comprobada a 1024, 1280 y 1600 px, sin scroll horizontal de página y con contenido largo realista.",
+    "Los dos temas (Claro y Oscuro) comprobados, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado, foco visible, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: contexto aislado, IPC validado, CSP, sin contenido remoto y sin acceso del renderer a Node.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen datos; copia y restauración probadas si aplica.",
+    "Funcionamiento offline comprobado si el cambio toca arranque, datos o actualizaciones.",
+    "Manual de usuario actualizado si el cambio es visible (o constancia de cómo se cubrirá).",
+    "ADR creado o actualizado si hay una decisión arquitectónica o de producto relevante.",
+    "Seguridad revisada: secretos, dependencias, IPC, rutas de archivos y contenido no confiable.",
+    "Datos exportables e importables si se añade o cambia un modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Coste de contexto revisado: sin cambio de modelo o variante a mitad de sesión y sin editar AGENTS.md ni los agentes mientras se usaban.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan propuesto por task-architect el 2026-11-19, revisado por el agente maestro contra el esquema real de electron-builder 26.18.0. Arquitectura: electron-builder 26.18.0 (devDependency, MIT) con configuración comentable en electron-builder.config.cjs y recursos versionados en resources/ (icon.ico, icon.png, installer.nsh y licenses/); salida en release/. NSIS asistido por usuario: appId com.gonzalitojh.worldcraft, productName World Craft, oneClick false, perMachine false, allowElevation false, customInstallMode fuerza la instalación actual, allowToChangeInstallationDirectory true, createDesktopShortcut false, createStartMenuShortcut true, deleteAppDataOnUninstall false explícito, installerLanguages es_ES, artifactName world-craft-${version}-setup.${ext}, include installer.nsh con customInstallMode y customUnInstall (mensaje con %APPDATA%\\World Craft, solo si no es silencioso, sin añadir página de componentes). Sin firma: win.signExecutable false (electron-builder 26; no existe win.sign), win.verifyUpdateCodeSignature false (obligatorio al escribir app-update.yml sin publisherName) y forceCodeSigning false; los manifiestos Ed25519 no existen en 26.18.0 y se decidirán en M5, con integridad actual por HTTPS + SHA-512. El producto es x64; supportedArchitectures usa current + win32 y current + x64 para que Linux siga teniendo sharp nativo y para poder empaquetar x64 desde un equipo ARM64; afterPack poda los binarios nativos que no son win32-x64. Empaquetado: asar true, asarUnpack de better-sqlite3, sharp, @img y *.node; npmRebuild, nodeGypRebuild y buildDependenciesFromSource false; files out/** y package.json; extraFiles LICENSE, THIRD-PARTY-NOTICES.md y licenses/ junto al ejecutable; publish GitHub sin token y --publish never en local; win.requestedExecutionLevel asInvoker; win.executableName World Craft. Scripts: icons, licenses:sync, dist:dir, dist, package:checksums y verify:package (Windows-only). Versión 0.1.0 coherente entre package.json, APP_VERSION, app.getVersion(), latest.yml y ProductVersion, con test de consistencia. Icono generado desde src/renderer/assets/world-craft-logo.svg con sharp y contenedor ICO PNG de 16, 24, 32, 48, 64, 128 y 256 px, sin dependencias nuevas. Actualizaciones: electron-updater 6.8.11 externalizado como dependency y builder-util-runtime 9.7.0 como dependency directa para CancellationToken; autoDownload false, autoInstallOnAppQuit false, allowPrerelease false, allowDowngrade false, fullChangelog false, disableWebInstaller true, logger null. Servicio inyectable en src/main/updates/ (adapter puerto, máquina de estados pura, host allowlist, saneado de cabeceras, logger JSONL sin datos y composición Electron) con estados unavailable/idle/checking/up-to-date/available/downloading/downloaded/installing/error; comprobación solo manual, sin timer ni auto-check; cancelación real de descarga con CancellationToken y epoch para descartar resultados tardíos de la comprobación; timeout 30 s; errores estables UPDATE_CHECK_FAILED, UPDATE_DOWNLOAD_FAILED, UPDATE_INSTALL_FAILED y UPDATE_INVALID_STATE. Red solo por la partición electron-updater con cache false, guard onBeforeRequest limitado a https de github.com, api.github.com y subdominios de githubusercontent.com, y onBeforeSendHeaders que elimina x-user-staging-id, authorization, private-token y cookie; verificación de que autoUpdater.netSession coincide con la partición y desactivación si no. IPC: updates:getState, check, cancel, download e install con Zod strictObject({}) y evento updates:stateChanged separado de la allowlist; preload congelado con updates y onStateChanged que valida el snapshot; UI mínima con botón Actualizaciones en la barra superior y diálogo reutilizando Dialog, estados, progreso nativo, aria-live, privacidad visible, Intl, dos temas y 1024/1280/1600. Single instance lock en src/main/single-instance.ts antes de whenReady, con focusMainWindow en second-instance, activo también en desarrollo y compatible con modo seguro y updater. Preservación: test de integración con userData temporal, base, app_settings, asset y copia pre-migración, hashes, migración de fixture, reinstalación simulada y borrado de una carpeta de instalación temporal; script verify-install.ps1 con instalación /S, actualización/reinstalación, desinstalación y hashes de data, assets y backups, ejecutado por el usuario con confirmación. Verificación del paquete: app.asar, app.asar.unpacked de better-sqlite3/sharp/@img, app-update.yml sin token, latest.yml, blockmap, SHA256SUMS, licencias, icono y ProductVersion. CI: job package no bloqueante en windows-latest con verify:native, build, verify:build, dist, package:checksums y verify:package, sin publicar y sin artefactos. Documentación: ADR 0018, índice y registro D-041, notas en ADR 0003/0013/0015/0016, manual, plan de pruebas, continuidad, persistencia, arquitectura, README, CONTRIBUTING, CHANGELOG, THIRD-PARTY-NOTICES y SECURITY. Riesgos: colector de pnpm con electron-builder (spike gate antes de implementar), módulos nativos fuera del asar, sesión del updater, cancelación de comprobación no abortable a nivel HTTP, SmartScreen sin firma, divergencia de versión y prueba real de instalación pendiente de aprobación. No hay cambios de esquema ni migraciones de producto.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-19",
+    "notes": "Issue adoptada el 2026-11-19 con label ai, type: feature, status: todo, priority: p0, size: l, variant: max, area: packaging, area: persistence y hito M0. No tiene needs-decision ni status: blocked. Dependencias M0-02 (#62) y M0-04 (#64) fusionadas en dev. Variante recomendada y usada: max. Plan de task-architect revisado contra el esquema real de electron-builder 26.18.0: se usa win.signExecutable false (win.sign no existe en 26.18.0), verifyUpdateCodeSignature false, no se usa updateManifest (tampoco existe en 26.18.0), se retira allowMissingDependencies booleano y se añade builder-util-runtime 9.7.0 para el token de cancelación. El usuario aprobó explícitamente el plan completo el 2026-11-19: versión 0.1.0, UI de actualizaciones en la barra superior, comprobación manual por defecto, single instance activo, job de CI no bloqueante y sin firma de código; también aprobó ejecutar la prueba real de instalación, actualización y desinstalación. Implementación completada el 2026-11-19 por tdd-ddd-architect y el agente maestro tras un fallo de red del proveedor. En verde: lint, typecheck, 282 pruebas unitarias (4 omitidas), 85 de integración (1 omitida), build, verify:build, verify:native (SQLite 3.54.1 con FTS5, libvips 8.18.7), db:check, dist:dir, dist, package:checksums y verify:package --installer. Artefactos: release/world-craft-0.1.0-setup.exe (x64, 132.698.671 bytes, NSIS oneClick false, perMachine false), blockmap, latest.yml (0.1.0, SHA-512 comprobado) y SHA256SUMS con 3 artefactos. Paquete verificado: app.asar, app.asar.unpacked podado a 2 binarios (better-sqlite3 win32-x64 y sharp-win32-x64), app-update.yml GitHub sin token ni publisherName, licencias completas (sharp, @img, electron-updater, LGPL-3.0 de libvips y GPL-3.0), icono ICO de 7 tamaños, ProductVersion 0.1.0. Sonda nativa del paquete con ELECTRON_RUN_AS_NODE: better-sqlite3 y sharp x64 cargan, SQLite 3.54.1 y WebP real. Prueba real con scripts/verify-install.ps1: instalación silenciosa sin UAC en %LOCALAPPDATA%\\Programs\\World Craft, registro solo en HKCU, arranque correcto, reinstalación y desinstalación conservando 194 archivos de %APPDATA%\\World Craft (incluidas las copias diarias creadas por los arranques de prueba); actualización 0.1.0 a 0.1.1 temporal y vuelta a 0.1.0, con los mismos archivos intactos. Capturas revisadas a 1024, 1280 y 1600 px en Claro y Oscuro: sin scroll horizontal de página, diálogo legible y botón Actualizaciones sin desbordar. Prueba real final repetida sobre el instalador reconstruido con la UI definitiva, las licencias y la poda de binarios nativos (SHA-256 4F293749704FB9C35A24163E0DC8E2350C244CFE6FA6062350E86C0B91DE53BF; latest.yml con Pp8LkuckrEIAIPqJr+SxFrUyva1cT6ppx86YSBxPhGRkciG4sfQuOioecEXavvUuqOZ97Qu675Eurl1fZD+8Fg==). Residuales: la comprobación real contra GitHub Releases no se ejecuta hasta M5 (no hay release publicada); el instalador y latest.yml van sin firma (ADR 0015); no hay auto-check hasta Ajustes M1; la puerta documental actualizará manual, ADR 0018 y guías. Cierre documental (2026-11-20): ADR 0018 creado y enlazado en el índice y en D-041; notas de implementación en los ADR 0003, 0013, 0015 y 0016; manual actualizado con instalación por usuario, SmartScreen, actualizaciones manuales, desinstalación y tabla de estado; plan de pruebas, continuidad, persistencia, arquitectura, plan de desarrollo, README, CONTRIBUTING, CHANGELOG, SECURITY y THIRD-PARTY-NOTICES sincronizados con la implementación. La release pública, la firma de código, el auto-check/ajustes de M1, axe/E2E (#70/#93) y el job package required (#69) siguen documentados como residuales; no se presentan como disponibles. Commit local preparado el 2026-11-20 con QA, seguridad y documentación en PASS; sin push ni PR, pendiente de la revisión local del usuario."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA independiente (2026-11-20), PASS tras tres rondas. Criterios 1-4 verificados y CA5 pendiente de la puerta documental. Comandos reejecutados: lint, typecheck, 282 pruebas unitarias (4 omitidas), 85 de integración (1 omitida), build, verify:build, verify:native (SQLite 3.54.1 con FTS5, libvips 8.18.7), db:check y verify:package --installer, todo en verde. Los archivos nuevos/modificados pasan prettier --check --end-of-line auto; el fallo global de format:check en Windows es CRLF preexistente y no afecta a CI Linux. Artefacto final comprobado: 132.698.671 bytes, SHA-256 4F293749704FB9C35A24163E0DC8E2350C244CFE6FA6062350E86C0B91DE53BF, latest.yml 0.1.0 con SHA-512 y tamaño coincidentes, SHA256SUMS de 3 artefactos, ProductVersion 0.1.0.0, instalador NotSigned esperado (ADR 0015). Paquete con 2 binarios nativos (sharp-win32-x64 y better-sqlite3 win32-x64), poda verificada, 5 licencias completas, app-update.yml sin token ni publisherName y actualizador externalizado. Prueba real final con 194 archivos de userData intactos, instalación sin UAC, HKCU, actualización 0.1.0→0.1.1 y desinstalación. Capturas 1024/1280/1600 en Claro y Oscuro revisadas, sin scroll horizontal; axe/E2E de accesibilidad quedan para #70/#93. Residuales: actualización real contra GitHub Releases en M5, firma de código y SmartScreen (ADR 0015), auto-check/ajustes en M1, job package no bloqueante hasta #69 y confirmación de Ubuntu en CI. La primera ronda encontró el bloqueo de supportedArchitectures en Linux y la segunda el formato de dos archivos; ambos corregidos y revalidados."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      {
+        "severity": "MEDIUM",
+        "status": "aceptado-documentado",
+        "description": "Instalador y latest.yml sin firma Authenticode; verifyUpdateCodeSignature:false es coherente con app-update.yml sin publisherName. Aceptado en ADR 0015; la firma Ed25519 de manifiestos no está disponible en electron-builder 26.18.0 y se difiere a M5. La integridad actual se apoya en HTTPS y SHA-512."
+      },
+      {
+        "severity": "MEDIUM",
+        "status": "aceptado-documentado",
+        "description": "shell.openExternal exige https y rechaza hosts privados, pero no tiene allowlist de dominios. Preexistente de #63 y aceptado en ADR 0004; no lo introduce #68. Endurecimiento opcional para M5."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "release/builder-debug.yml contiene una ruta absoluta del desarrollador. release/ está ignorado por git y no se versiona; no adjuntar ese archivo a la PR."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "El fixture https://user:password@github.com/file es sintético y comprueba el rechazo de credenciales embebidas en la URL."
+      },
+      {
+        "severity": "LOW",
+        "status": "diferido",
+        "description": "El timeout y la cancelación de la comprobación descartan el resultado por epoch, pero no abortan el socket de autoUpdater.checkForUpdates(). No se envía contenido del usuario; se documenta como residual de red/UX."
+      },
+      {
+        "severity": "LOW",
+        "status": "aceptado-documentado",
+        "description": "isTrustedSenderUrl acepta cualquier file:// como remitente. Preexistente y mitigado por ventana única y bloqueo de navegación/subframes/webviews; endurecer a la ruta exacta del renderer es hardening futuro."
+      },
+      {
+        "severity": "LOW",
+        "status": "diferido",
+        "description": "dos vulnerabilidades moderadas dev-only (esbuild y minimatch) no llegan al instalador. Endurecimientos opcionales: allowlist de dominios en openExternal, proxy-authorization en cabeceras prohibidas y validar que downloadUpdate devuelve una lista no vacía."
+      }
+    ],
+    "notes": "Security-champion (2026-11-20): PASS sin hallazgos HIGH. Revisados aislamiento Electron, allowlist IPC, Zod strictObject, preload congelado, evento de estado fuera de invoke, CSP, updater (partición electron-updater con cache false, comparación de netSession, allowlist HTTPS de GitHub, saneado de x-user-staging-id/authorization/private-token/cookie, permisos denegados, autoDownload y autoInstallOnAppQuit false, cancelación real, epoch y timeout, instalación solo desde downloaded y desde la UI), single instance antes de la base, instalador per-user con deleteAppDataOnUninstall false, userData fuera de la instalación, asarUnpack y poda de binarios no x64, app-update.yml sin token ni publisherName, latest.yml y SHA256SUMS coherentes, licencias completas y CI sin GH_TOKEN ni subida de artefactos. git ls-files sin secretos, .env, claves, bases, out/, release/ ni node_modules; el único user:password es un fixture sintético. Limitaciones del entorno: git diff, gh y pnpm audit fueron denegados; se suplió con lectura directa y la evidencia de QA (audit con 2 moderadas dev-only). 2 MEDIUM aceptados o preexistentes y 4 LOW aceptados/diferidos; no se requiere volver a implementación."
+  },
+  "documentation": {
+    "adr": "docs/adr/0018-nsis-packaging-and-update-service.md",
+    "manual": "docs/manual-de-usuario.md",
+    "changelog": "CHANGELOG.md",
+    "agents": "no aplica"
+  }
+}

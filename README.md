@@ -8,15 +8,18 @@ código se publica bajo licencia MIT.
 
 ## Estado
 
-**Fundaciones de escritorio con persistencia local.** El repositorio contiene la
-base técnica de Electron con electron-vite, React y TypeScript estricto, el IPC
-tipado, una base SQLite con migraciones, comprobación de integridad y modo
-seguro, y el sistema de diseño con su shell de escritorio. `pnpm dev` abre una
-ventana segura con la barra lateral, el tema Claro/Oscuro conmutable y una página
-de inicio con estado vacío; `pnpm build` compila los tres procesos en `out/`.
-**Todavía no hay una versión instalable**: no existe empaquetado NSIS ni
-funciones de producto, y las de mundo, fichas, mapas y escritura llegan con M1 en
-adelante.
+**Fundaciones de escritorio con persistencia local e instalador.** El
+repositorio contiene la base técnica de Electron con electron-vite, React y
+TypeScript estricto, el IPC tipado, una base SQLite con migraciones,
+comprobación de integridad y modo seguro, el sistema de diseño con su shell de
+escritorio y un instalador NSIS por usuario con actualizaciones manuales.
+`pnpm dev` abre una ventana segura con la barra lateral, el tema Claro/Oscuro
+conmutable y una página de inicio con estado vacío; `pnpm build` compila los tres
+procesos en `out/` y `pnpm dist` genera
+`release/world-craft-0.1.0-setup.exe`. **Todavía no hay una release pública**:
+el instalador se genera y se prueba en local, y la publicación oficial, la
+actualización real contra GitHub Releases y las funciones de producto (mundos,
+fichas, mapas y escritura) llegan con las fases siguientes.
 
 El inventario de lo eliminado y las cuentas externas que hay que cerrar están en
 [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md). El plan aprobado,
@@ -35,8 +38,8 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); UI en M1 |
 | Editor | Tiptap 3 | Previsto (M3) |
 | Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |
-| Instalador | electron-builder + NSIS | Previsto (#68) |
-| Actualizaciones | electron-updater + GitHub Releases | Previsto (M5) |
+| Instalador | electron-builder 26.18.0 + NSIS por usuario | Implementado (#68); release pública en M5 |
+| Actualizaciones | electron-updater 6.8.11 + GitHub Releases | Implementado (#68) como comprobación manual; auto-check y ajustes en M1, release real en M5 |
 
 El renderer no accede a Node, al sistema de archivos ni a SQLite: usa una API
 tipada expuesta por el preload. Los detalles están en
@@ -71,7 +74,11 @@ pnpm dev              # abre la ventana de Electron en desarrollo
 pnpm build            # compila main, preload y renderer en out/
 pnpm start            # previsualiza el build de producción
 pnpm verify:build     # valida artefactos, CSP, migraciones y externalización
-pnpm verify:native    # comprueba better-sqlite3 en Node y Electron
+pnpm verify:native    # comprueba better-sqlite3 y sharp en Node y Electron
+pnpm dist:dir         # genera una carpeta desempaquetada en release/ (Windows)
+pnpm dist             # genera el instalador NSIS en release/ (Windows)
+pnpm package:checksums # escribe SHA256SUMS para el instalador y latest.yml
+pnpm verify:package   # valida asar, binarios nativos, licencias y manifiestos
 pnpm clean            # borra out/ y otros artefactos locales
 ```
 
@@ -91,14 +98,19 @@ pnpm format:check     # comprueba el formato
 
 `pnpm build` **no genera un instalador**: produce `out/main/index.cjs`,
 `out/preload/index.cjs` y `out/renderer/index.html`, y copia `drizzle/` a
-`out/main/drizzle`. El instalador NSIS llega con la issue del empaquetado (#68) y
-la carpeta `out/` no se versiona.
+`out/main/drizzle`. Los comandos `dist:dir`, `dist`, `package:checksums` y
+`verify:package` son **Windows-only**, escriben en `release/` (ignorada por git)
+y usan `--publish never`: no publican ni suben artefactos. La instalación real se
+puede probar a mano con `scripts/verify-install.ps1 -AcceptInstallTest`. La
+release pública llega con M5.
 
 ## Seguridad del scaffold
 
 - El renderer no accede a Node, al sistema de archivos ni a Electron. El preload
-  congela y expone solo `window.worldCraft` (`appInfo` y `shell.openExternal`);
-  todo canal IPC está en una allowlist y valida la entrada con Zod.
+  congela y expone solo `window.worldCraft` (`appInfo`, `shell.openExternal` y
+  `updates`); todo canal IPC está en una allowlist y valida la entrada con Zod.
+- Una única instancia: abrir la aplicación de nuevo enfoca la ventana existente y
+  no toca la base, el IPC ni el actualizador.
 - `contextIsolation`, `sandbox`, `nodeIntegration: false`, `webSecurity: true` y
   `webviewTag: false`; DevTools están deshabilitadas en la versión empaquetada.
 - CSP estricta de producción inyectada antes de los scripts y CSP de desarrollo
@@ -109,6 +121,10 @@ la carpeta `out/` no se versiona.
 - La base SQLite vive solo en `userData`, el renderer no la ve y `src/main/db/`
   no importa Electron. Un fallo de integridad, copia o migración deja la app en
   modo seguro sin conexión de escritura.
+- El actualizador usa la partición `electron-updater` con caché desactivada, solo
+  permite HTTPS a GitHub y sus descargas, elimina cabeceras de autenticación y
+  staging, deniega permisos y no envía contenido del usuario. La instalación es
+  por usuario y no requiere administrador.
 
 ## Privacidad y datos
 
@@ -116,7 +132,9 @@ la carpeta `out/` no se versiona.
   instalación. Actualizar, reinstalar o desinstalar no los borra.
 - No hay telemetría, analítica ni servicios de terceros.
 - La aplicación funciona sin conexión. La red solo se usa para comprobar
-  actualizaciones cuando la persona usuaria lo permite.
+  actualizaciones cuando la persona usuaria pulsa «Actualizaciones»; no hay
+  comprobación automática ni descarga sin consentimiento, y no se envía el
+  contenido de los mundos.
 - Antes de una migración se crea una copia local verificable. Las copias
   automáticas diarias, semanales y mensuales, la retención y la restauración
   desde el aviso de modo seguro ya funcionan; la interfaz de Ajustes llega en M1.
@@ -137,18 +155,25 @@ src/
     ipc/          Router tipado con allowlist y Zod
     messages/     Textos de los diálogos nativos
     security/     CSP, navegación, sesión y guards de red
+    updates/      Máquina de estados, adaptador de electron-updater y red
+    single-instance.ts  Lock de instancia única y foco de la ventana
   preload/        Puente congelado que solo expone window.worldCraft
   renderer/       React, mensajes, tema, shell, páginas y tokens de estilo
+    updates/      Textos de estado y formatos del panel de actualizaciones
   shared/         Identidad y contratos sin Node, Electron ni React
 drizzle/          Migraciones versionadas, journal y rollback de referencia
-tests/unit/       Pruebas unitarias del scaffold, IPC, seguridad, datos y diseño
-tests/integration/ Pruebas con bases SQLite temporales
+resources/        Iconos, installer.nsh y licencias para electron-builder
+release/          Instalador, blockmap, latest.yml y SHA256SUMS (ignorada)
+tests/unit/       Pruebas unitarias del scaffold, IPC, seguridad, datos, diseño,
+                  empaquetado, actualizador e instancia única
+tests/integration/ Pruebas con bases SQLite temporales y preservación
 docs/             Plan, proceso, arquitectura, persistencia, diseño y ADRs
   adr/            Decisiones de arquitectura y producto
   base-de-datos/  Esquema SQLite y migraciones
   calidad/        Plan de pruebas
 tasks/            Task files del flujo SDD
-scripts/          check-build, check-native, clean y utilidades
+scripts/          check-build, check-native, verify-package, checksums, iconos,
+                  licencias, verify-install y utilidades
 .github/          CI, Dependabot y plantillas de issue y PR
 .opencode/        Agentes y configuración de OpenCode
 ```
@@ -156,7 +181,7 @@ scripts/          check-build, check-native, clean y utilidades
 Las pantallas y los módulos de producto se añadirán dentro de `src/renderer/` y
 `src/main/` con sus issues; todavía no existen `src/renderer/modules/`. Los
 servicios de assets y de copias ya viven en `src/main/assets/` y
-`src/main/backup/`.
+`src/main/backup/`, y el actualizador en `src/main/updates/`.
 
 ## Ramas
 

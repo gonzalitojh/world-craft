@@ -1,6 +1,14 @@
 {
   "name": "world-craft",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Aplicación de escritorio local-first para construir mundos de ficción: fichas, relaciones, mapas y manuscrito.",
+  "author": "World Craft contributors",
+  "license": "MIT",
+  "homepage": "https://github.com/gonzalitojh/world-craft#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gonzalitojh/world-craft.git"
+  },
   "private": true,
   "type": "module",
   "main": "./out/main/index.cjs",
@@ -12,6 +20,12 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
+    "icons": "node scripts/generate-icons.mjs",
+    "licenses:sync": "node scripts/sync-licenses.mjs",
+    "dist:dir": "electron-vite build && electron-builder --config electron-builder.config.cjs --win --x64 --dir --publish never",
+    "dist": "electron-vite build && electron-builder --config electron-builder.config.cjs --win nsis --x64 --publish never",
+    "package:checksums": "node scripts/checksums.mjs",
+    "verify:package": "node scripts/verify-package.mjs",
     "verify:build": "node scripts/check-build.mjs",
     "verify:native": "node scripts/check-native.mjs",
     "db:generate": "drizzle-kit generate",
@@ -34,6 +48,7 @@
     "@vitejs/plugin-react": "^6.3.0",
     "drizzle-kit": "^0.31.11",
     "electron": "45.3.4",
+    "electron-builder": "26.18.0",
     "electron-vite": "^6.0.0",
     "eslint": "10.14.0",
     "eslint-config-prettier": "^10.1.8",
@@ -49,7 +64,9 @@
   },
   "dependencies": {
     "better-sqlite3": "13.2.0",
+    "builder-util-runtime": "9.7.0",
     "drizzle-orm": "^0.45.4",
+    "electron-updater": "6.8.11",
     "sharp": "^0.35.5",
     "zod": "^4.6.7"
   }

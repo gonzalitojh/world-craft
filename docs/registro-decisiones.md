@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0015.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0018.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -95,3 +95,18 @@ D-040 sin cambiar ninguna decisión.
   copia nueva ni pre-migración; hasta tres `integrity_check` por arranque; y la
   durabilidad cubre el cierre del proceso, no un corte de energía.
 - Referencias: ADR 0012, ADR 0016, `docs/persistencia.md` y `docs/continuidad.md`.
+
+## 2026-11-20 — Empaquetado, actualizaciones y preservación implementados (M0-08)
+
+**Contexto.** La issue #68 materializa el ADR 0003 en un instalador Windows real
+sin administrador y en una actualización manual que no puede perder datos. El
+MVP sigue sin release pública ni firma de código, y la comprobación automática
+con su interruptor pertenece a Ajustes (M1). La prueba real se hizo en local con
+el instalador 0.1.0; la actualización contra GitHub Releases se completará en M5.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-041 | Empaquetado NSIS, actualizador manual y preservación | electron-builder 26.18.0 con configuración comentada en `electron-builder.config.cjs`, recursos en `resources/`, salida en `release/` ignorada y versión 0.1.0; NSIS asistido por usuario (`oneClick:false`, `perMachine:false`, `allowElevation:false`, `customInstallMode` al usuario actual, `%LOCALAPPDATA%\Programs\World Craft`, acceso directo solo en Inicio, sin página de componentes, `deleteAppDataOnUninstall:false` y aviso de datos conservados al desinstalar); paquete x64 con asar, `asarUnpack` de `better-sqlite3`, `sharp` y `@img`, `npmRebuild:false`, `supportedArchitectures` con `current`/`win32` y poda `afterPack` de binarios no x64; sin firma (`signExecutable:false`, `verifyUpdateCodeSignature:false`, `forceCodeSigning:false`) y `latest.yml` sin Ed25519 porque electron-builder 26.18.0 no la soporta; electron-updater 6.8.11 y builder-util-runtime 9.7.0 externalizados, sin auto-check, comprobación manual de 30 s con `epoch`, descarga con consentimiento y cancelación real por `CancellationToken`, instalación solo desde `downloaded` y reinicio consentido, `autoDownload:false` y `autoInstallOnAppQuit:false`; partición `electron-updater` con `cache:false`, allowlist HTTPS de GitHub, saneado de cabeceras y permisos denegados, sin envío de contenido y log `logs/updates.log` sin URLs ni rutas; instancia única antes de la base con `second-instance` enfocando la ventana; `resources/licenses/` con los 5 textos completos; job `package` no bloqueante en `windows-latest` con `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`, sin publicar. | Actualizar, reinstalar y desinstalar no borran ni corrompen `userData`: la prueba real con actualización 0.1.0→0.1.1 conservó 194 archivos, incluida la base, los assets y las copias diarias; el instalador es de 132.698.671 bytes y no pide UAC ni escribe en HKLM; la actualización es opcional, cancelable y privada, pero no hay interruptor hasta Ajustes M1 porque tampoco hay auto-check; el instalador y `latest.yml` van sin firma y SmartScreen se documenta (ADR 0015); la actualización real contra GitHub Releases, la firma de manifiestos y el job `package` required quedan para M5/#69; el detalle está en el ADR 0018. |
+
+- Referencias: ADR 0018, ADR 0003, ADR 0013, ADR 0015, ADR 0016,
+  `docs/arquitectura.md`, `docs/continuidad.md` y `docs/persistencia.md`.

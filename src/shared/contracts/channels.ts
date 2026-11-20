@@ -12,6 +12,11 @@
 /** Canales IPC disponibles, con nombre estable en inglés. */
 export const IPC_CHANNELS = {
   shellOpenExternal: 'shell:openExternal',
+  updatesGetState: 'updates:getState',
+  updatesCheck: 'updates:check',
+  updatesCancel: 'updates:cancel',
+  updatesDownload: 'updates:download',
+  updatesInstall: 'updates:install',
 } as const;
 
 /** Unión de todos los canales admitidos. */

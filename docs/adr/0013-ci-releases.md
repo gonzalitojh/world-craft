@@ -32,6 +32,14 @@ PR sin credenciales ni datos de usuario y sin consumir minutos de pago.
 8. Sin secretos de servicios web; solo el `GITHUB_TOKEN` de la release.
 9. La release se crea desde `main` cuando el usuario promueve `dev`.
 
+> **Implementación (M0-08, #68, 20/11/2026).** El job `package` existe en
+> `windows-latest` con `verify:native`, `dist`, `verify:build`,
+> `package:checksums` y `verify:package --installer`; no publica, no usa
+> `GH_TOKEN` y no sube artefactos. Sigue **sin ser required** hasta #69, que
+> también debe confirmar el job de Ubuntu. La release completa y la publicación
+> en GitHub Releases se completan en M5. El detalle está en el
+> [ADR 0018](0018-nsis-packaging-and-update-service.md).
+
 ## Alternativas consideradas
 
 | Alternativa | Motivo del descarte |

@@ -1,17 +1,21 @@
 # Manual de usuario de World Craft
 
 > **Estado:** manual en construcción. World Craft se encuentra en desarrollo y
-> todavía **no hay una versión instalable** para usar. Las funciones se marcan
-> como **previstas** hasta que la issue que las implementa esté terminada y
-> probada. Este manual se actualiza en la misma tarea que cada cambio visible.
+> **todavía no hay una release pública**: el instalador existe y se genera en
+> local para probar cada versión, pero la publicación oficial llega con M5. Las
+> funciones se marcan como **previstas** hasta que la issue que las implementa
+> esté terminada y probada. Este manual se actualiza en la misma tarea que cada
+> cambio visible.
 >
-> Hoy el proyecto ya tiene un **shell de escritorio** que se abre en el entorno
-> de desarrollo: barra lateral con navegación, barra superior, tema Claro/Oscuro
-> conmutable, una página de inicio con estado vacío y una **página de muestras
-> solo para desarrollo**. También existe una **base de datos local** que se crea
-> y se comprueba al arrancar, con **copias automáticas** y **restauración desde
-> modo seguro**. Todavía no hay mundos, fichas, ajustes ni instalador, y la
-> preferencia de tema no se recuerda al reiniciar.
+> Hoy el proyecto ya tiene un **instalador local para Windows** que se instala
+> por usuario, sin permisos de administrador, y una **comprobación manual de
+> actualizaciones** integrada en la barra superior. La ventana incluye barra
+> lateral con navegación, tema Claro/Oscuro conmutable, una página de inicio con
+> estado vacío y una **página de muestras solo para desarrollo**. También existe
+> una **base de datos local** que se crea y se comprueba al arrancar, con
+> **copias automáticas** y **restauración desde modo seguro**. Todavía no hay
+> mundos, fichas ni ajustes, y la preferencia de tema no se recuerda al
+> reiniciar.
 
 ## 1. Qué es World Craft
 
@@ -28,22 +32,34 @@ La aplicación está pensada para:
 
 ## 2. Antes de empezar
 
-### 2.1 Requisitos (previstos)
+### 2.1 Requisitos
 
 - Windows 10 u 11 de 64 bits.
-- Al menos 4 GB de memoria RAM y 500 MB libres en disco.
+- Al menos 4 GB de memoria RAM y 500 MB libres en disco. El instalador ocupa
+  unos 133 MB y la aplicación instalada necesita espacio adicional.
 - Una ventana de al menos 1024×700 píxeles; se recomienda 1280×800 o más.
-- No hace falta conexión a Internet para trabajar.
+- No hace falta conexión a Internet para trabajar. Solo la comprobación de
+  actualizaciones consulta GitHub cuando tú lo pides.
 
-### 2.2 Instalación (prevista)
+### 2.2 Instalación
 
-1. Descarga el instalador desde la página de releases del proyecto.
+1. Consigue el instalador de World Craft. Todavía **no se descarga de una
+   página pública**: cuando se prepara una versión, el archivo se genera en
+   local como `release/world-craft-0.1.0-setup.exe` y se prueba antes de
+   publicarlo. La descarga oficial llegará con M5.
 2. Ejecuta el instalador. Windows puede mostrar un aviso de SmartScreen porque
    el instalador no está firmado; se explica en la sección 13.
-3. Elige la carpeta de instalación o acepta la propuesta.
-4. Abre World Craft desde el menú Inicio.
+3. El asistente instala **solo para tu usuario**, en
+   `%LOCALAPPDATA%\Programs\World Craft`. **No pide permisos de administrador ni
+   muestra el control de cuentas de usuario (UAC).** Puedes cambiar la carpeta de
+   instalación si lo deseas.
+4. Elige si quieres abrir World Craft al terminar. El acceso directo se crea en
+   el menú Inicio, no en el escritorio.
+5. Abre World Craft desde el menú Inicio.
 
-La instalación es por usuario y no requiere permisos de administrador.
+La instalación es por usuario y no requiere permisos de administrador. No crea
+ni modifica tu carpeta de datos `%APPDATA%\World Craft`: si ya tenías datos de
+una versión anterior, se conservan y se usan al abrir la aplicación.
 
 ### 2.3 Primer arranque
 
@@ -52,37 +68,38 @@ con la estructura inicial en tu equipo. Antes de abrir la ventana comprueba que
 la base está en buen estado y, si hay que actualizar su estructura, guarda antes
 una copia de seguridad.
 
-Cuando exista la versión instalable, el primer arranque mostrará además una
-pantalla de bienvenida con la opción de crear tu primer mundo o importar uno
-existente. Esa pantalla es **prevista**: todavía no existe.
+Más adelante, el primer arranque mostrará además una pantalla de bienvenida con
+la opción de crear tu primer mundo o importar uno existente. Esa pantalla es
+**prevista**: todavía no existe.
 
 ### 2.4 Estado actual del desarrollo
 
-El proyecto ya permite abrir la ventana de la aplicación en un entorno de
-desarrollo, pero **todavía no existe un programa instalable**. Esa ventana ya
-tiene el aspecto definitivo en lo básico: una barra lateral con navegación, una
-barra superior, dos temas de color y componentes de interfaz ya creados (botones,
+El proyecto ya genera un **instalador local** y permite abrir la ventana de la
+aplicación instalada. Esa ventana tiene el aspecto definitivo en lo básico: una
+barra lateral con navegación, una barra superior con el botón de actualizaciones
+y el de tema, dos modos de color y componentes de interfaz ya creados (botones,
 campos, insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
 
-La aplicación ya crea y comprueba su base de datos local, guarda copias
-automáticas y sabe arrancar en **modo seguro** si algo va mal, ofreciendo
-restaurar una copia. Por ahora **no se puede crear un mundo**, guardar contenido
-ni cambiar ajustes. El botón «Crear mundo» de la página de inicio todavía avisa
-de que la función llegará en una próxima versión. Cuando haya una versión
-instalable, esta sección explicará cómo conseguirla y qué esperar del primer
-arranque.
+La aplicación crea y comprueba su base de datos local, guarda copias automáticas,
+sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
+La comprobación de actualizaciones es **manual y cancelable**; no se ejecuta sola.
+Por ahora **no se puede crear un mundo**, guardar contenido ni cambiar ajustes.
+El botón «Crear mundo» de la página de inicio todavía avisa de que la función
+llegará en una próxima versión. **No hay una release pública**: el instalador se
+genera y se prueba en local, y la publicación oficial llegará con M5.
 
 ## 3. La ventana
 
 ### 3.1 Partes de la pantalla
 
-Estas partes ya existen en el entorno de desarrollo:
+Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
   navegación entre **Inicio** y **Muestras**, y un botón para plegarla. Expandida
   ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos.
-- **Barra superior:** muestra el nombre de la pantalla actual y el botón de
-  tema.
+- **Barra superior:** muestra el nombre de la pantalla actual, el botón
+  **Actualizaciones** y el botón de tema. El botón de actualizaciones abre un
+  diálogo para buscar, descargar e instalar versiones nuevas (sección 3.6).
 - **Área central:** el contenido de la pantalla. Es el destino del enlace
   «Saltar al contenido principal» que aparece al empezar a usar el teclado.
 
@@ -141,6 +158,39 @@ los datos se quedan en tu equipo.
 
 La base de datos local se crea y se comprueba sola al arrancar; si hubiera un
 problema, la aplicación avisa antes de abrir la ventana (sección 15).
+
+### 3.6 Actualizaciones
+
+La comprobación de actualizaciones es **siempre manual**: la aplicación no
+consulta Internet al arrancar ni en segundo plano. Solo lo hace cuando pulsas
+**Actualizaciones** en la barra superior y después **Buscar actualizaciones**.
+
+1. Pulsa **Actualizaciones**. El diálogo muestra la **versión instalada** y la
+   **última comprobación**, o «Todavía no se ha comprobado ninguna
+   actualización».
+2. Pulsa **Buscar actualizaciones**. El estado pasa a «Buscando una versión
+   nueva…». Puedes pulsar **Cancelar** para detener la comprobación.
+3. Si ya tienes la última versión, el diálogo lo indica. Si hay una nueva,
+   muestra su número y el botón **Descargar actualización**.
+4. Pulsa **Descargar actualización**. La descarga solo empieza con tu
+   consentimiento y muestra el progreso. Puedes pulsar **Cancelar** durante la
+   descarga; si lo haces, no se instala nada.
+5. Cuando la descarga termina, el botón cambia a **Reiniciar e instalar**. Al
+   pulsarlo, la aplicación se cierra, instala la versión nueva y vuelve a
+   abrirse. **Nunca se instala ni se reinicia sin que lo pidas.**
+6. Cerrar el diálogo no cancela una descarga en curso: puedes volver a abrirlo
+   para ver el progreso o cancelarla.
+
+La comprobación solo consulta GitHub Releases. **No envía el contenido de tus
+mundos, tus fichas ni datos personales.** En el entorno de desarrollo, en modo
+seguro o si la instalación no incluye la configuración de actualizaciones, el
+diálogo explica que están desactivadas. Todavía **no hay un interruptor para
+desactivarlas** porque no hay comprobación automática; ese ajuste llegará con la
+pantalla de Ajustes en M1.
+
+Si la comprobación o la descarga fallan, el diálogo muestra un aviso y puedes
+volver a intentarlo. Un fallo de actualización no toca tus datos: la base, los
+assets y las copias siguen en `%APPDATA%\World Craft` (sección 12).
 
 ## 4. Mundos (previsto)
 
@@ -221,7 +271,11 @@ criaturas, eventos y cualquier tipo que crees.
 - **Copias:** dentro de Ajustes → Datos, crear, verificar y restaurar copias. La
   restauración desde el aviso de modo seguro ya existe (sección 12.3); esta
   pantalla, con la copia manual y la elección de carpeta, es prevista.
-- **Actualizaciones:** buscar, descargar e instalar; se puede desactivar.
+- **Actualizaciones:** hoy se buscan, descargan e instalan desde el botón
+  **Actualizaciones** de la barra superior (sección 3.6). Ajustes añadirá el
+  interruptor y la frecuencia, pero **no habrá comprobación automática hasta
+  M1**; ahora no existe un ajuste para desactivarla porque no hay nada que
+  desactivar.
 - **Ayuda:** abrir este manual y exportar un diagnóstico.
 
 ## 12. Tus datos y las copias
@@ -230,9 +284,15 @@ criaturas, eventos y cualquier tipo que crees.
 
 - Todo se guarda en tu equipo, en la carpeta de datos de World Craft
   (`%APPDATA%\World Craft`). La base de datos está en la subcarpeta `data` y se
-  crea sola al arrancar. Las imágenes y los archivos están en `assets`.
-- Actualizar o desinstalar la aplicación **no borrará** tus datos: la carpeta de
-  datos queda fuera de la carpeta de instalación.
+  crea sola al arrancar. Las imágenes y los archivos están en `assets`; las
+  copias, en `backups`; y los registros técnicos, en `logs`.
+- Los binarios se instalan aparte, en `%LOCALAPPDATA%\Programs\World Craft`.
+  **Actualizar, reinstalar o desinstalar no borra** la carpeta de datos.
+- La aplicación puede guardar en su carpeta de datos un identificador técnico de
+  actualización y registros de la comprobación. No contienen tus mundos, tus
+  fichas ni el contenido de tus archivos. Las descargas de actualizaciones se
+  guardan en una carpeta temporal de Windows, fuera de `userData`; al instalar
+  o cancelar no se mezclan con tus datos.
 - No hay sincronización automática entre equipos ni subida de datos a Internet.
 
 ### 12.2 Copias automáticas
@@ -311,8 +371,8 @@ mal.
   desde el propio aviso y revisa que existan `backups/daily`, `weekly`,
   `monthly` o `pre-migration` con su `manifest.json`.
 - Si la aplicación se cierra sin mostrar el aviso, comprueba los requisitos
-  (sección 2.1) y, cuando exista el instalador, el aviso de Windows (sección
-  13). Si el problema continúa, conserva las carpetas y pide ayuda.
+  (sección 2.1) y el aviso de Windows (sección 13). Si el problema continúa,
+  conserva las carpetas y pide ayuda.
 - Si la aplicación se queda en modo seguro después de una restauración, puede
   haber quedado un archivo de bloqueo o un resto de la operación anterior. Cierra
   la aplicación, vuelve a abrirla y prueba otra copia. En casos excepcionales,
@@ -321,18 +381,39 @@ mal.
   marcador que impide crear una base vacía; si está presente, prueba otra copia
   o pide ayuda.
 
-## 13. Aviso de SmartScreen (previsto)
+### 12.6 Desinstalar World Craft
 
-El instalador del MVP no está firmado con un certificado de código. Windows
-puede mostrar un aviso azul de SmartScreen. Para continuar:
+1. Abre **Configuración → Aplicaciones** de Windows (en Windows 11,
+   **Aplicaciones instaladas**; en Windows 10, **Aplicaciones y
+   características**), busca **World Craft** y elige **Desinstalar**. También
+   puedes usar el desinstalador de la carpeta de instalación.
+2. La desinstalación es por usuario y **no pide permisos de administrador**.
+   Elimina los binarios y el acceso directo del menú Inicio.
+3. El desinstalador avisa de que tus mundos, fichas, mapas y copias
+   **se conservan** en `%APPDATA%\World Craft`. En una desinstalación silenciosa
+   no muestra el aviso, pero tampoco borra los datos.
+4. Si quieres eliminar también los datos, ciérrala y borra manualmente esa
+   carpeta. Antes de hacerlo, guarda una copia o exporta lo que necesites: esa
+   acción **no se puede deshacer** desde la aplicación.
 
-1. Comprueba que has descargado el instalador desde la página oficial del
-   proyecto.
-2. Pulsa «Más información».
-3. Pulsa «Ejecutar de todas formas».
+## 13. Aviso de SmartScreen
+
+El instalador del MVP **no está firmado** con un certificado de código. Windows
+puede mostrar un aviso azul de SmartScreen la primera vez que lo ejecutes. Para
+continuar:
+
+1. Comprueba que has obtenido el instalador por el canal oficial del proyecto y
+   que su nombre es el esperado (`world-craft-<versión>-setup.exe`).
+2. Si quieres comprobar la integridad, compara su SHA-256 con el valor publicado
+   junto al instalador (`SHA256SUMS`). Deben coincidir exactamente.
+3. Pulsa «Más información».
+4. Pulsa «Ejecutar de todas formas».
 
 La firma de código es opcional y de pago; se valorará más adelante. El aviso no
-significa que la aplicación tenga un problema.
+significa que la aplicación tenga un problema. Descargar el instalador de un
+sitio no oficial y ejecutarlo sí es un riesgo: sin firma, el aviso de Windows no
+puede distinguir un archivo manipulado. Descárgalo siempre del origen oficial y
+verifica el checksum cuando esté disponible.
 
 ## 14. Accesibilidad
 
@@ -365,10 +446,18 @@ las funciones correspondientes.
 | No aparece la copia que busco | La app no ofrece copias dañadas, con manifiesto inválido, de una versión más reciente ni las de `pre-restore`. Abre la carpeta de copias y comprueba que la carpeta elegida contiene `world-craft.sqlite` y `manifest.json`. |
 | La restauración falla | La app vuelve al aviso de modo seguro e intenta dejar los datos como estaban. Prueba otra copia; la base anterior queda en `backups/pre-restore`. No borres esas carpetas. |
 | La app sigue en modo seguro después de restaurar | Cierra la aplicación y vuelve a abrirla. Si persiste, prueba otra copia; como último recurso, con la app cerrada, borra `data/.restore.lock` (no contiene tus datos), pero **no borres `data/.restore.pending`**. |
-| La app no arranca | Comprueba los requisitos (sección 2.1) y, cuando exista el instalador, revisa el aviso de Windows (sección 13). No borres la carpeta de datos ni la de copias; conserva ambas y pide ayuda. |
+| La app no arranca | Comprueba los requisitos (sección 2.1) y revisa el aviso de Windows (sección 13). No borres la carpeta de datos ni la de copias; conserva ambas y pide ayuda. |
+| Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 13. Comprueba el SHA-256 si tienes el valor publicado. |
+| El instalador pide administrador o no encuentra la carpeta | No debería: la instalación es por usuario en `%LOCALAPPDATA%\Programs\World Craft` y no usa UAC. Cierra el instalador y vuelve a ejecutarlo; si persiste, no continúes y pide ayuda. |
+| La instalación o la actualización falla | Comprueba el espacio libre (el instalador ocupa unos 133 MB) y que la carpeta de instalación sea accesible. Vuelve a ejecutar el instalador; tus datos de `%APPDATA%\World Craft` no se tocan. |
+| No aparece ninguna actualización | La comprobación es manual: pulsa **Actualizaciones → Buscar actualizaciones**. Si no hay una versión publicada más reciente, el diálogo indica que ya tienes la última. La comprobación real contra GitHub Releases se probará con la primera release pública (M5). |
+| La comprobación de actualizaciones falla | Revisa la conexión e inténtalo de nuevo. La aplicación sigue funcionando sin conexión y tus datos no cambian. |
+| La descarga de la actualización falla | Comprueba el espacio libre y la conexión, y vuelve a intentarlo. Puedes cancelar la descarga sin instalar nada. |
+| La actualización está descargada pero no se instala | Pulsa **Reiniciar e instalar** en el diálogo. La instalación no ocurre sola: necesita tu confirmación. Si falla, cierra la aplicación y vuelve a intentarlo. |
+| Las actualizaciones están desactivadas | El diálogo explica el motivo: estás en desarrollo, en modo seguro o falta la configuración de la instalación. No es un fallo de tus datos. |
+| He desinstalado y no sé dónde están mis datos | Se conservan en `%APPDATA%\World Craft` (sección 12.6). La desinstalación no los borra; solo desaparecen si borras esa carpeta manualmente. |
 | No encuentro una ficha | Previsto: revisa la papelera y reconstruye la búsqueda. |
 | Una imagen no se ve | Previsto: comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. |
-| Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 13. |
 | He borrado un mundo | Previsto: restáuralo desde la papelera o desde una copia. |
 
 ## 16. Glosario
@@ -391,8 +480,14 @@ las funciones correspondientes.
 | Función | Estado |
 |---|---|
 | Barra lateral con navegación y plegado | Implementada (en desarrollo) |
-| Barra superior con el título y el botón de tema | Implementada (en desarrollo) |
+| Barra superior con el título, Actualizaciones y el botón de tema | Implementada (en desarrollo) |
 | Tema Claro/Oscuro conmutable | Implementado (en desarrollo); no se recuerda al reiniciar |
+| Instalador por usuario, sin administrador, en `%LOCALAPPDATA%` | Implementado (local); la release pública llega con M5 |
+| Desinstalación que conserva `%APPDATA%\World Craft` | Implementada (local); el desinstalador avisa de los datos conservados |
+| Comprobación manual de actualizaciones con descarga y cancelación | Implementada (en desarrollo); requiere una versión instalada y una release publicada para probarse de extremo a extremo |
+| Instalación de la actualización con reinicio consentido | Implementada (en desarrollo); nunca se instala sola |
+| Instancia única | Implementada; abrir la aplicación de nuevo enfoca la ventana existente |
+| Aviso de SmartScreen y checksums | Documentado; el instalador sigue sin firma (ADR 0015) |
 | Componentes base (botones, campos, avisos, diálogos...) | Implementados (en desarrollo) |
 | Página de inicio con estado vacío | Implementada (en desarrollo); «Crear mundo» avisa de que llegará |
 | Página de muestras | Solo en desarrollo; no es una función de producto |
@@ -401,7 +496,7 @@ las funciones correspondientes.
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
 | Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12 |
 | Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
-| Instalador y aplicación | Prevista |
+| Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
 | Mundos | Prevista |
 | Fichas y tipos | Prevista |
 | Relaciones y grafo | Prevista |
@@ -412,7 +507,9 @@ las funciones correspondientes.
 | Ajustes | Prevista |
 | Guardar la preferencia de tema | Prevista (con Ajustes) |
 | Copias manuales y elección de carpeta | Prevista (con Ajustes) |
-| Actualizaciones | Prevista |
+| Ajustes de actualizaciones (interruptor y frecuencia) | Previstos (con Ajustes, M1); hoy no hay auto-check |
+| Firma de código del instalador | Opcional y de pago; fuera del MVP (ADR 0015) |
+| Release pública y actualización desde GitHub Releases | Previstas para M5 |
 | Manual dentro de la app | Prevista |
 
 Este manual se actualizará cuando cada función esté disponible. Mientras una

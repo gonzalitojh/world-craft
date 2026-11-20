@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 
 import logoUrl from '../assets/world-craft-logo.svg';
 import { Button } from '../components/button';
+import { UpdatesControl } from '../components/updates-control';
 import { cx } from '../lib/class-names';
 import { messages } from '../messages/es';
 import type { ThemeMode } from '../theme';
@@ -239,6 +240,7 @@ export function AppShell({
           <header className="wc-topbar">
             <h1 className="wc-topbar__title">{messages.shell.views[view]}</h1>
             <div className="wc-topbar__actions">
+              <UpdatesControl />
               <Button
                 variant="secondary"
                 size="sm"

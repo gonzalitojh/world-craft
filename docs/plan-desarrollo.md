@@ -754,6 +754,17 @@ también 1920×1080.
   `userData`. La primera ejecución tras una actualización migra la base con
   copia previa.
 
+> **Actualización (2026-11-20, issue #68 / M0-08).** El alcance no cambia. Ya
+> existe un instalador local 0.1.0 generado con electron-builder 26.18.0: NSIS
+> por usuario en `%LOCALAPPDATA%\Programs\World Craft`, sin UAC, sin firma y con
+> `userData` fuera de la instalación. La comprobación de actualizaciones quedó
+> **manual** desde el botón «Actualizaciones», con descarga consentida,
+> cancelación real y reinicio consentido; el auto-check y su interruptor llegan
+> con Ajustes (M1). El job `package` de Windows existe pero no es bloqueante
+> hasta #69. La release pública, la actualización real contra GitHub Releases y
+> la firma Ed25519 de manifiestos se completan en M5. El detalle está en el
+> [ADR 0018](adr/0018-nsis-packaging-and-update-service.md).
+
 ### 3.9 Costes y dependencia externa
 
 | Servicio | Plan | Uso | Riesgo |

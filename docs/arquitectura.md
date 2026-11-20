@@ -13,15 +13,17 @@ los ADRs el porqué de cada decisión. Si hay discrepancia, mandan ellos.
 En la fase actual el repositorio contiene el **scaffold de escritorio** (#62), el
 **IPC tipado** (#63), la **persistencia local** (#64), el **sistema de diseño con
 shell de escritorio** (#65), el **servicio de assets locales con
-`wc-asset://`** (#66) y las **copias de seguridad con restauración desde modo
-seguro** (#67): ventana Electron segura, preload nominativo, renderer React con
-tokens, componentes base y navegación, un único canal IPC
-(`shell:openExternal`), una base SQLite con migraciones, comprobación de
-integridad y modo seguro, un servicio de imágenes con protocolo propio,
-miniaturas y purga recuperable, y copias automáticas con retención, verificación
-y restauración. La subida y la galería visibles, la interfaz de Ajustes y las
-copias manuales llegan en M1. Las secciones distinguen lo implementado de lo
-previsto.
+`wc-asset://`** (#66), las **copias de seguridad con restauración desde modo
+seguro** (#67) y el **instalador NSIS con actualizador manual** (#68): ventana
+Electron segura, preload nominativo, renderer React con tokens, componentes base
+y navegación, base SQLite con migraciones, comprobación de integridad y modo
+seguro, servicio de imágenes con protocolo propio, miniaturas y purga
+recuperable, copias automáticas con retención, verificación y restauración,
+instalación por usuario sin administrador, actualizaciones manuales, cancelables
+y consentidas, y bloqueo de instancia única. La subida y la galería visibles, la
+interfaz de Ajustes y las copias manuales llegan en M1; la release pública y la
+actualización real contra GitHub Releases, en M5. Las secciones distinguen lo
+implementado de lo previsto.
 
 ## 1. Vista general
 
@@ -43,17 +45,17 @@ previsto.
 |---|---|---|
 | Electron + Vite + React + TypeScript | Implementado (M0-02, #62) | [ADR 0001](adr/0001-electron-vite-react-typescript.md) |
 | SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 disponible en el binario, esquema en M1 | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
-| Instalador NSIS, actualizaciones y preservación de datos | Previsto (M0/M5, #68) | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md) |
+| Instalador NSIS, actualizaciones y preservación de datos | Implementado (M0-08, #68): instalador local 0.1.0 y actualizador manual; release pública y actualización real en M5 | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; sin IPC ni UI en M0 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base y shell (#65); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: 216 unitarias en verde (4 omitidas) y 84 de integración en verde (1 omitida) (#62–#67); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md) |
+| Pruebas y calidad | Parcial: 282 unitarias en verde (4 omitidas) y 85 de integración en verde (1 omitida) (#62–#68); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
-| CI y releases | Parcial: lint, typecheck, test, db:check y build (#62–#64); releases previstos | [ADR 0013](adr/0013-ci-releases.md) |
+| CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
 | Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
 
@@ -63,23 +65,26 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://` y copias de seguridad con restauración; actualizaciones y UI de Ajustes llegarán con sus issues. | Node, Electron, disco. |
-| **Preload** | Puente mínimo y tipado entre renderer y main: solo `appInfo` y funciones nominativas. | API de Electron limitada. |
+| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, copias de seguridad con restauración y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal` y actualizaciones; nunca un `invoke` genérico. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
-| `src/main/` | Composición del proceso principal, ventana, guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`), aviso de modo seguro (`safe-mode-*.ts`), protocolo de assets (`assets/`) y composición de la recuperación; updates llegarán con su issue. | `src/shared/`, Node, Electron |
+| `src/main/` | Composición del proceso principal, ventana, instancia única (`single-instance.ts`), guards de seguridad (`security/`), router IPC (`ipc/`), persistencia (`persistence.ts`), aviso de modo seguro (`safe-mode-*.ts`), protocolo de assets (`assets/`), composición de la recuperación y actualizador (`updates/`). | `src/shared/`, Node, Electron |
 | `src/main/assets/` | Servicio de assets: importación, procesamiento con sharp, rutas, protocolo `wc-asset://`, repositorio de metadatos, huérfanos, purga y log. Sin Electron salvo la composición. | Node, sharp, Drizzle |
 | `src/main/backup/` | Copias y restauración puros: manifiesto v2, creación online, verificación, inventario, rotación, programación por arranque, lock, marcador pendiente y reemplazo con rollback. No importa Electron (regla ESLint); la composición vive en `persistence.ts` y `safe-mode-recovery.ts`. | Node, better-sqlite3, Zod |
-| `src/main/logging/` | Escritura JSONL con rotación compartida por el log de arranque y el de assets. | Node |
+| `src/main/logging/` | Escritura JSONL con rotación compartida por el log de arranque, el de assets y el del actualizador. | Node |
 | `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
+| `src/main/updates/` | Máquina de estados del actualizador sin Electron, adaptador de electron-updater, allowlist de red y saneado de cabeceras, log JSONL y composición. | Node, electron-updater, `builder-util-runtime` |
+| `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo` y `shell.openExternal`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal` y `updates`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; las pantallas y módulos de dominio se añadirán con sus issues. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`) y control/diálogo de actualizaciones de #68; `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/updates/` | Textos de estado, acción principal y formatos del panel de actualizaciones, probados sin DOM. | `src/shared/` |
 | `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
 | `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (estado vacío) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
@@ -87,10 +92,13 @@ Electron separa tres procesos con permisos distintos:
 | `src/renderer/messages/` | Catálogo tipado del renderer (hoy `es.ts`). | — |
 | `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
-| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error y contrato de la API del preload. | — |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log) y de copias (manifiesto, rutas de restauración, buckets y rotación). | `src/` |
-| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias. | `src/` |
+| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload y contrato del actualizador. | — |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos) y de instancia única. | `src/` |
+| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
 | `tests/e2e/` | Playwright Electron. Previsto (#70). | `src/` |
+| `resources/` | `icon.ico`, `icon.png`, `installer.nsh` y `licenses/` generados o versionados para electron-builder. | — |
+| `scripts/` | Verificación de build, nativo, paquete, checksums, iconos, licencias, instalación manual y limpieza. | Node, PowerShell |
+| `release/` | Salida de electron-builder (instalador, blockmap, `latest.yml`, `SHA256SUMS`); ignorada por git. | — |
 | `docs/` | Plan, arquitectura, ADRs, persistencia, calidad y manual. | — |
 
 Reglas de dependencia:
@@ -137,17 +145,19 @@ Reglas de dependencia:
   escritura en `userData`, SQLite y las migraciones se añadieron en #64
   (sección 2.3).
 
-### 2.2 Estado implementado del IPC (#63)
+### 2.2 Estado implementado del IPC (#63 y #68)
 
 - **Contrato compartido.** `src/shared/contracts/` contiene la allowlist
-  `IPC_CHANNELS` (hoy un solo canal, `shell:openExternal`), el resultado
-  discriminado `IpcResult` con los códigos `INVALID_INPUT`, `UNKNOWN_CHANNEL`,
-  `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y `createWorldCraftApi({ invoke })`,
+  `IPC_CHANNELS` (hoy `shell:openExternal` y los cinco canales de
+  actualizaciones), el resultado discriminado `IpcResult` con los códigos
+  `INVALID_INPUT`, `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y
+  `createWorldCraftApi({ invoke })`,
   que construye la API congelada del preload. Son módulos puros: no importan
   Electron, Node ni Zod.
-- **Preload nominativo.** Publica `appInfo` y `shell.openExternal(url)`. No
-  expone `ipcRenderer`, `require` ni un `invoke` genérico; el renderer solo
-  puede llamar a las funciones declaradas en el contrato.
+- **Preload nominativo.** Publica `appInfo`, `shell.openExternal(url)` y la API
+  `updates` (desde #68). No expone `ipcRenderer`, `require` ni un `invoke`
+  genérico; el renderer solo puede llamar a las funciones declaradas en el
+  contrato.
 - **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
   canal de la allowlist, comprueba el remitente (`file:` empaquetado o loopback
   de desarrollo), valida la entrada con Zod (`zod@^4.6.7`, declarado en
@@ -192,8 +202,8 @@ Reglas de dependencia:
   falla, se cierra la conexión y se entra en modo seguro sin escritura.
 - **Build.** `better-sqlite3` y `drizzle-orm` se externalizan (y `sharp` desde
   #66, sección 2.5); `drizzle/` se copia a `out/main/drizzle`. `pnpm verify:build`
-  valida las migraciones copiadas y la externalización. #68 debe desempaquetar
-  los módulos nativos del asar.
+  valida las migraciones copiadas y la externalización. El desempaquetado del
+  asar y la poda x64 se completaron en #68 (sección 2.7).
 
 ### 2.4 Estado implementado del sistema de diseño (#65)
 
@@ -256,7 +266,8 @@ Reglas de dependencia:
 - **Dependencia.** `sharp@^0.35.5` se externaliza con `@img/*` en
   `electron.vite.config.ts`, se verifica en Node y Electron con
   `pnpm verify:native` y sus licencias están en `THIRD-PARTY-NOTICES.md`. #68
-  debe desempaquetar sharp del asar e incluir los textos completos.
+  desempaquetó sharp del asar e incluyó los textos completos en `licenses/`
+  (sección 2.7).
 - **Sin IPC ni UI.** No hay canal nuevo: la subida y la galería llegan con las
   fichas (M1). Los residuales de seguridad (TOCTOU, raíces no validadas antes de
   crear, `backups/orphans` sin comprobar y symlinks de archivo omitidos en
@@ -299,12 +310,49 @@ Reglas de dependencia:
 - **Logs.** `backup.schedule` y `backup.restore` registran resultado y códigos
   sin rutas, nombres, tamaños, SHA, identificadores ni contenido.
 
+### 2.7 Estado implementado del empaquetado y las actualizaciones (#68)
+
+- **Configuración.** `electron-builder.config.cjs` declara NSIS por usuario,
+  `appId` `com.gonzalitojh.worldcraft`, versión 0.1.0, recursos en `resources/`,
+  salida en `release/` y `--publish never` en local. `afterPack` escribe
+  `app-update.yml` también en las builds `--dir` y poda los binarios nativos que
+  no son win32-x64. El icono es un ICO de 7 tamaños; `licenses:sync` copia los
+  5 textos completos.
+- **Paquete.** `files` incluye `out/` y `package.json`; `extraFiles` añade
+  `LICENSE`, `THIRD-PARTY-NOTICES.md` y `licenses/`. `asarUnpack` cubre
+  `better-sqlite3`, `sharp`, `@img` y `*.node`; `npmRebuild` está desactivado.
+  Solo viajan `sharp-win32-x64` y `better-sqlite3` `win32-x64`.
+- **Instancia única.** `src/main/single-instance.ts` adquiere
+  `requestSingleInstanceLock()` antes de `whenReady`; un segundo proceso no toca
+  base, IPC ni ventana y la instancia existente recibe `second-instance`.
+- **Actualizador.** `src/main/updates/` separa la máquina de estados
+  (`service.ts`) del adaptador de electron-updater (`electron-adapter.ts`), la
+  política de red (`network.ts`), el log (`logger.ts`) y la composición
+  (`composition.ts`). Estados `unavailable`, `idle`, `checking`, `up-to-date`,
+  `available`, `downloading`, `downloaded`, `installing` y `error`; sin
+  auto-check, con timeout de 30 s, `epoch`, cancelación por `CancellationToken`,
+  descarga consentida e instalación solo desde `downloaded`. Se deshabilita en
+  desarrollo, en modo seguro y sin `app-update.yml`.
+- **Red.** Partición `electron-updater` con `cache:false`; se verifica que
+  `autoUpdater.netSession` es esa sesión antes de permitir tráfico. Solo HTTPS a
+  `github.com`, `api.github.com` y subdominios de `githubusercontent.com`; se
+  eliminan `x-user-staging-id`, `authorization`, `private-token` y `cookie`; los
+  permisos se deniegan. No se envía contenido del usuario.
+- **UI e IPC.** Canales `updates:getState`, `check`, `cancel`, `download` e
+  `install`, todos con `strictObject({})`, y evento `updates:stateChanged` fuera
+  de la allowlist de `invoke`. El botón de la barra superior y el diálogo
+  muestran versión, última comprobación, estado, progreso y privacidad.
+- **Persistencia.** `logs/updates.log` es JSONL con rotación a 256 KiB y sin
+  URLs, rutas, versiones ni contenido. La caché de descargas vive en
+  `%LOCALAPPDATA%`, fuera de `userData`.
+
 ## 3. Flujo de una operación
 
-### 3.1 Arranque (implementado, #64 y #67)
+### 3.1 Arranque (implementado, #64, #67 y #68)
 
 ```text
-app.setName(APP_NAME) → app.getPath('userData')
+requestSingleInstanceLock()               (antes de whenReady; si falla, salir)
+  → app.setName(APP_NAME) → app.getPath('userData')
   → registerLocalAssetScheme()            (antes de whenReady)
   → initializePersistence()
     → rutas, carpetas y log de arranque
@@ -316,20 +364,26 @@ app.setName(APP_NAME) → app.getPath('userData')
     → migraciones en una transacción
     → integrity_check posterior
     → copias automáticas del periodo en curso y rotación 7/4/12/5
-    → ready: registrar protocolo de assets, IPC y crear la ventana
+    → ready: registrar protocolo de assets, componer el actualizador,
+      registrar el IPC (incluido updates) y crear la ventana
     → safe-mode: diálogo nativo (restaurar, abrir copias, continuar o salir)
+      y actualizador deshabilitado
 ```
 
 La ventana no se crea hasta que el arranque termina. Solo en estado `ready` se
-registran el handler de `wc-asset://` y el IPC, y se ejecutan las copias
-automáticas. En modo seguro no hay ninguna vía de lectura ni de escritura; el
-diálogo permite restaurar una copia verificada desde `backups/`. Una restauración
-correcta relanza la aplicación y vuelve a pasar por este flujo, incluida la copia
-previa a las migraciones pendientes.
+registran el handler de `wc-asset://` y el IPC, se ejecutan las copias
+automáticas y se compone el actualizador. En modo seguro no hay ninguna vía de
+lectura ni de escritura y el actualizador queda deshabilitado; el diálogo permite
+restaurar una copia verificada desde `backups/`. Una restauración correcta
+relanza la aplicación y vuelve a pasar por este flujo, incluida la copia previa a
+las migraciones pendientes. `second-instance` enfoca la ventana de la instancia
+que ya tenía el lock.
 
 ### 3.2 IPC
 
-Hoy el único canal real es `shell:openExternal`. Una llamada recorre esta ruta:
+Los canales reales son `shell:openExternal` y los cinco de actualizaciones
+(`updates:getState`, `check`, `cancel`, `download` e `install`). Una llamada a
+`shell:openExternal` recorre esta ruta:
 
 ```text
 Llamada IPC (implementado, #63)
@@ -339,6 +393,19 @@ Llamada IPC (implementado, #63)
     → handler: resolveExternalUrl(url) → shell.openExternal(url normalizada)
     → main: IpcResult<{ opened: true }> o error estable
     → preload: comprueba la forma del resultado → renderer
+```
+
+Actualizaciones (implementado, #68):
+
+```text
+renderer → window.worldCraft.updates.check()
+  → preload: función nominativa → ipcRenderer.invoke('updates:check', {})
+  → main: remitente + allowlist + strictObject({}) → servicio
+  → snapshot inmediato (checking) y transición en segundo plano
+  → evento updates:stateChanged validado por el preload → diálogo
+
+download → consentimiento → CancellationToken + progreso
+install  → solo desde downloaded → quitAndInstall (reinicio consentido)
 ```
 
 ### 3.3 Assets (implementado, #66)
@@ -403,8 +470,9 @@ Actualización
 ## 4. Persistencia y datos
 
 La persistencia local está implementada desde M0-04 (#64), el servicio de assets
-desde M0-06 (#66) y las copias automáticas con restauración desde M0-07 (#67).
-La interfaz de Ajustes y las copias manuales siguen previstas para M1.
+desde M0-06 (#66), las copias automáticas con restauración desde M0-07 (#67) y el
+empaquetado con actualización manual desde M0-08 (#68). La interfaz de Ajustes y
+las copias manuales siguen previstas para M1.
 
 - **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`, con una única
   conexión de escritura en el proceso principal.
@@ -479,18 +547,31 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   evitan restauraciones solapadas y la creación de una base vacía tras un cierre
   abrupto; el reemplazo usa `.rollback*` y revierte si falla. Los logs
   `backup.schedule` y `backup.restore` no incluyen rutas, nombres, tamaños,
-  SHA, identificadores ni contenido. Residuales: el lock no es una exclusión
-  mutua estricta sin `requestSingleInstanceLock`, un lock obsoleto o ilegible
-  puede requerir borrado manual, una base de 0 bytes se considera nueva, una
-  base válida con restos obliga a modo seguro, la limpieza fallida de
-  `.rollback*` puede repetir el modo seguro y la durabilidad cubre el cierre del
-  proceso, no un corte de energía.
-- **Instancia única.** Pendiente: no hay `app.requestSingleInstanceLock`. Dos
-  instancias podrían competir por migrar o restaurar y una acabar en modo
-  seguro; SQLite serializa y la transacción revierte, así que no hay corrupción.
-  El lock de restauración reduce el solapamiento, pero no es una exclusión mutua
-  estricta entre procesos. Debe cerrarse antes de M1 y preferiblemente antes de
-  #68.
+  SHA, identificadores ni contenido. El lock de restauración no es una exclusión
+  mutua entre procesos, pero el bloqueo de instancia única de #68 impide que dos
+  procesos compitan por restaurar. Residuales: un lock obsoleto o ilegible puede
+  requerir borrado manual, una base de 0 bytes se considera nueva, una base
+  válida con restos obliga a modo seguro, la limpieza fallida de `.rollback*`
+  puede repetir el modo seguro y la durabilidad cubre el cierre del proceso, no
+  un corte de energía.
+- **Instancia única.** Implementado (#68): `requestSingleInstanceLock()` antes
+  de `whenReady`, de la base, del IPC y de la ventana; el segundo proceso sale y
+  la instancia existente recibe `second-instance` y enfoca su ventana. El lock
+  de restauración sigue siendo una protección adicional dentro del proceso.
+- **Actualizador.** Implementado (#68): sin auto-check, consulta solo desde la UI,
+  descarga con consentimiento, cancelación real, instalación solo desde
+  `downloaded` y actualización deshabilitada en desarrollo, modo seguro o sin
+  `app-update.yml`. La partición `electron-updater` usa `cache:false` y solo
+  permite HTTPS a GitHub y sus descargas; se sanean `x-user-staging-id`,
+  `authorization`, `private-token` y `cookie`, y los permisos se deniegan.
+  `logs/updates.log` no incluye URLs, rutas, versiones ni contenido. La
+  verificación de la firma está desactivada de forma coherente con el instalador
+  sin firmar (ADR 0015); la firma Ed25519 de manifiestos se decide en M5. La
+  cancelación de la comprobación descarta el resultado por `epoch`, pero no
+  aborta el socket de `checkForUpdates()` (LOW aceptado).
+- **Firma y distribución.** El instalador y `latest.yml` no están firmados. La
+  integridad se apoya en HTTPS, SHA-512 y `SHA256SUMS`; SmartScreen se documenta
+  en el manual. La firma Authenticode es opcional y de pago (ADR 0015).
 - **Assets y rutas.** Implementado (#66): gramática cerrada de `wc-asset://`, la
   ruta relativa sale de SQLite, coincidencia de ID y mundo, lista blanca
   `worlds/<uuid>/<uuid>.webp`, rechazo de `..`, rutas absolutas, UNC, NUL,
@@ -514,35 +595,44 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 216 pruebas unitarias en verde (4 omitidas por
-  symlinks en Windows sin modo desarrollador) y 84 de integración en verde (1
+- **Pruebas.** `pnpm test` ejecuta 282 pruebas unitarias en verde (4 omitidas por
+  symlinks en Windows sin modo desarrollador) y 85 de integración en verde (1
   omitida): scaffold (ventana, navegación, CSP e identidad), contrato IPC, router
   IPC, API del preload, enlaces externos, journal, checksum, rutas, UUIDv7,
   logger, modo seguro, tokens y contraste, servicio de assets (URL, rutas,
-  formatos, importación, huérfanos, protocolo y log) y copias (manifiesto, rutas
-  de restauración, buckets, rotación y recuperación), más arranque, migraciones,
-  copia, corrupción, versión adelantada, base ajena, preservación, rollback de
-  referencia, importación, protocolo, repositorio y purga con SQLite real, y
-  creación, restauración, rotación y restauración interrumpida de copias.
-  `pnpm build` y `pnpm verify:build` validan los artefactos; `pnpm verify:native`
-  comprueba better-sqlite3 y sharp en Node y Electron. `test:e2e` (Playwright
-  Electron) sigue previsto para #70.
-- **CI.** GitHub Actions en `ubuntu-latest`: jobs `lint` (con `format:check`),
-  `typecheck`, `test`, `build` (con `db:check` y `verify:build`), `gitleaks` y
-  `audit`. Los tres primeros son required; `build` todavía no lo es hasta #69, y
-  gitleaks y audit no bloquean. `verify:native` se ejecuta a mano y debe añadirse
-  a la CI antes de #68.
-- **Instalador.** Previsto (#68): `electron-builder` con NSIS por usuario;
-  `pnpm dist` generará el instalador y `pnpm dist:dir` una carpeta desempaquetada
-  para pruebas. Hoy no existen esos scripts. #68 también debe desempaquetar
-  `better-sqlite3` y `sharp` del asar, empaquetar las dependencias de producción,
-  `THIRD-PARTY-NOTICES.md` y `drizzle/`.
-- **Release.** Previsto: tag `vX.Y.Z`, workflow que compila, firma si hay
-  certificado y publica en GitHub Releases con `latest.yml`.
-- **Actualización.** Previsto (M5): `electron-updater` contra GitHub Releases;
-  descarga en segundo plano y reinicio consentido.
-- **Datos.** Cuando exista instalador, no tocará `userData`; la app migrará con
-  copia previa.
+  formatos, importación, huérfanos, protocolo y log), copias (manifiesto, rutas
+  de restauración, buckets, rotación y recuperación), empaquetado (configuración,
+  iconos y licencias), actualizador (contrato, servicio, red, log y textos) e
+  instancia única; además, arranque, migraciones, copia, corrupción, versión
+  adelantada, base ajena, preservación, rollback de referencia, importación,
+  protocolo, repositorio y purga con SQLite real, creación, restauración,
+  rotación y restauración interrumpida de copias, y preservación entre
+  instalaciones. `pnpm build` y `pnpm verify:build` validan los artefactos;
+  `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y Electron;
+  `pnpm verify:package` valida el paquete y `scripts/verify-install.ps1` prueba
+  la instalación real. `test:e2e` (Playwright Electron) sigue previsto para #70.
+- **CI.** GitHub Actions: jobs `lint` (con `format:check`), `typecheck`, `test` y
+  `build` (con `db:check` y `verify:build`) en `ubuntu-latest`; `package` en
+  `windows-latest` con `verify:native`, `dist`, `verify:build`,
+  `package:checksums` y `verify:package --installer`; `gitleaks` y `audit`. Los
+  tres primeros son required; `build` y `package` todavía no lo son hasta #69, y
+  gitleaks y audit no bloquean. El job `package` no publica, no usa `GH_TOKEN` y
+  no sube artefactos.
+- **Instalador.** Implementado (#68): electron-builder 26.18.0 con NSIS por
+  usuario; `pnpm dist` genera `release/world-craft-0.1.0-setup.exe` y
+  `pnpm dist:dir` una carpeta desempaquetada para pruebas. El paquete desempaqueta
+  `better-sqlite3` y `sharp` del asar, poda los binarios no x64 e incluye
+  `LICENSE`, `THIRD-PARTY-NOTICES.md` y `licenses/`. La release pública sigue
+  prevista para M5.
+- **Release.** Prevista (M5): tag `vX.Y.Z`, workflow que compila, publica en
+  GitHub Releases con `latest.yml` y los checksums, y prueba la actualización
+  real. La firma de código sigue siendo opcional (ADR 0015).
+- **Actualización.** Implementada (#68) como comprobación manual desde la barra
+  superior, descarga consentida y cancelable, e instalación solo con reinicio
+  consentido. El auto-check y su interruptor llegan con Ajustes (M1); la
+  actualización real contra GitHub Releases se prueba en M5.
+- **Datos.** El instalador por usuario y el desinstalador no tocan `userData`; la
+  app migra con copia previa. La prueba real de 0.1.0→0.1.1 conservó 194 archivos.
 
 El detalle está en el [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md),
 [ADR 0013](adr/0013-ci-releases.md) y
@@ -552,8 +642,8 @@ El detalle está en el [ADR 0003](adr/0003-nsis-installer-electron-updater-data-
 
 | Fase | Qué añade a la arquitectura |
 |---|---|
-| **M0** | Baseline, ventana segura, SQLite/Drizzle, IPC, diseño, assets, backups, CI e instalador. |
-| **M1** | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes y papelera. |
+| **M0** | Baseline, ventana segura, SQLite/Drizzle, IPC, diseño, assets, backups, CI, instalador y actualizador manual. |
+| **M1** | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes (incluido el interruptor de actualizaciones) y papelera. |
 | **M2** | Mapas vectoriales y grafo. |
 | **M3** | Editor de manuscritos, herramientas de escritura y exportadores. |
 | **M4** | Dados, tablas de inspiración y packs de contenido. |
@@ -580,6 +670,7 @@ decisiones está en [`docs/registro-decisiones.md`](registro-decisiones.md).
 - [Migraciones](base-de-datos/migraciones.md)
 - [ADR 0016: SQLite, migraciones y modo seguro](adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017: Servicio de assets y purga recuperable](adr/0017-assets-service-sharp-orphan-purge.md)
+- [ADR 0018: Empaquetado NSIS, actualizador manual y preservación](adr/0018-nsis-packaging-and-update-service.md)
 - [Continuidad y copias](continuidad.md)
 - [Plan de pruebas](calidad/plan-de-pruebas.md)
 - [Sistema de diseño](diseno/sistema-de-diseno.md)

@@ -32,6 +32,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0015](0015-optional-code-signing-smartscreen.md) | Firma de código opcional y SmartScreen | Aceptado | D-034 |
 | [0016](0016-sqlite-migrations-safe-mode.md) | SQLite, migraciones propias y modo seguro | Aceptado | D-040 |
 | [0017](0017-assets-service-sharp-orphan-purge.md) | Servicio de assets locales, sharp, miniatura y purga recuperable (#66) | Aceptado | D-022 |
+| [0018](0018-nsis-packaging-and-update-service.md) | Empaquetado NSIS, actualizador manual y preservación (#68) | Aceptado | D-041 |
 
 ## 3. Relación con otros documentos
 
@@ -72,3 +73,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-18 | Se añade el ADR 0016 (persistencia local, migraciones y modo seguro, #64). |
 | 2026-11-19 | Se añade el ADR 0017 (servicio de assets locales, sharp y purga recuperable, #66). |
 | 2026-11-19 | Se anota la implementación de M0-07 (#67) en los ADR 0012 y 0016: manifiesto v2, copias automáticas, retención 7/4/12/5 y restauración desde modo seguro. |
+| 2026-11-20 | Se añade el ADR 0018 (empaquetado NSIS, actualizador manual y preservación, #68) y se anota su implementación en los ADR 0003, 0013, 0015 y 0016. |
