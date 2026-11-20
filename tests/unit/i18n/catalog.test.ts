@@ -74,6 +74,8 @@ describe('catálogo de mensajes', () => {
           home: 'Home',
           worlds: 'Worlds',
           world: 'World',
+          entities: 'Entries',
+          entity: 'Entry',
           samples: 'Samples',
         },
       },

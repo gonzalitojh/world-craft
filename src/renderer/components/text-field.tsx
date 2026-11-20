@@ -16,7 +16,7 @@ export interface TextFieldProps {
   /** Identificador explícito; si falta se genera con `useId`. */
   readonly id?: string;
   readonly name?: string;
-  readonly type?: 'text' | 'search' | 'email' | 'url';
+  readonly type?: 'text' | 'search' | 'email' | 'url' | 'number' | 'date';
   readonly placeholder?: string;
   readonly autoComplete?: string;
   readonly autoFocus?: boolean;

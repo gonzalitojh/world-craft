@@ -325,9 +325,10 @@ Toda pantalla debe cubrir:
 
 Desde #65 existe una verificación automática de tokens y contraste
 (`tests/unit/design-tokens.test.ts`, 14 pruebas). Desde #70,
-`tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en Claro y Oscuro y
+`tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en Claro y Oscuro,
 `tests/e2e/shell.spec.ts` comprueba la ventana a 1024, 1280 y 1600 px sin scroll
-horizontal. La matriz visual real, las capturas y la auditoría de todas las
+horizontal y `tests/e2e/entities.spec.ts` hace lo mismo con la lista y la ficha,
+incluidos sus componentes y ambos temas. La matriz visual real, las capturas y la auditoría de todas las
 pantallas **siguen pendientes** de #93 y de la revisión local; no deben darse por
 hechos.
 

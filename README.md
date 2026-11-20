@@ -35,10 +35,11 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Base de datos | SQLite local con better-sqlite3 + Drizzle ORM | Implementado (#64) |
 | Migraciones | Runner propio sobre el journal de Drizzle y copia previa | Implementado (#64) |
 | Mundos | CRUD, dashboard y actividad sobre `worlds` y `activity_log` | Implementado (#72); portada con #115 |
-| Tipos de entidad | 18 tipos del sistema, tipos personalizados y campos tipados en JSON | Implementado (#73); UI de fichas con #74 |
-| Búsqueda | SQLite FTS5 | Disponible en el binario; esquema previsto (M1) |
-| Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); UI en M1 |
-| Editor | Tiptap 3 | Previsto (M3) |
+| Tipos de entidad | 18 tipos del sistema, tipos personalizados y campos tipados en JSON | Implementado (#73); gestión visual con #74 |
+| Fichas | CRUD, campos tipados, galería, etiquetas, favoritos, filtros y autoguardado | Implementado (#74); papelera con #77 |
+| Búsqueda | Filtros locales por nombre, alias, resumen y descripción; SQLite FTS5 | Disponible en el binario; búsqueda global con #76 |
+| Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); lista e importación de imágenes con #74 |
+| Editor | Tiptap 3 con formato básico y enlaces internos | Implementado (#74); manuscrito en M3 |
 | Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |
 | Instalador | electron-builder 26.18.0 + NSIS por usuario | Implementado (#68); release pública en M5 |
 | Actualizaciones | electron-updater 6.8.11 + GitHub Releases | Implementado (#68) como comprobación manual; auto-check y ajustes en M1, release real en M5 |
@@ -112,8 +113,8 @@ release pública llega con M5.
 
 - El renderer no accede a Node, al sistema de archivos ni a Electron. El preload
   congela y expone solo `window.worldCraft` (`appInfo`, `shell.openExternal`,
-  `updates`, `worlds` y `entityTypes`); todo canal IPC está en una allowlist y
-  valida la entrada con Zod.
+  `updates`, `worlds`, `entityTypes`, `entities`, `tags` y `assets`); todo canal
+  IPC está en una allowlist y valida la entrada con Zod.
 - Una única instancia: abrir la aplicación de nuevo enfoca la ventana existente y
   no toca la base, el IPC ni el actualizador.
 - `contextIsolation`, `sandbox`, `nodeIntegration: false`, `webSecurity: true` y

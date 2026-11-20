@@ -1,12 +1,13 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08, M1-01 y M1-02. La base local, las migraciones, el modo
+> 20/11/2026 con M0-08 y M1-01 a M1-03. La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
-> (#66), M0-07 (#67) y M0-08 (#68). Los mundos y su actividad, en M1-01 (#72), y
-> los tipos de entidad con sus plantillas, en M1-02 (#73). La interfaz de copias
+> (#66), M0-07 (#67) y M0-08 (#68). Los mundos y su actividad, en M1-01 (#72);
+> los tipos de entidad con sus plantillas, en M1-02 (#73); y las fichas con
+> imágenes, etiquetas y galería, en M1-03 (#74). La interfaz de copias
 > de Ajustes y la papelera visible llegan en M1 y la release pública con
 > actualización real, en M5. Las secciones distinguen lo implementado de lo
 > previsto.
@@ -130,14 +131,15 @@ no se crea `config.json`.
 - `PRAGMA integrity_check` al arrancar, antes de activar WAL y después de
   migrar; si falla, modo seguro sin escritura.
 - `PRAGMA user_version` es el **número de migraciones aplicadas** (con
-  `0000_init`, `0001_assets`, `0002_worlds` y `0003_entity_types`, vale 4), no el
-  prefijo de la etiqueta. La tabla `schema_migrations` conserva el detalle y se
-  contrasta con él.
+  `0000_init`, `0001_assets`, `0002_worlds`, `0003_entity_types` y
+  `0004_entities`, vale 5), no el prefijo de la etiqueta. La tabla
+  `schema_migrations` conserva el detalle y se contrasta con él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
 - IDs UUIDv7 generados en el proceso principal (`src/main/db/ids.ts`) con
-  contador para mantener el orden dentro del mismo milisegundo. En M1-02 existen
-  las tablas del sistema, `assets`, `worlds`, `activity_log` y `entity_types`; el
-  resto de tablas de contenido llega con sus issues.
+  contador para mantener el orden dentro del mismo milisegundo. En M1-03 existen
+  las tablas del sistema, `assets`, `worlds`, `activity_log`, `entity_types`,
+  `entities`, `tags`, `entity_tags` y `entity_gallery`; el resto de tablas de
+  contenido llega con sus issues.
 
 ### 3.2 Acceso
 
@@ -170,8 +172,9 @@ lo registrará.
 
 **Implementado en M0-06 (#66).** El servicio es puro en `src/main/assets/`; la
 composición con Electron está en `composition.ts` y el protocolo en
-`protocol.ts`. En M0 no hay IPC ni interfaz: la subida y la galería llegan con
-las fichas (M1).
+`protocol.ts`. Desde M1-03 (#74) hay IPC (`assets:list` y `assets:import`) y la
+galería de fichas importa con el diálogo nativo y muestra miniaturas; la purga
+de huérfanos sigue sin canal ni interfaz.
 
 ### 4.1 Archivos y metadatos
 
@@ -252,7 +255,8 @@ las fichas (M1).
   libvips LGPL-3.0-or-later) está externalizado en `electron.vite.config.ts`
   junto a `better-sqlite3` y verificado en Node y Electron con
   `pnpm verify:native`. `THIRD-PARTY-NOTICES.md` recoge las licencias; #68
-  desempaquetó sharp del asar e incluyó los 5 textos completos en `licenses/`.
+  desempaquetó sharp del asar e incluyó los textos completos en `licenses/`
+  (seis desde #74, con Tiptap/ProseMirror).
 - Residuales aceptados y documentados en el
   [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md): ventanas TOCTOU de
   escritura temporal y de lectura, raíces creadas antes de validar su
@@ -281,8 +285,8 @@ las fichas (M1).
   la deuda del [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md).
 - La versión del esquema se guarda en `PRAGMA user_version` como **número de
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
-  SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds` y
-  `0003_entity_types`, vale 4.
+  SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds`,
+  `0003_entity_types` y `0004_entities`, vale 5.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -297,6 +301,12 @@ las fichas (M1).
   `0002_worlds` porque `entity_types.world_id` referencia `worlds`. Conserva
   mundos y actividad; la prueba de preservación migra una base en `0002` con
   datos.
+- `0004_entities` es aditiva: crea `entities`, `tags`, `entity_tags` y
+  `entity_gallery`, conserva mundos, actividad, tipos y assets y deja
+  `user_version` 5. Su rollback está en
+  `drizzle/rollback/0004_entities.down.sql` y debe ejecutarse antes del de
+  `0003_entity_types` porque las fichas referencian los tipos. La prueba de
+  preservación migra una base en `0003` con un mundo y un tipo personalizado.
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o

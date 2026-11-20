@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { createUnavailableAssetsService } from '@/main/assets/service';
+import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { EntityTypeProtectedError } from '@/main/entity-types/errors';
 import type { EntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
@@ -51,6 +53,9 @@ function createRoute(service: EntityTypesService) {
       }),
       worlds: createUnavailableWorldsService(),
       entityTypes: service,
+      entities: createUnavailableEntitiesService(),
+      assets: createUnavailableAssetsService(),
+      pickImages: async () => [],
     }),
   );
 }

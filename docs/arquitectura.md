@@ -15,10 +15,11 @@ En la fase actual el repositorio contiene el **scaffold de escritorio** (#62), e
 shell de escritorio** (#65), el **servicio de assets locales con
 `wc-asset://`** (#66), las **copias de seguridad con restauración desde modo
 seguro** (#67), el **instalador NSIS con actualizador manual** (#68), los
-**mundos con CRUD, dashboard y actividad** (#72) y los **tipos de entidad con
-catálogo y campos personalizados** (#73): ventana Electron segura, preload
-nominativo, renderer React con tokens, componentes base y navegación, base
-SQLite con migraciones, comprobación de integridad y modo
+**mundos con CRUD, dashboard y actividad** (#72), los **tipos de entidad con
+catálogo y campos personalizados** (#73) y las **fichas con imágenes,
+etiquetas, favoritos y editor enriquecido** (#74): ventana Electron segura,
+preload nominativo, renderer React con tokens, componentes base y navegación,
+base SQLite con migraciones, comprobación de integridad y modo
 seguro, servicio de imágenes con protocolo propio, miniaturas y purga
 recuperable, copias automáticas con retención, verificación y restauración,
 instalación por usuario sin administrador, actualizaciones manuales, cancelables
@@ -50,13 +51,14 @@ distinguen lo implementado de lo previsto.
 | SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 disponible en el binario, esquema en M1 | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | Instalador NSIS, actualizaciones y preservación de datos | Implementado (M0-08, #68): instalador local 0.1.0 y actualizador manual; release pública y actualización real en M5 | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
-| Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; sin IPC ni UI en M0 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
+| Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base y shell (#65); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
-| Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
+| Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74); manuscrito y exportadores en M3 | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; la UI llega con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
-| Pruebas y calidad | Implementado: 339 unitarias (4 omitidas), 19 de componentes y 108 de integración (1 omitida) (#62-#73); E2E de shell, ventana, temas, axe y mundos (#70, #72) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; gestión visual con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
+| Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
+| Pruebas y calidad | Implementado: 352 unitarias (4 omitidas), 22 de componentes y 118 de integración (1 omitida) (#62-#74); E2E de shell, ventana, temas, axe, mundos y fichas (#70, #72, #74) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -69,8 +71,8 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, copias de seguridad con restauración y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
-| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos y tipos de entidad; nunca un `invoke` genérico. | API de Electron limitada. |
+| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, servicio de fichas, etiquetas y galería, servicio de assets para el IPC, copias de seguridad con restauración y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos, tipos de entidad, fichas, etiquetas y assets; nunca un `invoke` genérico. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
@@ -87,24 +89,25 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/updates/` | Máquina de estados del actualizador sin Electron, adaptador de electron-updater, allowlist de red y saneado de cabeceras, log JSONL y composición. | Node, electron-updater, `builder-util-runtime` |
 | `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds` y `entityTypes`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos y su dashboard están implementados en #72. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `text-area-field`, `select-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68 y tarjetas, diálogos de mundo y lista de actividad de #72; `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags` y `assets`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
+| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72) y las fichas con imágenes, etiquetas y editor (#74) están implementados. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `text-area-field`, `select-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, y componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
-| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
 | `src/renderer/i18n/` | Composición del idioma: `create.ts` (`createI18n`), `provider.tsx` (`I18nProvider`, `useI18n`, `useMessages`) y `formats.ts` (fechas, números, listas y plurales con `Intl`). | Mensajes, `src/shared/` |
 | `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
-| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`) y contrato de tipos de entidad (`entity-types.ts`) con guardas estructurales. | - |
-| `src/shared/entity-types/` | Catálogo del sistema en código y validación compartida con Zod de plantillas y valores de campos, reutilizable por main y por la futura UI de fichas. | Zod |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación), de los tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC) y de instancia única. | `src/` |
-| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; CRUD, aislamiento y actividad de mundos; CRUD, protección, aislamiento, duplicación y transferencia de tipos de entidad; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
-| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados, formularios y tarjetas de mundo, y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
-| `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas, axe, CRUD de mundos, teclado y textos largos con `userData` temporal e aislado. | `src/` |
+| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`), contrato de tipos de entidad (`entity-types.ts`), contrato de fichas y etiquetas (`entities.ts`) y contrato de assets (`assets.ts`) con guardas estructurales. | - |
+| `src/shared/entity-types/` | Catálogo del sistema en código y validación compartida con Zod de plantillas y valores de campos, reutilizable por main y por la UI de fichas. | Zod |
+| `src/shared/entities/` | Validación cerrada de la descripción de ProseMirror, extracción de texto plano y patrón UUIDv7 compartido. | Zod |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación), de los tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC), de las fichas (descripción, esquemas IPC, handlers y tarjetas) y de instancia única. | `src/` |
+| `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; CRUD, aislamiento y actividad de mundos; CRUD, protección, aislamiento, duplicación y transferencia de tipos de entidad; CRUD, validación, referencias, etiquetas, favoritos, galería, filtros y aislamiento de fichas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
+| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados, formularios y tarjetas de mundo y de ficha, diálogos de creación y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
+| `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas, axe, CRUD de mundos, CRUD y filtros de fichas, teclado y textos largos con `userData` temporal y aislado. | `src/` |
 | `resources/` | `icon.ico`, `icon.png`, `installer.nsh` y `licenses/` generados o versionados para electron-builder. | — |
 | `scripts/` | Verificación de build, nativo, paquete, checksums, iconos, licencias, instalación manual y limpieza. | Node, PowerShell |
 | `release/` | Salida de electron-builder (instalador, blockmap, `latest.yml`, `SHA256SUMS`); ignorada por git. | — |
@@ -140,8 +143,9 @@ Reglas de dependencia:
   `ready-to-show` y con fondo acorde a `nativeTheme` para evitar destellos. No
   recuerda tamaño ni posición: esa persistencia sigue prevista.
 - **Preload.** `contextBridge` publica un objeto congelado con `appInfo` (nombre y
-  versión); desde #63 añade también `shell.openExternal` (sección 2.2). No expone
-  `ipcRenderer`, `require` ni un `invoke` genérico.
+  versión); desde #63 añade `shell.openExternal` y desde #68-#74 el resto de APIs
+  nominativas (sección 2.2). No expone `ipcRenderer`, `require` ni un `invoke`
+  genérico.
 - **CSP.** La política de producción se inyecta como `<meta>` antes de los
   scripts; la de desarrollo solo añade inline y loopback para Vite y su HMR.
 - **Guards.** Se bloquean navegación, redirecciones, navegación de subframes,
@@ -155,21 +159,20 @@ Reglas de dependencia:
   escritura en `userData`, SQLite y las migraciones se añadieron en #64
   (sección 2.3).
 
-### 2.2 Estado implementado del IPC (#63, #68 y #72)
+### 2.2 Estado implementado del IPC (#63, #68, #72, #73 y #74)
 
 - **Contrato compartido.** `src/shared/contracts/` contiene la allowlist
   `IPC_CHANNELS` (hoy `shell:openExternal`, los cinco canales de actualizaciones,
-  los ocho de mundos y los cinco de tipos de entidad), el resultado discriminado
-  `IpcResult` con los códigos
-  `INVALID_INPUT`, `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y
-  `createWorldCraftApi({ invoke })`,
-  que construye la API congelada del preload. Son módulos puros: no importan
-  Electron, Node ni Zod.
+  los ocho de mundos, los cinco de tipos de entidad, los seis de fichas, los dos
+  de etiquetas y los dos de assets), el resultado discriminado `IpcResult` con
+  los códigos `INVALID_INPUT`, `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y
+  `UNTRUSTED_SENDER`, y `createWorldCraftApi({ invoke })`, que construye la API
+  congelada del preload. Son módulos puros: no importan Electron, Node ni Zod.
 - **Preload nominativo.** Publica `appInfo`, `shell.openExternal(url)`, la API
-  `updates` (desde #68), la API `worlds` (desde #72) y la API `entityTypes`
-  (desde #73). No expone `ipcRenderer`,
-  `require` ni un `invoke` genérico; el renderer solo puede llamar a las
-  funciones declaradas en el contrato.
+  `updates` (desde #68), la API `worlds` (desde #72), la API `entityTypes`
+  (desde #73) y las APIs `entities`, `tags` y `assets` (desde #74). No expone
+  `ipcRenderer`, `require` ni un `invoke` genérico; el renderer solo puede
+  llamar a las funciones declaradas en el contrato.
 - **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
   canal de la allowlist, comprueba el remitente (`file:` empaquetado o loopback
   de desarrollo), valida la entrada con Zod (`zod@^4.6.7`, declarado en
@@ -284,10 +287,12 @@ Reglas de dependencia:
   `pnpm verify:native` y sus licencias están en `THIRD-PARTY-NOTICES.md`. #68
   desempaquetó sharp del asar e incluyó los textos completos en `licenses/`
   (sección 2.7).
-- **Sin IPC ni UI.** No hay canal nuevo: la subida y la galería llegan con las
-  fichas (M1). Los residuales de seguridad (TOCTOU, raíces no validadas antes de
-  crear, `backups/orphans` sin comprobar y symlinks de archivo omitidos en
-  Windows) están en el [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md).
+- **IPC y UI desde #74.** `assets:list` e `assets:import` exponen solo metadatos
+  y usan un diálogo nativo; la galería de la ficha muestra miniaturas
+  `wc-asset://thumb/<id>`. La purga de huérfanos sigue sin canal ni UI. Los
+  residuales de seguridad (TOCTOU, raíces no validadas antes de crear,
+  `backups/orphans` sin comprobar y symlinks de archivo omitidos en Windows)
+  están en el [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md).
 
 ### 2.6 Estado implementado de copias y restauración (#67)
 
@@ -333,7 +338,7 @@ Reglas de dependencia:
   salida en `release/` y `--publish never` en local. `afterPack` escribe
   `app-update.yml` también en las builds `--dir` y poda los binarios nativos que
   no son win32-x64. El icono es un ICO de 7 tamaños; `licenses:sync` copia los
-  5 textos completos.
+  6 textos completos.
 - **Paquete.** `files` incluye `out/` y `package.json`; `extraFiles` añade
   `LICENSE`, `THIRD-PARTY-NOTICES.md` y `licenses/`. `asarUnpack` cubre
   `better-sqlite3`, `sharp`, `@img` y `*.node`; `npmRebuild` está desactivado.
@@ -421,6 +426,40 @@ Reglas de dependencia:
   dominio y todavía no tienen canal IPC ni UI; #78 los integrará en la
   exportación e importación del mundo.
 
+### 2.10 Estado implementado de las fichas (#74)
+
+- **Datos.** La migración `0004_entities` crea `entities`, `tags`, `entity_tags`
+  y `entity_gallery` con FKs a `worlds`, `entity_types` y `assets`, índices por
+  mundo y `CHECK` de estado, favorito, slug, JSON y posición. `user_version`
+  pasa a 5 y el rollback de referencia elimina solo esas tablas.
+- **Descripción.** `src/shared/entities/description.ts` valida un documento de
+  ProseMirror con una lista cerrada de nodos y marcas, calcula el texto plano y
+  rechaza HTML, nodos desconocidos y enlaces que no sean
+  `wc-entity://<uuid>`. Tiptap 3 (MIT, ADR 0007) edita ese documento en el
+  renderer; nunca se inyecta HTML.
+- **Dominio.** `src/main/entities/` no importa Electron: normaliza nombre, alias,
+  resumen y estado; genera slugs únicos por mundo; valida la plantilla y los
+  valores con la misma función de #73; comprueba referencias del mismo mundo y
+  tipo; valida etiquetas y assets del mismo mundo; aplica borrado lógico y
+  agrupa ficha, etiquetas y galería en una transacción. Los tipos con fichas
+  vivas no se borran desde el dominio de tipos.
+- **Assets.** `src/main/assets/service.ts` lista imágenes por mundo e importa las
+  rutas elegidas por un diálogo nativo con el servicio de #66. El renderer solo
+  recibe metadatos y usa `wc-asset://thumb/<id>` para miniaturas y
+  `wc-asset://asset/<id>` para la imagen principal.
+- **IPC.** Canales `entities:list`, `get`, `create`, `update`, `setFavorite` y
+  `remove`; `tags:list` y `create`; y `assets:list` e `import`, todos con Zod
+  estricto, guardas en el preload y servicio no disponible en modo seguro.
+- **UI.** La página de fichas incluye búsqueda, filtros por tipo, etiqueta,
+  favorito y estado, tarjetas con miniatura y etiquetas, y creación rápida. La
+  ficha incluye autoguardado con debounce, editor Tiptap, atributos dinámicos,
+  imagen principal, galería, etiquetas, favorito y borrado lógico. El diálogo de
+  tipos permite crear, duplicar, editar y borrar tipos personalizados con un
+  constructor de campos.
+- **Pendiente.** La papelera visible y la restauración llegan con #77; la
+  búsqueda global con #76; la exportación completa con #78. El tipo de una ficha
+  no cambia después de crearla.
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -459,9 +498,11 @@ que ya tenía el lock.
 Los canales reales son `shell:openExternal`, los cinco de actualizaciones
 (`updates:getState`, `check`, `cancel`, `download` e `install`), los ocho de
 mundos (`worlds:list`, `get`, `create`, `update`, `duplicate`, `setArchived`,
-`remove` y `listActivity`) y los cinco de tipos de entidad (`entityTypes:list`,
-`create`, `update`, `duplicate` y `remove`). Una llamada a `shell:openExternal`
-recorre esta ruta:
+`remove` y `listActivity`), los cinco de tipos de entidad (`entityTypes:list`,
+`create`, `update`, `duplicate` y `remove`), los seis de fichas
+(`entities:list`, `get`, `create`, `update`, `setFavorite` y `remove`), los dos
+de etiquetas (`tags:list` y `create`) y los dos de assets (`assets:list` e
+`import`). Una llamada a `shell:openExternal` recorre esta ruta:
 
 ```text
 Llamada IPC (implementado, #63)
@@ -499,14 +540,14 @@ Carga de imagen
       → Response 200 image/webp con nosniff, Content-Length, caché y CSP
     → 400/403/404/413/415/500 con cuerpo genérico y log sin rutas
 
-Importación (servicio, sin IPC en M0)
+Importación (servicio; IPC y UI desde #74)
   importAsset({ worldId, kind: 'image', source })
     → límite 25 MB → magic bytes → límites 8192 px / 24 Mpx
     → EXIF + sRGB + WebP 90 + miniatura 320 px
     → assets/.tmp/<assetId>/ → rename a worlds/<worldId>/
     → INSERT en assets → compensación si falla
 
-Purga (servicio, sin IPC en M0)
+Purga (servicio; sin IPC ni UI todavía)
   purgeOrphans({ confirmation: 'purge-orphans' })
     → plan de solo lectura → revalidar → copia en backups/orphans/
     → SHA-256 + manifiesto → borrar solo entonces
@@ -515,8 +556,8 @@ Purga (servicio, sin IPC en M0)
 Cada canal nuevo se declara en `src/shared/contracts/channels.ts`, añade su
 esquema Zod y su handler en `src/main/ipc/` y su función nominativa en el
 contrato del preload. Los errores nunca cruzan IPC como excepciones crudas: se
-convierten en `{ ok: false, error: { code } }`. La importación y la purga por
-IPC (`assets:import`, `assets:list` y `assets:purgeOrphans`) se definirán en M1.
+convierten en `{ ok: false, error: { code } }`. `assets:list` e `assets:import`
+están implementados desde #74; `assets:purgeOrphans` sigue sin IPC ni UI.
 
 ### 3.4 Flujos de dominio
 
@@ -536,16 +577,28 @@ Mutación de mundos
     → el renderer refresca la biblioteca y la actividad
 ```
 
-Los flujos de fichas, relaciones, mapas, manuscrito y juego son el **objetivo**
-una vez existan sus tablas e issues; todavía no tienen canales ni consultas.
+Lectura de fichas (implementado, #74):
 
 ```text
-Lectura de fichas (previsto)
-  renderer → window.worldCraft.entities.list({ worldId })
-    → preload: función nominativa → ipcRenderer.invoke('entities:list', payload)
-    → main: remitente → allowlist → Zod → consulta Drizzle/SQLite → IpcResult
-    → renderer: pinta datos o error tipado
+renderer → window.worldCraft.entities.list({ worldId, filter })
+  → preload: función nominativa → ipcRenderer.invoke('entities:list', payload)
+  → main: remitente → allowlist → Zod → Drizzle (filtro por world_id) → IpcResult
+  → preload: guarda estructural → renderer: tarjetas o error tipado
+```
 
+Importación de una imagen (implementado, #74):
+
+```text
+renderer → window.worldCraft.assets.import({ worldId })
+  → main: Zod → dialog.showOpenDialog → importAsset (WebP + miniatura)
+  → main: fila en assets → IpcResult con id, tamaño y alt (sin rutas)
+  → renderer: añade el id a la galería y muestra wc-asset://thumb/<id>
+```
+
+Los flujos de relaciones, mapas, manuscrito y juego son el **objetivo** una vez
+existan sus tablas e issues; todavía no tienen canales ni consultas.
+
+```text
 Exportación (previsto)
   renderer → window.worldCraft.backup.exportWorld(worldId)
     → main: consulta → ZIP temporal → dialog.save → IpcResult
@@ -567,8 +620,9 @@ las copias manuales siguen previstas para M1.
 - **Migraciones** en `drizzle/`: `0000_init` crea `schema_migrations` y
   `app_settings`; `0001_assets` crea `assets`; `0002_worlds` crea `worlds` y
   `activity_log`; `0003_entity_types` crea `entity_types` y siembra los tipos
-  del sistema. `PRAGMA user_version` guarda el número de migraciones aplicadas
-  (hoy 4).
+  del sistema; `0004_entities` crea `entities`, `tags`, `entity_tags` y
+  `entity_gallery`. `PRAGMA user_version` guarda el número de migraciones
+  aplicadas (hoy 5).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
   `monthly` (12), `pre-migration` (5) y `pre-restore` (sin poda). Cada copia
   lleva `manifest.json` v2, SHA-256 e integridad; solo contiene SQLite, no
@@ -592,8 +646,9 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   `nodeIntegration: false`, `webSecurity: true` y `webviewTag: false`; además
   `app.enableSandbox()` antes de crear ventanas.
 - **Preload mínimo.** Implementado: publica un objeto congelado con `appInfo` y
-  `shell.openExternal`; nunca `ipcRenderer`, `require`, rutas del sistema ni un
-  `invoke` genérico.
+  las APIs nominativas de actualizaciones, mundos, tipos, fichas, etiquetas y
+  assets; nunca `ipcRenderer`, `require`, rutas del sistema ni un `invoke`
+  genérico.
 - **CSP estricta.** Implementada: producción sin `unsafe-eval`, `unsafe-inline`
   ni orígenes remotos, inyectada antes de los scripts; desarrollo solo permite
   inline y loopback para Vite. `img-src` admite `wc-asset:` desde #66.

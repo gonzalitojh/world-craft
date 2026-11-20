@@ -141,3 +141,19 @@ aíslan por mundo y cómo se transfieren con la exportación futura.
 
 - Referencias: ADR 0020, #74, #77, #78, `docs/base-de-datos/esquema.md`,
   `docs/base-de-datos/migraciones.md` y `docs/calidad/plan-de-pruebas.md`.
+
+## 2026-11-20 — Fichas, galería, etiquetas y editor enriquecido (M1-03)
+
+**Contexto.** La issue #74 convierte los tipos de #73 en la pantalla central de
+la enciclopedia. Había que decidir el modelo de ficha y galería, el formato de
+la descripción rica, cómo exponer las imágenes sin rutas, cómo filtrar etiquetas
+y favoritos por mundo, cómo autoguardar sin perder contenido y cómo gestionar
+los tipos personalizados desde la interfaz.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-044 | Fichas, galería, etiquetas y editor | Migración `0004_entities` aditiva con `entities`, `tags`, `entity_tags` y `entity_gallery`; ficha con tipo estable, slug único por mundo y borrado lógico; descripción como JSON de ProseMirror con lista cerrada de nodos y `description_text` para búsqueda, sin HTML; Tiptap 3 MIT (ADR 0007) limitado a formato básico y enlaces internos `wc-entity://<uuid>`; galería relacional ordenada y imagen principal por `assets`; `assets:list` y `assets:import` con diálogo nativo, WebP y miniaturas `wc-asset://thumb`; etiquetas de color por mundo con creación idempotente; filtros por tipo, etiqueta, favorito, estado y búsqueda en el proceso principal; autoguardado con debounce de 700 ms y guardado explícito; gestión visual de tipos personalizados con bloqueo del borrado y de la retirada o cambio de tipo de un campo si tienen fichas; creación rápida desde el shell. | La ficha completa se guarda y se recupera sin red; las imágenes no duplican archivos ni exponen rutas; el color no es el único indicador; los tipos del sistema solo se duplican; el tipo de una ficha no cambia tras crearla; la papelera y la restauración llegan con #77 y la búsqueda global con #76; la galería añade una tabla no prevista en el esquema objetivo, documentada con rollback. ADR 0021. |
+
+- Referencias: ADR 0021, ADR 0007, ADR 0017, ADR 0020, #76, #77, #78,
+  `docs/manual-de-usuario.md`, `docs/base-de-datos/esquema.md` y
+  `docs/calidad/plan-de-pruebas.md`.

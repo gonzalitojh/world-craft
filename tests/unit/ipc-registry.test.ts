@@ -2,6 +2,8 @@ import type { IpcMain } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
+import { createUnavailableAssetsService } from '@/main/assets/service';
+import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
 import {
@@ -22,6 +24,9 @@ const createHandlers = () =>
     }),
     worlds: createUnavailableWorldsService(),
     entityTypes: createUnavailableEntityTypesService(),
+    entities: createUnavailableEntitiesService(),
+    assets: createUnavailableAssetsService(),
+    pickImages: async () => [],
   });
 
 type RegisteredListener = (
@@ -204,6 +209,9 @@ describe('registerIpcHandlers', () => {
         }),
         worlds: createUnavailableWorldsService(),
         entityTypes: createUnavailableEntityTypesService(),
+        entities: createUnavailableEntitiesService(),
+        assets: createUnavailableAssetsService(),
+        pickImages: async () => [],
       }),
     );
 

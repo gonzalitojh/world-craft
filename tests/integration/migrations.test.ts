@@ -524,6 +524,10 @@ describe('migraciones', () => {
       );
       closeDatabase(first.client.sqlite);
 
+      const rollbackEntitiesSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0004_entities.down.sql'),
+        'utf8',
+      );
       const rollbackEntityTypesSql = await readFile(
         join(
           REPOSITORY_MIGRATIONS_DIR,
@@ -547,6 +551,17 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
+        database.exec(rollbackEntitiesSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(4);
+        expect(
+          (
+            database
+              .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+              .all() as { name: string }[]
+          ).map((row) => row.name),
+        ).not.toContain('entities');
+
         database.exec(rollbackEntityTypesSql);
 
         expect(database.pragma('user_version', { simple: true })).toBe(3);
@@ -628,12 +643,12 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(4);
-        expect(upgraded.appliedMigrations).toBe(3);
+        expect(upgraded.schemaVersion).toBe(5);
+        expect(upgraded.appliedMigrations).toBe(4);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite.pragma('user_version', { simple: true }),
-        ).toBe(4);
+        ).toBe(5);
         expect(
           upgraded.client.sqlite
             .prepare('SELECT value FROM app_settings WHERE key = ?')
@@ -643,7 +658,7 @@ describe('migraciones', () => {
           upgraded.client.sqlite
             .prepare('SELECT count(*) AS total FROM schema_migrations')
             .get(),
-        ).toEqual({ total: 4 });
+        ).toEqual({ total: 5 });
 
         expect(
           upgraded.client.sqlite
@@ -716,7 +731,7 @@ describe('migraciones', () => {
     }
   });
 
-  it('aplica 0003 sobre mundos y actividad existentes sin perder datos', async () => {
+  it('aplica 0003 y 0004 sobre mundos y actividad existentes sin perder datos', async () => {
     const test = await createTestDatabase();
     const migrationsDir = join(test.rootDir, 'migrations');
 
@@ -783,8 +798,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(4);
-        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.schemaVersion).toBe(5);
+        expect(upgraded.appliedMigrations).toBe(2);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -803,6 +818,123 @@ describe('migraciones', () => {
             )
             .get(),
         ).toEqual({ total: 18 });
+      } finally {
+        closeDatabase(upgraded.client.sqlite);
+      }
+    } finally {
+      await test.cleanup();
+    }
+  });
+
+  it('aplica 0004 sobre mundos y tipos existentes sin perder datos', async () => {
+    const test = await createTestDatabase();
+    const migrationsDir = join(test.rootDir, 'migrations');
+
+    try {
+      const assetsSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0001_assets.sql'),
+        'utf8',
+      );
+      const worldsSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0002_worlds.sql'),
+        'utf8',
+      );
+      const entityTypesSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, '0003_entity_types.sql'),
+        'utf8',
+      );
+
+      await createMigrationFixture(migrationsDir, [
+        { tag: '0000_init', sql: INIT_MIGRATION_SQL },
+        { tag: '0001_assets', sql: assetsSql },
+        { tag: '0002_worlds', sql: worldsSql },
+        { tag: '0003_entity_types', sql: entityTypesSql },
+      ]);
+
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir,
+        }),
+      );
+
+      first.client.sqlite
+        .prepare(
+          `INSERT INTO worlds (id, name, slug, genres, status, language, settings, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000001',
+          'Las Mareas Grises',
+          'las-mareas-grises',
+          '["Fantasía"]',
+          'active',
+          'es',
+          '{}',
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      first.client.sqlite
+        .prepare(
+          `INSERT INTO entity_types (id, world_id, key, name, icon, color, fields, is_system, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000002',
+          '01900000-0000-7000-8000-000000000001',
+          'reliquia',
+          'Reliquia',
+          'gem',
+          'ochre',
+          '[{"key":"poder","label":"Poder","type":"text","required":false}]',
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      first.client.sqlite
+        .prepare(
+          'INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)',
+        )
+        .run('locale', '"es-ES"', 1_760_000_000_000);
+      closeDatabase(first.client.sqlite);
+
+      const upgraded = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+
+      try {
+        expect(upgraded.schemaVersion).toBe(5);
+        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.backup).not.toBeNull();
+        expect(
+          upgraded.client.sqlite
+            .prepare('SELECT name FROM worlds WHERE id = ?')
+            .get('01900000-0000-7000-8000-000000000001'),
+        ).toEqual({ name: 'Las Mareas Grises' });
+        expect(
+          upgraded.client.sqlite
+            .prepare('SELECT name FROM entity_types WHERE key = ?')
+            .get('reliquia'),
+        ).toEqual({ name: 'Reliquia' });
+        expect(
+          upgraded.client.sqlite
+            .prepare('SELECT value FROM app_settings WHERE key = ?')
+            .get('locale'),
+        ).toEqual({ value: '"es-ES"' });
+        expect(
+          upgraded.client.sqlite
+            .prepare(
+              "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('entities', 'tags', 'entity_tags', 'entity_gallery') ORDER BY name",
+            )
+            .all(),
+        ).toEqual([
+          { name: 'entities' },
+          { name: 'entity_gallery' },
+          { name: 'entity_tags' },
+          { name: 'tags' },
+        ]);
       } finally {
         closeDatabase(upgraded.client.sqlite);
       }
@@ -843,6 +975,10 @@ describe('migraciones', () => {
         );
       closeDatabase(first.client.sqlite);
 
+      const rollbackEntitiesSql = await readFile(
+        join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0004_entities.down.sql'),
+        'utf8',
+      );
       const rollbackEntityTypesSql = await readFile(
         join(
           REPOSITORY_MIGRATIONS_DIR,
@@ -862,8 +998,10 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
-        // El rollback de 0001 solo es válido después de deshacer 0003 y 0002,
-        // porque `entity_types` y `worlds` referencian tablas anteriores.
+        // El rollback de 0001 solo es válido después de deshacer 0004, 0003 y
+        // 0002, porque las fichas, `entity_types` y `worlds` referencian
+        // tablas anteriores.
+        database.exec(rollbackEntitiesSql);
         database.exec(rollbackEntityTypesSql);
         database.exec(rollbackWorldsSql);
         database.exec(rollbackSql);
@@ -890,8 +1028,8 @@ describe('migraciones', () => {
         closeDatabase(database);
       }
 
-      // Al reabrir, las migraciones 0001, 0002 y 0003 se vuelven a aplicar con
-      // copia previa.
+      // Al reabrir, las migraciones 0001, 0002, 0003 y 0004 se vuelven a
+      // aplicar con copia previa.
       const reapplied = expectReady(
         await initializeDatabase({
           userDataDir: test.userDataDir,
@@ -900,8 +1038,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(reapplied.schemaVersion).toBe(4);
-        expect(reapplied.appliedMigrations).toBe(3);
+        expect(reapplied.schemaVersion).toBe(5);
+        expect(reapplied.appliedMigrations).toBe(4);
         expect(reapplied.backup).not.toBeNull();
       } finally {
         closeDatabase(reapplied.client.sqlite);

@@ -36,10 +36,17 @@ const REQUIRED_CSP_DIRECTIVES = [
 /**
  * `http://www.w3.org/...` son identificadores de espacio de nombres XML que
  * React incluye como cadenas; `https://react.dev/errors/` es el prefijo de los
- * enlaces de documentación de los mensajes de error de React. Ninguno se
- * solicita por red.
+ * enlaces de documentación de los mensajes de error de React;
+ * `json-schema.org` son los identificadores de los dialectos de JSON Schema que
+ * usa el validador de ProseMirror; y `prosemirror.net` es un enlace de
+ * documentación dentro de un mensaje de error. Ninguno se solicita por red.
  */
-const ALLOWED_REMOTE_HOSTS = new Set(['www.w3.org', 'react.dev']);
+const ALLOWED_REMOTE_HOSTS = new Set([
+  'www.w3.org',
+  'react.dev',
+  'json-schema.org',
+  'prosemirror.net',
+]);
 
 /** El HTML generado escapa las comillas simples de la CSP como `&#39;`. */
 function decodeHtmlEntities(text) {

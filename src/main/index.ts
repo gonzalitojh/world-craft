@@ -15,6 +15,17 @@ import {
   registerLocalAssetProtocol,
   registerLocalAssetScheme,
 } from './assets/composition';
+import { pickImageFiles } from './assets/dialog';
+import {
+  createAssetsLogger,
+  createAssetsService,
+  createUnavailableAssetsService,
+} from './assets/service';
+import { createAssetRepository } from './assets/store';
+import {
+  createEntitiesService,
+  createUnavailableEntitiesService,
+} from './entities/service';
 import {
   createEntityTypesService,
   createUnavailableEntityTypesService,
@@ -141,6 +152,21 @@ if (!hasSingleInstanceLock) {
               database: database.orm,
               sqlite: database.sqlite,
             });
+      const entities =
+        database === null
+          ? createUnavailableEntitiesService()
+          : createEntitiesService({
+              database: database.orm,
+              sqlite: database.sqlite,
+            });
+      const assets =
+        database === null
+          ? createUnavailableAssetsService()
+          : createAssetsService({
+              userDataDir: app.getPath('userData'),
+              repository: createAssetRepository(database.orm),
+              logger: createAssetsLogger(app.getPath('userData')),
+            });
       const worlds =
         database === null
           ? createUnavailableWorldsService()
@@ -158,6 +184,9 @@ if (!hasSingleInstanceLock) {
           updates: updatesService,
           worlds,
           entityTypes,
+          entities,
+          assets,
+          pickImages: pickImageFiles,
         }),
       );
 

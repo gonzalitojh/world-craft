@@ -9,6 +9,10 @@ import type { DatabaseErrorCode } from '../db/errors';
 import { DEFAULT_LOCALE, toIntlLocale } from '../../shared/contracts/locale';
 
 export interface MainMessages {
+  readonly assetsPicker: {
+    readonly title: string;
+    readonly filterName: string;
+  };
   readonly safeMode: {
     readonly buttons: {
       readonly openBackups: string;
@@ -84,6 +88,10 @@ export function formatBackupDate(createdAt: string): string {
 }
 
 export const messages: MainMessages = {
+  assetsPicker: {
+    title: 'Elegir imágenes',
+    filterName: 'Imágenes',
+  },
   safeMode: {
     buttons: {
       openBackups: 'Abrir carpeta de copias',

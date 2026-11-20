@@ -1,12 +1,13 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con la issue M1-02 (#73). La migración `0000_init` y las tablas
+> 20/11/2026 con la issue M1-03 (#74). La migración `0000_init` y las tablas
 > `schema_migrations` y `app_settings` están implementadas en M0-04 (#64); la
 > tabla `assets` en `0001_assets` (M0-06, #66); `worlds` y `activity_log` en
-> `0002_worlds` (M1-01, #72); y `entity_types` en `0003_entity_types` (M1-02,
-> #73). El resto de tablas de contenido y FTS5 llegan en M1 con sus propias
-> migraciones; hasta entonces figuran como previstas.
+> `0002_worlds` (M1-01, #72); `entity_types` en `0003_entity_types` (M1-02,
+> #73); y `entities`, `tags`, `entity_tags` y `entity_gallery` en
+> `0004_entities` (M1-03, #74). El resto de tablas de contenido y FTS5 llegan
+> en M1 con sus propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -31,14 +32,16 @@
 ## 2. Diagrama
 
 Modelo objetivo (implementadas hoy `schema_migrations`, `app_settings`,
-`assets`, `worlds`, `activity_log` y `entity_types`):
+`assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`,
+`entity_tags` y `entity_gallery`):
 
 ```text
 worlds
   ├─< entity_types
-  ├─< entities >─< relations >─ relation_types
-  │      ├─< entity_tags >─ tags
-  │      └─< assets                 (referencia desde entidades en M1)
+  ├─< tags >─< entity_tags >─< entities >─< relations >─ relation_types
+  │                                ├─< entity_gallery >─ assets
+  │                                └─ image_asset_id ──> assets
+  │      └─< assets                 (imagen principal y galería desde #74)
   ├─< maps >─< map_entity_links
   ├─< manuscripts >─< books >─< chapters >─< scenes >─< scene_versions
   ├─< game_tables >─< game_table_entries
@@ -230,29 +233,64 @@ Reglas de la issue M1-02:
 
 ### 4.3 `entities`
 
+**Implementada en `0004_entities` (M1-03, #74).**
+
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | TEXT | PK | UUIDv7. |
-| `world_id` | TEXT | NOT NULL, FK `worlds(id)` | Mundo. |
-| `type_id` | TEXT | NOT NULL, FK `entity_types(id)` | Tipo. |
-| `name` | TEXT | NOT NULL | Nombre. |
-| `slug` | TEXT | NOT NULL | Identificador estable por mundo. |
-| `aliases` | TEXT | NOT NULL DEFAULT `'[]'` | JSON de alias. |
-| `summary` | TEXT | NULL | Resumen corto. |
-| `description` | TEXT | NULL | JSON ProseMirror. |
-| `description_text` | TEXT | NULL | Texto plano para búsqueda. |
-| `image_asset_id` | TEXT | FK `assets(id)`, NULL | Imagen principal. |
-| `attributes` | TEXT | NOT NULL DEFAULT `'{}'` | Campos personalizados. |
-| `status` | TEXT | NOT NULL DEFAULT `'active'` | `active`, `draft`, `archived`. |
-| `is_favorite` | INTEGER | NOT NULL DEFAULT 0 | Favorito. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` ON DELETE CASCADE | Mundo. |
+| `type_id` | TEXT | NOT NULL, FK `entity_types(id)` ON DELETE RESTRICT | Tipo del sistema o personalizado del mundo. |
+| `name` | TEXT | NOT NULL, CHECK 1–120 | Nombre. |
+| `slug` | TEXT | NOT NULL, CHECK canónico | Identificador estable por mundo. |
+| `aliases` | TEXT | NOT NULL DEFAULT `'[]'`, JSON array | Alias; máximo 10. |
+| `summary` | TEXT | NULL | Resumen corto (máximo 280). |
+| `description` | TEXT | NULL, JSON object | Documento de ProseMirror validado con Zod; nunca HTML. |
+| `description_text` | TEXT | NULL | Texto plano derivado para búsqueda. |
+| `image_asset_id` | TEXT | FK `assets(id)` ON DELETE SET NULL, NULL | Imagen principal. |
+| `attributes` | TEXT | NOT NULL DEFAULT `'{}'`, JSON object | Valores de la plantilla, validados con Zod. |
+| `status` | TEXT | NOT NULL DEFAULT `'active'`, CHECK | `active`, `draft` o `archived`. |
+| `is_favorite` | INTEGER | NOT NULL DEFAULT 0, CHECK 0/1 | Favorito. |
 | `created_at` | INTEGER | NOT NULL | Creación. |
 | `updated_at` | INTEGER | NOT NULL | Actualización. |
-| `deleted_at` | INTEGER | NULL | Papelera. |
+| `deleted_at` | INTEGER | NULL | Papelera lógica. |
 
 Índices: `entities_world_slug_uq (world_id, slug)`,
 `entities_world_type_idx (world_id, type_id, deleted_at)`,
 `entities_name_idx (world_id, name)`,
 `entities_favorite_idx (world_id, is_favorite)`.
+
+Reglas:
+
+- El tipo no cambia después de crear la ficha; los valores se validan con la
+  plantilla del tipo y las referencias deben existir, estar vivas y pertenecer
+  al mismo mundo. Si el campo declara `targetTypeKey`, también se comprueba el
+  tipo de destino.
+- El slug es único por mundo y no se reutiliza mientras la fila exista, incluidas
+  las fichas en papelera.
+- Borrar es lógico: la fila, sus etiquetas y sus assets se conservan hasta la
+  papelera y la purga de #77.
+- La descripción sigue la lista cerrada de nodos y marcas de
+  `src/shared/entities/description.ts`; el `CHECK` solo comprueba que es un JSON
+  de objeto, la garantía de forma es de la aplicación.
+
+### 4.3.1 `entity_gallery`
+
+**Implementada en `0004_entities` (M1-03, #74).** Extiende el esquema objetivo
+para conservar el orden de la galería y la relación con `assets`.
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `entity_id` | TEXT | PK, FK `entities(id)` ON DELETE CASCADE | Ficha. |
+| `asset_id` | TEXT | PK, FK `assets(id)` ON DELETE CASCADE | Imagen del mundo. |
+| `position` | INTEGER | NOT NULL, CHECK >= 0 | Orden explícito en la galería. |
+
+Índices: `entity_gallery_position_uq (entity_id, position)`,
+`entity_gallery_asset_idx (asset_id)`.
+
+Regla: el servicio comprueba que el asset pertenece al mismo mundo que la ficha
+y que es una imagen. La imagen principal se guarda en `entities.image_asset_id`;
+la interfaz la añade también a la galería cuando el usuario la elige como
+principal, pero el modelo no obliga a que esté allí.
 
 ### 4.4 `relation_types`
 
@@ -294,17 +332,21 @@ Regla: `source_id <> target_id` con `CHECK`.
 
 ### 4.6 `tags` y `entity_tags`
 
+**Implementadas en `0004_entities` (M1-03, #74).**
+
 `tags`:
 
 | Columna | Tipo | Restricciones |
 |---|---|---|
-| `id` | TEXT | PK |
-| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
-| `name` | TEXT | NOT NULL |
-| `color` | TEXT | NOT NULL |
-| `created_at` | INTEGER | NOT NULL |
+| `id` | TEXT | PK, UUIDv7. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` ON DELETE CASCADE. |
+| `name` | TEXT | NOT NULL, CHECK 1–40. |
+| `color` | TEXT | NOT NULL, CHECK `moss`, `ochre`, `danger` o `prussian`. |
+| `created_at` | INTEGER | NOT NULL. |
 
-Índice: `tags_world_name_uq (world_id, name)`.
+Índices: `tags_world_name_uq (world_id, name)` y `tags_world_idx (world_id,
+name)`. Crear una etiqueta con un nombre existente en el mismo mundo es
+idempotente.
 
 `entity_tags`:
 
@@ -312,6 +354,9 @@ Regla: `source_id <> target_id` con `CHECK`.
 |---|---|---|
 | `entity_id` | TEXT | PK, FK `entities(id)` ON DELETE CASCADE |
 | `tag_id` | TEXT | PK, FK `tags(id)` ON DELETE CASCADE |
+
+Índice: `entity_tags_tag_idx (tag_id)`. Las etiquetas y los filtros se aíslan
+siempre por `world_id`.
 
 ### 4.7 `assets`
 

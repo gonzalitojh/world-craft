@@ -23,6 +23,7 @@ export interface WorldPageProps {
   readonly onBack: () => void;
   readonly onRetry: () => void;
   readonly onRetryActivity: () => void;
+  readonly onOpenEntities: () => void;
 }
 
 /**
@@ -41,6 +42,7 @@ export function WorldPage({
   onBack,
   onRetry,
   onRetryActivity,
+  onOpenEntities,
 }: WorldPageProps) {
   const { messages, formats } = useI18n();
   const metaId = useId();
@@ -95,10 +97,22 @@ export function WorldPage({
   const percentLabel = formats.formatPercent(percent / 100);
 
   const modules = [
-    messages.worlds.detail.quick.entities,
-    messages.worlds.detail.quick.maps,
-    messages.worlds.detail.quick.manuscripts,
-    messages.worlds.detail.quick.game,
+    {
+      ...messages.worlds.detail.quick.entities,
+      available: true,
+    },
+    {
+      ...messages.worlds.detail.quick.maps,
+      available: false,
+    },
+    {
+      ...messages.worlds.detail.quick.manuscripts,
+      available: false,
+    },
+    {
+      ...messages.worlds.detail.quick.game,
+      available: false,
+    },
   ];
 
   return (
@@ -292,11 +306,18 @@ export function WorldPage({
             <li className="wc-quick-card" key={module.title}>
               <div className="wc-quick-card__heading">
                 <h3 className="wc-quick-card__title">{module.title}</h3>
-                <Badge tone="neutral">
-                  {messages.worlds.detail.quickPlanned}
-                </Badge>
+                {module.available ? null : (
+                  <Badge tone="neutral">
+                    {messages.worlds.detail.quickPlanned}
+                  </Badge>
+                )}
               </div>
               <p className="wc-quick-card__description">{module.description}</p>
+              {module.available ? (
+                <Button variant="secondary" size="sm" onClick={onOpenEntities}>
+                  {messages.entities.list.title}
+                </Button>
+              ) : null}
             </li>
           ))}
         </ul>

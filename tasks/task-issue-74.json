@@ -1,0 +1,63 @@
+{
+  "title": "Fichas: CRUD, imágenes, etiquetas y favoritos",
+  "description": "Implementar la pantalla central de la enciclopedia del mundo: CRUD de fichas de cualquier tipo, campos personalizados validados, descripción enriquecida con enlaces internos, imagen principal y galería servidas por wc-asset://, etiquetas de color, favoritos, búsqueda y filtros por tipo, etiqueta y favorito, con autoguardado, creación rápida, aislamiento por mundo, dos temas, teclado y pruebas.",
+  "status": "implemented",
+  "model_variant": "high",
+  "issue": {
+    "number": 74,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/74",
+    "title": "Fichas: CRUD, imágenes, etiquetas y favoritos"
+  },
+  "acceptance_criteria": [
+    "Se pueden crear, editar y consultar fichas de cualquier tipo con sus campos.",
+    "La descripción y los atributos se validan y se guardan sin perder contenido.",
+    "Las imágenes se sirven con wc-asset:// y las miniaturas no cargan originales.",
+    "Las etiquetas y favoritos filtran correctamente y se aíslan por mundo.",
+    "El contenido largo no rompe el layout y la pantalla funciona en ambos temas y por teclado.",
+    "Existen pruebas de CRUD, validación, imágenes y aislamiento.",
+    "El manual explica cómo crear y organizar fichas."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de componentes, de integración y build en verde.",
+    "E2E del flujo crítico de fichas ejecutado: crear, editar, autoguardar, filtrar, marcar favorito, abrir galería y navegar por enlace interno.",
+    "Migración 0004 probada sobre una base con mundos, actividad y tipos, con preservación de datos y rollback de referencia verificado.",
+    "La descripción enriquecida se guarda como JSON de ProseMirror y texto plano; el contenido inválido se rechaza y nunca se inyecta HTML sin control.",
+    "Las imágenes se sirven solo por wc-asset://, la galería usa miniaturas y el asset debe pertenecer al mismo mundo.",
+    "Las referencias entre fichas validan existencia, mundo y tipo de destino; las etiquetas y favoritos se aíslan por mundo.",
+    "La ventana se comprueba a 1024, 1280 y 1600 px con contenido largo realista, sin scroll horizontal de página.",
+    "Los dos temas (Claro y Oscuro) se comprueban con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: teclado completo, foco visible, diálogos nativos, axe sin errores críticos y prefers-reduced-motion.",
+    "Seguridad Electron revisada: canales en allowlist, Zod estricto, sin Node en el renderer, CSP, protocolo de assets y contenido no confiable.",
+    "Preservación de datos verificada: actualización, reinicio y migración no borran ni corrompen mundos, tipos ni fichas.",
+    "Funcionamiento offline comprobado: crear, editar y consultar fichas no requiere red.",
+    "Manual de usuario actualizado con la creación y organización de fichas, tipos, imágenes, etiquetas y favoritos.",
+    "ADR 0021 creado con las decisiones de fichas, galería, etiquetas, editor y autoguardado.",
+    "Datos exportables e importables: el modelo de fichas y etiquetas queda preparado para la exportación de #78.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario."
+  ],
+  "plan": "Plan propuesto el 2026-11-20, pendiente de aprobación del usuario. 1) Migración 0004_entities aditiva con entities, tags, entity_tags y entity_gallery, índices, checks y FKs a worlds, entity_types y assets; rollback de referencia y prueba de preservación desde 0003. 2) Contratos compartidos en src/shared/contracts/entities.ts y assets.ts: estados, límites, filtros, entrada y detalle de ficha, etiquetas, assets y guardas puras. 3) Validación compartida con Zod: nombre, alias, resumen, atributos reutilizando validateEntityFieldValues, JSON de ProseMirror y texto plano, límites de galería y etiquetas. 4) Dominio src/main/entities/ con repositorio Drizzle aislado por mundo y servicio con reloj e IDs inyectables: CRUD, autoguardado idempotente, favorito, borrado lógico, filtros por tipo/etiqueta/favorito/estado/búsqueda, tags por mundo, referencias entre fichas y validación de imagen y galería. 5) Assets IPC: canales assets:list y assets:import con diálogo nativo en el proceso principal, validación Zod, importación existente de #66 y preload con guardas; el renderer solo recibe metadatos y usa wc-asset://thumb para miniaturas. 6) Canales entities:list/get/create/update/setFavorite/remove, tags:list/create y assets:list/import en la allowlist, esquemas estrictos, handlers y composición con modo seguro. 7) Renderer: vistas de fichas y ficha; lista con búsqueda, filtros, favoritos y estados vacío/carga/error; formulario de creación rápida; editor Tiptap 3 básico (negrita, cursiva, títulos, listas, cita, enlace interno a ficha) con autoguardado; selector de imagen principal y galería con miniaturas; etiquetas de color; atributos dinámicos por plantilla; y gestión visual de tipos (crear, duplicar, editar y borrar tipos personalizados con constructor de campos). 8) Navegación desde el mundo y acceso global «Nueva ficha» cuando hay un mundo seleccionado, sin router. 9) Pruebas: unitarias de validación, contratos, esquemas, editor y guardas; integración de CRUD, aislamiento, referencias, etiquetas, favoritos, assets, filtros, migración y preservación; componentes de lista y formulario; E2E de flujo crítico, teclado, temas, 1024/1280/1600 y axe. 10) Documentación: ADR 0021, manual de usuario, esquema y migraciones, arquitectura, plan de pruebas, continuidad, README y CHANGELOG. Decisiones propuestas: (a) galería en tabla entity_gallery con posición para no mezclar assets de otros mundos; (b) descripción en JSON de ProseMirror más texto plano para búsqueda, sin HTML crudo; (c) Tiptap 3 con extensiones MIT y enlaces internos con esquema wc-entity://; (d) autoguardado con debounce y guardado explícito, mostrando estado; (e) Tiptap se añade como dependencia justificada por ADR 0007. Sin push ni PR sin petición explícita.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p0, size: l, area: entities, area: ui, variant: high y hito M1. Dependencias M1-02 (#73) y M0-06 (#66) fusionadas en dev. Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-74-entities-crud desde origin/dev. El plan y las decisiones (galería relacional, ProseMirror + texto plano, Tiptap MIT, autoguardado con debounce y dependencia justificada por ADR 0007) quedaron aprobados por el usuario el 2026-11-20. Implementado: migración 0004_entities, contratos y validación de descripción, dominio src/main/entities, assets:list/import con diálogo nativo, canales entities/tags/assets, preload, páginas de lista y detalle, editor Tiptap con enlaces internos, autoguardado, galería, etiquetas, favoritos, búsqueda/filtros y gestión visual de tipos. Evidencia local (2026-11-20): pnpm lint OK; pnpm typecheck OK; pnpm test:unit 352 en verde y 4 omitidas; pnpm test:components 22 en verde; pnpm test:integration 117 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; pnpm licenses:sync OK; Playwright 15 en verde (CRUD, autoguardado, galería con importación nativa y miniaturas, imagen principal, enlace interno y apertura, creación rápida, contenido largo, 1024/1280/1600, dos temas y axe sin violaciones críticas ni graves). Migración 0004 probada con preservación desde 0003 con mundo, tipo personalizado y app_settings, y rollback de referencia. Nota de entorno: pnpm format:check sobre todo el repositorio marca archivos CRLF preexistentes; se aplicó Prettier solo a los archivos tocados."
+  },
+  "qa": {
+    "result": "in-review",
+    "notes": "Revisión de QA en curso el 2026-11-20 sobre el árbol congelado; pendiente de registrar el informe final."
+  },
+  "security": {
+    "result": "pending",
+    "findings": [],
+    "notes": "Pendiente de implementación."
+  },
+  "documentation": {
+    "adr": "docs/adr/0021-entities-crud-gallery-tags-editor.md creado y añadido al índice con D-044 en docs/registro-decisiones.md.",
+    "manual": "docs/manual-de-usuario.md actualizado: estado del desarrollo, navegación rápida, sección 5 de fichas, tipos, imágenes, etiquetas, favoritos, autoguardado, búsqueda, filtros y tabla de estado de funciones.",
+    "changelog": "CHANGELOG.md actualizado en Añadido con fichas, descripción, autoguardado, imágenes, etiquetas, favoritos, filtros, gestión de tipos, migración 0004, pruebas y dependencias Tiptap.",
+    "agents": "no aplica"
+  }
+}

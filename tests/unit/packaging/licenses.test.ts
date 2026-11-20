@@ -14,6 +14,7 @@ describe('licencias empaquetadas', () => {
       'img-sharp-win32-LICENSE.txt',
       'libvips-LICENSE.txt',
       'sharp-LICENSE.txt',
+      'tiptap-LICENSE.txt',
     ]);
 
     for (const file of files) {
@@ -41,5 +42,8 @@ describe('licencias empaquetadas', () => {
         'utf8',
       ),
     ).toContain('MIT');
+    expect(
+      await readFile(join(LICENSES_DIR, 'tiptap-LICENSE.txt'), 'utf8'),
+    ).toContain('MIT License');
   });
 });

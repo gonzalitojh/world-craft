@@ -158,6 +158,7 @@ async function main() {
   const sharpDirectory = resolvePackageDirectory('sharp');
   const sharpPlatformDirectory = resolveSharpPlatformPackage();
   const electronUpdaterDirectory = resolvePackageDirectory('electron-updater');
+  const tiptapDirectory = resolvePackageDirectory('@tiptap/react');
 
   const copied = [
     await copyLicense(join(sharpDirectory, 'LICENSE'), 'sharp-LICENSE.txt'),
@@ -168,6 +169,10 @@ async function main() {
     await copyLicense(
       join(electronUpdaterDirectory, 'LICENSE'),
       'electron-updater-LICENSE.txt',
+    ),
+    await copyLicense(
+      join(tiptapDirectory, 'LICENSE.md'),
+      'tiptap-LICENSE.txt',
     ),
   ];
 
