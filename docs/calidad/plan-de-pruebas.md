@@ -340,12 +340,12 @@ contención, y añadir una prueba de junction dentro de `backups/daily`.
 
 **CI:** el job `package` corre en `windows-latest` con `verify:native`, `dist`,
 `verify:build`, `package:checksums` y `verify:package --installer`; no publica ni
-sube artefactos y **no es required hasta #69**.
+sube artefactos y **sigue sin ser required hasta M5**.
 
 **Residuales:** la actualización real contra GitHub Releases se prueba en M5; el
 instalador y `latest.yml` van sin firma (ADR 0015); la cancelación de la
-comprobación no aborta el socket; axe/E2E siguen en #70/#93; la confirmación del
-job de Ubuntu y el paso de `package` a required corresponden a #69.
+comprobación no aborta el socket; axe/E2E siguen en #70/#93; el paso de
+`package` a required y la build de release de Windows se abordan en M5.
 
 ## 4. Cobertura
 
@@ -374,20 +374,43 @@ descenso injustificado bloquea la puerta de QA.
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
 | `test` | Sí | `pnpm test`: 282 unitarias en verde (4 omitidas) + 85 de integración en verde (1 omitida). |
-| `build` | No hasta #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
-| `package` | No hasta #69 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
+| `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
+| `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
 | `gitleaks` | No | Escaneo de secretos. |
 | `audit` | No | `pnpm audit --audit-level=high`. |
 
-El repositorio ya ejecuta `lint`, `typecheck`, `test`, `build` y `package`, y el
-job `build` incluye `db:check`. `build` y `package` no son todavía required:
-añadirlos a la protección de `dev` corresponde a #69, que también debe confirmar
-el job de Ubuntu. `e2e` llegará con #70 y la auditoría de accesibilidad, temas y
-ventana con #93. `verify:native` se ejecuta en el job `package` de Windows desde
-#68. Los required checks se aplican en los rulesets `protect-dev` y
-`protect-main`. La CI no tiene credenciales ni datos de usuario; el job `package`
-no recibe `GH_TOKEN`.
+Desde #69, `lint`, `typecheck`, `test` y `build` son required en los rulesets
+`protect-dev` y `protect-main`; el job `build` incluye `db:check`. `package`
+sigue sin ser required: empaquetar NSIS en Windows es lento y la build de release
+completa llega con M5. `e2e` llegará con #70 y la auditoría de accesibilidad,
+temas y ventana con #93. `verify:native` se ejecuta en el job `package` de Windows
+desde #68. La CI no tiene credenciales ni datos de usuario; el job `package` no
+recibe `GH_TOKEN`. `gitleaks` y `audit` se revisan en la puerta de seguridad y no
+bloquean una PR que no toca secretos ni dependencias.
+
+### 6.1 Caché, límites gratuitos y build de Windows en M5
+
+- **Caché.** `.github/actions/setup` usa `actions/setup-node` con `cache: pnpm`
+  y la clave derivada de `pnpm-lock.yaml`; la instalación siempre usa
+  `pnpm install --frozen-lockfile`. No hay caché manual ni se cachean `out/`,
+  `release/` ni bases de datos. Un cambio de lockfile invalida la caché.
+- **Límites.** El repositorio es público y usa GitHub Free: los runners estándar
+  de Ubuntu y Windows no consumen minutos facturables. Los límites operativos
+  que hay que vigilar son el tiempo máximo por job (6 h), los jobs concurrentes
+  del plan y el almacenamiento de caché (10 GB por repositorio, con expulsión de
+  entradas no usadas). `concurrency` cancela ejecuciones antiguas de la misma
+  rama y ningún job sube artefactos, salvo la release de M5. Si GitHub cambia
+  estas condiciones, se revisa el [ADR 0013](../adr/0013-ci-releases.md).
+- **Build de Windows en M5.** El job `package` actual es la base: reutiliza
+  `verify:native`, `dist`, `verify:build`, `package:checksums` y
+  `verify:package --installer`. En M5 se añadirá un workflow de release que se
+  dispare con un tag `vX.Y.Z` desde `main`, ejecute esos mismos pasos en
+  `windows-latest`, publique el instalador NSIS, `latest.yml` y `SHA256SUMS` en
+  GitHub Releases y pruebe la actualización real. La publicación usará solo el
+  `GITHUB_TOKEN` del repositorio; no se añaden secretos de Supabase, Vercel ni
+  R2. Cuando el tiempo del job sea aceptable, `package` podrá pasar a required;
+  la firma de código sigue siendo opcional (ADR 0015).
 
 ## 7. Checklist de QA por issue
 

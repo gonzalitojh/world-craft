@@ -25,8 +25,7 @@ primera versión estable.
   `pnpm build` compila los tres procesos en `out/` (todavía sin instalador),
   `pnpm start` previsualiza el build y `pnpm verify:build` valida artefactos, CSP
   y ausencia de URLs remotas.
-- Pruebas unitarias del scaffold (25) y job `build` en la CI, todavía no
-  required hasta #69.
+- Pruebas unitarias del scaffold (25) y job `build` en la CI.
 - IPC tipado con allowlist de canales y validación Zod en el proceso principal
   (#63): preload nominativo con `appInfo` y `shell.openExternal`, comprobación
   del remitente y errores estables (`INVALID_INPUT`, `UNKNOWN_CHANNEL`,
@@ -185,6 +184,10 @@ primera versión estable.
 - El paquete deja de ser solo `out/`: incluye `LICENSE`,
   `THIRD-PARTY-NOTICES.md` y `licenses/`, externaliza los módulos nativos y los
   poda a Windows x64 (#68).
+- La CI de escritorio queda cerrada (#69): `lint`, `typecheck`, `test` y
+  `build` son required checks de `dev` y `main`; `gitleaks` y `audit` siguen sin
+  bloquear y el job `package` de Windows queda para M5. La caché de pnpm, los
+  límites gratuitos y la ruta de la build de Windows están documentados.
 
 ### Eliminado
 

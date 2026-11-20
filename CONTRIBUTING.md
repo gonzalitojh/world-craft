@@ -151,16 +151,19 @@ pnpm format:check
 un instalador**. `pnpm start` compila y abre el build de producción (se puede
 omitir la compilación con `--skipBuild`). `test:e2e` llegará con #70.
 
-- `lint`, `typecheck` y `test` son **required checks**: una PR no se fusiona si
-  fallan.
-- El job `build` (`pnpm db:check`, `pnpm build` y `pnpm verify:build`) ya se
-  ejecuta en la CI, pero no es required hasta la issue #69.
+- `lint`, `typecheck`, `test` y `build` son **required checks**: una PR no se
+  fusiona si fallan. `build` ejecuta `pnpm db:check`, `pnpm build` y
+  `pnpm verify:build`.
 - El job `package` (`verify:native`, `dist`, `verify:build`,
   `package:checksums` y `verify:package --installer`) corre en `windows-latest`,
-  **no es required hasta #69**, no publica y no sube artefactos.
+  **no es required hasta M5**, no publica y no sube artefactos.
 - `pnpm verify:native` se ejecuta en el job `package`; también se puede lanzar a
   mano antes de tocar módulos nativos.
-- `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear.
+- `gitleaks` y `audit` también se ejecutan en la CI, sin bloquear; se revisan en
+  la puerta de seguridad.
+- La caché de pnpm la gestiona `.github/actions/setup`; los límites gratuitos y
+  la build de Windows de M5 se documentan en
+  [`docs/calidad/plan-de-pruebas.md`](docs/calidad/plan-de-pruebas.md), §6.1.
 - En PowerShell, si la política de ejecución bloquea `pnpm.ps1`, usa `pnpm.cmd`
   (por ejemplo `pnpm.cmd typecheck`).
 - Para corregir el formato: `pnpm format`. En Windows, `format:check` puede fallar

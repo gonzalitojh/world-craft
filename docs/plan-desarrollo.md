@@ -760,9 +760,9 @@ también 1920×1080.
 > `userData` fuera de la instalación. La comprobación de actualizaciones quedó
 > **manual** desde el botón «Actualizaciones», con descarga consentida,
 > cancelación real y reinicio consentido; el auto-check y su interruptor llegan
-> con Ajustes (M1). El job `package` de Windows existe pero no es bloqueante
-> hasta #69. La release pública, la actualización real contra GitHub Releases y
-> la firma Ed25519 de manifiestos se completan en M5. El detalle está en el
+> con Ajustes (M1). El job `package` de Windows existe y no es bloqueante hasta
+> M5. La release pública, la actualización real contra GitHub Releases y la
+> firma Ed25519 de manifiestos se completan en M5. El detalle está en el
 > [ADR 0018](adr/0018-nsis-packaging-and-update-service.md).
 
 ### 3.9 Costes y dependencia externa

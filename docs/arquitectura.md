@@ -615,9 +615,10 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
   `build` (con `db:check` y `verify:build`) en `ubuntu-latest`; `package` en
   `windows-latest` con `verify:native`, `dist`, `verify:build`,
   `package:checksums` y `verify:package --installer`; `gitleaks` y `audit`. Los
-  tres primeros son required; `build` y `package` todavía no lo son hasta #69, y
+  cuatro primeros son required desde #69; `package` sigue sin serlo hasta M5, y
   gitleaks y audit no bloquean. El job `package` no publica, no usa `GH_TOKEN` y
-  no sube artefactos.
+  no sube artefactos. La caché de pnpm se configura en `.github/actions/setup`
+  con `cache: pnpm`, sin secretos ni servicios de pago.
 - **Instalador.** Implementado (#68): electron-builder 26.18.0 con NSIS por
   usuario; `pnpm dist` genera `release/world-craft-0.1.0-setup.exe` y
   `pnpm dist:dir` una carpeta desempaquetada para pruebas. El paquete desempaqueta
