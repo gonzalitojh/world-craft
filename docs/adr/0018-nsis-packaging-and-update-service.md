@@ -95,8 +95,8 @@ Windows, pero la CI de calidad corre en Ubuntu y debe seguir funcionando.
 9. **CI de empaquetado no bloqueante.** El job `package` corre en
    `windows-latest` y ejecuta `verify:native`, `dist`, `verify:build`,
    `package:checksums` y `verify:package --installer`. No publica, no recibe
-   `GH_TOKEN` y no sube artefactos. No es required hasta #69, que también debe
-   confirmar el comportamiento del job de Ubuntu; la release completa con
+   `GH_TOKEN` y no sube artefactos. #69 confirmó el job de Ubuntu y mantiene
+   `package` fuera de los required checks hasta M5; la release completa con
    publicación llega con M5.
 
 ## Alternativas consideradas
@@ -164,7 +164,7 @@ Windows, pero la CI de calidad corre en Ubuntu y debe seguir funcionando.
 | Riesgo | Límite o coste | Mitigación | Seguimiento |
 |---|---|---|---|
 | Tamaño de GitHub Releases | Límite por archivo y almacenamiento del plan Free | Un instalador por versión, sin binarios duplicados ni artefactos de CI | M5 |
-| Minutos de Actions en Windows | Los runners de Windows consumen más minutos que Ubuntu | Job `package` no bloqueante y acotado; la release completa se hace en M5 | #69 |
+| Minutos de Actions en Windows | Los runners de Windows consumen más minutos que Ubuntu | Job `package` no bloqueante y acotado; la release completa se hace en M5 | M5 |
 | SmartScreen sin firma | Aviso para el usuario; reputación no disponible | Manual con pasos, checksums publicados y descarga solo desde el origen oficial | ADR 0015 |
 | Firma de código | Certificado de pago | Fuera del MVP; cualquier adopción exige aprobación y ADR | Backlog |
 | Servidor de actualizaciones | No aplica: se usa GitHub Releases | Sin servidor propio, sin cuotas adicionales | M5 |
@@ -178,7 +178,7 @@ contra GitHub Releases, al decidir la firma de código y la firma Ed25519 de
 manifiestos, y al añadir Ajustes en M1 con el interruptor y la frecuencia de
 comprobación. También se reabre si cambia electron-builder a una versión con
 firma de manifiestos, si GitHub modifica las condiciones de Releases o si el job
-`package` pasa a required en #69. Cualquier cambio de instalador, de canal o de
+`package` pasa a required en M5. Cualquier cambio de instalador, de canal o de
 verificación de actualizaciones exige un ADR nuevo.
 
 ## Referencias

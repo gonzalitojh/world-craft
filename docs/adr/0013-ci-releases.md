@@ -35,10 +35,20 @@ PR sin credenciales ni datos de usuario y sin consumir minutos de pago.
 > **Implementación (M0-08, #68, 20/11/2026).** El job `package` existe en
 > `windows-latest` con `verify:native`, `dist`, `verify:build`,
 > `package:checksums` y `verify:package --installer`; no publica, no usa
-> `GH_TOKEN` y no sube artefactos. Sigue **sin ser required** hasta #69, que
-> también debe confirmar el job de Ubuntu. La release completa y la publicación
-> en GitHub Releases se completan en M5. El detalle está en el
+> `GH_TOKEN` y no sube artefactos. La release completa y la publicación en
+> GitHub Releases se completan en M5. El detalle está en el
 > [ADR 0018](0018-nsis-packaging-and-update-service.md).
+>
+> **Implementación (M0-09, #69, 20/11/2026).** La CI de escritorio queda
+> cerrada: `lint` (con `format:check`), `typecheck`, `test` y `build` (con
+> `db:check` y `verify:build`) son los required status checks de `protect-dev` y
+> `protect-main`; `build` pasó a bloqueante al existir el scaffold. `gitleaks` y
+> `audit` siguen siendo no bloqueantes y se revisan en la puerta de seguridad.
+> `package` sigue sin ser required hasta M5 por su coste en Windows. La caché de
+> pnpm vive en `.github/actions/setup` (`cache: pnpm`, clave del lockfile) y no
+> hay secretos de servicios web. Los límites gratuitos y la ruta para añadir la
+> build de Windows en M5 están en
+> [`docs/calidad/plan-de-pruebas.md`](../calidad/plan-de-pruebas.md), §6.1.
 
 ## Alternativas consideradas
 

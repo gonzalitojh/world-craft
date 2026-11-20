@@ -535,9 +535,10 @@ de los usuarios.
   propietario puede saltarse las reglas para promover `dev` a `main` cuando la
   versión es estable.
 - **Required status checks.** `protect-dev` y `protect-main` exigen los checks
-  `lint`, `typecheck` y `test`, que son los jobs de
-  `.github/workflows/ci.yml`. El job `build` existe desde el scaffold (#62), pero
-  no será required hasta la issue #69. No exigen que la rama esté al día
+  `lint`, `typecheck`, `test` y `build`, que son los jobs de
+  `.github/workflows/ci.yml`; `build` pasó a required en #69. `package` sigue
+  sin ser required hasta M5 para no bloquear cada PR con un empaquetado NSIS
+  lento. No exigen que la rama esté al día
   (`strict_required_status_checks_policy = $false`), para no re-ejecutar la CI
   tras cada merge en `dev`.
 - **Seguridad del repositorio.** Escaneo de secretos, push protection y reporte
@@ -551,8 +552,8 @@ de los usuarios.
 - **Scripts de mantenimiento.** `scripts/sync-labels.ps1` sincroniza de forma
   idempotente las 46 etiquetas canónicas y lista las extra sin borrarlas;
   `scripts/set-branch-protection.ps1` crea o actualiza los rulesets por nombre,
-  admite `-DryRun` y recibe `-RequiredChecks` (por defecto `lint`, `typecheck`
-  y `test`). Ambos son herramientas locales: no publican ni abren PRs.
+  admite `-DryRun` y recibe `-RequiredChecks` (por defecto `lint`, `typecheck`,
+  `test` y `build`). Ambos son herramientas locales: no publican ni abren PRs.
 
 ## 8. Documentación y mantenimiento
 
@@ -581,7 +582,7 @@ de los usuarios.
 | `.github/ISSUE_TEMPLATE/feature.yml`, `bug.yml`, `chore.yml`, `decision.yml` | Vigente | Formularios de issue por tipo, con contexto, alcance, dependencias, variante, criterios y notas; la de decisión añade problema, opciones, recomendación, consecuencias e issues afectadas. |
 | `.github/ISSUE_TEMPLATE/config.yml` | Vigente | Deshabilita las issues en blanco y enlaza el proceso SDD y `AGENTS.md`. |
 | `.github/pull_request_template.md` | Vigente | Plantilla de PR: resumen, issue, cambios, pruebas, documentación, UI, seguridad y base `dev`. |
-| `.github/workflows/ci.yml` y `.github/actions/setup` | Vigente | CI de PR y push a `dev`/`main`: jobs `lint` (con `format:check`), `typecheck` y `test` como required checks, `build` (con `verify:build`, no required hasta #69), más `gitleaks` y `audit` no bloqueantes. |
+| `.github/workflows/ci.yml` y `.github/actions/setup` | Vigente | CI de PR y push a `dev`/`main`: jobs `lint` (con `format:check`), `typecheck`, `test` y `build` (con `db:check` y `verify:build`) como required checks, `package` en Windows no required y `gitleaks` y `audit` no bloqueantes. |
 | `.github/dependabot.yml` | Vigente | Actualizaciones semanales de npm y GitHub Actions contra `dev`, agrupadas por minor y patch. |
 | `scripts/sync-labels.ps1` | Vigente | Sincronización idempotente de las 46 etiquetas canónicas; no borra etiquetas extra. |
 | `scripts/set-branch-protection.ps1` | Vigente | Crea o actualiza los rulesets `protect-dev` y `protect-main` con sus required checks; admite `-RequiredChecks` y `-DryRun`. |

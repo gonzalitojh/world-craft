@@ -1,0 +1,57 @@
+{
+  "title": "CI de escritorio: checks, secretos y dependencias",
+  "description": "Cerrar la CI de escritorio: ejecutar lint, format:check, typecheck, test y build en cada PR y push a dev y main, mantener gitleaks y audit como checks no bloqueantes revisados en la puerta de seguridad, exigir los required checks correctos en protect-dev y protect-main y documentar la caché, los límites gratuitos y la ruta de la build de Windows de M5.",
+  "status": "review",
+  "model_variant": "low",
+  "issue": {
+    "number": 69,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/69",
+    "title": "CI de escritorio: checks, secretos y dependencias"
+  },
+  "acceptance_criteria": [
+    "Una PR ejecuta los jobs lint, typecheck y test y los tres pasan con el scaffold.",
+    "gitleaks y audit se ejecutan y no bloquean una PR que no toca secretos o dependencias.",
+    "Los rulesets protect-dev y protect-main exigen los checks correctos.",
+    "No hay secretos de Supabase, Vercel o R2 en Actions.",
+    "La documentación de CI coincide con los jobs reales."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios y build en verde.",
+    "Ventana de 1024, 1280 y 1600 px: no aplica, el cambio no toca interfaz.",
+    "Temas Claro y Oscuro: no aplica, el cambio no toca interfaz.",
+    "Accesibilidad: no aplica, el cambio no toca interfaz.",
+    "Seguridad Electron revisada: no aplica, no se tocan procesos ni IPC.",
+    "Preservación de datos: no aplica, no hay migraciones ni cambios en userData.",
+    "Funcionamiento offline: no aplica, solo configuración de CI y documentación.",
+    "Manual de usuario: no aplica, el cambio no es visible para el usuario.",
+    "ADR 0013 y ADR 0018 actualizados con el cierre de la CI de escritorio.",
+    "Seguridad revisada: sin secretos ni credenciales añadidas; gitleaks y audit siguen no bloqueantes.",
+    "Datos exportables e importables: no aplica, no cambia el modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario, o PR fusionada en dev si ya se publicó."
+  ],
+  "plan": "Plan de la issue, sin task-architect por ser variant: low. 1) Revisar el workflow actual y confirmar que lint (con format:check), typecheck y test ya se ejecutan en PR y push a dev/main, que build incluye db:check y verify:build, y que gitleaks y audit no son required. 2) Pasar build a required en protect-dev y protect-main porque el scaffold de Electron ya existe y ADR 0013 lo condicionaba a esa llegada; mantener package no required hasta M5 por su coste en Windows. 3) Actualizar el valor por defecto de scripts/set-branch-protection.ps1 y aplicarlo de forma idempotente con -DryRun primero. 4) Documentar en docs/calidad/plan-de-pruebas.md la caché de pnpm en .github/actions/setup, los límites gratuitos y cómo se añadirá la build de Windows en M5; sincronizar ADR 0013, ADR 0018, arquitectura, proceso SDD, plan de desarrollo, CONTRIBUTING, CHANGELOG y cambio-a-escritorio. 5) Verificar localmente lint, format:check, typecheck, test, db:check, build y verify:build; validar los JSON de tasks, los enlaces Markdown y git diff --check. Las pruebas de CI reales quedan a la vista de la PR; no se hace push ni se abre PR sin petición explícita.",
+  "validation": {
+    "result": "pending-user-review",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: chore, priority: p1, size: s, area: infra, variant: low y hito M0. Dependencia M0-02 (#62) fusionada en dev. Sin needs-decision. Variante recomendada y usada: low. Rama chore/issue-69-ci-desktop desde origin/dev; commit local sin push ni PR. Rulesets protect-dev y protect-main actualizados de forma idempotente con scripts/set-branch-protection.ps1: checks lint, typecheck, test y build, bypass solo del propietario en main. La revisión real de la PR y sus jobs queda para la publicación explícita; las mismas comprobaciones se ejecutaron en local."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA local (2026-11-20) sobre chore/issue-69-ci-desktop. En verde: pnpm lint; pnpm typecheck (tsconfig.node y tsconfig.web); pnpm test (282 unitarias en verde, 4 omitidas; 85 de integración en verde, 1 omitida); pnpm db:check; pnpm build; pnpm verify:build (artefactos, CSP estricta, sin URLs remotas, migraciones copiadas y módulos nativos y actualizador externalizados). format:check global falla en Windows por CRLF preexistente en 118 archivos no tocados; los archivos modificados pasan prettier --check --end-of-line auto, y la CI lo ejecuta en Linux. Verificados: los JSON de tasks son válidos; git diff --check sin errores; rulesets protect-dev y protect-main con checks lint, typecheck, test y build (verificado con el propio script); gitleaks y audit no están en required checks; no hay secretos de Supabase, Vercel ni R2 en Actions. Documentación sincronizada con los jobs reales en ADR 0013, ADR 0018, arquitectura, plan de pruebas, proceso SDD, plan de desarrollo, CONTRIBUTING, CHANGELOG y cambio-a-escritorio. No aplica ventana, temas, accesibilidad, preservación de datos ni offline porque solo cambian CI, un script de administración y documentación."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Security-champion (checklist proporcional, 2026-11-20): PASS sin hallazgos HIGH. Revisados .github/workflows/ci.yml, .github/actions/setup, scripts/set-branch-protection.ps1 y el diff documental. Solo aparece secrets.GITHUB_TOKEN para gitleaks, con permissions contents: read y pull-requests: read; el job package no recibe GH_TOKEN. Acciones fijadas por SHA, sin contenido remoto nuevo, sin credenciales de Supabase, Vercel o R2, sin correos ni datos personales y sin dependencias nuevas. gitleaks y audit siguen no bloqueantes y se revisan en la puerta de seguridad. El cambio de rulesets se aplicó con el script idempotente y sin force push ni cambios de visibilidad."
+  },
+  "documentation": {
+    "adr": "docs/adr/0013-ci-releases.md y docs/adr/0018-nsis-packaging-and-update-service.md actualizados con el cierre de la CI de escritorio y el aplazamiento de package a M5.",
+    "manual": "no aplica",
+    "changelog": "CHANGELOG.md actualizado en la sección Cambiado.",
+    "agents": "no aplica"
+  }
+}

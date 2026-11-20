@@ -1,3 +1,7 @@
+# CI de escritorio (issue #69). La caché de pnpm la gestiona
+# .github/actions/setup con `cache: pnpm`; en un repo público los runners
+# estándar no consumen minutos facturables. El detalle de límites y de la build
+# de Windows de M5 está en docs/calidad/plan-de-pruebas.md, sección 6.
 name: CI
 
 on:
@@ -15,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Los jobs lint, typecheck y test son los required status checks de
+  # Los jobs lint, typecheck, test y build son los required status checks de
   # `protect-dev` y `protect-main`. No renombrar sus ids ni su `name` sin
   # actualizar scripts/set-branch-protection.ps1 y los rulesets.
   lint:
@@ -49,9 +53,9 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm test
 
-  # Todavía no es required: añadirlo a la protección de `dev` corresponde a la
-  # issue #69. Comprueba que el scaffold compila y que los artefactos cumplen la
-  # CSP y no cargan contenido remoto.
+  # Required desde #69. Comprueba que el scaffold compila, que las migraciones
+  # son válidas y que los artefactos cumplen la CSP y no cargan contenido
+  # remoto.
   build:
     name: build
     runs-on: ubuntu-latest
@@ -64,9 +68,9 @@ jobs:
       - run: pnpm build
       - run: pnpm verify:build
 
-  # No es required todavía: empaquetar NSIS en Windows es lento y la build de
-  # release completa llega con M5. Comprueba el instalador, los binarios
-  # nativos desempaquetados, latest.yml y los checksums sin publicar nada.
+  # No es required: empaquetar NSIS en Windows es lento y la build de release
+  # completa llega con M5. Comprueba el instalador, los binarios nativos
+  # desempaquetados, latest.yml y los checksums sin publicar nada.
   package:
     name: package
     runs-on: windows-latest

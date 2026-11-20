@@ -157,7 +157,7 @@ pivote.
 | `.prettierignore` | Rutas de escritorio y migraciones SQLite. |
 | `pnpm-workspace.yaml` | Autorización de `esbuild`; sin overrides web. |
 | `src/shared/app-info.ts` y `tests/unit/app-info.test.ts` | Identidad y ventana mínima con una prueba real. |
-| `.github/workflows/ci.yml` | Lint, typecheck, test, gitleaks y audit; sin build web ni `test:db`. |
+| `.github/workflows/ci.yml` | Lint, typecheck, test, build, package, gitleaks y audit; sin build web ni `test:db`. |
 | `.github/pull_request_template.md` | Checklist de ventana, datos y seguridad Electron. |
 | `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md` | Reescritos para escritorio. |
 | `tasks/task-example.json` | Ejemplo del esquema canónico actualizado. |
@@ -324,8 +324,9 @@ El 2026-11-18 se completaron estas operaciones sobre
    un `status:`, un `priority:`, un `size:` y un `variant:`, al menos un
    `area:`, un hito existente y solo etiquetas del catálogo.
 6. Se actualizaron los rulesets `protect-dev` y `protect-main` con
-   `scripts/set-branch-protection.ps1`: exigen `lint`, `typecheck` y `test`,
-   mantienen el bypass del propietario solo en `main` y ya no exigen `build`.
+   `scripts/set-branch-protection.ps1`: exigen `lint`, `typecheck` y `test` y
+   mantienen el bypass del propietario solo en `main`. `build` volvió a los
+   required checks en #69, con el scaffold de escritorio.
 
 La issue #61 queda en `status: needs-review` porque este mismo pivote es su
 trabajo. El resto queda en `status: todo`; #98–#101 llevan `future` y #99/#101
