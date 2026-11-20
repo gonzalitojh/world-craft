@@ -1,12 +1,19 @@
 {
   "title": "Instalador NSIS, actualizaciones y preservación de datos",
   "description": "M0-08. Empaquetado instalable de World Craft para Windows: electron-builder con target NSIS por usuario en LOCALAPPDATA y sin privilegios de administrador; appId, versión, iconos, artefactos y metadatos del instalador y del desinstalador; electron-updater contra GitHub Releases con latest.yml y comprobación opcional y cancelable que no envía contenido del usuario; pruebas de instalación, actualización, reinstalación y desinstalación sobre una carpeta userData con datos; y documentación del aviso de SmartScreen mientras el instalador no esté firmado (ADR 0015). Depende de M0-02 (#62) y M0-04 (#64), ya fusionadas en dev. La build de release en CI se completa en M5. Requiere revisión de seguridad y de datos.",
-  "status": "review",
+  "status": "published",
   "model_variant": "max",
   "issue": {
     "number": 68,
     "url": "https://github.com/gonzalitojh/world-craft/issues/68",
     "title": "Instalador NSIS, actualizaciones y preservación de datos"
+  },
+  "pr": {
+    "number": 110,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/110",
+    "title": "feat: instalador NSIS, actualizaciones y preservación de datos (#68)",
+    "branch": "feat/issue-68-nsis-updater-preservation",
+    "commit": "fddf419"
   },
   "acceptance_criteria": [
     "El instalador NSIS se genera y se instala sin permisos de administrador.",
