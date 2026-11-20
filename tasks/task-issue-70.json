@@ -1,12 +1,19 @@
 {
   "title": "Arranque de pruebas: Vitest, Testing Library, Playwright Electron y axe",
   "description": "Completar la base de pruebas de escritorio: Vitest para dominio, esquema, IPC y utilidades; Testing Library para componentes; Playwright Electron para E2E con userData temporal; axe-core en las pruebas de accesibilidad del shell; fixtures y helpers para base de datos, assets y ventana; y documentación de la estrategia y los comandos en docs/calidad/plan-de-pruebas.md.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 70,
     "url": "https://github.com/gonzalitojh/world-craft/issues/70",
     "title": "Arranque de pruebas: Vitest, Testing Library, Playwright Electron y axe"
+  },
+  "pr": {
+    "number": 112,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/112",
+    "title": "test: arrancar pruebas de componentes, E2E y axe (#70)",
+    "branch": "test/issue-70-test-bootstrap",
+    "commit": "4b16f8b"
   },
   "acceptance_criteria": [
     "pnpm test ejecuta unitarias e integración y pnpm test:e2e abre la aplicación real.",
