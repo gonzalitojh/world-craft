@@ -1,11 +1,12 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con la issue M1-01 (#72). La migración `0000_init` y las tablas
+> 20/11/2026 con la issue M1-02 (#73). La migración `0000_init` y las tablas
 > `schema_migrations` y `app_settings` están implementadas en M0-04 (#64); la
-> tabla `assets` en `0001_assets` (M0-06, #66); y `worlds` y `activity_log` en
-> `0002_worlds` (M1-01, #72). El resto de tablas de contenido y FTS5 llegan en
-> M1 con sus propias migraciones; hasta entonces figuran como previstas.
+> tabla `assets` en `0001_assets` (M0-06, #66); `worlds` y `activity_log` en
+> `0002_worlds` (M1-01, #72); y `entity_types` en `0003_entity_types` (M1-02,
+> #73). El resto de tablas de contenido y FTS5 llegan en M1 con sus propias
+> migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -30,7 +31,7 @@
 ## 2. Diagrama
 
 Modelo objetivo (implementadas hoy `schema_migrations`, `app_settings`,
-`assets`, `worlds` y `activity_log`):
+`assets`, `worlds`, `activity_log` y `entity_types`):
 
 ```text
 worlds
@@ -71,9 +72,9 @@ CREATE TABLE `schema_migrations` (
 
 La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
 guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
-`0001_assets` vale 2 y con `0002_worlds` vale 3; no es el prefijo de la etiqueta.
-El runner contrasta ese valor con `schema_migrations` y entra en modo seguro si
-no coinciden.
+`0001_assets` vale 2, con `0002_worlds` vale 3 y con `0003_entity_types` vale
+4; no es el prefijo de la etiqueta. El runner contrasta ese valor con
+`schema_migrations` y entra en modo seguro si no coinciden.
 
 ### 3.1 `schema_migrations`
 
@@ -93,10 +94,10 @@ no coinciden.
 
 ## 4. Mundos y contenido
 
-**Implementadas:** `worlds` y `activity_log` en `0002_worlds` (M1-01, #72) y
-`assets` en `0001_assets` (M0-06, #66). Las demás tablas de esta sección
-describen el modelo objetivo y todavía no existen; llegarán con sus issues de
-M1 y M2.
+**Implementadas:** `worlds` y `activity_log` en `0002_worlds` (M1-01, #72),
+`entity_types` en `0003_entity_types` (M1-02, #73) y `assets` en `0001_assets`
+(M0-06, #66). Las demás tablas de esta sección describen el modelo objetivo y
+todavía no existen; llegarán con sus issues de M1 y M2.
 
 ### 4.1 `worlds`
 
@@ -161,21 +162,71 @@ Reglas de la issue M1-01:
 
 ### 4.2 `entity_types`
 
+Implementada en `0003_entity_types` (M1-02, #73). SQL real:
+
+```sql
+CREATE TABLE `entity_types` (
+	`id` text PRIMARY KEY NOT NULL,
+	`world_id` text,
+	`key` text NOT NULL,
+	`name` text NOT NULL,
+	`icon` text NOT NULL,
+	`color` text NOT NULL,
+	`fields` text DEFAULT '[]' NOT NULL,
+	`is_system` integer DEFAULT 0 NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`deleted_at` integer,
+	FOREIGN KEY (`world_id`) REFERENCES `worlds`(`id`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "entity_types_is_system_check" CHECK("entity_types"."is_system" in (0, 1)),
+	CONSTRAINT "entity_types_world_check" CHECK(("entity_types"."world_id" is null and "entity_types"."is_system" = 1) or ("entity_types"."world_id" is not null and "entity_types"."is_system" = 0)),
+	CONSTRAINT "entity_types_key_check" CHECK(length("entity_types"."key") between 1 and 60 AND "entity_types"."key" NOT GLOB '*[^a-z0-9-]*' AND "entity_types"."key" GLOB '[a-z0-9]*' AND "entity_types"."key" GLOB '*[a-z0-9]' AND "entity_types"."key" NOT GLOB '*--*'),
+	CONSTRAINT "entity_types_name_check" CHECK(length("entity_types"."name") between 1 and 80),
+	CONSTRAINT "entity_types_fields_check" CHECK(json_valid("entity_types"."fields") AND json_type("entity_types"."fields") = 'array')
+);
+```
+
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
-| `id` | TEXT | PK | UUIDv7. |
-| `world_id` | TEXT | FK `worlds(id)`, NULL | `NULL` = tipo del sistema. |
+| `id` | TEXT | PK | UUIDv7. Los 18 tipos del sistema usan IDs fijos y estables. |
+| `world_id` | TEXT | FK `worlds(id)` `CASCADE`, NULL | `NULL` = tipo del sistema. |
 | `key` | TEXT | NOT NULL | Clave estable (`character`, `place`). |
-| `name` | TEXT | NOT NULL | Nombre visible. |
-| `icon` | TEXT | NOT NULL | Nombre de icono Lucide. |
-| `color` | TEXT | NOT NULL | Token de color validado. |
-| `fields` | TEXT | NOT NULL DEFAULT `'[]'` | JSON de campos personalizados. |
-| `is_system` | INTEGER | NOT NULL DEFAULT 0 | 1 si es del sistema. |
+| `name` | TEXT | NOT NULL, CHECK 1–80 | Nombre visible. |
+| `icon` | TEXT | NOT NULL | Nombre de icono Lucide de la lista cerrada. |
+| `color` | TEXT | NOT NULL | Token de color (`moss`, `ochre`, `danger`, `prussian`). |
+| `fields` | TEXT | NOT NULL DEFAULT `'[]'`, CHECK JSON array | Plantilla de campos validada con Zod. |
+| `is_system` | INTEGER | NOT NULL DEFAULT 0, CHECK 0/1 | 1 si es del sistema. |
 | `created_at` | INTEGER | NOT NULL | Creación. |
 | `updated_at` | INTEGER | NOT NULL | Actualización. |
+| `deleted_at` | INTEGER | NULL | Borrado lógico; la clave queda reservada. |
 
 Índices: `entity_types_world_key_uq (world_id, key)`,
-`entity_types_system_key_uq (key) WHERE world_id IS NULL`.
+`entity_types_system_key_uq (key) WHERE world_id IS NULL` y
+`entity_types_world_idx (world_id, deleted_at, name)`.
+
+Reglas de la issue M1-02:
+
+- Los 18 tipos del sistema se siembran en la migración con los mismos IDs,
+  claves, iconos, colores, plantillas y marcas de tiempo simbólicas
+  (`2026-11-20`) que `src/shared/entity-types/catalog.ts`; una prueba de
+  integración compara ambas fuentes.
+- Los tipos del sistema no se editan ni se borran desde la aplicación. Se pueden
+  duplicar en un mundo para ajustar su plantilla.
+- Cada tipo personalizado pertenece a un mundo; las listas y mutaciones filtran
+  por `world_id`. La clave es única dentro de su mundo y no puede coincidir con
+  una del sistema, aunque la misma clave puede repetirse en mundos distintos.
+- Borrar un tipo personalizado es un borrado lógico (`deleted_at`). La fila se
+  conserva, la clave sigue reservada y la purga definitiva llegará con la
+  papelera de #77. Los tipos del sistema no se borran.
+- La plantilla de campos se guarda como JSON y se valida con Zod. Los valores de
+  cada ficha se guardarán en `entities.attributes` con la misma plantilla, sin
+  migrar el esquema por cada campo.
+- Al duplicar un mundo se copian sus tipos personalizados en la misma
+  transacción. El borrado del mundo es lógico y conserva sus tipos hasta la
+  purga.
+- El formato de transferencia de tipos (`entity-types.v1`) solo incluye los
+  tipos personalizados; la exportación completa del mundo lo compondrá en
+  M1-07 (#78).
 
 ### 4.3 `entities`
 

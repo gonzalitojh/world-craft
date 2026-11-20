@@ -1,18 +1,19 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01. El modo seguro, la comprobación de integridad y la
-> copia pre-migración se implementaron en M0-04 (#64); las copias automáticas con
-> retención y la restauración desde el diálogo de modo seguro, en M0-07 (#67); el
-> instalador por usuario, la actualización manual y la preservación en
-> instalación, actualización y desinstalación, en M0-08 (#68); y el borrado lógico
-> de mundos con su actividad, en M1-01 (#72). La interfaz de copias de Ajustes, la
+> 20/11/2026 con M0-08, M1-01 y M1-02. El modo seguro, la comprobación de
+> integridad y la copia pre-migración se implementaron en M0-04 (#64); las copias
+> automáticas con retención y la restauración desde el diálogo de modo seguro,
+> en M0-07 (#67); el instalador por usuario, la actualización manual y la
+> preservación en instalación, actualización y desinstalación, en M0-08 (#68); el
+> borrado lógico de mundos con su actividad, en M1-01 (#72); y los tipos de
+> entidad con sus plantillas, en M1-02 (#73). La interfaz de copias de Ajustes, la
 > papelera visible y la purga llegan en M1; la release pública con actualización
 > real contra GitHub Releases, en M5.
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
-> **Decisiones:** ADR 0012, ADR 0016 y ADR 0018. La estructura de datos está en
-> [`persistencia.md`](persistencia.md).
+> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019 y ADR 0020. La
+> estructura de datos está en [`persistencia.md`](persistencia.md).
 
 ## 1. Objetivo
 
@@ -221,6 +222,15 @@ con M1-06 (#77); hasta entonces, las copias de seguridad son la vía de
 recuperación documentada. Archivar es reversible desde la propia lista y no
 borra nada.
 
+**Implementado en M1-02 (#73):** los tipos personalizados pertenecen al mundo y
+se copian al duplicarlo. Borrar un tipo es un borrado lógico con `deleted_at`:
+la fila se conserva, la clave queda reservada y la papelera visible llegará con
+#77. El borrado lógico de un mundo no toca sus tipos; la purga definitiva los
+eliminará en cascada con el mundo. Los 18 tipos del sistema no se borran ni se
+editan: para ajustar una plantilla se duplica el tipo en el mundo. El formato de
+transferencia solo incluye los tipos personalizados y se integra en la
+exportación completa del mundo en #78.
+
 ## 7. Actualizaciones y desinstalación
 
 ### 7.1 Actualización (implementada en M0-08)
@@ -290,6 +300,7 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Instalar → usar → desinstalar | Cada release | `userData` intacto y aviso al desinstalar (M0-08) |
 | Migración con datos | Cada migración | Copia + preservación |
 | Migración fallida | Cada migración | Rollback, copia y modo seguro (pruebas de integración) |
+| Tipos al duplicar y borrar un mundo | M1-02 | Copia transaccional, aislamiento y conservación tras el borrado lógico (integración) |
 | Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
 | Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
 | Copia automática y manifiesto v2 | M0-07 | Creación verificable, lectura de v1 y rechazo de bytes alterados (integración) |

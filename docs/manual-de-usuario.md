@@ -292,8 +292,14 @@ disco sin avisar.
 Las fichas son la base del mundo: personajes, lugares, organizaciones, objetos,
 criaturas, eventos y cualquier tipo que crees.
 
+- **Tipos preparados:** personaje, lugar, ciudad, nación, cultura, raza,
+  organización, religión, deidad, magia, objeto, criatura, idioma, evento,
+  conflicto, tecnología, flora y fauna y concepto. Los tipos ya están
+  preparados en la aplicación, pero todavía no hay pantalla para verlos, crear
+  tus propios tipos ni editarlos; llegarán con las fichas.
 - **Crear una ficha:** elige el tipo, ponle nombre y rellena los campos.
-- **Campos personalizados:** cada tipo puede tener sus propios campos.
+- **Campos personalizados:** cada tipo puede tener sus propios campos de texto,
+  número, fecha, selección o referencia a otra ficha.
 - **Imagen:** añade una imagen principal; se guarda en tu equipo.
 - **Etiquetas:** clasifica fichas con etiquetas de color.
 - **Favoritos:** marca las fichas que más usas.

@@ -122,6 +122,12 @@ Cada tipo de entidad tiene un color accesible en ambos temas. El color se usa
 en el icono, la etiqueta y el nodo del grafo; nunca es el único indicador de
 estado. Se eligen de una paleta limitada y se validan con contraste.
 
+Desde #73 el modelo solo admite cuatro tokens (`moss`, `ochre`, `danger` y
+`prussian`) y una lista cerrada de nombres de icono Lucide. No se guardan hex
+libres: el renderer resuelve el token con las variables de tema y el icono se
+dibuja con el conjunto permitido. La UI de tipos y fichas de #74 aplicará esta
+correspondencia y la revisión visual de #93 comprobará contraste y tamaño.
+
 ### 3.5 Verificación automática
 
 `tests/unit/design-tokens.test.ts` lee los CSS reales, resuelve los tokens de

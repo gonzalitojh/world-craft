@@ -1,19 +1,21 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01. La base local, las migraciones, el modo seguro, el
-> servicio de assets con `wc-asset://`, las copias automáticas, la rotación, la
-> restauración desde el diálogo de modo seguro, el instalador por usuario y la
-> actualización manual están implementados en M0-04 (#64), M0-06 (#66), M0-07
-> (#67) y M0-08 (#68). Los mundos y su actividad están implementados en M1-01
-> (#72). La interfaz de copias de Ajustes y la papelera visible llegan en M1 y la
-> release pública con actualización real, en M5. Las secciones distinguen lo
-> implementado de lo previsto.
+> 20/11/2026 con M0-08, M1-01 y M1-02. La base local, las migraciones, el modo
+> seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
+> rotación, la restauración desde el diálogo de modo seguro, el instalador por
+> usuario y la actualización manual están implementados en M0-04 (#64), M0-06
+> (#66), M0-07 (#67) y M0-08 (#68). Los mundos y su actividad, en M1-01 (#72), y
+> los tipos de entidad con sus plantillas, en M1-02 (#73). La interfaz de copias
+> de Ajustes y la papelera visible llegan en M1 y la release pública con
+> actualización real, en M5. Las secciones distinguen lo implementado de lo
+> previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
-> ADR 0012 (copias y recuperación), ADR 0016 (migraciones y modo seguro) y
-> ADR 0019 (mundos del MVP).
+> ADR 0012 (copias y recuperación), ADR 0016 (migraciones y modo seguro),
+> ADR 0019 (mundos del MVP) y ADR 0020 (tipos de entidad y campos
+> personalizados).
 
 ## 1. Principio
 
@@ -128,14 +130,14 @@ no se crea `config.json`.
 - `PRAGMA integrity_check` al arrancar, antes de activar WAL y después de
   migrar; si falla, modo seguro sin escritura.
 - `PRAGMA user_version` es el **número de migraciones aplicadas** (con
-  `0000_init`, `0001_assets` y `0002_worlds`, vale 3), no el prefijo de la
-  etiqueta. La tabla `schema_migrations` conserva el detalle y se contrasta con
-  él.
+  `0000_init`, `0001_assets`, `0002_worlds` y `0003_entity_types`, vale 4), no el
+  prefijo de la etiqueta. La tabla `schema_migrations` conserva el detalle y se
+  contrasta con él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
 - IDs UUIDv7 generados en el proceso principal (`src/main/db/ids.ts`) con
-  contador para mantener el orden dentro del mismo milisegundo. En M1-01 existen
-  las tablas del sistema, `assets`, `worlds` y `activity_log`; el resto de tablas
-  de contenido llega con sus issues.
+  contador para mantener el orden dentro del mismo milisegundo. En M1-02 existen
+  las tablas del sistema, `assets`, `worlds`, `activity_log` y `entity_types`; el
+  resto de tablas de contenido llega con sus issues.
 
 ### 3.2 Acceso
 
@@ -279,8 +281,8 @@ las fichas (M1).
   la deuda del [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md).
 - La versión del esquema se guarda en `PRAGMA user_version` como **número de
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
-  SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets` y `0002_worlds`,
-  vale 3.
+  SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds` y
+  `0003_entity_types`, vale 4.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -289,6 +291,12 @@ las fichas (M1).
   `assets` y `app_settings` y deja `user_version` 3. Su rollback está en
   `drizzle/rollback/0002_worlds.down.sql` y debe ejecutarse antes del de
   `0001_assets` porque `worlds.cover_asset_id` referencia `assets`.
+- `0003_entity_types` es aditiva: crea `entity_types`, siembra los 18 tipos del
+  sistema con IDs estables y deja `user_version` 4. Su rollback está en
+  `drizzle/rollback/0003_entity_types.down.sql` y debe ejecutarse antes del de
+  `0002_worlds` porque `entity_types.world_id` referencia `worlds`. Conserva
+  mundos y actividad; la prueba de preservación migra una base en `0002` con
+  datos.
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o
@@ -527,8 +535,10 @@ confirmación.
 
 Un ZIP con:
 
-- `world.json`: mundo, tipos, entidades, relaciones, etiquetas, mapas, grafo,
-  manuscritos, escenas, tablas de juego y ajustes del mundo.
+- `world.json`: mundo, tipos (los personalizados viajan en el bloque
+  `entity-types.v1`; los del sistema son implícitos), entidades, relaciones,
+  etiquetas, mapas, grafo, manuscritos, escenas, tablas de juego y ajustes del
+  mundo.
 - `assets/`: archivos referenciados con rutas relativas.
 - `manifest.json`: versión del formato, versión de esquema, fecha y checksums.
 
@@ -538,6 +548,8 @@ assets.
 ### 8.2 Importación
 
 - Se valida el ZIP y cada JSON con Zod.
+- Los tipos del bloque `entity-types.v1` rechazan las claves del sistema o ya
+  existentes en el mundo y se insertan en una transacción.
 - Límites de tamaño, número de archivos y profundidad.
 - Se rechazan rutas absolutas, `..`, enlaces simbólicos y nombres reservados de
   Windows.

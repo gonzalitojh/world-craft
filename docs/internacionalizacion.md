@@ -54,7 +54,11 @@ src/main/messages/es.ts          Textos tipados de los diálogos nativos
    activo del proveedor.
 6. Los textos de error visibles también están en el catálogo; los códigos
    internos no se muestran.
-7. Los nombres de usuario, mundos y fichas no se traducen.
+7. Los nombres de usuario, mundos y fichas no se traducen. Los tipos del
+   sistema tienen una clave estable (`character`, `place`…) y su nombre actual
+   en español es contenido del catálogo; al añadir idiomas, la interfaz podrá
+   resolverlo desde el catálogo del renderer usando esa clave, sin cambiar el
+   modelo ni las exportaciones.
 8. Los textos de `aria-label`, `alt`, `title`, `placeholder` y `aria-live`
    también salen del catálogo.
 

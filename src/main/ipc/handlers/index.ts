@@ -5,9 +5,11 @@
  * `IPC_CHANNELS` sin atenderlo aquí rompe el typecheck.
  */
 import { IPC_CHANNELS } from '../../../shared/contracts/channels';
+import type { EntityTypesService } from '../../entity-types/service';
 import type { UpdatesService } from '../../updates/service';
 import type { WorldsService } from '../../worlds/service';
 import type { IpcHandlers } from '../registry';
+import { createEntityTypeIpcHandlers } from './entity-types';
 import { createShellOpenExternalHandler } from './shell';
 import { createUpdateIpcHandlers } from './updates';
 import { createWorldIpcHandlers } from './worlds';
@@ -17,6 +19,7 @@ export interface IpcDependencies {
   readonly openExternal: (url: string) => Promise<void>;
   readonly updates: UpdatesService;
   readonly worlds: WorldsService;
+  readonly entityTypes: EntityTypesService;
 }
 
 /** Construye el mapa de handlers con las dependencias del proceso principal. */
@@ -26,5 +29,6 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
       createShellOpenExternalHandler(dependencies),
     ...createUpdateIpcHandlers(dependencies.updates),
     ...createWorldIpcHandlers(dependencies.worlds),
+    ...createEntityTypeIpcHandlers(dependencies.entityTypes),
   };
 }

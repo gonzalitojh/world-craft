@@ -13,6 +13,17 @@
  */
 import { APP_NAME, APP_VERSION } from '../app-info';
 import { IPC_CHANNELS, type IpcChannel } from './channels';
+import {
+  isEntityTypeDeleteResult,
+  isEntityTypeList,
+  isEntityTypeSummary,
+  type EntityTypeCreateInput,
+  type EntityTypeDuplicateInput,
+  type EntityTypeRemoveInput,
+  type EntityTypeSummary,
+  type EntityTypeUpdateInput,
+  type WorldCraftEntityTypesApi,
+} from './entity-types';
 import { ipcErr, isIpcResult, type IpcResult } from './result';
 import {
   isUpdateSnapshot,
@@ -98,6 +109,7 @@ export interface WorldCraftApi {
   readonly shell: WorldCraftShellApi;
   readonly updates: WorldCraftUpdatesApi;
   readonly worlds: WorldCraftWorldsApi;
+  readonly entityTypes: WorldCraftEntityTypesApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -188,11 +200,18 @@ function isNullableWorldDetail(value: unknown): value is WorldDetail | null {
   return value === null || isWorldDetail(value);
 }
 
+function isNullableEntityTypeSummary(
+  value: unknown,
+): value is EntityTypeSummary | null {
+  return value === null || isEntityTypeSummary(value);
+}
+
 /**
  * Construye la API congelada del preload.
  *
- * Se congelan el objeto raíz, `appInfo`, `shell`, `updates` y `worlds` para que
- * el renderer no pueda sustituirlos en tiempo de ejecución.
+ * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `worlds` y
+ * `entityTypes` para que el renderer no pueda sustituirlos en tiempo de
+ * ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -313,5 +332,38 @@ export function createWorldCraftApi(
       ),
   });
 
-  return Object.freeze({ appInfo, shell, updates, worlds });
+  const entityTypes: WorldCraftEntityTypesApi = Object.freeze({
+    list: (worldId: string) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entityTypesList,
+        { worldId },
+        isEntityTypeList,
+      ),
+    create: (input: EntityTypeCreateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entityTypesCreate,
+        input,
+        isEntityTypeSummary,
+      ),
+    update: (input: EntityTypeUpdateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entityTypesUpdate,
+        input,
+        isNullableEntityTypeSummary,
+      ),
+    duplicate: (input: EntityTypeDuplicateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entityTypesDuplicate,
+        input,
+        isNullableEntityTypeSummary,
+      ),
+    remove: (input: EntityTypeRemoveInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.entityTypesRemove,
+        input,
+        isEntityTypeDeleteResult,
+      ),
+  });
+
+  return Object.freeze({ appInfo, shell, updates, worlds, entityTypes });
 }

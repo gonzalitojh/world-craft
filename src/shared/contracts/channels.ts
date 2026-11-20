@@ -25,6 +25,11 @@ export const IPC_CHANNELS = {
   worldsSetArchived: 'worlds:setArchived',
   worldsRemove: 'worlds:remove',
   worldsListActivity: 'worlds:listActivity',
+  entityTypesList: 'entityTypes:list',
+  entityTypesCreate: 'entityTypes:create',
+  entityTypesUpdate: 'entityTypes:update',
+  entityTypesDuplicate: 'entityTypes:duplicate',
+  entityTypesRemove: 'entityTypes:remove',
 } as const;
 
 /** Unión de todos los canales admitidos. */

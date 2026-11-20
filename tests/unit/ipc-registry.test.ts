@@ -2,6 +2,7 @@ import type { IpcMain } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
+import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
 import {
   createIpcRouter,
@@ -20,6 +21,7 @@ const createHandlers = () =>
       currentVersion: '0.1.0',
     }),
     worlds: createUnavailableWorldsService(),
+    entityTypes: createUnavailableEntityTypesService(),
   });
 
 type RegisteredListener = (
@@ -201,6 +203,7 @@ describe('registerIpcHandlers', () => {
           currentVersion: '0.1.0',
         }),
         worlds: createUnavailableWorldsService(),
+        entityTypes: createUnavailableEntityTypesService(),
       }),
     );
 

@@ -10,6 +10,7 @@ import {
   createIdleUpdateSnapshot,
   UPDATE_STATE_CHANGED_CHANNEL,
 } from '@/shared/contracts/updates';
+import type { EntityTypeSummary } from '@/shared/contracts/entity-types';
 import type {
   WorldActivityEntry,
   WorldDetail,
@@ -32,6 +33,27 @@ const world: WorldDetail = {
   archivedAt: null,
 };
 
+const entityType: EntityTypeSummary = {
+  id: '01900000-0000-7000-8000-000000000010',
+  worldId: world.id,
+  key: 'orden-del-alba',
+  name: 'Orden del Alba',
+  icon: 'crown',
+  color: 'ochre',
+  isSystem: false,
+  fields: [
+    {
+      key: 'leader',
+      label: 'Líder',
+      type: 'text',
+      required: true,
+      maxLength: 80,
+    },
+  ],
+  createdAt: 1_760_000_000_000,
+  updatedAt: 1_760_000_001_000,
+};
+
 const activity: WorldActivityEntry = {
   id: '01900000-0000-7000-8000-000000000099',
   worldId: world.id,
@@ -43,11 +65,17 @@ const activity: WorldActivityEntry = {
 };
 
 describe('world-craft-api', () => {
-  it('expone únicamente la identidad, el puente de shell y las actualizaciones', () => {
+  it('expone la identidad, el puente de shell, actualizaciones, mundos y tipos', () => {
     const api = createWorldCraftApi({ invoke: async () => ({ ok: true }) });
 
     expect(WORLD_CRAFT_API_KEY).toBe('worldCraft');
-    expect(Object.keys(api)).toEqual(['appInfo', 'shell', 'updates', 'worlds']);
+    expect(Object.keys(api)).toEqual([
+      'appInfo',
+      'shell',
+      'updates',
+      'worlds',
+      'entityTypes',
+    ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
     expect(Object.keys(api.updates)).toEqual([
       'getState',
@@ -78,6 +106,7 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.shell)).toBe(true);
     expect(Object.isFrozen(api.updates)).toBe(true);
     expect(Object.isFrozen(api.worlds)).toBe(true);
+    expect(Object.isFrozen(api.entityTypes)).toBe(true);
 
     expect(() => {
       (api.appInfo as { version: string }).version = '9.9.9';
@@ -301,6 +330,101 @@ describe('world-craft-api', () => {
     await expect(
       detailApi.worlds.create({ name: world.name }),
     ).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  });
+
+  it('envía los canales y payloads de tipos de entidad y valida la forma', async () => {
+    const invoke = vi.fn(async (): Promise<unknown> => ({
+      ok: true,
+      data: [entityType],
+    }));
+    const api = createWorldCraftApi({ invoke });
+
+    await expect(api.entityTypes.list(world.id)).resolves.toEqual({
+      ok: true,
+      data: [entityType],
+    });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.entityTypesList, {
+      worldId: world.id,
+    });
+
+    invoke.mockResolvedValueOnce({ ok: true, data: entityType });
+    await expect(
+      api.entityTypes.create({
+        worldId: world.id,
+        name: entityType.name,
+        icon: entityType.icon,
+        color: entityType.color,
+        fields: entityType.fields,
+      }),
+    ).resolves.toEqual({ ok: true, data: entityType });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.entityTypesCreate, {
+      worldId: world.id,
+      name: entityType.name,
+      icon: entityType.icon,
+      color: entityType.color,
+      fields: entityType.fields,
+    });
+
+    invoke.mockResolvedValueOnce({ ok: true, data: null });
+    await expect(
+      api.entityTypes.update({
+        worldId: world.id,
+        id: entityType.id,
+        name: entityType.name,
+        icon: entityType.icon,
+        color: entityType.color,
+        fields: entityType.fields,
+      }),
+    ).resolves.toEqual({ ok: true, data: null });
+
+    invoke.mockResolvedValueOnce({ ok: true, data: entityType });
+    await expect(
+      api.entityTypes.duplicate({
+        worldId: world.id,
+        id: entityType.id,
+        name: 'Copia',
+      }),
+    ).resolves.toEqual({ ok: true, data: entityType });
+
+    invoke.mockResolvedValueOnce({ ok: true, data: { deleted: true } });
+    await expect(
+      api.entityTypes.remove({ worldId: world.id, id: entityType.id }),
+    ).resolves.toEqual({ ok: true, data: { deleted: true } });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.entityTypesRemove, {
+      worldId: world.id,
+      id: entityType.id,
+    });
+  });
+
+  it('degrada a INTERNAL_ERROR las respuestas de tipos incoherentes', async () => {
+    const api = createWorldCraftApi({
+      invoke: async () => ({
+        ok: true,
+        data: [{ ...entityType, icon: 'icono-inventado' }],
+      }),
+    });
+
+    await expect(api.entityTypes.list(world.id)).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
+
+    const fieldsApi = createWorldCraftApi({
+      invoke: async () => ({
+        ok: true,
+        data: {
+          ...entityType,
+          fields: [
+            { key: 'x', label: 'X', type: 'desconocido', required: false },
+          ],
+        },
+      }),
+    });
+
+    await expect(fieldsApi.entityTypes.list(world.id)).resolves.toEqual({
       ok: false,
       error: { code: 'INTERNAL_ERROR' },
     });
