@@ -110,8 +110,10 @@ La primera implementación del sistema confirma la decisión con estos matices:
   La persistencia en `config.json` y la pantalla de Ajustes son posteriores; la
   preferencia todavía no se recuerda al reiniciar.
 - **Verificación.** `tests/unit/design-tokens.test.ts` calcula el contraste por
-  tema y comprueba la disciplina de tokens. La matriz visual real, las capturas,
-  axe y el E2E quedan para #70 y la revisión local.
+  tema y comprueba la disciplina de tokens. Desde #70,
+  `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en Claro y Oscuro
+  y comprueba la ventana a 1024, 1280 y 1600 px. La matriz visual real, las
+  capturas y la auditoría de todas las pantallas siguen en #93.
 
 ## Referencias
 

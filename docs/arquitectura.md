@@ -52,7 +52,7 @@ implementado de lo previsto.
 | Tiptap y exportadores | Previsto (M3) | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Parcial: mensajes tipados del scaffold (#62) | [ADR 0009](adr/0009-centralized-i18n.md) |
-| Pruebas y calidad | Parcial: 282 unitarias en verde (4 omitidas) y 85 de integración en verde (1 omitida) (#62–#68); E2E previsto (#70) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida) (#62–#70); E2E de shell, ventana, temas y axe (#70) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -95,7 +95,8 @@ Electron separa tres procesos con permisos distintos:
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload y contrato del actualizador. | — |
 | `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos) y de instancia única. | `src/` |
 | `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
-| `tests/e2e/` | Playwright Electron. Previsto (#70). | `src/` |
+| `tests/components/` | Testing Library y `jsdom`: botón, pestañas y patrones de teclado y estados. | `src/renderer/` |
+| `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas y axe con `userData` temporal e isolado. | `src/` |
 | `resources/` | `icon.ico`, `icon.png`, `installer.nsh` y `licenses/` generados o versionados para electron-builder. | — |
 | `scripts/` | Verificación de build, nativo, paquete, checksums, iconos, licencias, instalación manual y limpieza. | Node, PowerShell |
 | `release/` | Salida de electron-builder (instalador, blockmap, `latest.yml`, `SHA256SUMS`); ignorada por git. | — |
@@ -231,8 +232,11 @@ Reglas de dependencia:
   con respaldo del sistema; el empaquetado OFL de las fuentes sigue pendiente y
   no hay `@font-face` ni recursos remotos.
 - **Verificación.** `tests/unit/design-tokens.test.ts` resuelve los tokens de
-  cada tema, calcula contraste WCAG y comprueba la disciplina de colores. La
-  matriz visual, las capturas, axe y el E2E quedan para #70 y la revisión local.
+  cada tema, calcula contraste WCAG y comprueba la disciplina de colores.
+  `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en los dos temas
+  y `tests/e2e/shell.spec.ts` comprueba la ventana a 1024, 1280 y 1600 px. La
+  matriz visual completa, las capturas y la auditoría de todas las pantallas
+  siguen en #93.
 
 ### 2.5 Estado implementado de los assets (#66)
 
@@ -595,30 +599,34 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 282 pruebas unitarias en verde (4 omitidas por
-  symlinks en Windows sin modo desarrollador) y 85 de integración en verde (1
-  omitida): scaffold (ventana, navegación, CSP e identidad), contrato IPC, router
-  IPC, API del preload, enlaces externos, journal, checksum, rutas, UUIDv7,
-  logger, modo seguro, tokens y contraste, servicio de assets (URL, rutas,
-  formatos, importación, huérfanos, protocolo y log), copias (manifiesto, rutas
-  de restauración, buckets, rotación y recuperación), empaquetado (configuración,
-  iconos y licencias), actualizador (contrato, servicio, red, log y textos) e
-  instancia única; además, arranque, migraciones, copia, corrupción, versión
-  adelantada, base ajena, preservación, rollback de referencia, importación,
-  protocolo, repositorio y purga con SQLite real, creación, restauración,
-  rotación y restauración interrumpida de copias, y preservación entre
-  instalaciones. `pnpm build` y `pnpm verify:build` validan los artefactos;
-  `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y Electron;
-  `pnpm verify:package` valida el paquete y `scripts/verify-install.ps1` prueba
-  la instalación real. `test:e2e` (Playwright Electron) sigue previsto para #70.
+- **Pruebas.** `pnpm test` ejecuta 282 pruebas unitarias (4 omitidas por
+  symlinks en Windows sin modo desarrollador), 7 de componentes y 85 de
+  integración (1 omitida): scaffold (ventana, navegación, CSP e identidad),
+  contrato IPC, router IPC, API del preload, enlaces externos, journal, checksum,
+  rutas, UUIDv7, logger, modo seguro, tokens y contraste, servicio de assets
+  (URL, rutas, formatos, importación, huérfanos, protocolo y log), copias
+  (manifiesto, rutas de restauración, buckets, rotación y recuperación),
+  empaquetado (configuración, iconos y licencias), actualizador (contrato,
+  servicio, red, log y textos) e instancia única; además, arranque, migraciones,
+  copia, corrupción, versión adelantada, base ajena, preservación, rollback de
+  referencia, importación, protocolo, repositorio y purga con SQLite real,
+  creación, restauración, rotación y restauración interrumpida de copias, y
+  preservación entre instalaciones. `pnpm test:e2e` abre la aplicación real con
+  Playwright Electron y un `userData` temporal: shell, ventana a 1024, 1280 y
+  1600 px, temas y axe. `pnpm build` y `pnpm verify:build` validan los
+  artefactos; `pnpm verify:native` comprueba better-sqlite3 y sharp en Node y
+  Electron; `pnpm verify:package` valida el paquete y
+  `scripts/verify-install.ps1` prueba la instalación real.
 - **CI.** GitHub Actions: jobs `lint` (con `format:check`), `typecheck`, `test` y
   `build` (con `db:check` y `verify:build`) en `ubuntu-latest`; `package` en
   `windows-latest` con `verify:native`, `dist`, `verify:build`,
   `package:checksums` y `verify:package --installer`; `gitleaks` y `audit`. Los
   cuatro primeros son required desde #69; `package` sigue sin serlo hasta M5, y
-  gitleaks y audit no bloquean. El job `package` no publica, no usa `GH_TOKEN` y
-  no sube artefactos. La caché de pnpm se configura en `.github/actions/setup`
-  con `cache: pnpm`, sin secretos ni servicios de pago.
+  gitleaks y audit no bloquean. `test` incluye las pruebas de componentes desde
+  #70; los E2E no tienen job de PR (Windows-only) y se ejecutan en local antes
+  de `review` y en el workflow de release de M5. El job `package` no publica, no
+  usa `GH_TOKEN` y no sube artefactos. La caché de pnpm se configura en
+  `.github/actions/setup` con `cache: pnpm`, sin secretos ni servicios de pago.
 - **Instalador.** Implementado (#68): electron-builder 26.18.0 con NSIS por
   usuario; `pnpm dist` genera `release/world-craft-0.1.0-setup.exe` y
   `pnpm dist:dir` una carpeta desempaquetada para pruebas. El paquete desempaqueta

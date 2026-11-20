@@ -1,0 +1,63 @@
+{
+  "title": "Arranque de pruebas: Vitest, Testing Library, Playwright Electron y axe",
+  "description": "Completar la base de pruebas de escritorio: Vitest para dominio, esquema, IPC y utilidades; Testing Library para componentes; Playwright Electron para E2E con userData temporal; axe-core en las pruebas de accesibilidad del shell; fixtures y helpers para base de datos, assets y ventana; y documentación de la estrategia y los comandos en docs/calidad/plan-de-pruebas.md.",
+  "status": "review",
+  "model_variant": "high",
+  "issue": {
+    "number": 70,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/70",
+    "title": "Arranque de pruebas: Vitest, Testing Library, Playwright Electron y axe"
+  },
+  "acceptance_criteria": [
+    "pnpm test ejecuta unitarias e integración y pnpm test:e2e abre la aplicación real.",
+    "Las pruebas E2E usan un userData temporal y no leen ni escriben datos del usuario.",
+    "axe se ejecuta al menos en el shell y falla ante errores críticos.",
+    "Existen pruebas de ejemplo que demuestran el patrón para cada nivel.",
+    "La CI ejecuta al menos unitarias e integración; E2E queda documentado para local y release."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Typecheck, lint, tests unitarios, de componentes, de integración y build en verde.",
+    "E2E de arranque, ventana, temas y accesibilidad ejecutado en local.",
+    "Ventana comprobada a 1024, 1280 y 1600 px por el E2E, sin scroll horizontal de página.",
+    "Los dos temas comprobados por el E2E de axe, con contraste AA y sin elementos invisibles.",
+    "Accesibilidad revisada: axe sin errores críticos en el shell y navegación por teclado en componentes.",
+    "Seguridad Electron revisada: el E2E usa un userData temporal y no toca datos del usuario ni contenido remoto.",
+    "Preservación de datos verificada: fixtures y E2E no leen ni escriben el userData real.",
+    "Funcionamiento offline comprobado: los E2E no requieren red.",
+    "Manual de usuario: no aplica, el cambio es interno de calidad.",
+    "ADR 0010 actualizado con el arranque real de Vitest, Testing Library, Playwright y axe.",
+    "Seguridad revisada: sin secretos ni dependencias injustificadas.",
+    "Datos exportables e importables: no aplica, no cambia el modelo de datos.",
+    "Sin servicios de pago ni dependencias injustificadas.",
+    "La variante recomendada y la usada están registradas en el task file.",
+    "Task file actualizado con estados, QA, seguridad y documentación.",
+    "Cambio en review para la revisión local del usuario, o PR fusionada en dev si ya se publicó."
+  ],
+  "plan": "1) Instalar @playwright/test, axe-core, Testing Library (react, dom, jest-dom, user-event) y jsdom como devDependencies. 2) Añadir vitest.components.config.ts con entorno jsdom, setup de jest-dom y tests/components; incluirla en pnpm test y en el typecheck con tsconfig.tests.json. 3) Configurar playwright.config.ts y fixtures en tests/e2e: userData temporal en os.tmpdir(), comprobación de que app.getPath('userData') cae dentro del temporal, cierre y borrado; ejemplos de arranque, ventana a 1024/1280/1600, tema Claro/Oscuro y axe sin errores críticos. 4) Añadir helpers y fixtures compartidos sin tocar datos reales. 5) Reutilizar los helpers existentes de SQLite y assets y documentar los comandos, la CI y la ejecución local/release en docs/calidad/plan-de-pruebas.md y ADR 0010. 6) Ejecutar typecheck, lint, test:unit, test:components, test:integration, build y test:e2e en local; validar JSON, enlaces y git diff --check. Desviación aprobada durante la implementación: se usa axe-core directamente con page.evaluate en lugar de @axe-core/playwright, porque este último necesita browserContext.newPage() y Electron no lo soporta.",
+  "validation": {
+    "result": "pending-user-review",
+    "date": "2026-11-20",
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: testing, status: todo, priority: p1, size: m, area: qa, variant: high y el hito M0. Dependencia M0-02 (#62) fusionada en dev; la base de Vitest unitaria y de integración ya existe desde M0-02 a M0-08. Sin needs-decision. Variante recomendada y usada: high. Implementado en la rama test/issue-70-test-bootstrap: @playwright/test 1.65.1, axe-core 4.14.1, Testing Library (react 16.3.3, dom 10.4.2, jest-dom 8.0.0, user-event 14.6.13) y jsdom 31.0.1 como devDependencies. vitest.components.config.ts, playwright.config.ts, tsconfig.tests.json y tests/setup/components.ts. Ejemplos: tests/components/button.test.tsx y tabs.test.tsx (7 pruebas), tests/e2e/shell.spec.ts y accessibility.spec.ts (9 pruebas). E2E con --user-data-dir temporal en os.tmpdir(), APPDATA y LOCALAPPDATA redirigidos al temporal, comprobación temprana de app.getPath('userData') en el fixture electronApp, cierre y borrado. axe inyectado con page.evaluate porque @axe-core/playwright necesita browserContext.newPage() y Electron no lo soporta. Evidencia local (2026-11-20): lint OK; typecheck (node, web y tests) OK; prettier --check de los archivos tocados OK; pnpm test = 282 unitarias (4 omitidas) + 7 de componentes + 85 de integración (1 omitida) OK; pnpm test:e2e = 9 E2E OK en 22 s; db:check, build y verify:build OK; pnpm audit --audit-level=high OK (2 moderadas preexistentes). Ventana 1024/1280/1600 con Muestras y temas Claro/Oscuro comprobados por el E2E. No se hace push ni PR sin petición explícita."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA independiente (qa-reviewer, 2026-11-20) sobre test/issue-70-test-bootstrap. Reprodujo en verde: pnpm lint; pnpm typecheck (node, web y tests); pnpm test (282 unitarias con 4 omitidas, 6 de componentes en ese momento y 85 de integración con 1 omitida); pnpm verify:build; pnpm test:e2e (8/8 en 20,3 s). Tras aplicar sus recomendaciones, la suite final queda en 7 componentes y 9 E2E. Verificó empíricamente el aislamiento: %APPDATA%\\World Craft (194 archivos) y %APPDATA%\\world-craft siguen intactos, sin carpetas temporales residuales; el guard compara app.getPath('userData') con el temporal y falla si no coincide. Inyectó una imagen sin alt y comprobó que axe devuelve image-alt crítico, por lo que la aserción no es vacía. Confirmó que no hay red, webServer ni navegadores descargados; que tsconfig.web no se relaja; que unit/componentes/integración tienen include disjuntos; que el job test incluye componentes y no promete E2E en CI. Hallazgo bloqueante corregido: documentation.adr y documentation.changelog decían pendiente pese a estar actualizados. Recomendaciones aplicadas: guard de aislamiento movido al fixture electronApp antes de firstWindow, guarda de motor y prueba negativa en axe, globals de ESLint acotados a componentes/E2E, prueba de teclado en Button, selector de tema desde messages, punto 3 del ADR 0013 aclarado y logs locales eliminados."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [
+      "LOW: axe-core se inyecta en la ventana con page.evaluate solo en tests; no se empaqueta ni se reutiliza en producción.",
+      "LOW: el aislamiento del E2E se comprueba tras el arranque; se añadió APPDATA/LOCALAPPDATA temporales como segunda barrera.",
+      "LOW: las trazas y capturas de Playwright en test-results/ pueden contener rutas y DOM; no se adjuntan a issues ni PRs.",
+      "LOW: las dependencias de desarrollo añaden paquetes transitivos; pnpm audit no reporta vulnerabilidades HIGH (2 moderadas preexistentes de electron-builder/vite)."
+    ],
+    "notes": "Security-champion (2026-11-20): PASS sin hallazgos HIGH ni MEDIUM. Revisados el diff completo, package.json, pnpm-lock.yaml, playwright.config.ts, fixtures, tests, tsconfig y documentación. No hay secretos, credenciales, datos personales, rutas C:\\Users ni correos. No se tocó src/: permisos de Electron, CSP, preload y protocolo intactos; tests, Playwright, axe-core y jsdom quedan fuera del asar (devDependencies y electron-builder solo empaqueta out/** y package.json). El E2E usa --user-data-dir temporal, comprueba app.getPath('userData') antes de abrir la ventana y ahora también redirige APPDATA/LOCALAPPDATA al temporal; no hay red, webServer ni navegadores descargados y el renderer carga desde file://. axe-core es MPL-2.0 y el resto MIT/Apache-2.0, sin distribución. pnpm audit --audit-level=high: exit 0; 2 vulnerabilidades moderadas preexistentes (esbuild vía vite y minimatch vía electron-builder), ninguna HIGH. Logs y capturas de test-results/ están ignorados por git y no se publican."
+  },
+  "documentation": {
+    "adr": "ADR 0006, 0010, 0013 y 0018 actualizados con el arranque de pruebas, la política de E2E local/release y el estado de accesibilidad.",
+    "manual": "no aplica",
+    "changelog": "CHANGELOG.md actualizado en Añadido y Cambiado.",
+    "agents": "no aplica"
+  }
+}

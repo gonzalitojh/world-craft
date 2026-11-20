@@ -25,14 +25,15 @@
 | Nivel | Herramienta | Qué cubre | Dónde |
 |---|---|---|---|
 | Unitario | Vitest | Dominio, validaciones Zod, utilidades, i18n, tokens, lógica de exportación. | `tests/unit/` |
-| Componentes | Vitest + Testing Library | Renderer, formularios, estados, teclado, temas. | `tests/unit/` y `tests/components/` |
+| Componentes | Vitest + Testing Library | Renderer, formularios, estados, teclado, temas. | `tests/components/` |
 | Integración | Vitest + SQLite temporal | Esquema, migraciones, consultas, FTS5, backups, importación. | `tests/integration/` |
 | E2E | Playwright Electron | Arranque, ventana, flujos críticos, temas, accesibilidad. | `tests/e2e/` |
 | Manual | Checklist | Instalación, actualización, desinstalación y percepción visual. | Task file |
 
-`tests/unit/` e `tests/integration/` existen y están en verde (M0-02 a M0-08).
-`components/` y `e2e/` se crearán con sus issues y hasta entonces son contrato
-previsto.
+`tests/unit/`, `tests/components/`, `tests/integration/` y `tests/e2e/` existen y
+están en verde desde #70. La base de Vitest llegó con M0-02 a M0-08; Testing
+Library, Playwright Electron y axe se incorporaron con el arranque de pruebas
+(M0-10, #70).
 
 ## 3. Qué se prueba en cada área
 
@@ -93,14 +94,17 @@ deshabilitado se lea sin opacidad, que exista `prefers-reduced-motion` y que
 `html`/`body` no usen `overflow-x: hidden`. La tabla completa de ratios vive en
 el test y en el informe de #65.
 
-Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión local:
+Desde #70, `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell real en
+los dos temas y falla ante violaciones críticas (detalle en 3.11). Lo siguiente
+**sigue pendiente** y pertenece a #93 y a la revisión local:
 
 - Componentes con estados de reposo, hover, foco, error, deshabilitado y carga
   en una matriz visual real a 1024, 1280 y 1600 px.
-- Navegación por teclado y foco visible revisados en la aplicación.
+- Navegación por teclado y foco visible revisados en todas las pantallas de
+  dominio.
 - `aria-live` en los flujos de guardado y error de las pantallas de dominio (los
   avisos del shell ya lo usan).
-- axe sin errores críticos en pantallas principales.
+- axe sin errores críticos en todas las pantallas principales, no solo el shell.
 - Capturas de los dos temas y revisión de `prefers-reduced-motion` en ejecución.
 - Textos largos, nombres sin espacios y rutas sin romper el layout, comprobados
   visualmente (el test solo impide el parche de `overflow-x: hidden`).
@@ -143,6 +147,9 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
   seguro, tokens y contraste del sistema de diseño, servicio de assets, copias
   (manifiesto, rutas de restauración, buckets, rotación y composición de modo
   seguro), instalador, actualizador, instancia única y licencias.
+- **7 pruebas de componentes en verde** en `tests/components/`: botón nativo
+  (nombre accesible, `onClick`, `loading`, variantes) y pestañas (selección,
+  panel activo, flechas, Inicio/Fin y clic). Usan Testing Library y `jsdom`.
 - **85 pruebas de integración en verde (1 omitida)** en `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
@@ -151,9 +158,11 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
   a `0001_assets`, importación, protocolo, repositorio y purga con SQLite real,
   creación, verificación, restauración, rotación y restauración interrumpida de
   copias, y preservación de datos entre instalaciones.
-- **Comandos.** `pnpm test:unit`, `pnpm test:integration`, `pnpm test`,
-  `pnpm db:check`, `pnpm verify:native`, `pnpm verify:build`, `pnpm dist:dir`,
-  `pnpm dist`, `pnpm package:checksums` y `pnpm verify:package`.
+- **Comandos.** `pnpm test` (unitarias, componentes e integración),
+  `pnpm test:unit`, `pnpm test:components`, `pnpm test:integration`,
+  `pnpm test:e2e`, `pnpm db:check`, `pnpm verify:native`, `pnpm verify:build`,
+  `pnpm dist:dir`, `pnpm dist`, `pnpm package:checksums` y
+  `pnpm verify:package`.
 - **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
   `out/renderer/index.html`, y copia `drizzle/` a `out/main/drizzle`; no genera
   instalador.
@@ -167,11 +176,12 @@ Lo siguiente **no está hecho todavía** y pertenece a #70 y a la revisión loca
   2×2. Se ejecuta en el job `package` de Windows desde #68.
 - **Manual del scaffold.** DevTools sin `require` ni `process`, navegación
   externa bloqueada y arranque sin red. La comprobación visual de la ventana a
-  1024, 1280 y 1600 px y de los dos temas con el shell de #65 queda pendiente
-  para #70 y la revisión local.
-- **Pendiente.** E2E con Playwright (#70) y auditoría de accesibilidad, temas y
-  ventana (#93). El instalador, el asar y el actualizador ya están cubiertos en
-  3.6 y 3.10.
+  1024, 1280 y 1600 px y de los dos temas con el shell de #65 la cubre el E2E de
+  #70; las capturas y la matriz visual completa siguen en #93.
+- **Pendiente.** Auditoría de accesibilidad, temas y ventana de todas las
+  pantallas (#93). Los E2E de arranque, ventana, temas y axe del shell están
+  implementados en 3.11. El instalador, el asar y el actualizador ya están
+  cubiertos en 3.6 y 3.10.
 
 ### 3.8 Assets locales (implementado, #66)
 
@@ -344,8 +354,53 @@ sube artefactos y **sigue sin ser required hasta M5**.
 
 **Residuales:** la actualización real contra GitHub Releases se prueba en M5; el
 instalador y `latest.yml` van sin firma (ADR 0015); la cancelación de la
-comprobación no aborta el socket; axe/E2E siguen en #70/#93; el paso de
-`package` a required y la build de release de Windows se abordan en M5.
+comprobación no aborta el socket; la auditoría completa de axe, temas y ventana
+sigue en #93; el paso de `package` a required y la build de release de Windows
+se abordan en M5.
+
+### 3.11 Componentes y E2E (implementado, #70)
+
+**Componentes.** `pnpm test:components` ejecuta Vitest con `jsdom`, Testing
+Library y `@testing-library/jest-dom` sobre `tests/components/`. El setup
+(`tests/setup/components.ts`) extiende `expect` y limpia el DOM entre pruebas.
+Los ejemplos cubren `Button` (nombre accesible, `onClick`, activación con
+Enter/Espacio, `loading` con `aria-busy` y variantes) y `Tabs`
+(tablist/tab/tabpanel, flechas, Inicio/Fin y clic). Las pruebas se typechequean
+con `tsconfig.tests.json`, que añade DOM y JSX sin relajar `tsconfig.node` ni
+`tsconfig.web`.
+
+**E2E.** `pnpm test:e2e` compila con `pnpm build` y ejecuta Playwright Electron
+en `tests/e2e/` (en serie, un worker, timeout de 60 s).
+`tests/e2e/fixtures/electron-app.ts` crea una carpeta en `os.tmpdir()`, la pasa
+como `--user-data-dir`, redirige `APPDATA` y `LOCALAPPDATA` a subcarpetas del
+temporal, comprueba que `app.getPath('userData')` cae exactamente ahí, cierra la
+aplicación y borra la carpeta. Una fuga de aislamiento detiene la prueba: no se
+leen ni escriben `%APPDATA%`, la base, los assets ni las copias del usuario.
+
+- **Shell:** identidad y versión, ventana visible con mínimo 1024×700, carga del
+  renderer desde `file://`, navegación Inicio/Muestras con `aria-current` y
+  conmutación de los dos temas.
+- **Ventana:** a 1024, 1280 y 1600 px no hay scroll horizontal de página
+  (`scrollWidth <= clientWidth` en `html` y `body`) con el contenido largo de la
+  página de Muestras.
+- **Accesibilidad:** se inyecta `axe-core` con `page.evaluate` (no está sujeto a
+  la CSP) y se ejecuta sobre el documento en Claro y Oscuro. Se falla ante
+  violaciones `critical`; las `serious` se anotan para #93. Una prueba negativa
+  con un `img` sin `alt` confirma que la aserción detecta `image-alt` crítico y
+  no es vacía. No se usa `@axe-core/playwright` porque necesita
+  `browserContext.newPage()`, que el contexto de Electron no admite
+  (`Target.createTarget: Not supported`).
+- **Sin red:** los E2E no descargan navegadores ni hacen peticiones externas.
+
+**Fixtures y helpers.** Las pruebas de integración reutilizan
+`tests/integration/helpers/temp-db.ts` y `temp-assets.ts`; la ventana y el
+`userData` temporal viven en `tests/e2e/fixtures/electron-app.ts` y la auditoría
+en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
+
+**Comandos y tiempos (equipo de referencia, 2026-11-20).** `pnpm test` ejecuta
+282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida) en
+unos 40 s; `pnpm test:e2e` compila y ejecuta 9 pruebas en unos 21 s. Los E2E son
+Windows-only, igual que la aplicación.
 
 ## 4. Cobertura
 
@@ -365,29 +420,33 @@ descenso injustificado bloquea la puerta de QA.
 - Nombres ficticios y evidentes (`Mundo de ejemplo`, `Personaje #1`).
 - Imágenes de prueba generadas o de dominio público.
 - Bases temporales en el directorio de pruebas; nunca la base del usuario.
-- Los E2E usan un `userData` temporal y lo borran al terminar.
+- Los E2E crean un `userData` temporal en `os.tmpdir()`, comprueban que la
+  aplicación lo usa de verdad y lo borran al terminar.
 
 ## 6. CI
 
 | Job | Bloqueante | Qué ejecuta |
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
-| `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node` y `tsconfig.web`). |
-| `test` | Sí | `pnpm test`: 282 unitarias en verde (4 omitidas) + 85 de integración en verde (1 omitida). |
+| `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
+| `test` | Sí | `pnpm test`: 282 unitarias (4 omitidas), 7 de componentes y 85 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
-| `e2e` | No | Playwright Electron en Windows; pendiente de #70. |
+| `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |
 | `gitleaks` | No | Escaneo de secretos. |
 | `audit` | No | `pnpm audit --audit-level=high`. |
 
 Desde #69, `lint`, `typecheck`, `test` y `build` son required en los rulesets
 `protect-dev` y `protect-main`; el job `build` incluye `db:check`. `package`
 sigue sin ser required: empaquetar NSIS en Windows es lento y la build de release
-completa llega con M5. `e2e` llegará con #70 y la auditoría de accesibilidad,
-temas y ventana con #93. `verify:native` se ejecuta en el job `package` de Windows
-desde #68. La CI no tiene credenciales ni datos de usuario; el job `package` no
-recibe `GH_TOKEN`. `gitleaks` y `audit` se revisan en la puerta de seguridad y no
-bloquean una PR que no toca secretos ni dependencias.
+completa llega con M5. Desde #70, `test` incluye las pruebas de componentes y no
+hay job `e2e` en las PRs: los E2E se ejecutan en local antes de `review` y en el
+workflow de release de M5 porque abren la aplicación real en Windows. La
+auditoría de accesibilidad, temas y ventana de todas las pantallas sigue en #93.
+`verify:native` se ejecuta en el job `package` de Windows desde #68. La CI no
+tiene credenciales ni datos de usuario; el job `package` no recibe `GH_TOKEN`.
+`gitleaks` y `audit` se revisan en la puerta de seguridad y no bloquean una PR
+que no toca secretos ni dependencias.
 
 ### 6.1 Caché, límites gratuitos y build de Windows en M5
 

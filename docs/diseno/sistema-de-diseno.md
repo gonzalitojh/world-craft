@@ -3,8 +3,9 @@
 > **Estado:** guía vigente desde el 18/11/2026 para la aplicación de escritorio.
 > Los tokens, los componentes base y el shell de escritorio se implementaron en
 > la issue #65; las pantallas de dominio llegarán con las issues de UI de M1.
-> La matriz visual real, las capturas, axe y el E2E se verifican en #70 y en la
-> revisión local.
+> La matriz visual real, las capturas y la auditoría de todas las pantallas se
+> completan en #93; el axe del shell y el E2E de ventana y temas están
+> implementados desde #70.
 > **Ámbito:** principios visuales, tokens, temas, tipografía, componentes,
 > estados, accesibilidad y patrones de escritorio.
 
@@ -297,9 +298,12 @@ Toda pantalla debe cubrir:
 ## 12. Verificación
 
 Desde #65 existe una verificación automática de tokens y contraste
-(`tests/unit/design-tokens.test.ts`, 14 pruebas). La matriz visual real a 1024,
-1280 y 1600 px, las capturas, axe y el E2E **siguen pendientes** de #70 y de la
-revisión local; no deben darse por hechos.
+(`tests/unit/design-tokens.test.ts`, 14 pruebas). Desde #70,
+`tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en Claro y Oscuro y
+`tests/e2e/shell.spec.ts` comprueba la ventana a 1024, 1280 y 1600 px sin scroll
+horizontal. La matriz visual real, las capturas y la auditoría de todas las
+pantallas **siguen pendientes** de #93 y de la revisión local; no deben darse por
+hechos.
 
 Antes de cerrar una issue de UI:
 

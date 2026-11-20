@@ -153,7 +153,7 @@ Windows, pero la CI de calidad corre en Ubuntu y debe seguir funcionando.
 |---|---|
 | Ventana y escritorio | El instalador crea acceso directo solo en Inicio; una única instancia enfoca la ventana existente. |
 | Temas (Claro/Oscuro) | El botón «Actualizaciones» y su diálogo usan los tokens y se revisaron en ambos temas a 1024, 1280 y 1600 px. |
-| Accesibilidad | Diálogo nativo con trampa de foco, `Escape`, `aria-live`, `<progress>` etiquetado y textos del catálogo; axe/E2E quedan para #70/#93. |
+| Accesibilidad | Diálogo nativo con trampa de foco, `Escape`, `aria-live`, `<progress>` etiquetado y textos del catálogo; axe sobre el shell y E2E desde #70, y auditoría completa en #93. |
 | Seguridad y privacidad | Partición aislada, allowlist HTTPS de GitHub, cabeceras saneadas, permisos denegados y logs sin URLs ni contenido; sin firma Authenticode. |
 | Datos y preservación | `userData` fuera de la instalación, `deleteAppDataOnUninstall:false`, aviso al desinstalar y prueba de instalación/actualización/desinstalación. |
 | Coste | 0 €/mes: GitHub Free, electron-builder y electron-updater open source; la firma de código sigue siendo opcional y de pago. |

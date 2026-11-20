@@ -154,6 +154,16 @@ primera versión estable.
   licencias, contrato y estados del actualizador, red, log, textos e instancia
   única, más preservación entre instalaciones. El total pasa a 282 unitarias en
   verde (4 omitidas) y 85 de integración en verde (1 omitida).
+- Base de pruebas de escritorio (#70): Testing Library con `jsdom` para
+  componentes, Playwright Electron para E2E con `userData`, `APPDATA` y
+  `LOCALAPPDATA` temporales en `os.tmpdir()` y axe-core para el shell en los dos
+  temas. `pnpm test` suma 7 pruebas de componentes y `pnpm test:e2e` añade 9 E2E
+  de arranque, navegación, ventana a 1024/1280/1600 px, temas y accesibilidad sin
+  errores críticos.
+- Configuración de pruebas (#70): `vitest.components.config.ts`,
+  `playwright.config.ts`, `tsconfig.tests.json` y fixtures compartidos. La CI
+  ejecuta unitarias, componentes e integración; los E2E, Windows-only, se
+  ejecutan en local antes de `review` y en el workflow de release de M5.
 
 ### Cambiado
 
@@ -188,6 +198,8 @@ primera versión estable.
   `build` son required checks de `dev` y `main`; `gitleaks` y `audit` siguen sin
   bloquear y el job `package` de Windows queda para M5. La caché de pnpm, los
   límites gratuitos y la ruta de la build de Windows están documentados.
+- `pnpm typecheck` cubre también las pruebas con `tsconfig.tests.json` y
+  `pnpm test` incluye las pruebas de componentes (#70).
 
 ### Eliminado
 
