@@ -78,9 +78,7 @@ test('abre la ventana con el shell, sin versión en la navegación', async ({
   await expect(page).toHaveTitle(messages.app.title);
 
   // La versión instalada vive en el diálogo de actualizaciones.
-  await page
-    .getByRole('button', { name: messages.updates.open })
-    .click();
+  await page.getByRole('button', { name: messages.updates.open }).click();
 
   const updates = page.getByRole('dialog', { name: messages.updates.title });
 
@@ -158,9 +156,9 @@ test('navega entre Inicio y Mundos y mantiene Muestras fuera de producto', async
   const palette = page.getByRole('dialog', { name: messages.palette.title });
 
   await expect(palette).toBeVisible();
-  await expect(
-    palette.getByRole('option', { name: /Muestras/ }),
-  ).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /Muestras/ })).toHaveCount(
+    0,
+  );
   await expect(
     palette.getByRole('option', {
       name: new RegExp(messages.palette.commands.search),
@@ -267,9 +265,7 @@ test('el rail plegado mide 64 px y no desborda a 1024 px', async ({
 }) => {
   await setViewportWidth(electronApp, page, 1024, 700);
 
-  await page
-    .getByRole('button', { name: messages.shell.collapse })
-    .click();
+  await page.getByRole('button', { name: messages.shell.collapse }).click();
   await expect(
     page.getByRole('button', { name: messages.shell.expand }),
   ).toHaveAttribute('aria-expanded', 'false');
@@ -324,9 +320,7 @@ test('el rail plegado mide 64 px y no desborda a 1024 px', async ({
   }
 
   // Se deja expandido para no contaminar el estado de la ventana de la prueba.
-  await page
-    .getByRole('button', { name: messages.shell.expand })
-    .click();
+  await page.getByRole('button', { name: messages.shell.expand }).click();
   await expect(
     page.getByRole('button', { name: messages.shell.collapse }),
   ).toHaveAttribute('aria-expanded', 'true');
@@ -336,7 +330,9 @@ test('con 0 mundos solo hay una primaria, la del estado vacío', async ({
   page,
 }) => {
   await expect(page.locator('.wc-button--primary:visible')).toHaveCount(1);
-  await expect(page.locator('.wc-topbar .wc-button--primary:visible')).toHaveCount(0);
+  await expect(
+    page.locator('.wc-topbar .wc-button--primary:visible'),
+  ).toHaveCount(0);
 
   // Mundos con 0 también deja la primaria al estado vacío.
   await page
@@ -344,7 +340,9 @@ test('con 0 mundos solo hay una primaria, la del estado vacío', async ({
     .getByRole('button', { name: messages.shell.views.worlds })
     .click();
   await expect(page.locator('.wc-button--primary:visible')).toHaveCount(1);
-  await expect(page.locator('.wc-topbar .wc-button--primary:visible')).toHaveCount(0);
+  await expect(
+    page.locator('.wc-topbar .wc-button--primary:visible'),
+  ).toHaveCount(0);
 
   await createWorld(page, 'Las Mareas Grises');
 
@@ -369,7 +367,9 @@ test('mantiene una sola primaria por vista de producto', async ({ page }) => {
 
   // Inicio y Mundos con al menos un mundo: la primaria es «Crear mundo».
   for (const view of ['home', 'worlds'] as const) {
-    await navigation.getByRole('button', { name: messages.shell.views[view] }).click();
+    await navigation
+      .getByRole('button', { name: messages.shell.views[view] })
+      .click();
     await expect(
       page.getByRole('heading', { level: 1, name: messages.shell.views[view] }),
     ).toBeVisible();
@@ -391,7 +391,9 @@ test('mantiene una sola primaria por vista de producto', async ({ page }) => {
     .getByRole('button', { name: messages.shell.views.worlds })
     .click();
   await page
-    .getByRole('button', { name: messages.worlds.card.openNamed('Las Mareas Grises') })
+    .getByRole('button', {
+      name: messages.worlds.card.openNamed('Las Mareas Grises'),
+    })
     .click();
   await page
     .getByRole('button', { name: messages.entities.list.title })
@@ -417,7 +419,9 @@ test('mantiene una sola primaria por vista de producto', async ({ page }) => {
       .locator('.wc-entity-toolbar')
       .getByRole('button', { name: messages.entities.list.create }),
   ).toHaveCount(0);
-  await expect(page.locator('.wc-topbar .wc-button--primary:visible')).toHaveCount(0);
+  await expect(
+    page.locator('.wc-topbar .wc-button--primary:visible'),
+  ).toHaveCount(0);
 });
 
 test('el menú del mundo funciona con teclado, Escape y foco', async ({
@@ -453,9 +457,7 @@ test('el menú del mundo funciona con teclado, Escape y foco', async ({
 
   // Un diálogo abierto desde el menú vuelve a enfocar el disparador.
   await trigger.click();
-  await page
-    .getByRole('menuitem', { name: messages.worlds.card.edit })
-    .click();
+  await page.getByRole('menuitem', { name: messages.worlds.card.edit }).click();
 
   const dialog = page.getByRole('dialog');
 
@@ -566,18 +568,17 @@ for (const width of [1024, 1280, 1600] as const) {
         topbarWidth: topbar.scrollWidth,
         topbarHeight: topbar.getBoundingClientRect().height,
         titleHeight: title.getBoundingClientRect().height,
-        titleLineHeight: Number.parseFloat(
-          getComputedStyle(title).lineHeight,
-        ),
+        titleLineHeight: Number.parseFloat(getComputedStyle(title).lineHeight),
       };
     });
 
     expect(metrics).not.toBeNull();
 
     if (metrics !== null) {
-      expect(metrics.documentWidth, JSON.stringify(metrics)).toBeLessThanOrEqual(
-        metrics.clientWidth,
-      );
+      expect(
+        metrics.documentWidth,
+        JSON.stringify(metrics),
+      ).toBeLessThanOrEqual(metrics.clientWidth);
       expect(metrics.bodyWidth, JSON.stringify(metrics)).toBeLessThanOrEqual(
         metrics.clientWidth,
       );

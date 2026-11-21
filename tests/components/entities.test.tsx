@@ -213,12 +213,12 @@ describe('página de fichas', () => {
         '.wc-page__header .wc-button--primary, .wc-empty .wc-button--primary',
       ),
     ).toHaveLength(1);
-    expect(
-      header?.querySelectorAll('.wc-button--primary') ?? [],
-    ).toHaveLength(0);
-    expect(
-      empty?.querySelectorAll('.wc-button--primary') ?? [],
-    ).toHaveLength(1);
+    expect(header?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      0,
+    );
+    expect(empty?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      1,
+    );
     expect(empty?.textContent).toContain(messages.entities.list.create);
 
     // El menú de la cabecera sigue disponible.
@@ -252,15 +252,17 @@ describe('página de fichas', () => {
 
     expect(header).not.toBeNull();
     expect(empty).not.toBeNull();
-    expect(
-      header?.querySelectorAll('.wc-button--primary') ?? [],
-    ).toHaveLength(1);
+    expect(header?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      1,
+    );
     expect(header?.textContent).toContain(messages.entities.list.create);
-    expect(
-      empty?.querySelectorAll('.wc-button--primary') ?? [],
-    ).toHaveLength(0);
+    expect(empty?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      0,
+    );
 
-    const clear = empty?.querySelector<HTMLButtonElement>('.wc-button--secondary');
+    const clear = empty?.querySelector<HTMLButtonElement>(
+      '.wc-button--secondary',
+    );
 
     expect(clear).toHaveTextContent(messages.entities.list.clearFilters);
   });

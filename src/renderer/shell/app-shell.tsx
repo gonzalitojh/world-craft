@@ -150,7 +150,12 @@ const NAV_ITEMS = [
   { id: 'worlds', icon: <WorldsIcon /> },
 ] as const;
 
-const WORLDS_VIEWS: readonly AppView[] = ['worlds', 'world', 'entities', 'entity'];
+const WORLDS_VIEWS: readonly AppView[] = [
+  'worlds',
+  'world',
+  'entities',
+  'entity',
+];
 
 /**
  * Shell de escritorio sin router.
@@ -216,9 +221,7 @@ export function AppShell({
       }}
     >
       {icon}
-      {isCollapsed ? null : (
-        <span className="wc-nav-item__label">{label}</span>
-      )}
+      {isCollapsed ? null : <span className="wc-nav-item__label">{label}</span>}
     </button>
   );
 

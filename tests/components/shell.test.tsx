@@ -90,7 +90,9 @@ describe('AppShell', () => {
       const { unmount } = renderShell({ view: view as AppView });
 
       expect(
-        within(nav()).getByRole('button', { name: messages.shell.views.worlds }),
+        within(nav()).getByRole('button', {
+          name: messages.shell.views.worlds,
+        }),
         view,
       ).toHaveAttribute('aria-current', 'page');
       unmount();
@@ -115,7 +117,9 @@ describe('AppShell', () => {
     expect(onCollapsedChange).toHaveBeenCalledWith(true);
     expect(onCollapsedChange).toHaveBeenCalledOnce();
 
-    const expanded = screen.getByRole('button', { name: messages.shell.expand });
+    const expanded = screen.getByRole('button', {
+      name: messages.shell.expand,
+    });
 
     expect(expanded).toHaveAttribute('aria-expanded', 'false');
 
@@ -215,9 +219,10 @@ describe('AppShell', () => {
     expect(trigger).toHaveClass('wc-topbar__search');
 
     // El atajo visual es decorativo: el accesible es aria-keyshortcuts.
-    expect(
-      trigger.querySelector('.wc-topbar__search-kbd'),
-    ).toHaveAttribute('aria-hidden', 'true');
+    expect(trigger.querySelector('.wc-topbar__search-kbd')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
 
     trigger.focus();
 
@@ -248,9 +253,7 @@ describe('AppShell', () => {
     renderShell({ theme: 'light', onToggleTheme });
 
     const toggle = screen.getByRole('button', {
-      name: messages.shell.theme.switchLabel(
-        messages.shell.theme.currentLight,
-      ),
+      name: messages.shell.theme.switchLabel(messages.shell.theme.currentLight),
     });
 
     expect(toggle).not.toHaveAttribute('aria-pressed');

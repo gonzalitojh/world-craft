@@ -319,7 +319,9 @@ describe('paleta de comandos', () => {
   it('no ofrece Muestras y renombra la búsqueda global', () => {
     renderPalette();
 
-    expect(messages.palette.commands.search).toBe('Abrir la página de búsqueda');
+    expect(messages.palette.commands.search).toBe(
+      'Abrir la página de búsqueda',
+    );
     expect(
       screen.getByRole('option', {
         name: new RegExp(messages.palette.commands.search),

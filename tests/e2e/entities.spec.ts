@@ -723,12 +723,12 @@ test('mueve una ficha a la papelera desde el menú de la página', async ({
   await expect(
     page.getByRole('heading', { level: 2, name: messages.entities.list.title }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Mara Viento' }),
-  ).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Mara Viento' })).toHaveCount(
+    0,
+  );
 
   // La página de la ficha desaparece, así que el foco vuelve al contenido.
-  expect(
-    await page.evaluate(() => document.activeElement?.id ?? null),
-  ).toBe('wc-main');
+  expect(await page.evaluate(() => document.activeElement?.id ?? null)).toBe(
+    'wc-main',
+  );
 });

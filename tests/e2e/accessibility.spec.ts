@@ -126,9 +126,7 @@ for (const theme of THEMES) {
 
     await expect(html).toHaveAttribute('data-theme', theme.mode);
 
-    await page
-      .getByRole('button', { name: messages.shell.collapse })
-      .click();
+    await page.getByRole('button', { name: messages.shell.collapse }).click();
     await expect(
       page.getByRole('button', { name: messages.shell.expand }),
     ).toHaveAttribute('aria-expanded', 'false');

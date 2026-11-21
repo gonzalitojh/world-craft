@@ -337,7 +337,9 @@ describe('página de mundo', () => {
 
     // Las acciones secundarias del mundo viven ahora en el menú «⋯» de la
     // barra superior, que controla `App`; la página no las duplica.
-    expect(screen.queryByText(messages.worlds.card.delete)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(messages.worlds.card.delete),
+    ).not.toBeInTheDocument();
   });
 
   it('muestra el estado de error con reintento y vuelta', () => {

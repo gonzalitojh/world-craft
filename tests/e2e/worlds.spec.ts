@@ -85,9 +85,7 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
   await page
     .getByRole('button', { name: messages.shell.viewMenuLabel })
     .click();
-  await page
-    .getByRole('menuitem', { name: messages.worlds.card.edit })
-    .click();
+  await page.getByRole('menuitem', { name: messages.worlds.card.edit }).click();
   await page
     .getByLabel(messages.worlds.form.summaryLabel)
     .fill('Resumen actualizado desde la prueba.');
