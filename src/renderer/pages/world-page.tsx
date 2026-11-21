@@ -10,8 +10,11 @@ import {
   WorldActivityList,
   type WorldActivityState,
 } from '../components/worlds/world-activity-list';
+import { WorldMark } from '../components/worlds/world-mark';
+import { WorldModuleNav } from '../components/worlds/world-module-nav';
+import { useEntityCount } from '../hooks/use-entity-count';
 import { useI18n } from '../i18n/provider';
-import { assetUrl } from '../lib/asset-url';
+import { cx } from '../lib/class-names';
 
 export interface WorldPageProps {
   readonly world: WorldDetail | null;
@@ -25,11 +28,13 @@ export interface WorldPageProps {
 }
 
 /**
- * Página de un mundo.
+ * Marco modular de un mundo.
  *
- * Reúne la ficha del mundo, su preparación, los accesos a las secciones futuras
- * y la actividad **de ese mundo**, sin filas de otros mundos. La portada es
- * opcional y decorativa; su selector llega con la galería de imágenes.
+ * La identidad (marca, estado, resumen y géneros) no repite el nombre ni las
+ * acciones de la barra superior. La navegación modular lleva solo a Fichas; el
+ * Resumen reúne la descripción y los datos, la Preparación el progreso y la
+ * Actividad queda al final como información secundaria. El recuento de fichas
+ * es asíncrono y, si falla, se omite sin bloquear la página.
  */
 export function WorldPage({
   world,
@@ -42,10 +47,11 @@ export function WorldPage({
   onOpenEntities,
 }: WorldPageProps) {
   const { messages, formats } = useI18n();
-  const metaId = useId();
+  const summaryId = useId();
+  const metadataId = useId();
   const progressId = useId();
-  const quickId = useId();
   const activityId = useId();
+  const entityCount = useEntityCount(world?.id ?? null);
 
   if (state === 'loading') {
     return (
@@ -79,7 +85,6 @@ export function WorldPage({
   }
 
   const archived = world.status === 'archived';
-  const initial = world.name.trim().slice(0, 1).toLocaleUpperCase('es');
   const statusLabel = archived
     ? messages.worlds.status.archived
     : messages.worlds.status.active;
@@ -93,25 +98,6 @@ export function WorldPage({
   const percent = Math.round((completed / checks.length) * 100);
   const percentLabel = formats.formatPercent(percent / 100);
 
-  const modules = [
-    {
-      ...messages.worlds.detail.quick.entities,
-      available: true,
-    },
-    {
-      ...messages.worlds.detail.quick.maps,
-      available: false,
-    },
-    {
-      ...messages.worlds.detail.quick.manuscripts,
-      available: false,
-    },
-    {
-      ...messages.worlds.detail.quick.game,
-      available: false,
-    },
-  ];
-
   return (
     <div className="wc-page">
       <div className="wc-page__header">
@@ -120,71 +106,94 @@ export function WorldPage({
         </Button>
       </div>
 
-      <article className="wc-world-hero">
-        <div className="wc-world-hero__cover" aria-hidden="true">
-          {world.coverAssetId !== null ? (
-            <img
-              className="wc-world-hero__cover-image"
-              src={assetUrl(world.coverAssetId)}
-              alt=""
-            />
-          ) : (
-            <span className="wc-world-hero__initial">{initial}</span>
-          )}
-        </div>
+      <header className="wc-world-header">
+        <WorldMark worldId={world.id} coverAssetId={world.coverAssetId} />
 
-        <div className="wc-world-hero__body">
-          <div className="wc-world-hero__heading">
-            <h2 className="wc-world-hero__title">{world.name}</h2>
+        <div className="wc-world-header__body">
+          <div className="wc-world-header__meta">
             <Badge tone={archived ? 'neutral' : 'success'}>{statusLabel}</Badge>
           </div>
 
-          <p className="wc-world-hero__summary">
+          <p
+            className={cx(
+              'wc-world-header__summary',
+              world.summary === null && 'wc-world-header__summary--empty',
+            )}
+          >
             {world.summary ?? messages.worlds.detail.noSummary}
           </p>
 
-          {world.genres.length > 0 ? (
-            <ul
-              className="wc-world-hero__genres"
-              aria-label={messages.worlds.form.genresLabel}
-            >
-              {world.genres.map((genre) => (
-                <li key={genre}>
-                  <Badge tone="accent">{genre}</Badge>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          <p className="wc-world-hero__description">
-            {world.description ?? messages.worlds.detail.noDescription}
-          </p>
-
-          <section aria-labelledby={metaId}>
-            <h3 className="wc-world-section__title" id={metaId}>
-              {messages.worlds.detail.metadataTitle}
-            </h3>
-            <ul className="wc-world-meta">
-              <li className="wc-world-meta__row">
-                {messages.worlds.detail.slug(world.slug)}
+          <ul
+            className="wc-world-header__genres"
+            aria-label={messages.worlds.form.genresLabel}
+          >
+            {world.genres.map((genre) => (
+              <li key={genre}>
+                <Badge tone="accent">{genre}</Badge>
               </li>
-              <li className="wc-world-meta__row">
-                {messages.worlds.detail.language(languageLabel)}
-              </li>
-              <li className="wc-world-meta__row">
-                {messages.worlds.detail.created(
-                  formats.formatDate(world.createdAt),
-                )}
-              </li>
-              <li className="wc-world-meta__row">
-                {messages.worlds.detail.updated(
-                  formats.formatDate(world.updatedAt),
-                )}
-              </li>
-            </ul>
-          </section>
+            ))}
+          </ul>
         </div>
-      </article>
+      </header>
+
+      <WorldModuleNav
+        entityCount={entityCount}
+        onOpenEntities={onOpenEntities}
+      />
+
+      <section className="wc-page__section" aria-labelledby={summaryId}>
+        <h2 className="wc-page__section-title" id={summaryId}>
+          {messages.worlds.detail.summaryTitle}
+        </h2>
+        <p
+          className={cx(
+            'wc-world-description',
+            world.description === null && 'wc-world-description--empty',
+          )}
+        >
+          {world.description ?? messages.worlds.detail.noDescription}
+        </p>
+
+        <div className="wc-world-data">
+          <h3 className="wc-world-section__title" id={metadataId}>
+            {messages.worlds.detail.metadataTitle}
+          </h3>
+          <dl className="wc-world-meta" aria-labelledby={metadataId}>
+            <div className="wc-world-meta__pair">
+              <dt className="wc-world-meta__term">
+                {messages.worlds.detail.meta.slug}
+              </dt>
+              <dd className="wc-world-meta__value">{world.slug}</dd>
+            </div>
+            <div className="wc-world-meta__pair">
+              <dt className="wc-world-meta__term">
+                {messages.worlds.detail.meta.language}
+              </dt>
+              <dd className="wc-world-meta__value">{languageLabel}</dd>
+            </div>
+            <div className="wc-world-meta__pair">
+              <dt className="wc-world-meta__term">
+                {messages.worlds.detail.meta.created}
+              </dt>
+              <dd className="wc-world-meta__value">
+                <time dateTime={new Date(world.createdAt).toISOString()}>
+                  {formats.formatDate(world.createdAt)}
+                </time>
+              </dd>
+            </div>
+            <div className="wc-world-meta__pair">
+              <dt className="wc-world-meta__term">
+                {messages.worlds.detail.meta.updated}
+              </dt>
+              <dd className="wc-world-meta__value">
+                <time dateTime={new Date(world.updatedAt).toISOString()}>
+                  {formats.formatDate(world.updatedAt)}
+                </time>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
 
       <section className="wc-page__section" aria-labelledby={progressId}>
         <h2 className="wc-page__section-title" id={progressId}>
@@ -226,7 +235,10 @@ export function WorldPage({
         </ul>
       </section>
 
-      <section className="wc-page__section" aria-labelledby={activityId}>
+      <section
+        className="wc-page__section wc-world-activity"
+        aria-labelledby={activityId}
+      >
         <h2 className="wc-page__section-title" id={activityId}>
           {messages.worlds.detail.activityTitle}
         </h2>
@@ -241,35 +253,6 @@ export function WorldPage({
           onRetry={onRetryActivity}
           showWorldName={false}
         />
-      </section>
-
-      <section className="wc-page__section" aria-labelledby={quickId}>
-        <h2 className="wc-page__section-title" id={quickId}>
-          {messages.worlds.detail.quickTitle}
-        </h2>
-        <p className="wc-page__section-lead">
-          {messages.worlds.detail.quickLead}
-        </p>
-        <ul className="wc-quick-grid">
-          {modules.map((module) => (
-            <li className="wc-quick-card" key={module.title}>
-              <div className="wc-quick-card__heading">
-                <h3 className="wc-quick-card__title">{module.title}</h3>
-                {module.available ? null : (
-                  <Badge tone="neutral">
-                    {messages.worlds.detail.quickPlanned}
-                  </Badge>
-                )}
-              </div>
-              <p className="wc-quick-card__description">{module.description}</p>
-              {module.available ? (
-                <Button variant="secondary" size="sm" onClick={onOpenEntities}>
-                  {messages.entities.list.title}
-                </Button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   );

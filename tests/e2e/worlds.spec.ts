@@ -36,13 +36,23 @@ async function goWorlds(page: Page) {
     .click();
 }
 
-async function createEntity(page: Page, name: string) {
-  await page
-    .getByRole('button', { name: messages.entities.list.title })
+function worldModules(page: Page) {
+  return page.getByRole('navigation', {
+    name: messages.worlds.detail.modules.label,
+  });
+}
+
+async function openEntities(page: Page) {
+  await worldModules(page)
+    .getByRole('button', { name: messages.worlds.detail.modules.entities })
     .click();
   await expect(
     page.getByRole('heading', { level: 2, name: messages.entities.list.title }),
   ).toBeVisible();
+}
+
+async function createEntity(page: Page, name: string) {
+  await openEntities(page);
 
   await page
     .locator('#wc-main')
@@ -130,17 +140,31 @@ async function fillWorldForm(
   values: {
     readonly name: string;
     readonly summary?: string;
+    readonly description?: string;
     readonly genres?: string;
+    readonly slug?: string;
   },
 ) {
   await page
     .getByLabel(messages.worlds.form.nameLabel, { exact: false })
     .fill(values.name);
 
+  if (values.slug !== undefined) {
+    await page
+      .getByLabel(messages.worlds.form.slugLabel, { exact: false })
+      .fill(values.slug);
+  }
+
   if (values.summary !== undefined) {
     await page
       .getByLabel(messages.worlds.form.summaryLabel)
       .fill(values.summary);
+  }
+
+  if (values.description !== undefined) {
+    await page
+      .getByLabel(messages.worlds.form.descriptionLabel)
+      .fill(values.description);
   }
 
   if (values.genres !== undefined) {
@@ -153,7 +177,9 @@ async function createWorld(
   values: {
     readonly name: string;
     readonly summary?: string;
+    readonly description?: string;
     readonly genres?: string;
+    readonly slug?: string;
   },
 ) {
   await openCreateDialog(page);
@@ -163,8 +189,9 @@ async function createWorld(
     .getByRole('button', { name: messages.worlds.form.submitCreate })
     .click();
   await expect(
-    page.getByRole('heading', { level: 2, name: values.name, exact: true }),
+    page.getByRole('heading', { level: 1, name: values.name, exact: true }),
   ).toBeVisible();
+  await expect(worldModules(page)).toBeVisible();
 }
 
 test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
@@ -190,6 +217,7 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
     .click();
   await page.getByRole('menuitem', { name: messages.worlds.card.edit }).click();
   await page
+    .getByRole('dialog')
     .getByLabel(messages.worlds.form.summaryLabel)
     .fill('Resumen actualizado desde la prueba.');
   await page
@@ -346,8 +374,9 @@ test('Continúa con el último mundo de la sesión y se pierde al recargar', asy
     .getByRole('button', { name: messages.home.continueWorldAction })
     .click();
   await expect(
-    page.getByRole('heading', { level: 2, name: WORLD_NAME, exact: true }),
+    page.getByRole('heading', { level: 1, name: WORLD_NAME, exact: true }),
   ).toBeVisible();
+  await expect(worldModules(page)).toBeVisible();
 
   await goHome(page);
   await expect(
@@ -456,128 +485,177 @@ test('el menú de la tarjeta funciona con teclado y devuelve el foco', async ({
   await expect(trigger).toBeFocused();
 });
 
-test('el dashboard y la ficha funcionan en ambos temas y sin desbordar', async ({
+test('la vista de mundo es modular', async ({ page }) => {
+  const modules = messages.worlds.detail.modules;
+  const entityName = 'Mara Viento';
+
+  await createWorld(page, { name: WORLD_NAME });
+
+  const nav = worldModules(page);
+
+  await expect(
+    nav.getByRole('button', { name: modules.summary }),
+  ).toHaveAttribute('aria-current', 'page');
+
+  for (const label of [modules.maps, modules.manuscript, modules.graph]) {
+    await expect(nav.getByRole('button', { name: label })).toHaveCount(0);
+    await expect(nav.getByText(label, { exact: true })).toBeVisible();
+  }
+
+  await expect(nav.getByText(modules.planned)).toHaveCount(3);
+
+  const entitiesButton = nav.getByRole('button', { name: modules.entities });
+
+  await expect(entitiesButton).toContainText(messages.entities.list.count(0));
+
+  // Entrada con teclado: Resumen está enfocado y Tab llega a Fichas.
+  await nav.getByRole('button', { name: modules.summary }).focus();
+  await page.keyboard.press('Tab');
+  await expect(entitiesButton).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  await expect(
+    page.getByRole('heading', { level: 2, name: messages.entities.list.title }),
+  ).toBeVisible();
+
+  await page
+    .locator('#wc-main')
+    .getByRole('button', { name: messages.entities.list.create })
+    .first()
+    .click();
+
+  const dialog = page.getByRole('dialog');
+
+  await dialog
+    .getByLabel(messages.entities.create.nameLabel, { exact: false })
+    .fill(entityName);
+  await dialog
+    .getByRole('button', { name: messages.entities.create.submit })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: entityName, exact: true }),
+  ).toBeVisible();
+  await dismissToasts(page);
+
+  // Vuelve al mundo: el recuento se refresca al remontar la página.
+  await page
+    .getByRole('button', { name: messages.entities.detail.back })
+    .click();
+  await page
+    .getByRole('button', { name: messages.entities.list.backToWorld })
+    .click();
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: WORLD_NAME, exact: true }),
+  ).toBeVisible();
+  await expect(entitiesButton).toContainText(messages.entities.list.count(1));
+});
+
+test('la vista de mundo no desborda ni rompe el contraste con contenido largo', async ({
   page,
   electronApp,
 }) => {
-  const longName = 'A'.repeat(120);
-  const longSummary = 'Mareas'.repeat(20).slice(0, 280);
+  const longName =
+    'Crónica de la expedición al archipiélago de las Mareas Grises y los pactos de sal del alba';
+  const longSlug =
+    'cronica-de-la-expedicion-al-archipielago-mareas-grises-pactos-de-sal';
+  const description =
+    'La expedición recorrió las islas del norte, levantó actas de cada desembarco y dibujó a mano las líneas de bajamar que el atlas oficial daba por definitivas. '
+      .repeat(40)
+      .slice(0, 4_000);
+  const genres = [
+    'Fantasía épica',
+    'Aventura marítima',
+    'Misterio de marea',
+    'Histórico naval',
+    'Cartografía imaginaria',
+    'Intriga cortesana',
+    'Viajes y exploración',
+    'Pactos de sal',
+  ];
+
+  expect(longName.length).toBeLessThanOrEqual(120);
+  expect(longSlug.length).toBeLessThanOrEqual(80);
+  expect(description).toHaveLength(4_000);
 
   await createWorld(page, {
     name: longName,
-    summary: longSummary,
-    genres: 'Fantasía',
+    slug: longSlug,
+    description,
+    genres: genres.join(', '),
   });
 
-  for (const theme of ['light', 'dark'] as const) {
-    const html = page.locator('html');
-    const currentTheme = await html.getAttribute('data-theme');
+  for (const collapsed of [false, true] as const) {
+    await setRail(page, collapsed);
 
-    if (currentTheme !== theme) {
-      const currentLabel =
-        currentTheme === 'dark'
-          ? messages.shell.theme.currentDark
-          : messages.shell.theme.currentLight;
+    for (const theme of ['light', 'dark'] as const) {
+      await setTheme(page, theme);
 
-      await page
-        .getByRole('button', {
-          name: messages.shell.theme.switchLabel(currentLabel),
-        })
-        .click();
+      for (const width of [1024, 1280, 1600] as const) {
+        await setContentWidth(electronApp, page, width);
+
+        const context = `${width}px, rail ${collapsed ? 'plegado' : 'expandido'}, tema ${theme}`;
+
+        await expect(
+          page.getByRole('heading', {
+            level: 1,
+            name: longName,
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(worldModules(page)).toBeVisible();
+        await expect(page.locator('.wc-world-header__genres li')).toHaveCount(
+          8,
+        );
+        await expect(page.getByText(longSlug)).toBeVisible();
+
+        const descriptionNode = page.locator('.wc-world-description');
+
+        expect((await descriptionNode.textContent())?.length, context).toBe(
+          4_000,
+        );
+
+        const metrics = await page.evaluate(() => ({
+          clientWidth: document.documentElement.clientWidth,
+          documentWidth: document.documentElement.scrollWidth,
+          bodyWidth: document.body.scrollWidth,
+        }));
+
+        expect(metrics.clientWidth).toBeGreaterThan(0);
+        expect(
+          metrics.documentWidth,
+          `${context}: ${JSON.stringify(metrics)}`,
+        ).toBeLessThanOrEqual(metrics.clientWidth);
+        expect(metrics.bodyWidth).toBeLessThanOrEqual(metrics.clientWidth);
+
+        const results = await analyzeWithAxe(page, {
+          runOnly: {
+            type: 'tag',
+            values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+          },
+        });
+
+        expect(results.testEngine.name).toBe('axe-core');
+        expect(
+          results.violations
+            .filter(
+              (violation) =>
+                violation.impact === 'critical' ||
+                violation.impact === 'serious',
+            )
+            .map((violation) => ({
+              id: violation.id,
+              help: violation.help,
+              context,
+              nodes: violation.nodes.length,
+            })),
+        ).toEqual([]);
+      }
     }
-
-    await expect(html).toHaveAttribute('data-theme', theme);
-
-    const results = await analyzeWithAxe(page, {
-      runOnly: {
-        type: 'tag',
-        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
-      },
-    });
-
-    expect(results.testEngine.name).toBe('axe-core');
-    expect(
-      results.violations
-        .filter(
-          (violation) =>
-            violation.impact === 'critical' || violation.impact === 'serious',
-        )
-        .map((violation) => ({
-          id: violation.id,
-          help: violation.help,
-          nodes: violation.nodes.length,
-        })),
-    ).toEqual([]);
   }
 
-  for (const width of [1024, 1280, 1600] as const) {
-    await electronApp.evaluate(
-      ({ BrowserWindow }, size) => {
-        const main = BrowserWindow.getAllWindows()[0];
-
-        if (main === undefined) {
-          throw new Error('No hay ventana principal.');
-        }
-
-        main.setContentSize(size.width, size.height);
-      },
-      { width, height: 700 },
-    );
-
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        }),
-    );
-
-    const worldMetrics = await page.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      bodyWidth: document.body.scrollWidth,
-    }));
-
-    expect(worldMetrics.clientWidth).toBeGreaterThan(0);
-    expect(
-      worldMetrics.documentWidth,
-      JSON.stringify(worldMetrics),
-    ).toBeLessThanOrEqual(worldMetrics.clientWidth);
-    expect(
-      worldMetrics.bodyWidth,
-      JSON.stringify(worldMetrics),
-    ).toBeLessThanOrEqual(worldMetrics.clientWidth);
-
-    // Inicio con la tarjeta del mundo largo tampoco desborda.
-    await goHome(page);
-    await expect(
-      page
-        .getByRole('region', { name: messages.home.recentTitle })
-        .getByRole('heading', { level: 3, name: longName, exact: true }),
-    ).toBeVisible();
-
-    const homeMetrics = await page.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      bodyWidth: document.body.scrollWidth,
-    }));
-
-    expect(homeMetrics.documentWidth).toBeLessThanOrEqual(
-      homeMetrics.clientWidth,
-    );
-    expect(homeMetrics.bodyWidth).toBeLessThanOrEqual(homeMetrics.clientWidth);
-
-    // Vuelve a la ficha para la siguiente anchura.
-    await page
-      .getByRole('button', { name: messages.worlds.card.openNamed(longName) })
-      .click();
-    await expect(
-      page.getByRole('heading', { level: 2, name: longName, exact: true }),
-    ).toBeVisible();
-  }
+  // Se deja el rail expandido para no contaminar la ventana de la prueba.
+  await setRail(page, false);
 });
 
 test('Inicio envuelve el contenido largo sin scroll horizontal con el rail expandido y plegado', async ({

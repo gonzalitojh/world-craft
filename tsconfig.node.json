@@ -34,6 +34,7 @@
     "src/renderer/i18n/formats.ts",
     "src/renderer/lib/recent-location.ts",
     "src/renderer/lib/world-mark.ts",
+    "src/renderer/lib/entity-count.ts",
     "src/renderer/shell/views.ts",
     "src/renderer/shell/internal-views.ts",
     "tests/unit/**/*.ts",

@@ -349,7 +349,16 @@ const CONTRAST_PAIRS = [
   { fg: '--muted', bg: '--bg', min: 4.5, label: 'texto normal' },
   { fg: '--muted', bg: '--surface', min: 4.5, label: 'texto normal' },
   { fg: '--muted', bg: '--surface-sunken', min: 4.5, label: 'texto normal' },
+  { fg: '--fg', bg: '--surface-sunken', min: 4.5, label: 'texto normal' },
   { fg: '--accent', bg: '--bg', min: 4.5, label: 'texto normal' },
+  {
+    fg: '--accent-strong',
+    bg: '--accent-surface',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  { fg: '--accent-strong', bg: '--bg', min: 3, label: 'componente' },
+  { fg: '--accent', bg: '--surface', min: 3, label: 'componente' },
   { fg: '--accent-contrast', bg: '--accent', min: 4.5, label: 'texto normal' },
   {
     fg: '--accent',

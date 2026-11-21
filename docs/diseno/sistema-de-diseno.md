@@ -3,10 +3,10 @@
 > **Estado:** dirección v2 aprobada el 21/11/2026 en la issue #124 mediante el
 > ADR 0025 y la decisión D-048. #125 implementó los tokens, la tipografía y las
 > primitivas; #126 migró el shell, la navegación y la barra superior; #127 migró
-> Inicio y las tarjetas de mundo. Las pantallas restantes se migran en
-> #128–#133. Este documento describe el contrato completo y distingue lo
-> implementado de lo previsto, sin presentar como existente nada que aún no lo
-> esté. El estado real se mantiene en la sección 17.
+> Inicio y las tarjetas de mundo; #128 migró la vista de mundo modular. Las
+> pantallas restantes se migran en #129–#133. Este documento describe el contrato
+> completo y distingue lo implementado de lo previsto, sin presentar como
+> existente nada que aún no lo esté. El estado real se mantiene en la sección 17.
 > **Ámbito:** identidad, superficies, color, tipografía, iconos, espaciado,
 > radios, elevación, bordes, componentes, shell, estados, accesibilidad,
 > movimiento, patrones de escritorio, migración y verificación.
@@ -62,6 +62,7 @@
 | Rail | Navegación principal y marca | 240 px; 64 px plegado; sin lema permanente ni versión. |
 | Barra superior | Contexto, búsqueda y acciones globales | 56 px; una entrada a la paleta `Ctrl+K`, tema y acciones de la vista. |
 | Lienzo | Contenido principal | Superficie base; sin tarjeta contenedora que lo encierre todo. |
+| Navegación modular | Módulos de un mundo | Lista de módulos; el actual lleva `aria-current="page"` y lo previsto es texto con insignia, sin enlace ni foco. |
 | Panel de propiedades | Datos secundarios de la ficha | 280–360 px; plegable; no compite con el documento. |
 | Barra contextual | Acciones de la selección | Aparece solo con selección; no duplica la acción primaria. |
 | Diálogo | Decisión o formulario breve | Flotante, con velo, foco atrapado y cierre con Escape. |
@@ -421,6 +422,7 @@ como existente lo que aún no lo está.
 | Insignia | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. | Adaptado v2 | #125 |
 | Tarjeta | Sin contorno ni sombra por defecto; título y contenido primero. Una acción visible y las secundarias en `⋯`; portada o marca procedural, sin iniciales gigantes. La misma tarjeta sirve a la fila de Inicio y a la rejilla de Mundos. | Implementada | #125, #127 |
 | Marca procedural de mundo | Portada si existe; si no, sello determinista por `id` con 4 tramas × 4 tonos resueltos con `--entity-*`. Decorativa (`aria-hidden`), estática y legible en ambos temas. | Implementada | #127 |
+| Navegación modular de mundo | Lista de módulos con el actual en `aria-current="page"`; los previstos son texto con insignia, sin enlace ni foco. El recuento de fichas es secundario y se omite si no está disponible. | Implementada | #128 |
 | Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Adaptado v2 | #125 |
 | Menú `⋯` | Acciones secundarias; teclado, foco y cierre con Escape. Se posiciona respecto al viewport, elige el lado con más espacio, limita su altura y desplaza su contenido sin cerrar el menú. | Implementado | #125 |
 | Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape sin cerrar el diálogo que lo contiene. Ancho de contenido con máximo de 18rem y colocación arriba o abajo según el espacio. | Adaptado v2 | #125 |
@@ -515,15 +517,46 @@ dashboard de contadores.
 
 ### 10.3 Vista de mundo
 
-- Navegación modular: resumen, fichas, relaciones, mapas, manuscrito y juego
-  según existan; la estructura completa llega con #128.
-- Desde #126 el nombre del mundo es el título de la barra superior y la acción
-  primaria es «Nueva ficha»; editar, duplicar, archivar/restaurar y eliminar
-  están en el `⋯` de la barra.
-- La cabecera de la página conserva el enlace de vuelta y no compite con la
-  barra; el contenido y las acciones secundarias no se duplican.
-- Los paneles se pliegan y su estado se recuerda por pantalla cuando #132 lo
-  permita.
+Implementado en #128: la página de un mundo es el marco modular del mundo, no un
+documento apilado.
+
+- **Composición y orden:** vuelta a Inicio → cabecera de identidad → navegación
+  «Módulos del mundo» → «Resumen» → «Preparación del mundo» → «Actividad de este
+  mundo». El orden es fijo: los paneles plegables y su memoria llegan con #132.
+  No hay hero con inicial gigante, ni rejilla de «Accesos rápidos» con
+  descripciones, ni párrafo de presentación.
+- **Cabecera de identidad:** portada o `WorldMark` (4,5 rem) y un bloque con la
+  insignia de estado, el resumen —con texto de reserva si falta— y los géneros
+  como insignias de acento. No repite el nombre: el `h1` vive en la barra
+  superior desde #126. Tampoco declara acciones: **Nueva ficha** y el menú `⋯`
+  con editar, duplicar, archivar/restaurar y eliminar siguen solo en la barra.
+- **Navegación modular:** `nav` con la etiqueta «Módulos del mundo» y una lista de
+  cinco piezas. **Resumen** es el módulo actual (`aria-current="page"`) y
+  **Fichas** es el único módulo implementado al que se navega. **Mapas**,
+  **Manuscrito** y **Grafo** son texto estático con la insignia «Previsto»: no
+  son botones, no entran en el orden de tabulación y no generan enlaces muertos;
+  una nota al pie aclara que llegarán en próximas versiones. El juego se
+  incorporará a la lista cuando tenga pantalla.
+- **Recuento de fichas:** vive dentro del botón **Fichas** como información
+  secundaria. Se lee una vez por montaje con el canal existente `entities:list`
+  (límite por defecto) y se presenta como «1 ficha», «N fichas» o «N o más
+  fichas» cuando la lista alcanza el límite. En carga o error se omite: no
+  bloquea la página ni anuncia un fallo. Al volver de Fichas la vista se remonta
+  y el recuento se refresca.
+- **Resumen:** descripción legible —con texto de reserva e indicación de dónde
+  añadirla— y una lista de datos `dl` en dos columnas que colapsa con el ancho:
+  identificador, idioma del contenido, creado y actualizado, con `<time>`.
+- **Preparación:** barra de progreso con `role="progressbar"`,
+  `aria-valuemin/max/now` y `aria-valuetext` porcentual, recuento «de 3 campos
+  completados» y lista de resumen, descripción y géneros con **Completado** o
+  **Pendiente**. La pista usa `--border-strong` para alcanzar 3:1 sobre la
+  superficie.
+- **Actividad:** al final, con tipografía y peso secundarios, solo del mundo
+  abierto. No se pinta durante la carga.
+- **Estados:** carga con un aviso de estado; error con explicación, **Volver a
+  intentar** y **Volver a Inicio**, sin perder los datos.
+- **Espacio y texto largo:** `min-width: 0` y `overflow-wrap` en cabecera,
+  descripción y datos; a 1024, 1280 y 1600 px no hay scroll horizontal de página.
 
 ### 10.4 Ficha
 
@@ -702,7 +735,7 @@ Reglas de migración:
 | Tokens, tipografía y primitivas v2 | Implementado | #125 |
 | Shell, navegación y barra superior v2 | Implementado | #126 |
 | Inicio y tarjetas de mundo | Implementado | #127 |
-| Vista de mundo modular | Previsto | #128 |
+| Vista de mundo modular | Implementado | #128 |
 | Ficha como documento y panel de propiedades | Previsto | #129 |
 | Relaciones legibles y grafo contextual | Previsto | #130 |
 | Editor mínimo y menciones | Previsto | #131 |
@@ -710,10 +743,10 @@ Reglas de migración:
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
 Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
-los tokens y las primitivas ya son v2 desde #125, el shell desde #126 e Inicio
-desde #127; la vista de mundo, la ficha, las relaciones y el editor siguen siendo
-las de v1 hasta que su issue las migre. No se deben tomar capturas nuevas como si
-esas pantallas ya estuvieran rediseñadas.
+los tokens y las primitivas ya son v2 desde #125, el shell desde #126, Inicio
+desde #127 y la vista de mundo desde #128; la ficha, las relaciones y el editor
+siguen siendo las de v1 hasta que su issue las migre. No se deben tomar capturas
+nuevas como si esas pantallas ya estuvieran rediseñadas.
 
 ### 17.2 Verificación automática
 
@@ -775,11 +808,25 @@ esas pantallas ya estuvieran rediseñadas.
   foco. Añade Inicio con contenido largo a 1024, 1280 y 1600 px, rail expandido y
   plegado y ambos temas (12 combinaciones), sin scroll horizontal, y ejecuta axe
   WCAG 2.1 A/AA en Inicio en Claro y Oscuro sin violaciones críticas ni graves.
+- La vista de mundo modular se cubre desde #128. `tests/unit/entity-count.test.ts`
+  fija el recuento: resultado correcto, límite alcanzado («N o más»), error,
+  lista vacía y no mutación. `tests/components/worlds.test.tsx` añade 11 pruebas
+  del bloque «página de mundo» con el puente simulado: vuelta, cabecera sin
+  nombre ni acciones, `nav` con `aria-current` y módulos previstos sin botón,
+  recuento presente, ausente en carga y en error, oración de reserva, datos del
+  mundo y actividad. `tests/e2e/worlds.spec.ts` comprueba la vista modular en la
+  ventana real: entrada a Fichas por la navegación, que la cabecera no repite el
+  nombre ni los botones de la barra, los módulos previstos sin foco y el bucle
+  1024/1280/1600 px × rail expandido y plegado × ambos temas con una descripción
+  de 4.000 caracteres, ocho géneros y un identificador largo, sin scroll
+  horizontal y con axe WCAG 2.1 A/AA sin violaciones críticas ni graves.
 - `scripts/check-build.mjs` verifica que los dos woff2 viajan en `out/renderer`,
   que el CSS construido los referencia con rutas relativas y que no hay hosts
   remotos de fuentes.
 - Al cerrar #127 la suite queda en 447 unitarias en verde (4 omitidas), 87 de
-  componentes, 134 de integración en verde (1 omitida) y 42 E2E en verde.
+  componentes, 134 de integración en verde (1 omitida) y 42 E2E en verde. Al
+  cerrar #128 queda en 453 unitarias (4 omitidas), 96 de componentes, 134 de
+  integración (1 omitida) y 43 E2E.
 - La matriz visual completa, las capturas y la auditoría de todas las pantallas
   se completan en #133.
 

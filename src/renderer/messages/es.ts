@@ -132,16 +132,29 @@ export const es = {
       errorBack: 'Volver a Inicio',
       noSummary: 'Sin resumen todavía.',
       noDescription:
-        'Este mundo todavía no tiene descripción. Puedes añadirla con el botón Editar.',
+        'Este mundo todavía no tiene descripción. Puedes añadirla desde el menú ⋯ de la barra superior, con Editar.',
+      summaryTitle: 'Resumen',
       metadataTitle: 'Datos del mundo',
-      created: (date: string): string => `Creado el ${date}`,
-      updated: (date: string): string => `Actualizado el ${date}`,
-      language: (language: string): string =>
-        `Idioma del contenido: ${language}`,
-      slug: (slug: string): string => `Identificador: ${slug}`,
+      meta: {
+        slug: 'Identificador',
+        language: 'Idioma del contenido',
+        created: 'Creado',
+        updated: 'Actualizado',
+      },
+      modules: {
+        label: 'Módulos del mundo',
+        summary: 'Resumen',
+        entities: 'Fichas',
+        maps: 'Mapas',
+        manuscript: 'Manuscrito',
+        graph: 'Grafo',
+        planned: 'Previsto',
+        plannedNote:
+          'Los módulos marcados como «Previsto» llegarán en próximas versiones.',
+      },
       progressTitle: 'Preparación del mundo',
       progressLead:
-        'Completa la ficha del mundo para que sea fácil reconocerlo en la lista y en las exportaciones.',
+        'Completa estos campos para reconocer el mundo en la lista.',
       progressValue: (done: number, total: number): string =>
         `${done} de ${total} campos completados`,
       progressPercent: (percent: string): string =>
@@ -160,29 +173,6 @@ export const es = {
         'Solo se muestran las acciones de este mundo. El contenido de otros mundos no aparece aquí.',
       activityEmpty: 'Todavía no hay actividad en este mundo.',
       activityError: 'No se pudo cargar la actividad de este mundo.',
-      quickTitle: 'Accesos rápidos',
-      quickLead:
-        'Las demás secciones del mundo llegarán con las próximas versiones. Mientras tanto, la ficha del mundo ya funciona.',
-      quickPlanned: 'Previsto',
-      quick: {
-        entities: {
-          title: 'Fichas',
-          description:
-            'Personajes, lugares, organizaciones y objetos del mundo.',
-        },
-        maps: {
-          title: 'Mapas',
-          description: 'Mapas por capas y vínculos entre lugares y fichas.',
-        },
-        manuscripts: {
-          title: 'Manuscrito',
-          description: 'Libros, capítulos y escenas con contador de palabras.',
-        },
-        game: {
-          title: 'Juego',
-          description: 'Dados, tablas de inspiración y sesiones del mundo.',
-        },
-      },
     },
     form: {
       createTitle: 'Crear un mundo',
@@ -291,6 +281,7 @@ export const es = {
       statusLabel: 'Estado',
       count: (count: number): string =>
         count === 1 ? '1 ficha' : `${count} fichas`,
+      countAtLeast: (count: number): string => `${count} o más fichas`,
       emptyTitle: 'Todavía no hay fichas',
       emptyDescription:
         'Crea la primera ficha para empezar a reunir personajes, lugares y todo lo que necesitas recordar.',

@@ -98,13 +98,17 @@ actualizaciones de la aplicación.
 Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, e **Inicio**
 reúne los mundos recientes y la actividad en una mesa de trabajo. Dentro de
 cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción,
-imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. También
-existe la **búsqueda global** con filtros, recientes y favoritos, y una **paleta
-de comandos** que se abre con `Ctrl+K`. Todavía no hay ventana de grafo, mapas,
-manuscritos, ajustes ni papelera visible, y la portada del mundo y la descripción
-enriquecida del mundo llegarán en actualizaciones posteriores. **No hay una
-release pública**: el instalador se genera y se prueba en local, y la publicación
-oficial llegará con M5.
+imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. La página
+de un mundo ya es un **marco modular**: su cabecera reúne la identidad del mundo
+y una navegación de módulos donde **Resumen** y **Fichas** funcionan, con el
+recuento de fichas, mientras que **Mapas**, **Manuscrito** y **Grafo** aparecen
+como **Previsto** sin pantalla todavía. También existe la **búsqueda global** con
+filtros, recientes y favoritos, y una **paleta de comandos** que se abre con
+`Ctrl+K`. Todavía no hay ventanas de mapas, manuscritos, grafo, ajustes ni
+papelera visible, y la portada del mundo y la descripción enriquecida del mundo
+llegarán en actualizaciones posteriores. **No hay una release pública**: el
+instalador se genera y se prueba en local, y la publicación oficial llegará con
+M5.
 
 ## 3. La ventana
 
@@ -340,23 +344,44 @@ temas. No hay iniciales gigantes.
 
 ### 4.4 La página de un mundo
 
-Al abrir un mundo ves su ficha completa: nombre, estado, resumen, géneros,
-descripción, identificador, idioma y fechas de creación y actualización.
+Al abrir un mundo entras en su **marco modular**. La barra superior ya muestra
+el nombre del mundo como título y reúne la acción principal **Nueva ficha** y el
+menú `⋯` con las acciones del mundo (sección 4.5): la página no repite ni el
+nombre ni esos botones. Lo primero es **Volver a Inicio** y, después, la
+identidad del mundo y sus módulos.
 
+- **Cabecera de identidad:** la portada o la marca gráfica del mundo, su estado
+  (activo o archivado), el resumen y los géneros. Si todavía no hay resumen, la
+  cabecera lo dice en su lugar.
+- **Módulos del mundo:** una navegación con cinco módulos.
+  - **Resumen** es el módulo en el que estás.
+  - **Fichas** abre la lista de fichas del mundo. A su lado aparece cuántas hay:
+    «1 ficha», «N fichas» o «200 o más fichas» cuando el mundo es muy grande.
+    Ese recuento es solo informativo: si tarda o no se puede leer, simplemente
+    no se muestra y la página sigue funcionando.
+  - **Mapas**, **Manuscrito** y **Grafo** llevan la insignia **Previsto** y no
+    se pueden pulsar, porque sus pantallas todavía no existen. Una nota recuerda
+    que llegarán en próximas versiones.
+- **Resumen:** la descripción del mundo, que indica cómo añadirla si aún no la
+  tiene, y sus datos: identificador, idioma del contenido y fechas de creación y
+  de actualización.
 - **Preparación del mundo:** una barra de progreso indica si faltan el resumen,
   la descripción o los géneros. Los campos que ya están completos se marcan como
-  **Completado**.
-- **Actividad de este mundo:** solo las acciones de ese mundo, con su fecha.
-- **Accesos rápidos:** **Fichas del mundo** abre la lista de fichas. Mapas,
-  manuscrito y juego siguen como **Previsto** hasta que lleguen sus pantallas.
-  Mientras tanto, la ficha del mundo ya es editable.
+  **Completado** y los que faltan, como **Pendiente**.
+- **Actividad de este mundo:** al final y como información secundaria, solo las
+  acciones de ese mundo con su fecha.
+
+Mientras el mundo se está leyendo se muestra un aviso de carga. Si la lectura
+falla, la página lo explica y ofrece **Volver a intentar** y **Volver a Inicio**;
+tus datos siguen guardados.
 
 ### 4.5 Editar, duplicar, archivar y eliminar
 
 Dentro de un mundo, las cuatro acciones están en el menú `⋯` de la barra
-superior, junto a la acción principal **Nueva ficha**. Las tarjetas de Inicio y
-de Mundos muestran **Abrir** y su propio menú `⋯` con **Editar**, **Duplicar**,
-**Archivar** o **Restaurar** y **Eliminar**.
+superior, junto a la acción principal **Nueva ficha**. La página del mundo no
+repite esos botones: solo muestra la identidad, los módulos y el contenido. Las
+tarjetas de Inicio y de Mundos muestran **Abrir** y su propio menú `⋯` con
+**Editar**, **Duplicar**, **Archivar** o **Restaurar** y **Eliminar**.
 
 - **Editar:** cambia el nombre, el identificador, el resumen, la descripción, los
   géneros o el idioma. El mundo se actualiza al guardar y queda registrado en la
@@ -376,7 +401,7 @@ o, si ese control ya no existe, al contenido principal.
 
 ### 4.6 Lo que llegará después
 
-- **Portada del mundo:** elegir una imagen local y verla en la ficha.
+- **Portada del mundo:** elegir una imagen local y verla en la cabecera del mundo.
 - **Descripción enriquecida:** formato básico, enlaces internos y texto listo
   para buscar.
 - **Exportar e importar** un mundo completo en un archivo abierto.
@@ -385,14 +410,15 @@ o, si ese control ya no existe, al contenido principal.
 ## 5. Fichas y entidades
 
 Las fichas son la base del mundo: personajes, lugares, organizaciones, objetos,
-criaturas, eventos y cualquier tipo que crees. Se abren desde **Fichas del
-mundo**, en los accesos rápidos de la página de un mundo.
+criaturas, eventos y cualquier tipo que crees. Se abren desde el módulo
+**Fichas** de la página de un mundo, que también indica cuántas tienes; dentro,
+la lista se titula **Fichas del mundo**.
 
 ### 5.1 Crear una ficha
 
 1. Abre un mundo: la acción principal de la barra superior es **Nueva ficha**.
-   También puedes entrar en **Fichas del mundo** y pulsar **Nueva ficha** en la
-   cabecera de la página.
+   También puedes entrar en el módulo **Fichas** y pulsar **Nueva ficha** en la
+   cabecera de la lista.
 2. Elige el mundo, el tipo y el nombre. Desde Inicio y Mundos, el menú `⋯`
    ofrece **Crear una ficha** y la paleta `Ctrl+K` incluye el mismo comando; los
    dos abren la creación rápida con el mundo preseleccionado cuando ya estás
@@ -548,6 +574,11 @@ aparecerán en esa vista.
 - **Exportar:** genera Markdown, HTML, EPUB o PDF.
 
 ## 9. Juego de inspiración (previsto)
+
+El juego todavía no tiene un módulo propio en la navegación de un mundo: cuando
+exista su pantalla se incorporará a ella junto a **Mapas**, **Manuscrito** y
+**Grafo**, que hoy aparecen como **Previsto**. Estas son las funciones
+planeadas:
 
 - **Dados:** tira dados y guarda el resultado.
 - **Tablas:** consulta tablas de ideas por categoría.
@@ -875,7 +906,7 @@ las funciones correspondientes.
 | Lista de mundos con búsqueda y filtro por estado | Implementada (en desarrollo) |
 | CRUD de mundos: crear, editar, duplicar y archivar/restaurar | Implementado (en desarrollo); con validación y confirmación |
 | Borrado lógico de mundos con confirmación | Implementado (en desarrollo); la papelera visible llega con #77 |
-| Página de mundo con preparación y actividad aislada | Implementada (en desarrollo) |
+| Página de mundo modular con identidad, navegación, preparación y actividad | Implementada (en desarrollo); Fichas navegable con recuento y Mapas, Manuscrito y Grafo como previstos sin enlace |
 | Elegir la portada del mundo | Prevista (#115); si el mundo ya tiene una portada, Inicio y Mundos la muestran |
 | Descripción enriquecida de mundos | Prevista (#114) |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
