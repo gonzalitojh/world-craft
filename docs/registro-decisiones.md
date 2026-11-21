@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0019.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0023.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -173,3 +173,20 @@ arista y cómo exponer el grafo sin acoplar la ficha a su detalle.
 - Referencias: ADR 0022, ADR 0019, ADR 0020, ADR 0021, #77, #78,
   `docs/manual-de-usuario.md`, `docs/base-de-datos/esquema.md` y
   `docs/calidad/plan-de-pruebas.md`.
+
+## 2026-11-20 — Búsqueda global FTS5 y paleta de comandos (M1-05)
+
+**Contexto.** La issue #76 necesitaba encontrar mundos, fichas y relaciones sin
+conexión y concentrar la navegación y las acciones en una paleta de teclado. La
+búsqueda por `instr` de las fichas no escalaba a 10.000 documentos ni ofrecía
+prefijos, ranking o resaltado. Había que decidir qué se indexa, cómo se
+sincroniza, cómo se toleran los errores tipográficos y qué se hace con mapas,
+manuscritos y escenas, que todavía no existen.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-046 | Búsqueda global FTS5 y paleta de comandos | Migración `0006_search` aditiva con `search_documents`, FTS5 `search_fts` (unicode61, `remove_diacritics 2`, prefijos 2/3/4) y el vocabulario `search_vocabulary`; vistas por tipo y triggers en `worlds`, `entities`, `relations`, `relation_types`, `entity_tags` y `tags`; se indexan mundos, fichas y relaciones, y los tipos `map`, `manuscript` y `scene` quedan reservados en el `CHECK` para las migraciones de M2 (mapas) y M3 (manuscritos y escenas); los documentos de relación indexan etiquetas y notas, no los nombres de las fichas; la consulta usa prefijos y, si no hay coincidencia, expande términos del vocabulario con Levenshtein acotado; los filtros por mundo, tipo de documento, tipo de ficha, etiqueta y estado se combinan en SQL; `highlight` y `snippet` devuelven texto con marcadores de control, nunca HTML; recientes y favoritos se derivan de `updated_at` e `is_favorite` sin historial nuevo; `search:rebuild` reconstruye el índice en una transacción y se ofrece desde la paleta; la paleta `Ctrl+K` usa combobox/listbox, se ignora en campos editables y con diálogos abiertos, y reúne navegación, creación, tema y reconstrucción. | La búsqueda responde en menos de 150 ms con 10.000 fichas y funciona sin red; el índice se actualiza al crear, editar, borrar o restaurar y se puede reconstruir sin tocar el contenido; los filtros y el resaltado son seguros y accesibles; los triggers añaden coste a cada escritura y la optimización fina llega con M5-02; los errores en la primera letra quedan fuera de la tolerancia; la papelera de #77 deberá verificar la purga definitiva. ADR 0023. |
+
+- Referencias: ADR 0023, ADR 0002, ADR 0004, ADR 0006, ADR 0022, #77, #78,
+  `docs/manual-de-usuario.md`, `docs/base-de-datos/esquema.md`,
+  `docs/base-de-datos/migraciones.md` y `docs/calidad/plan-de-pruebas.md`.

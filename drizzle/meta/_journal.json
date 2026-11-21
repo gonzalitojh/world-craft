@@ -43,6 +43,13 @@
       "when": 1795202508644,
       "tag": "0005_relations",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795213004507,
+      "tag": "0006_search",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import {
   RelationTypeProtectedError,
 } from '@/main/relations/errors';
 import type { RelationsService } from '@/main/relations/service';
+import { createUnavailableSearchService } from '@/main/search/service';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
 import { createUnavailableWorldsService } from '@/main/worlds/service';
 import { IPC_CHANNELS } from '@/shared/contracts/channels';
@@ -95,6 +96,7 @@ function createRoute(service: RelationsService) {
       entityTypes: createUnavailableEntityTypesService(),
       entities: createUnavailableEntitiesService(),
       relations: service,
+      search: createUnavailableSearchService(),
       assets: createUnavailableAssetsService(),
       pickImages: async () => [],
     }),

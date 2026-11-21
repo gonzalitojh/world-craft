@@ -22,6 +22,7 @@ export const es = {
     navigationLabel: 'Navegación principal',
     views: {
       home: 'Inicio',
+      search: 'Búsqueda',
       worlds: 'Mundos',
       world: 'Mundo',
       entities: 'Fichas',
@@ -30,6 +31,8 @@ export const es = {
     },
     collapse: 'Plegar menú lateral',
     expand: 'Expandir menú lateral',
+    searchAction: 'Buscar',
+    searchShortcut: 'Ctrl+K',
     version: (version: string): string => `Versión ${version}`,
     theme: {
       currentLight: 'Claro',
@@ -811,6 +814,101 @@ export const es = {
       name: 'AldoVarelaDeLaTorreYDelAmoDelArchipielagoDeLasMareasGrisesYNieblasDelSurOccidentalY',
       path: 'C:\\Users\\cartografa\\Documents\\World Craft\\mundos\\mareas-grises\\mapas\\costa-norte-del-archipielago\\capa-de-rutas-balleneras-1926.geojson',
     },
+  },
+  search: {
+    title: 'Búsqueda global',
+    lead: 'Encuentra mundos, fichas y relaciones por su título, su contenido, sus alias o sus notas. Todo se consulta en este equipo, sin conexión.',
+    inputLabel: 'Buscar en tu biblioteca',
+    inputPlaceholder: 'Nombre, alias, texto o nota…',
+    filtersLabel: 'Filtros de búsqueda',
+    worldLabel: 'Mundo',
+    worldAll: 'Todos los mundos',
+    kindLabel: 'Tipo de contenido',
+    kindAll: 'Todo el contenido',
+    kinds: {
+      world: 'Mundos',
+      entity: 'Fichas',
+      relation: 'Relaciones',
+    },
+    entityTypeLabel: 'Tipo de ficha',
+    entityTypeAll: 'Todos los tipos de ficha',
+    entityTypeHint: 'Elige un mundo para filtrar por tipo de ficha.',
+    tagLabel: 'Etiqueta',
+    tagAll: 'Todas las etiquetas',
+    tagHint: 'Elige un mundo para filtrar por etiqueta.',
+    statusLabel: 'Estado',
+    statusAll: 'Todos los estados',
+    statuses: {
+      active: 'Activos',
+      draft: 'Borradores',
+      archived: 'Archivados',
+    },
+    statusValue: {
+      active: 'Activo',
+      draft: 'Borrador',
+      archived: 'Archivado',
+    },
+    clearFilters: 'Quitar filtros',
+    resultsLabel: 'Resultados de búsqueda',
+    count: (count: number): string =>
+      count === 1 ? '1 resultado' : `${count} resultados`,
+    showing: (shown: number, total: number): string =>
+      `Mostrando ${shown} de ${total}.`,
+    took: (milliseconds: number): string =>
+      `Tiempo de búsqueda: ${milliseconds} ms.`,
+    fuzzy: (terms: string): string =>
+      `No había una coincidencia exacta; se muestran resultados parecidos a ${terms}.`,
+    loading: 'Buscando en tu biblioteca…',
+    errorTitle: 'No se pudo completar la búsqueda',
+    errorDescription:
+      'La aplicación no pudo consultar el índice. Vuelve a intentarlo; tus datos siguen guardados en este equipo.',
+    retry: 'Volver a intentar',
+    emptyTitle: 'Ningún resultado coincide',
+    emptyDescription:
+      'Prueba con otra palabra, revisa la ortografía o quita algún filtro para ampliar la búsqueda.',
+    recentTitle: 'Recientes',
+    favoritesTitle: 'Favoritos',
+    suggestionsLead:
+      'Lo último que has tocado y las fichas que has marcado como favoritas.',
+    suggestionsLoading: 'Cargando recientes y favoritos…',
+    suggestionsError:
+      'No se pudieron cargar las sugerencias. Puedes buscar igualmente.',
+    suggestionsEmpty: 'Todavía no hay contenido para sugerir.',
+    noSnippet: 'Sin texto adicional.',
+    openPrefix: 'Abrir',
+    kindBadge: (kind: string): string => `Tipo: ${kind}`,
+    favoriteBadge: 'Favorita',
+    updated: (date: string): string => `Actualizado el ${date}`,
+    listLabel: 'Resultados de la búsqueda global',
+    rebuilt: (documents: number): string =>
+      documents === 1
+        ? 'Índice reconstruido: 1 documento.'
+        : `Índice reconstruido: ${documents} documentos.`,
+    rebuildError:
+      'No se pudo reconstruir el índice de búsqueda. Vuelve a intentarlo; tus datos siguen guardados.',
+  },
+  palette: {
+    title: 'Paleta de comandos',
+    inputLabel: 'Buscar o ejecutar un comando',
+    placeholder: 'Escribe para buscar o ejecutar…',
+    listLabel: 'Comandos y resultados',
+    hints: '↑↓ para moverte · Enter para abrir · Esc para cerrar',
+    commands: {
+      home: 'Ir a Inicio',
+      worlds: 'Ir a Mundos',
+      samples: 'Ir a Muestras',
+      search: 'Abrir la búsqueda global',
+      createWorld: 'Crear un mundo',
+      createEntity: 'Crear una ficha',
+      toggleTheme: 'Cambiar entre tema claro y oscuro',
+      rebuild: 'Reconstruir el índice de búsqueda',
+    },
+    searchFor: (query: string): string =>
+      `Ver todos los resultados para «${query}»`,
+    loading: 'Buscando…',
+    error: 'No se pudieron cargar los resultados. Vuelve a intentarlo.',
+    noResults: 'Ningún comando ni resultado coincide.',
+    commandBadge: 'Comando',
   },
   components: {
     form: {

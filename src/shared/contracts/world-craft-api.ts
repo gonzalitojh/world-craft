@@ -73,6 +73,14 @@ import {
   type UpdateSnapshot,
 } from './updates';
 import {
+  isSearchRebuildResult,
+  isSearchResponse,
+  isSearchSuggestions,
+  type SearchQueryInput,
+  type SearchSuggestionsInput,
+  type WorldCraftSearchApi,
+} from './search';
+import {
   isWorldActivityList,
   isWorldDeleteResult,
   isWorldDetail,
@@ -156,6 +164,7 @@ export interface WorldCraftApi {
   readonly tags: WorldCraftTagsApi;
   readonly relationTypes: WorldCraftRelationTypesApi;
   readonly relations: WorldCraftRelationsApi;
+  readonly search: WorldCraftSearchApi;
   readonly assets: WorldCraftAssetsApi;
 }
 
@@ -269,8 +278,8 @@ function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
  * Construye la API congelada del preload.
  *
  * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `worlds`,
- * `entityTypes`, `entities`, `tags` y `assets` para que el renderer no pueda
- * sustituirlos en tiempo de ejecución.
+ * `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search` y
+ * `assets` para que el renderer no pueda sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -515,6 +524,19 @@ export function createWorldCraftApi(
       ),
   });
 
+  const search: WorldCraftSearchApi = Object.freeze({
+    query: (input: SearchQueryInput) =>
+      invokeWorldCommand(IPC_CHANNELS.searchQuery, input, isSearchResponse),
+    suggestions: (input?: SearchSuggestionsInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.searchSuggestions,
+        input ?? {},
+        isSearchSuggestions,
+      ),
+    rebuild: () =>
+      invokeWorldCommand(IPC_CHANNELS.searchRebuild, {}, isSearchRebuildResult),
+  });
+
   return Object.freeze({
     appInfo,
     shell,
@@ -525,6 +547,7 @@ export function createWorldCraftApi(
     tags,
     relationTypes,
     relations,
+    search,
     assets,
   });
 }

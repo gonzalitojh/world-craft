@@ -37,6 +37,10 @@ import {
   createUnavailableRelationsService,
 } from './relations/service';
 import {
+  createSearchService,
+  createUnavailableSearchService,
+} from './search/service';
+import {
   closePersistence,
   getDatabase,
   initializePersistence,
@@ -178,6 +182,10 @@ if (!hasSingleInstanceLock) {
               database: database.orm,
               sqlite: database.sqlite,
             });
+      const search =
+        database === null
+          ? createUnavailableSearchService()
+          : createSearchService({ sqlite: database.sqlite });
       const worlds =
         database === null
           ? createUnavailableWorldsService()
@@ -197,6 +205,7 @@ if (!hasSingleInstanceLock) {
           entityTypes,
           entities,
           relations,
+          search,
           assets,
           pickImages: pickImageFiles,
         }),

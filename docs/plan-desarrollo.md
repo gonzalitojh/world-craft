@@ -617,8 +617,8 @@ Tablas principales:
 | `game_content_packs` | `id`, `name`, `version`, `description`, `author`, `license`, `metadata` json, `created_at` |
 | `game_sessions` | `id`, `world_id`, `seed`, `results` json, `notes`, `created_at` |
 | `activity_log` | `id`, `world_id`, `action`, `entity_type`, `entity_id`, `diff` json, `created_at` |
-| `search_documents` | `id`, `world_id`, `kind`, `ref_id`, `title`, `body`, `updated_at` |
-| `search_fts` | Tabla virtual FTS5 sobre `title` y `body`, sincronizada por triggers |
+| `search_documents` | `id`, `kind`, `source_id`, `context_id`, `related_id`, `world_id`, `title`, `body`, `keywords`, `entity_type_id`, `status`, `is_favorite`, timestamps |
+| `search_fts` | Tabla virtual FTS5 sobre `title`, `body` y `keywords`, con vocabulario `fts5vocab`, sincronizada por triggers |
 
 **Decisiones de modelado:**
 

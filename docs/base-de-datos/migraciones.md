@@ -1,8 +1,8 @@
 # Migraciones de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M1-04 (#75): tablas `relation_types` y `relations`, con rollback
-> de referencia y `user_version` 6.
+> 20/11/2026 con M1-05 (#76): índice de búsqueda FTS5, con rollback de
+> referencia y `user_version` 7.
 > **Ámbito:** creación, aplicación, verificación y reversión de migraciones
 > SQLite. El esquema vigente está en [`esquema.md`](esquema.md).
 
@@ -49,8 +49,10 @@ migración `0001_assets` (M0-06, #66) crea la tabla `assets`. La migración
 `tags`, `entity_tags` y `entity_gallery`, con FKs a `worlds`, `entity_types` y
 `assets`, y deja `user_version` en 5. La migración `0005_relations` (M1-04, #75)
 crea `relation_types` y `relations`, siembra los 18 tipos de relación del sistema
-y deja `user_version` en 6. El resto de tablas de contenido llega en M1 con
-migraciones `0006` y siguientes.
+y deja `user_version` en 6. La migración `0006_search` (M1-05, #76) crea el
+índice de búsqueda con FTS5, sus vistas y triggers, y deja `user_version` en 7.
+El resto de tablas de contenido llega en M2, M3 y M4 con migraciones `0007` y
+siguientes.
 
 ## 3. Flujo de una migración
 
@@ -173,6 +175,8 @@ drizzle/
   0002_worlds.sql
   0003_entity_types.sql
   0004_entities.sql
+  0005_relations.sql
+  0006_search.sql
   meta/
     _journal.json
   rollback/
@@ -182,6 +186,7 @@ drizzle/
     0003_entity_types.down.sql
     0004_entities.down.sql
     0005_relations.down.sql
+    0006_search.down.sql
 ```
 
 - Cuatro dígitos, secuencia sin huecos y etiqueta en `snake_case` e inglés.
@@ -189,9 +194,10 @@ drizzle/
 - El journal y las instantáneas de `drizzle/meta/` se versionan.
 - `0000_init` crea solo las tablas del sistema, `0001_assets` la tabla `assets`,
   `0002_worlds` los mundos y su actividad, `0003_entity_types` los tipos de
-  entidad con su seed, `0004_entities` las fichas, etiquetas y galería y
-  `0005_relations` los tipos de relación y las aristas. Las siguientes (`0006`
-  en adelante) son previstas para M1 y no se reservan nombres de antemano.
+  entidad con su seed, `0004_entities` las fichas, etiquetas y galería,
+  `0005_relations` los tipos de relación y las aristas y `0006_search` el índice
+  de búsqueda. Las siguientes (`0007` en adelante) son previstas para M2, M3 y
+  M4 y no se reservan nombres de antemano.
 - `0002_worlds` crea `worlds` antes que `activity_log` para que la clave foránea
   de la actividad siempre encuentre su tabla. Su rollback deshace primero
   `activity_log`, después `worlds` y deja `user_version` en 2.
@@ -213,6 +219,17 @@ drizzle/
   sus índices y la fila de `schema_migrations`, y deja `user_version` en 5. Debe
   ejecutarse antes de los rollbacks de `0004` y `0003` porque las relaciones
   referencian fichas y tipos.
+- `0006_search` crea `search_documents` con FK a `worlds`, `search_fts` con
+  `unicode61`, prefijos 2/3/4 y `remove_diacritics`, `search_vocabulary` con
+  `fts5vocab`, las vistas `search_world_documents`, `search_entity_documents` y
+  `search_relation_documents` y los triggers de sincronización de `worlds`,
+  `entities`, `relations`, `relation_types`, `entity_tags` y `tags`. Repuebla el
+  índice desde las tablas existentes para que una base migrada sea buscable sin
+  reintroducir datos. La reconstrucción completa sanea FTS5, elimina documentos
+  obsoletos y vuelve a poblar el índice desde las vistas. Su rollback elimina
+  solo esos objetos y la fila de
+  `schema_migrations`, y deja `user_version` en 6. Debe ejecutarse antes de los
+  rollbacks de `0005`, `0004` y `0003`.
 
 ## 5. Pruebas
 
@@ -221,16 +238,17 @@ drizzle/
 | `journal` | Journal válido, secuencia sin huecos, etiquetas sin traversal y checksum normalizado. | Implementada (unitaria) |
 | `migrations` | Una base vacía llega a la última versión sin errores y es idempotente al reabrir. | Implementada (integración) |
 | `upgrade-0001` | Una base en `0000` migra a `0001_assets` conservando `app_settings` y creando `assets`, con `user_version` 2. | Implementada (integración) |
-| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types` y `relations`, con `user_version` 6. | Implementada (integración) |
+| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`, `relations` y `search_documents`, con `user_version` 7. | Implementada (integración) |
 | `upgrade-0003` | Una base en `0002` con mundos y actividad migra a `0003`, `0004` y `0005` sin perder filas y con los 18 tipos del sistema. | Implementada (integración) |
 | `upgrade-0004` | Una base en `0003` con mundos y tipos personalizados migra a `0004` y `0005` sin perder filas y crea las tablas de fichas, etiquetas, galería, tipos de relación y relaciones. | Implementada (integración) |
 | `upgrade-0005` | Una base en `0004` con mundos, tipos y fichas migra a `0005` sin perder filas, crea `relation_types` y `relations` y siembra los 18 tipos de relación del sistema. | Implementada (integración) |
+| `upgrade-0006` | Una base en `0005` con mundos, fichas, etiquetas y relaciones migra a `0006` sin perder filas, crea el índice y lo repuebla desde las vistas. | Implementada (integración) |
 | `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo. | Implementada (integración) |
 | `backup` | Copia previa con manifiesto, tamaño, SHA-256 e integridad; fallo de copia no migra. | Implementada (integración) |
 | `integrity` | `PRAGMA integrity_check` detecta corrupción y el arranque no escribe. | Implementada (integración) |
 | `foreign-db` | Una base con tablas propias sin `schema_migrations` se rechaza. | Implementada (integración) |
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
-| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0004_entities` deja `user_version` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
+| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0006_search` deja `user_version` 6, `0005_relations` 5, `0004_entities` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
 | `backup-schedule` | Copias diaria, semanal y mensual al arrancar, sin duplicar el bucket, y rotación 7/4/12/5 sin podar pre-restore. | Implementada (unitaria e integración) |
 | `backup-restore` | Restauración verificada con copia pre-restore, rechazo de copia corrupta o futura, rollback y assets intactos. | Implementada (integración) |
@@ -264,8 +282,8 @@ instantáneas antes del build.
   integridad.
 - Ajustes → Datos → «Verificar base» (previsto) ejecutará `integrity_check` y
   `foreign_key_check` y mostrará un informe.
-- Ajustes → Datos → «Reconstruir búsqueda» (previsto) ejecutará el rebuild de
-  FTS5.
+- Ajustes → Datos → «Reconstruir búsqueda» (previsto en Ajustes) ejecutará el
+  rebuild de FTS5; hoy se ofrece desde la paleta `Ctrl+K` de la aplicación.
 - Ajustes → Datos → «Compactar base» (previsto) ejecutará `VACUUM` con
   confirmación y copia previa.
 - Los errores de migración usan los códigos de la sección 3.5 y no muestran SQL

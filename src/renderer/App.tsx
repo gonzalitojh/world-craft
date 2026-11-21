@@ -9,7 +9,9 @@ import type {
   WorldUpdateInput,
 } from '../shared/contracts/worlds';
 import type { EntityTypeSummary } from '../shared/contracts/entity-types';
+import type { SearchHit } from '../shared/contracts/search';
 import { ToastRegion, type Toast, type ToastTone } from './components';
+import { CommandPalette } from './components/command-palette';
 import { EntityQuickCreateDialog } from './components/entities/entity-quick-create-dialog';
 import { WorldConfirmDialog } from './components/worlds/world-confirm-dialog';
 import { WorldDuplicateDialog } from './components/worlds/world-duplicate-dialog';
@@ -21,6 +23,7 @@ import { EntitiesPage } from './pages/entities-page';
 import { EntityDetailPage } from './pages/entity-detail-page';
 import { HomePage, type WorldLibraryState } from './pages/home-page';
 import { SamplesPage } from './pages/samples-page';
+import { SearchPage } from './pages/search-page';
 import { WorldPage } from './pages/world-page';
 import { WorldsPage } from './pages/worlds-page';
 import { AppShell, type AppNavView, type AppView } from './shell/app-shell';
@@ -67,6 +70,10 @@ export function App() {
     useState<WorldActivityState>('ready');
 
   const [entityId, setEntityId] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteKey, setPaletteKey] = useState(0);
+  const [searchSeed, setSearchSeed] = useState('');
+  const [searchKey, setSearchKey] = useState(0);
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickKey, setQuickKey] = useState(0);
   const [quickWorldId, setQuickWorldId] = useState<string | null>(null);
@@ -96,6 +103,12 @@ export function App() {
     }
 
     const main = document.getElementById('wc-main');
+
+    if (view === 'search') {
+      main?.querySelector<HTMLElement>('input[type="search"]')?.focus();
+      return;
+    }
+
     main?.focus();
   }, [view]);
 
@@ -114,6 +127,55 @@ export function App() {
   const toggleTheme = useCallback(() => {
     setTheme((current) => (current === 'light' ? 'dark' : 'light'));
   }, []);
+
+  const openPalette = useCallback(() => {
+    // La clave remonta la paleta para que cada apertura empiece con la
+    // consulta y la selección limpias, sin estado que se arrastre.
+    setPaletteKey((current) => current + 1);
+    setPaletteOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const isEditable = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      return (
+        target.isContentEditable ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      );
+    };
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
+      const isShortcut =
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'k';
+
+      if (!isShortcut || paletteOpen) {
+        return;
+      }
+
+      // No se secuestra el atajo mientras el usuario escribe ni dentro de un
+      // diálogo modal: ahí Ctrl+K puede pertenecer al editor o al formulario.
+      if (isEditable(event.target) || document.querySelector('dialog[open]')) {
+        return;
+      }
+
+      event.preventDefault();
+      openPalette();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [paletteOpen, openPalette]);
 
   const refreshLibrary = useCallback(async () => {
     const [worldList, activityList] = await Promise.all([
@@ -290,6 +352,49 @@ export function App() {
     setEntityId(id);
     setView('entity');
   }, []);
+
+  const openSearchPage = useCallback((query: string) => {
+    setSearchSeed(query);
+    setSearchKey((current) => current + 1);
+    setView('search');
+  }, []);
+
+  const openSearchHit = useCallback(
+    async (hit: SearchHit) => {
+      if (hit.kind === 'world') {
+        await openWorld(hit.sourceId);
+        return;
+      }
+
+      await openWorld(hit.worldId);
+
+      const entityTargetId =
+        hit.kind === 'entity' ? hit.sourceId : hit.contextId;
+
+      if (entityTargetId !== null) {
+        openEntity(entityTargetId);
+      }
+    },
+    [openEntity, openWorld],
+  );
+
+  const openQuickCreate = useCallback(() => {
+    setQuickWorldId(selectedWorldId);
+    setQuickTypes([]);
+    setQuickTypesLoading(true);
+    setQuickKey((current) => current + 1);
+    setQuickOpen(true);
+  }, [selectedWorldId]);
+
+  const rebuildSearchIndex = useCallback(async () => {
+    const result = await window.worldCraft.search.rebuild();
+
+    if (result.ok) {
+      notify('success', messages.search.rebuilt(result.data.documents));
+    } else {
+      notify('error', messages.search.rebuildError);
+    }
+  }, [messages, notify]);
 
   const openDialog = useCallback((next: Exclude<DialogState, null>) => {
     const active = document.activeElement;
@@ -630,6 +735,11 @@ export function App() {
   };
 
   const navigate = (next: AppNavView): void => {
+    if (next === 'search') {
+      openSearchPage('');
+      return;
+    }
+
     setView(next);
   };
 
@@ -658,16 +768,13 @@ export function App() {
         view={view}
         title={title}
         onViewChange={navigate}
+        onOpenSearch={() => {
+          openPalette();
+        }}
         theme={theme}
         onToggleTheme={toggleTheme}
         version={appInfo.version}
-        onQuickCreate={() => {
-          setQuickWorldId(selectedWorldId);
-          setQuickTypes([]);
-          setQuickTypesLoading(true);
-          setQuickKey((current) => current + 1);
-          setQuickOpen(true);
-        }}
+        onQuickCreate={openQuickCreate}
       >
         {view === 'home' ? (
           <HomePage
@@ -682,6 +789,15 @@ export function App() {
               setView('worlds');
             }}
             onRetry={retryLibrary}
+          />
+        ) : view === 'search' ? (
+          <SearchPage
+            key={searchKey}
+            worlds={worlds}
+            initialQuery={searchSeed}
+            onOpenHit={(hit) => {
+              void openSearchHit(hit);
+            }}
           />
         ) : view === 'worlds' ? (
           <WorldsPage
@@ -822,6 +938,31 @@ export function App() {
           }}
         />
       ) : null}
+
+      <CommandPalette
+        key={paletteKey}
+        open={paletteOpen}
+        onClose={() => {
+          setPaletteOpen(false);
+        }}
+        onNavigate={(next) => {
+          navigate(next);
+        }}
+        onOpenSearch={(query) => {
+          openSearchPage(query);
+        }}
+        onOpenHit={(hit) => {
+          void openSearchHit(hit);
+        }}
+        onCreateWorld={() => {
+          openDialog({ kind: 'create' });
+        }}
+        onCreateEntity={openQuickCreate}
+        onToggleTheme={toggleTheme}
+        onRebuild={() => {
+          void rebuildSearchIndex();
+        }}
+      />
 
       <ToastRegion toasts={toasts} onDismiss={dismissToast} />
     </>

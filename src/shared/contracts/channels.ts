@@ -46,6 +46,9 @@ export const IPC_CHANNELS = {
   relationsCreate: 'relations:create',
   relationsUpdate: 'relations:update',
   relationsRemove: 'relations:remove',
+  searchQuery: 'search:query',
+  searchSuggestions: 'search:suggestions',
+  searchRebuild: 'search:rebuild',
   assetsList: 'assets:list',
   assetsImport: 'assets:import',
 } as const;
