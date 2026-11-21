@@ -1,31 +1,35 @@
-import { useState, type ReactNode } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 
 import logoUrl from '../assets/world-craft-logo.svg';
 import { Button } from '../components/button';
+import { IconButton } from '../components/icon-button';
+import { Menu, type MenuItem } from '../components/menu';
+import { Tooltip } from '../components/tooltip';
 import { UpdatesControl } from '../components/updates-control';
 import { useMessages } from '../i18n/provider';
 import { cx } from '../lib/class-names';
 import type { ThemeMode } from '../theme';
+import type { AppNavView, AppView, ShellPrimaryAction } from './views';
 
-export type AppView =
-  'home' | 'search' | 'worlds' | 'world' | 'entities' | 'entity' | 'samples';
-
-/** Vistas que aparecen en la navegación del rail. */
-export type AppNavView = 'home' | 'search' | 'worlds' | 'samples';
+export type { AppNavView, AppView, ShellPrimaryAction } from './views';
 
 export interface AppShellProps {
   readonly view: AppView;
   /** Título de la barra superior; puede ser el nombre de un mundo. */
   readonly title: string;
-  readonly onViewChange: (view: AppNavView) => void;
+  readonly onNavigate: (view: AppNavView) => void;
+  /** Acción primaria de la vista; como máximo una por pantalla. */
+  readonly primaryAction?: ShellPrimaryAction | undefined;
+  /** Acciones secundarias de la vista; se muestran en el menú «⋯». */
+  readonly secondaryActions?: readonly MenuItem[] | undefined;
   /** Abre la paleta de comandos Ctrl+K. */
-  readonly onOpenSearch: () => void;
+  readonly onOpenPalette: () => void;
   readonly theme: ThemeMode;
   readonly onToggleTheme: () => void;
-  /** Versión visible al pie del rail; la pasa `App` desde el preload. */
-  readonly version: string;
-  /** Abre la creación rápida de una ficha desde cualquier pantalla. */
-  readonly onQuickCreate?: (() => void) | undefined;
+  /** Estado plegado controlado; si falta, el shell lo gestiona. */
+  readonly collapsed?: boolean | undefined;
+  readonly defaultCollapsed?: boolean | undefined;
+  readonly onCollapsedChange?: ((collapsed: boolean) => void) | undefined;
   readonly children: ReactNode;
 }
 
@@ -89,30 +93,9 @@ function WorldsIcon() {
   );
 }
 
-function SamplesIcon() {
-  return (
-    <svg
-      className="wc-nav-item__icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="m12 4 8 4-8 4-8-4Z" />
-      <path d="m4 12 8 4 8-4" />
-      <path d="m4 16 8 4 8-4" />
-    </svg>
-  );
-}
-
 function CollapseIcon({ collapsed }: { readonly collapsed: boolean }) {
   return (
     <svg
-      className="wc-nav-item__icon"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -130,7 +113,6 @@ function CollapseIcon({ collapsed }: { readonly collapsed: boolean }) {
 function MoonIcon() {
   return (
     <svg
-      className="wc-button__icon"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -148,7 +130,6 @@ function MoonIcon() {
 function SunIcon() {
   return (
     <svg
-      className="wc-button__icon"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -164,55 +145,103 @@ function SunIcon() {
   );
 }
 
+const NAV_ITEMS = [
+  { id: 'home', icon: <HomeIcon /> },
+  { id: 'worlds', icon: <WorldsIcon /> },
+] as const;
+
+const WORLDS_VIEWS: readonly AppView[] = [
+  'worlds',
+  'world',
+  'entities',
+  'entity',
+];
+
 /**
  * Shell de escritorio sin router.
  *
- * La vista y el tema los controla `App`; el rail recuerda su estado plegado
- * mientras dura la sesión. Semántica: `aside` para el rail, `nav` para la
- * navegación, `header` para la barra superior y `main` como destino del enlace
- * de salto, con `tabIndex={-1}` para poder enfocarlo.
+ * La vista, el tema y las acciones las controla `App`; el rail recuerda su
+ * estado plegado mientras dura la sesión salvo que se controle desde fuera.
+ * Semántica: `aside` para el rail, `nav` para la navegación, `header` para la
+ * barra superior y `main` como destino del enlace de salto, con `tabIndex={-1}`
+ * para poder enfocarlo.
  */
 export function AppShell({
   view,
   title,
-  onViewChange,
-  onOpenSearch,
+  onNavigate,
+  primaryAction,
+  secondaryActions,
+  onOpenPalette,
   theme,
   onToggleTheme,
-  version,
-  onQuickCreate,
+  collapsed,
+  defaultCollapsed = false,
+  onCollapsedChange,
   children,
 }: AppShellProps) {
   const messages = useMessages();
-  const [collapsed, setCollapsed] = useState(false);
-  const navItems = [
-    { id: 'home', label: messages.shell.views.home, icon: <HomeIcon /> },
-    { id: 'search', label: messages.shell.views.search, icon: <SearchIcon /> },
-    {
-      id: 'worlds',
-      label: messages.shell.views.worlds,
-      icon: <WorldsIcon />,
-    },
-    {
-      id: 'samples',
-      label: messages.shell.views.samples,
-      icon: <SamplesIcon />,
-    },
-  ] as const;
+  const [uncontrolledCollapsed, setUncontrolledCollapsed] =
+    useState(defaultCollapsed);
+  const isCollapsed = collapsed ?? uncontrolledCollapsed;
   const themeLabel =
     theme === 'dark'
       ? messages.shell.theme.currentDark
       : messages.shell.theme.currentLight;
-  const collapseLabel = collapsed
+  const collapseLabel = isCollapsed
     ? messages.shell.expand
     : messages.shell.collapse;
 
+  const toggleCollapsed = (): void => {
+    const next = !isCollapsed;
+
+    if (collapsed === undefined) {
+      setUncontrolledCollapsed(next);
+    }
+
+    onCollapsedChange?.(next);
+  };
+
+  const isCurrent = (id: AppNavView): boolean =>
+    id === 'home' ? view === 'home' : WORLDS_VIEWS.includes(view);
+
+  const renderNavButton = (
+    id: AppNavView,
+    label: string,
+    icon: ReactNode,
+  ): ReactNode => (
+    <button
+      key={id}
+      type="button"
+      className="wc-nav-item"
+      aria-label={isCollapsed ? label : undefined}
+      aria-current={isCurrent(id) ? 'page' : undefined}
+      onClick={() => {
+        onNavigate(id);
+      }}
+    >
+      {icon}
+      {isCollapsed ? null : <span className="wc-nav-item__label">{label}</span>}
+    </button>
+  );
+
   return (
     <>
-      <a className="wc-skip-link" href="#wc-main">
+      <a
+        className="wc-skip-link"
+        href="#wc-main"
+        onClick={(event) => {
+          // El enlace conserva `href` por semántica, pero no cambia el hash:
+          // `#wc-main` lo interpretaría el listener de hashchange de `App`
+          // como una vista desconocida y devolvería a Inicio. Se enfoca el
+          // destino a mano, que también cubre la activación con Enter.
+          event.preventDefault();
+          document.getElementById('wc-main')?.focus();
+        }}
+      >
         {messages.shell.skipToContent}
       </a>
-      <div className={cx('wc-shell', collapsed && 'wc-shell--collapsed')}>
+      <div className={cx('wc-shell', isCollapsed && 'wc-shell--collapsed')}>
         <aside className="wc-shell__rail" aria-label={messages.shell.railLabel}>
           <div className="wc-shell__brand">
             {/*
@@ -230,13 +259,10 @@ export function AppShell({
             <span
               className={cx(
                 'wc-shell__brand-name',
-                collapsed && 'wc-visually-hidden',
+                isCollapsed && 'wc-visually-hidden',
               )}
             >
               {messages.shell.brandName}
-              <span className="wc-shell__brand-tagline">
-                {messages.shell.brandTagline}
-              </span>
             </span>
           </div>
 
@@ -245,99 +271,96 @@ export function AppShell({
             id="wc-navigation"
             aria-label={messages.shell.navigationLabel}
           >
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="wc-nav-item"
-                title={collapsed ? item.label : undefined}
-                aria-current={
-                  view === item.id || (view === 'world' && item.id === 'worlds')
-                    ? 'page'
-                    : undefined
-                }
-                onClick={() => {
-                  onViewChange(item.id);
-                }}
-              >
-                {item.icon}
-                <span
-                  className={cx(
-                    'wc-nav-item__label',
-                    collapsed && 'wc-visually-hidden',
-                  )}
-                >
-                  {item.label}
-                </span>
-              </button>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const label = messages.shell.views[item.id];
+              const button = renderNavButton(item.id, label, item.icon);
+
+              return isCollapsed ? (
+                <Tooltip key={item.id} label={label} align="end">
+                  {button}
+                </Tooltip>
+              ) : (
+                <Fragment key={item.id}>{button}</Fragment>
+              );
+            })}
           </nav>
 
           <div className="wc-shell__rail-footer">
-            <button
-              type="button"
-              className="wc-nav-item wc-shell__collapse"
-              title={collapsed ? collapseLabel : undefined}
-              aria-expanded={!collapsed}
+            <IconButton
+              className="wc-shell__collapse"
+              label={collapseLabel}
+              tooltip={collapseLabel}
+              icon={<CollapseIcon collapsed={isCollapsed} />}
+              aria-expanded={!isCollapsed}
               aria-controls="wc-navigation"
-              onClick={() => {
-                setCollapsed((current) => !current);
-              }}
-            >
-              <CollapseIcon collapsed={collapsed} />
-              <span
-                className={cx(
-                  'wc-nav-item__label',
-                  collapsed && 'wc-visually-hidden',
-                )}
-              >
-                {collapseLabel}
-              </span>
-            </button>
-            <p
-              className={cx(
-                'wc-shell__version',
-                collapsed && 'wc-visually-hidden',
-              )}
-            >
-              {messages.shell.version(version)}
-            </p>
+              onClick={toggleCollapsed}
+            />
           </div>
         </aside>
 
         <div className="wc-shell__workspace">
           <header className="wc-topbar">
-            <h1 className="wc-topbar__title">{title}</h1>
+            <h1 className="wc-topbar__title" title={title}>
+              {title}
+            </h1>
             <div className="wc-topbar__actions">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="wc-topbar__search"
-                onClick={onOpenSearch}
-              >
-                <SearchIcon className="wc-button__icon" />
-                <span className="wc-topbar__search-label">
-                  {messages.shell.searchAction}
-                </span>
-                <kbd className="wc-topbar__kbd">
-                  {messages.shell.searchShortcut}
-                </kbd>
-              </Button>
-              {onQuickCreate !== undefined ? (
-                <Button size="sm" onClick={onQuickCreate}>
-                  {messages.entities.quick.button}
+              <Tooltip label={messages.shell.searchTrigger}>
+                <button
+                  type="button"
+                  className="wc-topbar__search"
+                  aria-label={messages.shell.searchTrigger}
+                  aria-keyshortcuts="Control+K"
+                  aria-haspopup="dialog"
+                  onClick={onOpenPalette}
+                >
+                  <SearchIcon className="wc-topbar__search-icon" />
+                  <span className="wc-topbar__search-label">
+                    {messages.shell.searchTrigger}
+                  </span>
+                  {/*
+                    El atajo se pinta con `content: attr(data-keys)` para que
+                    el texto visible del botón sea solo «Buscar» y su nombre
+                    accesible coincida con la etiqueta (regla label-in-name de
+                    axe); el atajo se anuncia con `aria-keyshortcuts`.
+                  */}
+                  <kbd
+                    className="wc-topbar__search-kbd"
+                    data-keys={messages.shell.searchShortcut}
+                    aria-hidden="true"
+                  />
+                </button>
+              </Tooltip>
+
+              {primaryAction === undefined ? null : (
+                <Button
+                  variant="primary"
+                  size="md"
+                  disabled={primaryAction.disabled}
+                  onClick={primaryAction.onSelect}
+                >
+                  {primaryAction.label}
                 </Button>
-              ) : null}
-              <UpdatesControl />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onToggleTheme}
-                aria-label={messages.shell.theme.switchLabel(themeLabel)}
-              >
-                {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-                <span>{themeLabel}</span>
-              </Button>
+              )}
+
+              {secondaryActions === undefined ||
+              secondaryActions.length === 0 ? null : (
+                <Menu
+                  label={messages.shell.viewMenuLabel}
+                  items={secondaryActions}
+                  align="end"
+                  triggerTooltip={messages.shell.viewMenuLabel}
+                />
+              )}
+
+              <div className="wc-topbar__utilities">
+                <UpdatesControl />
+                <IconButton
+                  label={messages.shell.theme.switchLabel(themeLabel)}
+                  tooltip={messages.shell.theme.switchLabel(themeLabel)}
+                  icon={theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+                  onClick={onToggleTheme}
+                />
+              </div>
             </div>
           </header>
 

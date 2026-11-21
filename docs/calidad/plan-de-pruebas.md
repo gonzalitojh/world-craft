@@ -7,8 +7,8 @@
 > ADR 0018 (empaquetado, actualizador y preservación), ADR 0019 (mundos),
 > ADR 0020 (tipos de entidad y campos personalizados), ADR 0021 (fichas,
 > galería, etiquetas y editor enriquecido), ADR 0022 (relaciones tipadas,
-> etiquetas inversas y API del grafo) y ADR 0023 (búsqueda global y paleta de
-> comandos).
+> etiquetas inversas y API del grafo), ADR 0023 (búsqueda global y paleta de
+> comandos) y ADR 0025 (dirección visual v2).
 
 ## 1. Principios
 
@@ -105,10 +105,12 @@ renderer, la CSP, la navegación, los permisos y la red.
 ### 3.4 UI y accesibilidad
 
 Desde #65 hay una prueba unitaria estática del sistema de diseño,
-`tests/unit/design-tokens.test.ts`, reescrita en #125 para la dirección v2 (46
-pruebas): lee los CSS reales, resuelve los tokens de cada tema y calcula la
-tabla de contraste WCAG 2.2 §4.5 completa, incluidas las parejas nuevas de
-superficie hundida, foco y marcas de entidad. Además exige que solo
+`tests/unit/design-tokens.test.ts`, reescrita en #125 para la dirección v2 y
+ampliada en #126 con los estilos del shell v2 (rail, barra superior, disparador
+de la paleta y punto de actualizaciones). Lee los CSS reales, resuelve los
+tokens de cada tema y calcula la tabla de contraste WCAG 2.2 §4.5 completa,
+incluidas las parejas nuevas de superficie hundida, foco y marcas de entidad.
+Además exige que solo
 `palette.css` declare colores literales, que todas las referencias `var(--x)`
 resuelvan a un token declarado, que `--paper`/`--ink` hayan desaparecido, las
 escalas de texto, radios e iconos, la elevación sin contorno en tarjetas y
@@ -118,8 +120,11 @@ paneles, el deshabilitado sin opacidad, `prefers-reduced-motion`, la ausencia de
 Desde #125, `tests/components/primitives.test.tsx` cubre botón de icono con
 tooltip, menú `⋯` con teclado y foco, casilla, radio, panel, esqueleto, tarjeta,
 diálogo y avisos; `tests/components/samples.test.tsx` monta el banco de muestras
-completo con el catálogo real. Los archivos woff2, el texto OFL replicado y los
-avisos de terceros se comprueban en `design-tokens.test.ts` y en
+completo con el catálogo real. Desde #126, `tests/components/shell.test.tsx`
+cubre la navegación Inicio/Mundos, el plegado con nombres accesibles y tooltip,
+la acción primaria única, el menú `⋯`, el disparador de la paleta y el título
+truncado. Los archivos woff2, el texto OFL replicado y los avisos de terceros
+se comprueban en `design-tokens.test.ts` y en
 `tests/unit/packaging/licenses.test.ts`; `scripts/check-build.mjs` verifica que
 los dos woff2 viajan en el bundle con `@font-face` relativo y sin hosts remotos.
 
@@ -134,7 +139,8 @@ prohibición de `--muted` sobre `--selection`.
 
 Desde #70, `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y, desde
 #125, también sobre Muestras en los dos temas, y falla ante violaciones críticas
-(detalle en 3.11).
+(detalle en 3.11). Desde #126 el shell se audita además con el rail plegado en
+Claro y Oscuro, y Muestras se abre por su hash interno, no desde el rail.
 
 Desde #71, la internacionalización se prueba en `tests/unit/i18n/`: catálogo sin
 hojas vacías, claves y parámetros tipados, `Intl` para fechas, números,
@@ -191,7 +197,7 @@ lo cubre cuando aplica.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **419 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **433 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
@@ -200,14 +206,16 @@ lo cubre cuando aplica.
   de assets, copias (manifiesto, rutas de restauración, buckets, rotación y
   composición de modo seguro), instalador, actualizador, instancia única,
   licencias, mundos, tipos de entidad, fichas (descripción, esquemas IPC,
-  handlers y tarjetas) y relaciones (validación, esquemas, guardas y catálogo).
-- **58 pruebas de componentes en verde** en `tests/components/`: botón nativo,
+  handlers y tarjetas), relaciones (validación, esquemas, guardas y catálogo) y
+  vistas internas del shell (resolución de Muestras por hash).
+- **73 pruebas de componentes en verde** en `tests/components/`: botón nativo,
   botón de icono con tooltip, menú `⋯`, casilla, radio, panel, esqueleto,
   tarjeta, diálogo, avisos, pestañas, proveedor de i18n, tarjetas y formularios
   de mundo, ficha, diálogos de creación, creación rápida, panel de relaciones y
-  diálogo de relación, además del banco de muestras completo. Usan Testing
-  Library y `jsdom`.
-- **134 pruebas de integración (133 en verde y 1 omitida)** en `tests/integration/`:
+  diálogo de relación, el shell v2 (navegación, plegado, primaria, menú y
+  paleta) y el banco de muestras completo. Usan Testing Library y `jsdom`.
+- **134 pruebas de integración en verde (1 omitida)** en
+  `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
   base ajena, checksum alterado, rollback del lote, preservación con copia,
@@ -238,8 +246,8 @@ lo cubre cuando aplica.
   2×2. Se ejecuta en el job `package` de Windows desde #68.
 - **Manual del scaffold.** DevTools sin `require` ni `process`, navegación
   externa bloqueada y arranque sin red. La comprobación visual de la ventana a
-  1024, 1280 y 1600 px y de los dos temas con el shell de #65 la cubre el E2E de
-  #70; las capturas y la matriz visual completa siguen en #93.
+  1024, 1280 y 1600 px y de los dos temas con el shell v2 (#126) la cubren los
+  E2E de #70 y #126; las capturas y la matriz visual completa siguen en #93.
 - **Pendiente.** Auditoría de accesibilidad, temas y ventana de todas las
   pantallas (#93). Los E2E de arranque, ventana, temas y axe del shell están
   implementados en 3.11. El instalador, el asar y el actualizador ya están
@@ -421,7 +429,7 @@ comprobación no aborta el socket; la auditoría completa de axe, temas y ventan
 sigue en #93; el paso de `package` a required y la build de release de Windows
 se abordan en M5.
 
-### 3.11 Componentes y E2E (implementado, #70)
+### 3.11 Componentes y E2E (implementado, #70 y #126)
 
 **Componentes.** `pnpm test:components` ejecuta Vitest con `jsdom`, Testing
 Library y `@testing-library/jest-dom` sobre `tests/components/`. El setup
@@ -440,12 +448,22 @@ temporal, comprueba que `app.getPath('userData')` cae exactamente ahí, cierra l
 aplicación y borra la carpeta. Una fuga de aislamiento detiene la prueba: no se
 leen ni escriben `%APPDATA%`, la base, los assets ni las copias del usuario.
 
-- **Shell:** identidad y versión, ventana visible con mínimo 1024×700, carga del
-  renderer desde `file://`, navegación Inicio/Mundos/Muestras con `aria-current` y
+- **Shell:** identidad, ventana visible con mínimo 1024×700, carga del
+  renderer desde `file://`, navegación **Inicio/Mundos** con `aria-current`
+  (Mundos también en mundo, fichas y ficha), rail sin lema ni versión y
   conmutación de los dos temas.
+- **Shell v2 (#126):** el rail plegado mide 64 px y no desborda a 1024 px; la
+  barra superior mide 56 px; hay una sola acción primaria por vista y estado (con
+  cero mundos manda el estado vacío); el menú `⋯` funciona con flechas,
+  `Inicio`, `Fin`, `Enter` y `Escape`, y devuelve el foco al disparador; los
+  iconos de actualizaciones (con tooltip y punto cuando hay versión) y de tema
+  (sol/luna) son accesibles; el enlace de salto enfoca el contenido sin cambiar
+  el hash ni la vista; **Muestras** solo se abre por `#/internal/samples` y la
+  URL se limpia al salir; `Ctrl+K` abre la paleta desde el disparador de la
+  barra.
 - **Ventana:** a 1024, 1280 y 1600 px no hay scroll horizontal de página
-  (`scrollWidth <= clientWidth` en `html` y `body`) con el contenido largo de la
-  página de Muestras.
+  (`scrollWidth <= clientWidth` en `html` y `body`) con un nombre de mundo largo
+  y con el contenido largo de la página de Muestras abierta por su hash interno.
 - **Accesibilidad:** se inyecta `axe-core` con `page.evaluate` (no está sujeto a
   la CSP) y se ejecuta sobre el documento en Claro y Oscuro. Se falla ante
   violaciones `critical`; las `serious` se anotan para #93. Una prueba negativa
@@ -457,8 +475,9 @@ leen ni escriben `%APPDATA%`, la base, los assets ni las copias del usuario.
 
 **Fixtures y helpers.** Las pruebas de integración reutilizan
 `tests/integration/helpers/temp-db.ts` y `temp-assets.ts`; la ventana y el
-`userData` temporal viven en `tests/e2e/fixtures/electron-app.ts` y la auditoría
-en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
+`userData` temporal viven en `tests/e2e/fixtures/electron-app.ts`, la auditoría
+en `fixtures/axe.ts` y la apertura de Muestras por hash interno en
+`fixtures/internal-view.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
 
 ### 3.12 Mundos: CRUD, dashboard y aislamiento (implementado, #72)
 
@@ -551,7 +570,9 @@ en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
   alias, descripción, etiqueta, favorito, búsqueda y filtros, importa una imagen
   con el diálogo nativo y verifica miniatura `wc-asset://thumb` e imagen principal
   `wc-asset://asset`, inserta y abre un enlace interno, crea una segunda ficha de
-  otro tipo, comprueba la creación rápida desde la barra superior y repite
+  otro tipo desde la acción **Nueva ficha** de la vista de mundo, abre
+  **Gestionar tipos** desde el menú `⋯` de Fichas, mueve una ficha a la papelera
+  desde el `⋯` de su página con confirmación y retorno de foco, y repite
   1024/1280/1600 px con nombre, resumen, alias, etiqueta y descripción largos.
   Ejecuta axe en lista, ficha, diálogo de creación y gestor de tipos en ambos
   temas, sin violaciones críticas ni graves.
@@ -606,10 +627,10 @@ en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
   reconstrucción del índice y la apertura de resultados; repite 1024/1280/1600 px
   y ejecuta axe en ambos temas sin violaciones críticas ni graves.
 
-**Comandos y tiempos (equipo de referencia, 2026-11-21).** `pnpm test` ejecuta
-419 unitarias (4 omitidas), 58 de componentes y 134 de integración (1 omitida) en
-unos 80 s; `pnpm test:e2e` compila y ejecuta 26 pruebas en unos 100 s. Los E2E
-son Windows-only, igual que la aplicación.
+**Comandos y recuento (equipo de referencia, 2026-11-21).** `pnpm test` ejecuta
+433 unitarias (4 omitidas), 73 de componentes y 134 de integración en verde (1
+omitida); `pnpm test:e2e` compila y ejecuta 37 pruebas. Los E2E son Windows-only,
+igual que la aplicación.
 
 ## 4. Cobertura
 
@@ -638,7 +659,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 419 unitarias (4 omitidas), 58 de componentes y 134 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 433 unitarias (4 omitidas), 73 de componentes y 134 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

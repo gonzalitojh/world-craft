@@ -81,10 +81,11 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
     page.getByText(messages.worlds.activity.actions.created),
   ).toBeVisible();
 
-  // Edición desde la página del mundo.
+  // Edición desde el menú «⋯» de la barra superior.
   await page
-    .getByRole('button', { name: messages.worlds.card.editNamed(WORLD_NAME) })
+    .getByRole('button', { name: messages.shell.viewMenuLabel })
     .click();
+  await page.getByRole('menuitem', { name: messages.worlds.card.edit }).click();
   await page
     .getByLabel(messages.worlds.form.summaryLabel)
     .fill('Resumen actualizado desde la prueba.');
@@ -99,17 +100,16 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
     page.getByText(messages.worlds.notices.updated(WORLD_NAME)),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', {
-      name: messages.worlds.card.editNamed(WORLD_NAME),
-    }),
+    page.getByRole('button', { name: messages.shell.viewMenuLabel }),
   ).toBeFocused();
   await dismissToasts(page);
 
   // Duplicado con el nombre propuesto.
   await page
-    .getByRole('button', {
-      name: messages.worlds.card.duplicateNamed(WORLD_NAME),
-    })
+    .getByRole('button', { name: messages.shell.viewMenuLabel })
+    .click();
+  await page
+    .getByRole('menuitem', { name: messages.worlds.card.duplicate })
     .click();
   await page
     .getByRole('dialog')

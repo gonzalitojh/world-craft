@@ -3,6 +3,7 @@ import type { ElectronApplication, Page } from '@playwright/test';
 import { es as messages } from '../../src/renderer/messages/es';
 
 import { expect, test } from './fixtures/electron-app';
+import { openSamples } from './fixtures/internal-view';
 
 /**
  * Regresiones de la revisión UI de #125.
@@ -16,16 +17,6 @@ const THEMES = [
   { mode: 'light', label: messages.shell.theme.currentLight },
   { mode: 'dark', label: messages.shell.theme.currentDark },
 ] as const;
-
-async function openSamples(page: Page): Promise<void> {
-  await page
-    .getByRole('navigation', { name: messages.shell.navigationLabel })
-    .getByRole('button', { name: messages.shell.views.samples })
-    .click();
-  await expect(
-    page.getByRole('heading', { level: 1, name: messages.shell.views.samples }),
-  ).toBeVisible();
-}
 
 async function applyTheme(
   page: Page,

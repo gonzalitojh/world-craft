@@ -634,6 +634,75 @@ describe('correcciones de la revisión UI', () => {
   });
 });
 
+describe('shell v2', () => {
+  it('hunde el rail sobre la superficie y lo separa con un divisor', () => {
+    const body = blockBody('.wc-shell__rail');
+
+    expect(body).toMatch(/background-color:\s*var\(--surface-sunken\)/);
+    expect(body).toMatch(/border-inline-end:\s*1px\s+solid\s+var\(--border\)/);
+  });
+
+  it('marca la entrada activa con selección, texto principal y peso 600', () => {
+    const body = blockBody(".wc-nav-item[aria-current='page']");
+
+    expect(body).toMatch(/background-color:\s*var\(--selection\)/);
+    expect(body).toMatch(/color:\s*var\(--fg\)/);
+    expect(body).toMatch(/font-weight:\s*var\(--weight-semibold\)/);
+    expect(body).not.toMatch(/border/);
+    expect(body).not.toMatch(/--accent-surface/);
+  });
+
+  it('sube el hover de los iconos del rail a superficie elevada', () => {
+    const body = blockBody(
+      '.wc-shell__rail .wc-icon-button--ghost:hover:not(:disabled)',
+    );
+
+    expect(body).toMatch(/background-color:\s*var\(--surface-raised\)/);
+    expect(body).not.toMatch(/--surface-sunken/);
+  });
+
+  it('deja la barra superior en superficie con sombra y sin borde inferior', () => {
+    const body = blockBody('.wc-topbar');
+
+    expect(body).toMatch(/block-size:\s*var\(--topbar-height\)/);
+    expect(body).toMatch(/background-color:\s*var\(--surface\)/);
+    expect(body).toMatch(/box-shadow:\s*var\(--shadow-1\)/);
+    expect(body).not.toMatch(/border-block-end/);
+  });
+
+  it('trunca el título a una línea', () => {
+    const body = blockBody('.wc-topbar__title');
+
+    expect(body).toMatch(/white-space:\s*nowrap/);
+    expect(body).toMatch(/text-overflow:\s*ellipsis/);
+    expect(body).toMatch(/overflow:\s*hidden/);
+  });
+
+  it('pinta el disparador de búsqueda como un pozo de 32 px', () => {
+    const body = blockBody('.wc-topbar__search');
+
+    expect(body).toMatch(/block-size:\s*2rem/);
+    expect(body).toMatch(/background-color:\s*var\(--surface-sunken\)/);
+  });
+
+  it('da a la paleta un campo de 40 px con borde fuerte', () => {
+    const body = blockBody('.wc-palette__input');
+
+    expect(body).toMatch(/block-size:\s*2\.5rem/);
+    expect(body).toMatch(/border:\s*1px\s+solid\s+var\(--border-strong\)/);
+    expect(body).toMatch(/background-color:\s*var\(--surface\)/);
+  });
+
+  it('señala actualizaciones con un punto de 6 px sobre la superficie', () => {
+    const body = blockBody('.wc-updates__dot');
+
+    expect(body).toMatch(/inline-size:\s*6px/);
+    expect(body).toMatch(/block-size:\s*6px/);
+    expect(body).toMatch(/background-color:\s*var\(--accent\)/);
+    expect(body).toMatch(/border:\s*1px\s+solid\s+var\(--surface\)/);
+  });
+});
+
 describe('foco 2+2', () => {
   it('declara el anillo y lo aplica en base sin anularlo', () => {
     expect(scales.get('--focus-width')).toBe('2px');
@@ -779,7 +848,28 @@ describe('tipografía y fuente local', () => {
     expect(fontMono).not.toMatch(/JetBrains/);
     expect(fontContent.startsWith("'Source Serif 4'")).toBe(true);
     expect(fontContent).toMatch(/Georgia/);
-    expect(scales.get('--font-display')).toBe('var(--font-content)');
+  });
+
+  it('retira --font-display y no deja referencias en CSS ni TSX', () => {
+    expect(scales.has('--font-display')).toBe(false);
+
+    for (const [name, source] of [
+      ['tokens/palette.css', paletteSource],
+      ['tokens/semantic.css', semanticSource],
+      ['tokens/scales.css', scalesSource],
+      ['base.css', baseSource],
+      ['components.css', componentsSource],
+      ['relations.css', relationsSource],
+      ['fonts.css', fontsSource],
+    ] as const) {
+      expect(stripComments(source), name).not.toMatch(/--font-display/);
+    }
+
+    for (const directory of ['components', 'pages', 'shell']) {
+      for (const file of listTsxFiles(path.join(RENDERER_ROOT, directory))) {
+        expect(readTsxSource(file), file).not.toMatch(/--font-display/);
+      }
+    }
   });
 
   it('no usa el alias --font-display en primitivas v2 ni adaptadas', () => {

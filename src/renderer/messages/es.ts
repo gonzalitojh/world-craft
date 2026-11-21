@@ -17,7 +17,6 @@ export const es = {
   shell: {
     skipToContent: 'Saltar al contenido principal',
     brandName: 'World Craft',
-    brandTagline: 'Taller de cartógrafo',
     railLabel: 'Barra lateral de la aplicación',
     navigationLabel: 'Navegación principal',
     views: {
@@ -31,9 +30,10 @@ export const es = {
     },
     collapse: 'Plegar menú lateral',
     expand: 'Expandir menú lateral',
-    searchAction: 'Buscar',
+    searchTrigger: 'Buscar',
     searchShortcut: 'Ctrl+K',
-    version: (version: string): string => `Versión ${version}`,
+    viewMenuLabel: 'Más acciones de la vista',
+    quickCreate: 'Crear una ficha',
     theme: {
       currentLight: 'Claro',
       currentDark: 'Oscuro',
@@ -320,6 +320,7 @@ export const es = {
       retry: 'Volver a intentar',
       create: 'Nueva ficha',
       manageTypes: 'Gestionar tipos',
+      menuLabel: 'Acciones de las fichas',
       noTypes: 'Este mundo no tiene tipos disponibles.',
       typesError: 'No se pudieron cargar los tipos del mundo.',
       worldMissing: 'Abre un mundo para ver sus fichas.',
@@ -401,6 +402,7 @@ export const es = {
       removeTagNamed: (name: string): string =>
         `Quitar la etiqueta ${name} de la ficha`,
       newTag: 'Nueva etiqueta',
+      menuLabel: 'Acciones de la ficha',
       delete: 'Mover a la papelera',
       deleteTitle: (name: string): string => `¿Mover «${name}» a la papelera?`,
       deleteBody:
@@ -1038,8 +1040,7 @@ export const es = {
     commands: {
       home: 'Ir a Inicio',
       worlds: 'Ir a Mundos',
-      samples: 'Ir a Muestras',
-      search: 'Abrir la búsqueda global',
+      search: 'Abrir la página de búsqueda',
       createWorld: 'Crear un mundo',
       createEntity: 'Crear una ficha',
       toggleTheme: 'Cambiar entre tema claro y oscuro',

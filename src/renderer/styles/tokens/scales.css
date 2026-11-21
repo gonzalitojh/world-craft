@@ -56,11 +56,6 @@
     'Times New Roman', serif;
   --font-mono: 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
 
-  /* Alias obsoleto: se conserva hasta #126 para que las pantallas aún no
-   * migradas mantengan sus títulos en serif sin cambios de shell. Ninguna
-   * primitiva v2 lo usa y se retira cuando no queden referencias. */
-  --font-display: var(--font-content);
-
   /* Tamaños: 12/13/14/16/18/22/32 px. `base` es el cuerpo estándar de la
    * interfaz; `sm` y `xs` se reservan a metadatos y datos tabulares. */
   --text-xs: 0.75rem;

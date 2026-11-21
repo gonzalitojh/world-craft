@@ -111,7 +111,6 @@ export function WorldsPage({
     <div className="wc-page">
       <div className="wc-page__header">
         <p className="wc-page__section-lead">{messages.worlds.list.lead}</p>
-        <Button onClick={onCreate}>{messages.worlds.actions.create}</Button>
       </div>
 
       <div className="wc-toolbar">

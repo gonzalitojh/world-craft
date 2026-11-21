@@ -52,7 +52,7 @@ describe('catálogo de mensajes', () => {
     const t = createTranslator(es);
 
     expect(t('shell.views.home')).toBe('Inicio');
-    expect(t('shell.version', '0.1.0')).toBe('Versión 0.1.0');
+    expect(t('shell.searchTrigger')).toBe('Buscar');
     expect(t('updates.percentValue', '42 %')).toBe('42 %');
   });
 

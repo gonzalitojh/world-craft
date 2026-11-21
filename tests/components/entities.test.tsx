@@ -8,9 +8,11 @@ import { EntityCreateDialog } from '@/renderer/components/entities/entity-create
 import { EntityQuickCreateDialog } from '@/renderer/components/entities/entity-quick-create-dialog';
 import { I18nProvider } from '@/renderer/i18n/provider';
 import { es as messages } from '@/renderer/messages/es';
+import { EntitiesPage } from '@/renderer/pages/entities-page';
 import type { EntitySummary } from '@/shared/contracts/entities';
 import type { EntityTypeSummary } from '@/shared/contracts/entity-types';
-import type { WorldSummary } from '@/shared/contracts/worlds';
+import type { WorldCraftApi } from '@/shared/contracts/world-craft-api';
+import type { WorldDetail, WorldSummary } from '@/shared/contracts/worlds';
 
 const BASE_TIME = 1_760_000_000_000;
 
@@ -161,6 +163,108 @@ describe('diálogo de creación de ficha', () => {
         summary: 'Exploradora',
       });
     });
+  });
+});
+
+describe('página de fichas', () => {
+  const worldDetail: WorldDetail = {
+    ...world,
+    description: null,
+  };
+
+  function renderPage() {
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        entities: { list: async () => ({ ok: true, data: [] }) },
+        entityTypes: { list: async () => ({ ok: true, data: [type] }) },
+        tags: { list: async () => ({ ok: true, data: [] }) },
+      } satisfies Partial<WorldCraftApi>,
+    });
+
+    return renderWithI18n(
+      <EntitiesPage
+        world={worldDetail}
+        onBack={() => {}}
+        onOpenEntity={() => {}}
+        onNotify={() => {}}
+      />,
+    );
+  }
+
+  it('sin filtros deja una sola primaria, la del estado vacío', async () => {
+    const user = userEvent.setup();
+    const { container } = renderPage();
+
+    // Se espera al estado vacío: antes de pintarse, la cabecera aún muestra su
+    // botón y la prueba de una sola primaria sería vacía.
+    await screen.findByRole('heading', {
+      level: 2,
+      name: messages.entities.list.emptyTitle,
+    });
+
+    const header = container.querySelector<HTMLElement>('.wc-page__header');
+    const empty = container.querySelector<HTMLElement>('.wc-empty');
+
+    expect(header).not.toBeNull();
+    expect(empty).not.toBeNull();
+    expect(
+      container.querySelectorAll(
+        '.wc-page__header .wc-button--primary, .wc-empty .wc-button--primary',
+      ),
+    ).toHaveLength(1);
+    expect(header?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      0,
+    );
+    expect(empty?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      1,
+    );
+    expect(empty?.textContent).toContain(messages.entities.list.create);
+
+    // El menú de la cabecera sigue disponible.
+    await user.click(
+      screen.getByRole('button', { name: messages.entities.list.menuLabel }),
+    );
+
+    expect(
+      screen.getByRole('menuitem', {
+        name: messages.entities.list.manageTypes,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('con filtros activos conserva la primaria en la cabecera y el vacío usa secundaria', async () => {
+    const user = userEvent.setup();
+    const { container } = renderPage();
+
+    await user.type(
+      screen.getByLabelText(messages.entities.list.searchLabel),
+      'zzz',
+    );
+
+    await screen.findByRole('heading', {
+      level: 2,
+      name: messages.entities.list.emptyFilterTitle,
+    });
+
+    const header = container.querySelector<HTMLElement>('.wc-page__header');
+    const empty = container.querySelector<HTMLElement>('.wc-empty');
+
+    expect(header).not.toBeNull();
+    expect(empty).not.toBeNull();
+    expect(header?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      1,
+    );
+    expect(header?.textContent).toContain(messages.entities.list.create);
+    expect(empty?.querySelectorAll('.wc-button--primary') ?? []).toHaveLength(
+      0,
+    );
+
+    const clear = empty?.querySelector<HTMLButtonElement>(
+      '.wc-button--secondary',
+    );
+
+    expect(clear).toHaveTextContent(messages.entities.list.clearFilters);
   });
 });
 

@@ -9,16 +9,20 @@
 >
 > Hoy el proyecto ya tiene un **instalador local para Windows** que se instala
 > por usuario, sin permisos de administrador, y una **comprobación manual de
-> actualizaciones** integrada en la barra superior. La ventana incluye barra
-> lateral con navegación, tema Claro/Oscuro conmutable, una página de inicio que
-> es el **dashboard de mundos** (o su estado vacío) y una **página de muestras
-> solo para desarrollo**. También existe una **base de datos local** que se crea
-> y se comprueba al arrancar, con **copias automáticas** y **restauración desde
-> modo seguro**. Ya se pueden crear, editar, duplicar, archivar y eliminar
-> mundos con su actividad, y crear **fichas** de cualquier tipo con campos
-> personalizados, descripción enriquecida, imágenes, etiquetas y favoritos.
-> Todavía no hay mapas, manuscritos, ajustes ni papelera visible, y la
-> preferencia de tema no se recuerda al reiniciar.
+> actualizaciones** integrada en la barra superior. La ventana incluye una barra
+> lateral con la navegación **Inicio** y **Mundos**, una barra superior con el
+> título de lo que estás viendo, el buscador de la paleta `Ctrl+K`, una acción
+> principal, un menú `⋯` para las secundarias y los iconos de actualizaciones y
+> tema; el tema Claro/Oscuro se conmuta sin recargar. La página de inicio es el
+> **dashboard de mundos** o su estado vacío. También existe una **base de datos
+> local** que se crea y se comprueba al arrancar, con **copias automáticas** y
+> **restauración desde modo seguro**. Ya se pueden crear, editar, duplicar,
+> archivar y eliminar mundos con su actividad, y crear **fichas** de cualquier
+> tipo con campos personalizados, descripción enriquecida, imágenes, etiquetas y
+> favoritos. Todavía no hay mapas, manuscritos, ajustes ni papelera visible, y la
+> preferencia de tema no se recuerda al reiniciar. Las **muestras** de
+> componentes siguen existiendo solo como página interna de desarrollo y no
+> aparecen en la navegación ni en la búsqueda.
 
 ## 1. Qué es World Craft
 
@@ -79,10 +83,11 @@ la opción de crear tu primer mundo o importar uno existente. Esa pantalla es
 
 El proyecto ya genera un **instalador local** y permite abrir la ventana de la
 aplicación instalada. Esa ventana tiene el aspecto definitivo en lo básico: una
-barra lateral con navegación, una barra superior con el botón de búsqueda, el de
-actualizaciones y el de tema, dos modos de color y componentes de interfaz ya
-creados (botones, campos, insignias, tarjetas, diálogos, pestañas, avisos y
-ayudas emergentes).
+barra lateral con la navegación **Inicio** y **Mundos**, una barra superior con
+el título contextual, el buscador de la paleta `Ctrl+K`, una sola acción
+principal, un menú `⋯` para las secundarias y los iconos de actualizaciones y
+tema; dos modos de color y componentes de interfaz ya creados (botones, campos,
+insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
 
 La aplicación crea y comprueba su base de datos local, guarda copias automáticas,
 sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
@@ -107,19 +112,28 @@ oficial llegará con M5.
 Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
-  navegación entre **Inicio**, **Búsqueda**, **Mundos** y **Muestras**, y un botón
-  para plegarla. Expandida ocupa 240 px y plegada 64 px; al plegarla quedan el
-  logotipo y los iconos.
-- **Barra superior:** muestra el nombre de la pantalla actual —o el del mundo
-  abierto—, el botón **Buscar** con su atajo `Ctrl+K`, el botón
-  **Actualizaciones** y el botón de tema. El botón de actualizaciones abre un
-  diálogo para buscar, descargar e instalar versiones nuevas (sección 3.6).
+  navegación entre **Inicio** y **Mundos**, y un botón para plegarla. Expandida
+  ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos, con
+  su nombre accesible y una ayuda emergente. No muestra lema permanente ni
+  versión.
+- **Barra superior:** ocupa 56 px y muestra un único **título contextual**: el
+  nombre del mundo cuando estás en un mundo, en sus fichas o en una ficha, y el
+  nombre de la vista en el resto. A su lado están el disparador de la **paleta
+  de comandos** con su atajo `Ctrl+K`, **una sola acción principal** de la
+  pantalla —cuando la hay; en Fichas y Ficha vive en la propia página—, el menú
+  `⋯` con las acciones secundarias, el icono de **actualizaciones** —con un
+  punto cuando hay una versión disponible— y el icono de **tema**. La versión
+  instalada se consulta dentro del diálogo de actualizaciones (sección 3.6).
 - **Área central:** el contenido de la pantalla. Es el destino del enlace
-  «Saltar al contenido principal» que aparece al empezar a usar el teclado.
+  «Saltar al contenido principal» que aparece al empezar a usar el teclado; al
+  usarlo, el foco pasa al contenido sin cambiar de vista.
 
-El botón **Nueva ficha** de la barra superior abre la creación rápida desde
-cualquier pantalla. Las fichas se abren desde la página de su mundo, no desde la
-barra lateral.
+La acción principal cambia con la pantalla: **Crear mundo** en Inicio y Mundos
+cuando ya hay al menos un mundo, **Nueva ficha** en la vista de un mundo y
+**Nueva ficha** en la página de fichas. Con cero mundos, el botón **Crear mundo**
+vive en el estado vacío y no se repite en la barra. La creación rápida de una
+ficha —con su mundo, su tipo y su nombre— está en el menú `⋯` de Inicio y Mundos
+y en la paleta de comandos.
 
 Siguen **previstas**, para cuando existan mapas y escritura:
 
@@ -127,15 +141,27 @@ Siguen **previstas**, para cuando existan mapas y escritura:
 - **Paneles** de detalles, filtros o propiedades.
 - **Barra de estado** con el guardado y los avisos.
 
-La página **Muestras** solo sirve para revisar el aspecto de los componentes en
-los dos temas y con textos largos. Es una página de desarrollo: no forma parte
-de lo que verá quien use la aplicación.
+La **búsqueda** ya no tiene entrada propia en la navegación: se llega por el
+buscador de la barra superior y por la paleta (sección 10).
+
+La página de **muestras** solo sirve para revisar el aspecto de los componentes
+en los dos temas y con textos largos. Es una página interna de desarrollo: no
+aparece en la navegación, ni en la paleta, ni forma parte de lo que verá quien
+use la aplicación; solo se abre por su dirección interna.
 
 ### 3.2 Navegación por teclado
 
 - Pulsa `Tab` para avanzar por los controles. El primer `Tab` muestra el enlace
   «Saltar al contenido principal», que lleva directamente al contenido y evita
-  recorrer toda la barra lateral.
+  recorrer toda la barra lateral. Usarlo no cambia la pantalla ni la dirección
+  interna.
+- El botón **Plegar menú lateral** o **Expandir menú lateral** anuncia su estado
+  con `aria-expanded`. Con la barra plegada, cada icono de navegación conserva su
+  nombre accesible y muestra una ayuda emergente al recibir el foco.
+- El menú `⋯` de la barra superior se abre con `Enter` o espacio. Dentro, las
+  flechas recorren las acciones, `Inicio` y `Fin` van a la primera y a la última,
+  `Enter` ejecuta la acción y `Escape` cierra. Al cerrarse, el foco vuelve al
+  botón que lo abrió.
 - En las pestañas, usa las flechas izquierda y derecha para cambiar de pestaña;
   `Inicio` y `Fin` van a la primera y a la última.
 - Pulsa `Ctrl+K` para abrir la paleta de comandos. Dentro de la paleta, las
@@ -153,9 +179,11 @@ de lo que verá quien use la aplicación.
 
 ### 3.3 Tema Claro y Oscuro
 
-El botón de la barra superior indica el tema actual («Claro» u «Oscuro») y
-cambia al pulsarlo. El cambio es inmediato y afecta a toda la ventana: los
-mismos contenidos, la misma jerarquía y el mismo contraste en ambos temas.
+El icono de tema de la barra superior muestra un sol o una luna, incluye en su
+nombre la etiqueta del tema actual («Claro» u «Oscuro») y una ayuda emergente
+con esa misma información. Al pulsarlo, el cambio es inmediato y afecta a toda
+la ventana: los mismos contenidos, la misma jerarquía y el mismo contraste en
+ambos temas.
 
 **La preferencia no se recuerda al reiniciar:** cada vez que se abre la
 aplicación empieza en el tema Claro. Guardar la elección y elegirla desde una
@@ -184,7 +212,10 @@ idioma (sección 4).
 Cuando ya hay mundos, **Inicio** se convierte en el dashboard: muestra un
 resumen con el número de mundos activos y archivados, tarjetas con los mundos
 actualizados recientemente, la actividad reciente de todos tus mundos con el
-nombre de cada uno y accesos rápidos para crear o gestionar mundos.
+nombre de cada uno y accesos rápidos para crear o gestionar mundos. En ese caso
+la acción principal **Crear mundo** vive en la barra superior y no se duplica en
+el cuerpo de la página; con cero mundos, el botón vive en el estado vacío y la
+barra no lo repite.
 
 La base de datos local se crea y se comprueba sola al arrancar; si hubiera un
 problema, la aplicación avisa antes de abrir la ventana (sección 15).
@@ -192,12 +223,14 @@ problema, la aplicación avisa antes de abrir la ventana (sección 15).
 ### 3.6 Actualizaciones
 
 La comprobación de actualizaciones es **siempre manual**: la aplicación no
-consulta Internet al arrancar ni en segundo plano. Solo lo hace cuando pulsas
-**Actualizaciones** en la barra superior y después **Buscar actualizaciones**.
+consulta Internet al arrancar ni en segundo plano. Solo lo hace cuando pulsas el
+icono de **actualizaciones** en la barra superior y después **Buscar
+actualizaciones**.
 
-1. Pulsa **Actualizaciones**. El diálogo muestra la **versión instalada** y la
-   **última comprobación**, o «Todavía no se ha comprobado ninguna
-   actualización».
+1. Pulsa el icono de **Actualizaciones**. Cuando hay una versión disponible, el
+   icono muestra un punto y su nombre accesible lo anuncia. El diálogo muestra la
+   **versión instalada** y la **última comprobación**, o «Todavía no se ha
+   comprobado ninguna actualización».
 2. Pulsa **Buscar actualizaciones**. El estado pasa a «Buscando una versión
    nueva…». Puedes pulsar **Cancelar** para detener la comprobación.
 3. Si ya tienes la última versión, el diálogo lo indica. Si hay una nueva,
@@ -230,7 +263,9 @@ los demás; la actividad y las listas nunca mezclan datos de otro mundo.
 
 ### 4.1 Crear un mundo
 
-1. En **Inicio**, pulsa **Crear mundo**. También puedes hacerlo desde **Mundos**.
+1. Pulsa **Crear mundo**: en la barra superior cuando ya tienes algún mundo o,
+   si es el primero, en el estado vacío de **Inicio**. La misma acción principal
+   aparece en **Mundos** cuando hay mundos.
 2. Rellena el **nombre** (obligatorio), el **resumen** y la **descripción**. El
    resumen es una o dos frases para reconocer el mundo en la lista; la
    descripción admite varias líneas.
@@ -283,6 +318,10 @@ descripción, identificador, idioma y fechas de creación y actualización.
 
 ### 4.5 Editar, duplicar, archivar y eliminar
 
+Dentro de un mundo, las cuatro acciones están en el menú `⋯` de la barra
+superior, junto a la acción principal **Nueva ficha**. Las tarjetas de Inicio y
+de Mundos conservan sus propios accesos.
+
 - **Editar:** cambia el nombre, el identificador, el resumen, la descripción, los
   géneros o el idioma. El mundo se actualiza al guardar y queda registrado en la
   actividad.
@@ -296,7 +335,8 @@ descripción, identificador, idioma y fechas de creación y actualización.
   siendo la red de seguridad (sección 12).
 
 Todas las acciones destructivas piden confirmación y ninguna borra archivos del
-disco sin avisar.
+disco sin avisar. Al cerrar el diálogo, el foco vuelve al control que lo abrió
+o, si ese control ya no existe, al contenido principal.
 
 ### 4.6 Lo que llegará después
 
@@ -314,9 +354,13 @@ mundo**, en los accesos rápidos de la página de un mundo.
 
 ### 5.1 Crear una ficha
 
-1. Abre un mundo y pulsa **Fichas del mundo**.
-2. Pulsa **Nueva ficha** (o **Nueva ficha** en la barra superior desde cualquier
-   pantalla) y elige el mundo, el tipo y el nombre.
+1. Abre un mundo: la acción principal de la barra superior es **Nueva ficha**.
+   También puedes entrar en **Fichas del mundo** y pulsar **Nueva ficha** en la
+   cabecera de la página.
+2. Elige el mundo, el tipo y el nombre. Desde Inicio y Mundos, el menú `⋯`
+   ofrece **Crear una ficha** y la paleta `Ctrl+K` incluye el mismo comando; los
+   dos abren la creación rápida con el mundo preseleccionado cuando ya estás
+   dentro de uno.
 3. Al crearla se abre la ficha para completar el resto: alias, resumen,
    descripción, campos del tipo, imagen, galería, etiquetas y estado.
 
@@ -348,8 +392,8 @@ antes de guardar.
 
 ### 5.5 Tipos personalizados
 
-El botón **Gestionar tipos** abre la lista de tipos del sistema y de los
-personalizados de ese mundo.
+El menú `⋯` de la cabecera de **Fichas** ofrece **Gestionar tipos**, que abre la
+lista de tipos del sistema y de los personalizados de ese mundo.
 
 - Los 18 tipos del sistema (personaje, lugar, ciudad, nación, cultura, raza,
   organización, religión, deidad, magia, objeto, criatura, idioma, evento,
@@ -385,10 +429,11 @@ personalizados de ese mundo.
 ### 5.8 Estado y borrado
 
 - Cada ficha puede estar **Activa**, en **Borrador** o **Archivada**.
-- **Mover a la papelera** pide confirmación. La ficha deja de aparecer en la
-  lista; la pantalla de papelera para restaurarla llegará con la siguiente
-  entrega. Hasta entonces, las copias de seguridad siguen siendo la red de
-  seguridad (sección 12).
+- El **favorito** sigue visible como botón propio en la cabecera de la ficha.
+- **Mover a la papelera** está en el menú `⋯` de la ficha y pide confirmación.
+  La ficha deja de aparecer en la lista; la pantalla de papelera para restaurarla
+  llegará con la siguiente entrega. Hasta entonces, las copias de seguridad
+  siguen siendo la red de seguridad (sección 12).
 
 ## 6. Relaciones y grafo
 
@@ -478,10 +523,13 @@ aparecerán en esa vista.
 
 ### 10.1 Buscar en toda la biblioteca
 
-La pantalla **Búsqueda** de la barra lateral busca a la vez en mundos, fichas y
-relaciones. Escribe al menos una letra en **Buscar en tu biblioteca**: se
-encuentran coincidencias por el título, el resumen, la descripción, los alias, las
-notas de una relación y las etiquetas. No hace falta conexión a Internet.
+La pantalla de **Búsqueda** no tiene entrada en la barra lateral. Se entra por el
+buscador de la barra superior o con `Ctrl+K`; en la paleta puedes elegir **Abrir
+la página de búsqueda** o abrir directamente un resultado. La pantalla busca a la
+vez en mundos, fichas y relaciones. Escribe al menos una letra en **Buscar en tu
+biblioteca**: se encuentran coincidencias por el título, el resumen, la
+descripción, los alias, las notas de una relación y las etiquetas. No hace falta
+conexión a Internet.
 
 - La búsqueda acepta **prefijos**: `gand` encuentra «Gandalf el Gris».
 - No importan las mayúsculas ni los acentos: `cancion` encuentra «Canción».
@@ -520,11 +568,12 @@ volver rápido a lo que estabas usando.
 
 ### 10.4 Paleta de comandos
 
-Pulsa `Ctrl+K`, o el botón **Buscar** de la barra superior, para abrir la paleta:
+Pulsa `Ctrl+K`, o el disparador de la barra superior, para abrir la paleta:
 
 - Escribe para filtrar **comandos** y **resultados** al mismo tiempo.
-- Los comandos permiten ir a Inicio, Búsqueda, Mundos o Muestras, crear un mundo,
-  crear una ficha, cambiar el tema y **reconstruir el índice de búsqueda**.
+- Los comandos permiten ir a Inicio o Mundos, **abrir la página de búsqueda**,
+  crear un mundo, crear una ficha, cambiar el tema y **reconstruir el índice de
+  búsqueda**. **Muestras** no aparece: es una página interna de desarrollo.
 - Las flechas mueven la selección, `Enter` la ejecuta y `Escape` cierra.
 - El atajo no se activa mientras escribes en un campo ni con otro diálogo
   abierto, para no interferir con el texto.
@@ -532,10 +581,12 @@ Pulsa `Ctrl+K`, o el botón **Buscar** de la barra superior, para abrir la palet
 ### 10.5 Si los resultados no cuadran
 
 El índice de búsqueda es una copia local que se actualiza sola al crear, editar,
-borrar o restaurar contenido. Si sospechas que está desincronizado, abre la paleta
-con `Ctrl+K`, escribe `reconstruir` y elige **Reconstruir el índice de búsqueda**.
-No borra ningún dato: solo vuelve a leer los mundos, las fichas y las relaciones.
-La pantalla Ajustes → Datos añadirá este mismo botón más adelante.
+borrar o restaurar contenido. Si sospechas que está desincronizado, abre el menú
+`⋯` de la pantalla de **Búsqueda** y elige **Reconstruir el índice de búsqueda**;
+también puedes abrir la paleta con `Ctrl+K`, escribir `reconstruir` y elegir el
+mismo comando. No borra ningún dato: solo vuelve a leer los mundos, las fichas y
+las relaciones. La pantalla Ajustes → Datos añadirá este mismo botón más
+adelante.
 
 ### 10.6 Lo que llegará después
 
@@ -551,13 +602,13 @@ no se envía a ningún servicio externo.
 - **Idioma:** español en el MVP; la estructura está preparada para más idiomas.
 - **Ventana:** recordar tamaño y posición.
 - **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda (hoy se
-  hace desde la paleta `Ctrl+K`, sección 10.5), compactar y eliminar todos los
-  datos.
+  hace desde el menú `⋯` de la pantalla de Búsqueda o desde la paleta `Ctrl+K`,
+  sección 10.5), compactar y eliminar todos los datos.
 - **Copias:** dentro de Ajustes → Datos, crear, verificar y restaurar copias. La
   restauración desde el aviso de modo seguro ya existe (sección 12.3); esta
   pantalla, con la copia manual y la elección de carpeta, es prevista.
-- **Actualizaciones:** hoy se buscan, descargan e instalan desde el botón
-  **Actualizaciones** de la barra superior (sección 3.6). Ajustes añadirá el
+- **Actualizaciones:** hoy se buscan, descargan e instalan desde el icono de
+  actualizaciones de la barra superior (sección 3.6). Ajustes añadirá el
   interruptor y la frecuencia, pero **no habrá comprobación automática hasta
   M1**; ahora no existe un ajuste para desactivarla porque no hay nada que
   desactivar.
@@ -705,18 +756,24 @@ verifica el checksum cuando esté disponible.
 Ya funciona en el shell de desarrollo:
 
 - Navegación completa por teclado, con enlace «Saltar al contenido principal» y
-  foco visible en los dos temas.
+  foco visible en los dos temas; usarlo no cambia de pantalla.
+- Barra lateral plegable con nombres accesibles, `aria-expanded` y ayudas
+  emergentes al foco; menú `⋯` con flechas, `Inicio`, `Fin` y `Escape`.
 - Pestañas con flechas, `Inicio` y `Fin`; diálogo con foco atrapado y `Escape`;
   ayudas emergentes que se ocultan con `Escape`.
 - Etiquetas, ayudas y errores asociados en los campos de texto.
-- Avisos con `aria-live` (se anuncian sin robar el foco) y cierre manual.
+- Avisos con `aria-live` (se anuncian sin robar el foco) y cierre manual. La
+  disponibilidad de una actualización también se anuncia así.
 - Respeto de `prefers-reduced-motion`: las animaciones se reducen o se
   desactivan.
+- Revisión automática de accesibilidad (axe) sin errores críticos en el shell,
+  en los dos temas y con la barra lateral expandida y plegada; el contraste se
+  comprueba con la tabla del sistema de diseño.
 
 Sigue **previsto**:
 
-- Contraste y apariencia comprobados visualmente en todas las pantallas, con
-  revisión automática de accesibilidad pendiente para la fase de pruebas de UI.
+- Contraste y apariencia comprobados visualmente en todas las pantallas, hasta
+  completar la auditoría visual que llega con #133.
 - Los atajos de teclado generales, que se documentarán en la ayuda de la app.
 
 ## 15. Problemas frecuentes
@@ -735,7 +792,7 @@ las funciones correspondientes.
 | Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 13. Comprueba el SHA-256 si tienes el valor publicado. |
 | El instalador pide administrador o no encuentra la carpeta | No debería: la instalación es por usuario en `%LOCALAPPDATA%\Programs\World Craft` y no usa UAC. Cierra el instalador y vuelve a ejecutarlo; si persiste, no continúes y pide ayuda. |
 | La instalación o la actualización falla | Comprueba el espacio libre (el instalador ocupa unos 133 MB) y que la carpeta de instalación sea accesible. Vuelve a ejecutar el instalador; tus datos de `%APPDATA%\World Craft` no se tocan. |
-| No aparece ninguna actualización | La comprobación es manual: pulsa **Actualizaciones → Buscar actualizaciones**. Si no hay una versión publicada más reciente, el diálogo indica que ya tienes la última. La comprobación real contra GitHub Releases se probará con la primera release pública (M5). |
+| No aparece ninguna actualización | La comprobación es manual: pulsa el icono de **Actualizaciones** y luego **Buscar actualizaciones**. Si no hay una versión publicada más reciente, el diálogo indica que ya tienes la última. La comprobación real contra GitHub Releases se probará con la primera release pública (M5). |
 | La comprobación de actualizaciones falla | Revisa la conexión e inténtalo de nuevo. La aplicación sigue funcionando sin conexión y tus datos no cambian. |
 | La descarga de la actualización falla | Comprueba el espacio libre y la conexión, y vuelve a intentarlo. Puedes cancelar la descarga sin instalar nada. |
 | La actualización está descargada pero no se instala | Pulsa **Reiniciar e instalar** en el diálogo. La instalación no ocurre sola: necesita tu confirmación. Si falla, cierra la aplicación y vuelve a intentarlo. |
@@ -764,8 +821,8 @@ las funciones correspondientes.
 
 | Función | Estado |
 |---|---|
-| Barra lateral con navegación y plegado | Implementada (en desarrollo) |
-| Barra superior con el título, Buscar, Actualizaciones y el botón de tema | Implementada (en desarrollo) |
+| Barra lateral con navegación Inicio/Mundos y plegado | Implementada (en desarrollo); sin lema ni versión |
+| Barra superior con título contextual, buscador `Ctrl+K`, acción primaria, menú `⋯` e iconos de actualizaciones y tema | Implementada (en desarrollo) |
 | Tema Claro/Oscuro conmutable | Implementado (en desarrollo); no se recuerda al reiniciar |
 | Instalador por usuario, sin administrador, en `%LOCALAPPDATA%` | Implementado (local); la release pública llega con M5 |
 | Desinstalación que conserva `%APPDATA%\World Craft` | Implementada (local); el desinstalador avisa de los datos conservados |
@@ -775,7 +832,7 @@ las funciones correspondientes.
 | Aviso de SmartScreen y checksums | Documentado; el instalador sigue sin firma (ADR 0015) |
 | Componentes base (botones, campos, avisos, diálogos...) | Implementados (en desarrollo) |
 | Página de inicio con estado vacío | Implementada (en desarrollo); el botón abre el formulario de creación |
-| Página de muestras | Solo en desarrollo; no es una función de producto |
+| Página de muestras | Interna de desarrollo; solo por su dirección interna, fuera de la navegación y la paleta |
 | Dashboard con resumen, mundos recientes y actividad | Implementado (en desarrollo); sin mezclar datos entre mundos |
 | Lista de mundos con búsqueda y filtro por estado | Implementada (en desarrollo) |
 | CRUD de mundos: crear, editar, duplicar y archivar/restaurar | Implementado (en desarrollo); con validación y confirmación |
@@ -795,7 +852,7 @@ las funciones correspondientes.
 | Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); los metadatos quedan en la API |
 | Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |
 | Filtros de búsqueda por mundo, tipo, etiqueta y estado | Implementados (en desarrollo) |
-| Paleta de comandos `Ctrl+K` | Implementada (en desarrollo) |
+| Paleta de comandos `Ctrl+K` | Implementada (en desarrollo); sin entrada a Muestras |
 | Recientes y favoritos en la búsqueda | Implementados (en desarrollo) |
 | Grafo | Previsto |
 | Mapas | Prevista |
@@ -803,6 +860,7 @@ las funciones correspondientes.
 | Juego | Prevista |
 | Ajustes | Prevista |
 | Guardar la preferencia de tema | Prevista (con Ajustes) |
+| Recordar la barra lateral plegada | Prevista (#132); hoy se recuerda solo durante la sesión |
 | Copias manuales y elección de carpeta | Prevista (con Ajustes) |
 | Ajustes de actualizaciones (interruptor y frecuencia) | Previstos (con Ajustes, M1); hoy no hay auto-check |
 | Firma de código del instalador | Opcional y de pago; fuera del MVP (ADR 0015) |

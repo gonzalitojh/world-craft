@@ -286,6 +286,39 @@ describe('Menu', () => {
     expect(trigger).toHaveFocus();
   });
 
+  it('devuelve el foco al disparador antes de ejecutar la acción', async () => {
+    const user = userEvent.setup();
+    const focusedAtSelect: Array<string | null> = [];
+
+    render(
+      <Menu
+        label="Acciones de la ficha"
+        items={[
+          {
+            id: 'edit',
+            label: 'Editar ficha',
+            onSelect: () => {
+              focusedAtSelect.push(
+                document.activeElement?.getAttribute('aria-label') ?? null,
+              );
+            },
+          },
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', {
+      name: 'Acciones de la ficha',
+    });
+
+    await user.click(trigger);
+    await user.click(screen.getByRole('menuitem', { name: 'Editar ficha' }));
+
+    expect(focusedAtSelect).toEqual(['Acciones de la ficha']);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
   it('no ejecuta un ítem deshabilitado ni usa su acción destructiva para el resto', async () => {
     const user = userEvent.setup();
     const handlers = renderMenu();

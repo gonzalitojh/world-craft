@@ -2,7 +2,8 @@
 
 > **Estado:** dirección v2 aprobada el 21/11/2026 en la issue #124 mediante el
 > ADR 0025 y la decisión D-048. #125 implementó los tokens, la tipografía y las
-> primitivas; las pantallas se migran en #126–#133. Este documento describe el
+> primitivas; #126 migró el shell, la navegación y la barra superior. Las
+> pantallas restantes se migran en #127–#133. Este documento describe el
 > contrato completo y distingue lo implementado de lo previsto, sin presentar
 > como existente nada que aún no lo esté. El estado real se mantiene en la
 > sección 17.
@@ -300,9 +301,10 @@ queda en 4,20:1 y no cumple AA para texto normal.
   reservada a contenido, empaquetada como OFL y nunca cargada de Internet. La
   familia, los pesos y el subset son detalles operativos y reversibles; un ADR
   nuevo duplicaría contexto sin una decisión arquitectónica distinta.
-- **Alias temporal.** `--font-display: var(--font-content)` se conserva hasta
-  #126 para las pantallas aún no migradas. Está documentado como obsoleto y
-  ninguna primitiva v2 lo usa.
+- **Alias retirado.** `--font-display` ya no existe: se eliminó en #126 cuando
+  el shell y la marca pasaron a `--font-ui`. Las superficies de interfaz usan
+  `--font-ui` y el contenido y los títulos editoriales, `--font-content`; no
+  queda ningún alias de tipografía.
 
 ### 5.2 Escala
 
@@ -415,7 +417,7 @@ como existente lo que aún no lo está.
 | Área de texto | Misma semántica; alto mínimo y redimensionado solo vertical. | Adaptado v2 | #125 |
 | Selector | `<select>` nativo con etiqueta, ayuda, error y opciones tipadas. | Adaptado v2 | #125 |
 | Casilla y radio | Nativos, con etiqueta y foco visible; el objetivo de la fila y la etiqueta es de al menos 28 px. | Implementado | #125 |
-| Búsqueda | Campo con icono, limpiar y resultado anunciado; no duplica la paleta. | Previsto | #126 |
+| Búsqueda | Campo con icono, limpiar y resultado anunciado; la barra solo ofrece el disparador de la paleta, sin duplicar el campo. | Implementado | #76, #126 |
 | Insignia | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. | Adaptado v2 | #125 |
 | Tarjeta | Sin contorno ni sombra por defecto; título, contenido y acciones en `⋯`. | Adaptado v2 | #125 |
 | Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Adaptado v2 | #125 |
@@ -427,8 +429,8 @@ como existente lo que aún no lo está.
 | Esqueleto | Marcador decorativo con `aria-hidden`; el contenedor lleva `aria-busy`. | Implementado | #125 |
 | Tabla | Ordenación, filtros y selección; scroll horizontal solo dentro. | Previsto | — |
 | Estado vacío | Explica qué falta y cuál es la acción principal. | Adaptado v2 | #125 |
-| Paleta de comandos | `Ctrl+K`, combobox/listbox, navegación, creación, tema y reconstrucción. | Existente #76; se rediseña la entrada | #126 |
-| Cabecera de ficha | Título, tipo, favorito y acciones en `⋯`; no cinco botones. | Previsto | #129 |
+| Paleta de comandos | `Ctrl+K`, combobox/listbox, navegación, creación, tema y reconstrucción. Entrada desde la barra superior y sin Muestras. | Implementado | #76, #126 |
+| Cabecera de ficha | Título, tipo, favorito y acciones en `⋯`; no cinco botones. Desde #126 el favorito es visible y el borrado vive en `⋯`; el documento y el panel llegan con #129. | Parcial | #126, #129 |
 | Panel de propiedades | Plegable, 280–360 px; edita en contexto sin tapar el documento. | Previsto | #129 |
 | Lista de relaciones | Dirección, etiqueta y ficha destino legibles; backlinks claros. | Previsto | #130 |
 | Nodo de grafo | Avatar, nombre, tipo y selección; el grafo completo llega con #83. | Previsto | #130 |
@@ -438,39 +440,66 @@ como existente lo que aún no lo está.
 
 ### 10.1 Shell
 
-- Rail de 240 px plegable a 64 px, con navegación principal y marca sin lema
-  permanente ni versión.
-- Barra superior de 56 px con el contexto de la vista, la entrada a la paleta
-  `Ctrl+K`, el conmutador de tema y las acciones globales.
-- El estado plegado del rail se recuerda entre reinicios a partir de #132.
-- La navegación dejará de mostrar «Muestras» en #126; hasta entonces la página
-  sigue accesible desde el rail como herramienta de desarrollo, fuera del
-  producto.
-- La búsqueda ya implementada en #76 se conserva; no se duplica en la barra.
-- Las actualizaciones se muestran de forma discreta, sin ocupar el rail.
+- Rail de 240 px plegable a 64 px sobre `--surface-sunken`, con la marca y
+  navegación de producto **solo Inicio y Mundos**; sin lema permanente, versión,
+  búsqueda duplicada ni actualizaciones. Los iconos de navegación conservan su
+  nombre accesible y una ayuda emergente cuando el rail está plegado.
+- El plegado usa iconos, `aria-label`, tooltip accesible, `aria-expanded` y
+  `aria-controls`; el estado se mantiene durante la sesión y su persistencia
+  llega con #132.
+- Barra superior de 56 px con un único `h1` contextual —nombre del mundo en
+  mundo, fichas y ficha; etiqueta de vista en el resto—, truncado a una línea con
+  `title`, el disparador de la paleta `Ctrl+K`, **una sola acción primaria**,
+  el menú `⋯` de secundarias, el icono de actualizaciones con punto y `aria-live`
+  cuando hay versión disponible, y el icono de tema con etiqueta y tooltip.
+- Las acciones son declarativas por vista. Inicio y Mundos ofrecen «Crear mundo»
+  en la barra solo con al menos un mundo (con cero manda el estado vacío) y
+  «Crear una ficha» en `⋯`. Mundo ofrece «Nueva ficha» como primaria y
+  editar/duplicar/archivar/eliminar en `⋯`. Fichas deja «Nueva ficha» en la
+  página y «Gestionar tipos» en `⋯`. Ficha mantiene guardado en el contenido,
+  favorito visible y «Mover a la papelera» en `⋯`. Búsqueda no tiene primaria y
+  ofrece «Reconstruir el índice» en `⋯`.
+- **Muestras sale del producto.** Ya no aparece en el rail ni en la paleta; se
+  accede solo por el hash interno `#/internal/samples`, como banco de desarrollo
+  y contenido largo de los E2E. Cualquier otro hash vuelve a Inicio.
+- La búsqueda completa de #76 se conserva: se entra por el disparador de la barra
+  o la paleta y, desde la paleta, a la página de resultados.
+- El enlace «Saltar al contenido principal» enfoca `#wc-main` con
+  `preventDefault`, sin cambiar el hash ni la vista, para no devolver la ventana
+  a Inicio.
 
 ### 10.2 Inicio
 
-- Mesa de trabajo, no dashboard de contadores.
-- Mundos recientes con portada o inicial, nombre, estado y una acción principal.
-- Acceso rápido a crear mundo, buscar y continuar donde se dejó.
-- Una sola acción primaria visible; el resto va a `⋯` o a la paleta.
+- Objetivo de #127: mesa de trabajo, no dashboard de contadores.
+- Desde #126 la acción primaria «Crear mundo» vive en la barra superior cuando ya
+  hay mundos, la creación rápida de una ficha está en `⋯` y el estado vacío
+  conserva su propio botón sin duplicarse en la barra.
+- Las tarjetas y los accesos rápidos actuales se mantienen hasta #127, que
+  reduce cada tarjeta a una acción principal y un `⋯`.
+- Acceso rápido a crear mundo, buscar y continuar donde se dejó, sin acumular
+  botones.
 
 ### 10.3 Vista de mundo
 
 - Navegación modular: resumen, fichas, relaciones, mapas, manuscrito y juego
-  según existan.
-- Cabecera con nombre, estado, portada y una acción primaria.
-- El contenido y las acciones secundarias no compiten con la cabecera.
+  según existan; la estructura completa llega con #128.
+- Desde #126 el nombre del mundo es el título de la barra superior y la acción
+  primaria es «Nueva ficha»; editar, duplicar, archivar/restaurar y eliminar
+  están en el `⋯` de la barra.
+- La cabecera de la página conserva el enlace de vuelta y no compite con la
+  barra; el contenido y las acciones secundarias no se duplican.
 - Los paneles se pliegan y su estado se recuerda por pantalla cuando #132 lo
   permita.
 
 ### 10.4 Ficha
 
-- Documento antes que formulario: título, tipo y contenido legible.
+- Documento antes que formulario: título, tipo y contenido legible. La lectura
+  como documento y el panel de propiedades llegan con #129.
 - El contenido se edita en contexto; el panel de propiedades se abre cuando se
   necesita y no tapa el documento.
-- Las acciones secundarias van a `⋯`; la acción primaria es editar o guardar.
+- Desde #126 el guardado y su estado viven en el contenido, el favorito es un
+  botón visible en la cabecera y «Mover a la papelera» está en el `⋯` de la
+  página. No se acumulan cinco botones.
 - Las relaciones y backlinks se leen como parte de la ficha, no como una tabla
   aparte.
 
@@ -580,8 +609,8 @@ Toda pantalla debe cubrir:
 ## 16. Migración de tokens
 
 La migración de tokens y primitivas se ejecutó en #125. La tabla es el contrato
-de sustitución que se aplicó y sirve de referencia para las pantallas que
-migran en #126–#133.
+de sustitución que se aplicó y sirve de referencia para las pantallas que migran
+en #127–#133.
 
 | v1 | v2 | Acción |
 |---|---|---|
@@ -598,7 +627,7 @@ migran en #126–#133.
 | `--selection` | `--selection` | Pasa de ocre/musgo a arena. |
 | `--shadow-1/2` | Se conservan | Nuevos valores neutros; las tarjetas dejan de usar sombra. |
 | `--radius-sm/md/lg` | Se conservan | 4/6/8 px; se retiran los 10 px por defecto. |
-| `--font-display` | `--font-content` | La serif se reserva a contenido; la interfaz usa `--font-ui` del sistema. `--font-display` queda como alias temporal hasta #126. |
+| `--font-display` | `--font-content` y `--font-ui` | La serif se reserva a contenido; la interfaz usa `--font-ui` del sistema. El alias se retiró en #126. |
 | `--font-ui` | Se conserva | Pasa a la pila del sistema; no se empaqueta Segoe. |
 | `--font-mono` | Se conserva | Pasa a la pila del sistema. |
 | `--text-*` | Se conservan los nombres | Nueva escala: 12, 13, 14, 16, 18, 22 y 32 px. |
@@ -637,7 +666,7 @@ Reglas de migración:
 |---|---|---|
 | ADR 0025, D-048, este documento y taxonomía de hitos | Aprobado | #124 |
 | Tokens, tipografía y primitivas v2 | Implementado | #125 |
-| Shell, navegación y barra superior v2 | Previsto | #126 |
+| Shell, navegación y barra superior v2 | Implementado | #126 |
 | Inicio y tarjetas de mundo | Previsto | #127 |
 | Vista de mundo modular | Previsto | #128 |
 | Ficha como documento y panel de propiedades | Previsto | #129 |
@@ -647,9 +676,10 @@ Reglas de migración:
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
 Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
-los tokens y las primitivas ya son v2 desde #125, pero su estructura y su
-jerarquía siguen siendo las de v1 hasta que su issue la migre. No se deben tomar
-capturas nuevas como si la pantalla ya estuviera rediseñada.
+los tokens y las primitivas ya son v2 desde #125 y el shell desde #126, pero la
+estructura y la jerarquía de Inicio, la vista de mundo, la ficha, las relaciones
+y el editor siguen siendo las de v1 hasta que su issue las migre. No se deben
+tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
 
 ### 17.2 Verificación automática
 
@@ -661,8 +691,14 @@ capturas nuevas como si la pantalla ya estuviera rediseñada.
 - `tests/components/primitives.test.tsx` cubre botón de icono, menú, casilla,
   radio, panel, esqueleto, tarjeta, diálogo y avisos; `samples.test.tsx` monta el
   banco completo con el catálogo real.
-- `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y sobre Muestras
-  en Claro y Oscuro.
+- `tests/components/shell.test.tsx` verifica que el rail muestra solo Inicio y
+  Mundos, sin Muestras, lema ni versión, y que Mundos queda como página actual
+  también en mundo, fichas y ficha. Cubre el plegado con nombres accesibles y
+  tooltip al foco, el estado controlado, la acción primaria única, el menú `⋯`
+  con retorno de foco, el disparador de la paleta con su atajo y el título
+  truncado a una línea.
+- `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en Claro y Oscuro
+  con el rail expandido y plegado, y sobre Muestras abierta por su hash interno.
 - `tests/e2e/design-v2.spec.ts` comprueba en la ventana real, a 1024 px y en los
   dos temas, el ancho de tooltip, la colisión de tooltip y menú con el borde
   derecho, el foco computado de la casilla inválida, los objetivos de 28 px, el
@@ -672,13 +708,23 @@ capturas nuevas como si la pantalla ya estuviera rediseñada.
   tooltip, que PageDown cierra un menú corto, que un menú largo limita su altura
   y conserva la rueda interna, y que el menú del diálogo se mantiene dentro de
   la tarjeta.
-- `tests/e2e/shell.spec.ts` comprueba la ventana a 1024, 1280 y 1600 px sin
-  scroll horizontal, con Muestras como contenido largo y la carga de la fuente
-  local.
+- `tests/e2e/shell.spec.ts` comprueba que la navegación no muestra versión, que
+  Inicio y Mundos son las únicas entradas y que Muestras solo se abre por hash y
+  la URL se limpia al salir. Mide el rail plegado a 64 px y la barra a 56 px,
+  verifica una sola primaria por vista, el menú del mundo con teclado, `Escape` y
+  retorno de foco, los iconos accesibles de tema y actualizaciones, el enlace de
+  salto sin cambio de hash, la ventana a 1024, 1280 y 1600 px sin scroll
+  horizontal con un nombre de mundo largo, Muestras como contenido largo y la
+  carga de la fuente local.
 - `tests/e2e/entities.spec.ts` hace lo mismo con la lista y la ficha.
+- `tests/e2e/search.spec.ts` entra a la búsqueda por la paleta, porque el rail ya
+  no tiene ítem; `tests/components/search.test.tsx` comprueba que la paleta no
+  ofrece Muestras y que el comando se llama «Abrir la página de búsqueda».
 - `scripts/check-build.mjs` verifica que los dos woff2 viajan en `out/renderer`,
   que el CSS construido los referencia con rutas relativas y que no hay hosts
   remotos de fuentes.
+- Al cerrar #126 la suite queda en 433 unitarias en verde (4 omitidas), 73 de
+  componentes, 134 de integración en verde (1 omitida) y 37 E2E en verde.
 - La matriz visual completa, las capturas y la auditoría de todas las pantallas
   se completan en #133.
 

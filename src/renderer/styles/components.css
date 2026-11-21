@@ -41,9 +41,9 @@
   gap: var(--space-4);
   block-size: 100vh;
   min-width: 0;
-  padding: var(--space-4) var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
   border-inline-end: 1px solid var(--border);
-  background-color: var(--surface);
+  background-color: var(--surface-sunken);
   overflow-y: auto;
 }
 
@@ -51,8 +51,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-block-size: var(--topbar-height);
   min-width: 0;
-  padding: var(--space-2);
+  padding-inline: var(--space-2);
   color: var(--fg);
 }
 
@@ -73,19 +74,11 @@
 
 .wc-shell__brand-name {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
   overflow-wrap: break-word;
-}
-
-.wc-shell__brand-tagline {
-  display: block;
-  color: var(--muted);
-  font-family: var(--font-ui);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-regular);
 }
 
 .wc-shell__nav {
@@ -101,8 +94,9 @@
   gap: var(--space-3);
   inline-size: 100%;
   min-width: 0;
+  min-block-size: 2.25rem;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid transparent;
+  border: 0;
   border-radius: var(--radius-md);
   background-color: transparent;
   color: var(--fg);
@@ -114,7 +108,6 @@
   cursor: pointer;
   transition:
     background-color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
     color var(--motion-fast) var(--ease-standard);
 }
 
@@ -127,15 +120,15 @@
 }
 
 .wc-nav-item[aria-current='page'] {
-  border-color: var(--accent);
-  background-color: var(--accent-surface);
-  color: var(--accent-strong);
+  background-color: var(--selection);
+  color: var(--fg);
+  font-weight: var(--weight-semibold);
 }
 
 .wc-nav-item__icon {
   flex: 0 0 auto;
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
 }
 
 .wc-nav-item__label {
@@ -145,24 +138,39 @@
 
 .wc-shell__rail-footer {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  justify-content: flex-start;
   min-width: 0;
   margin-block-start: auto;
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--border);
 }
 
-.wc-shell__version {
-  color: var(--muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+.wc-shell__rail-footer .wc-shell__collapse {
+  min-inline-size: 2.25rem;
+  min-block-size: 2.25rem;
+}
+
+/*
+ * El rail vive sobre `--surface-sunken`. El hover por defecto del icono
+ * fantasma usa esa misma superficie (1,00:1), así que dentro del rail sube a
+ * `--surface-raised`, igual que los ítems de navegación.
+ */
+.wc-shell__rail .wc-icon-button--ghost:hover:not(:disabled) {
+  background-color: var(--surface-raised);
 }
 
 .wc-shell--collapsed .wc-shell__brand,
-.wc-shell--collapsed .wc-nav-item {
+.wc-shell--collapsed .wc-nav-item,
+.wc-shell--collapsed .wc-shell__rail-footer {
   justify-content: center;
+}
+
+.wc-shell--collapsed .wc-shell__brand {
+  padding-inline: 0;
+}
+
+.wc-shell--collapsed .wc-shell__nav .wc-tooltip {
+  inline-size: 100%;
 }
 
 .wc-shell__workspace {
@@ -178,23 +186,26 @@
   z-index: var(--z-sticky);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
+  block-size: var(--topbar-height);
   min-block-size: var(--topbar-height);
   min-width: 0;
-  padding: var(--space-2) var(--space-6);
-  border-block-end: 1px solid var(--border);
-  background-color: var(--surface-raised);
+  padding: 0 var(--space-6);
+  background-color: var(--surface);
   color: var(--fg);
+  box-shadow: var(--shadow-1);
 }
 
 .wc-topbar__title {
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
   font-family: var(--font-ui);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
-  overflow-wrap: break-word;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wc-topbar__actions {
@@ -203,6 +214,15 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+}
+
+/* Utilidades globales (actualizaciones y tema) separadas de las acciones de
+ * la vista por 16 px. */
+.wc-topbar__utilities {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: var(--space-4);
 }
 
 .wc-shell__main {
@@ -231,7 +251,7 @@
 }
 
 .wc-page__section-title {
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
@@ -690,11 +710,26 @@
 
 /* --- Actualizaciones ---------------------------------------------------- */
 
-.wc-updates__badge {
-  display: inline-block;
-  flex: 0 0 auto;
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
+.wc-updates__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.wc-updates__icon svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* Punto de 6 px con borde de la superficie de la barra para separarse. */
+.wc-updates__dot {
+  position: absolute;
+  inset-block-start: -2px;
+  inset-inline-end: -2px;
+  inline-size: 6px;
+  block-size: 6px;
   border: 1px solid var(--surface);
   border-radius: 50%;
   background-color: var(--accent);
@@ -1252,7 +1287,7 @@
 
 .wc-stats__item dd {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
 }
@@ -1312,7 +1347,7 @@
 .wc-world-card__initial,
 .wc-world-hero__initial {
   color: var(--accent-strong);
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
 }
@@ -1332,7 +1367,7 @@
 
 .wc-world-card__title {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
@@ -1370,16 +1405,14 @@
   overflow-wrap: break-word;
 }
 
-.wc-world-card__actions,
-.wc-world-actions {
+.wc-world-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.wc-world-card__actions > *,
-.wc-world-actions > * {
+.wc-world-card__actions > * {
   min-width: 0;
 }
 
@@ -1422,7 +1455,7 @@
 
 .wc-world-hero__title {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-display);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
@@ -1445,7 +1478,7 @@
 .wc-world-section__title {
   min-width: 0;
   margin-block-end: var(--space-2);
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   overflow-wrap: break-word;
@@ -1614,7 +1647,7 @@
 
 .wc-quick-action__title {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
@@ -1659,7 +1692,7 @@
 
 .wc-quick-card__title {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
@@ -1710,7 +1743,7 @@
 
 .wc-alert__title {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
@@ -1777,7 +1810,7 @@
 }
 
 .wc-page__title {
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-display);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
@@ -1928,7 +1961,7 @@
   border: 0;
   background: none;
   color: var(--fg);
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
@@ -2076,7 +2109,7 @@
 
 .wc-entity-header__name {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-display);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
@@ -2287,7 +2320,7 @@
 .wc-editor__content h1,
 .wc-editor__content h2,
 .wc-editor__content h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   line-height: var(--leading-tight);
   overflow-wrap: break-word;
 }
@@ -2537,11 +2570,54 @@
 
 /* --- Búsqueda global y paleta de comandos ------------------------------- */
 
+/*
+ * El disparador de la paleta parece un pozo, no un campo: misma altura que un
+ * icon button (32 px) y superficie hundida sobre la barra.
+ */
 .wc-topbar__search {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-2);
+  block-size: 2rem;
+  min-block-size: 2rem;
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
-.wc-topbar__kbd {
+.wc-topbar__search:hover {
+  background-color: var(--surface-raised);
+}
+
+.wc-topbar__search:active {
+  background-color: var(--surface);
+}
+
+.wc-topbar__search-icon {
+  flex: 0 0 auto;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.wc-topbar__search-label {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.wc-topbar__search-kbd::before {
+  content: attr(data-keys);
+}
+
+.wc-topbar__search-kbd {
+  flex: 0 0 auto;
   padding-inline: var(--space-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -2550,6 +2626,23 @@
   font-family: var(--font-ui);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1199px) {
+  .wc-topbar__search-label {
+    display: none;
+  }
+}
+
+@media (max-width: 1099px) {
+  .wc-topbar__search-kbd {
+    display: none;
+  }
+
+  .wc-topbar__search {
+    inline-size: 2rem;
+    padding-inline: 0;
+  }
 }
 
 .wc-filters--search {
@@ -2670,7 +2763,7 @@
 
 .wc-search-hit__title {
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-content);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
@@ -2728,9 +2821,10 @@
 
 .wc-palette__input {
   inline-size: 100%;
+  block-size: 2.5rem;
   min-width: 0;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background-color: var(--surface);
   color: var(--fg);
@@ -2758,6 +2852,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-block-size: 2.25rem;
   min-width: 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
@@ -2767,13 +2862,14 @@
 .wc-palette__item[data-selected] {
   background-color: var(--accent-surface);
   color: var(--accent-strong);
+  font-weight: var(--weight-semibold);
 }
 
 .wc-palette__badge {
   flex: 0 0 auto;
   padding-inline: var(--space-1);
-  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  background-color: var(--surface-sunken);
   color: var(--muted);
   font-size: var(--text-xs);
   text-transform: uppercase;
@@ -2826,12 +2922,6 @@
 @media (max-width: 1180px) {
   .wc-filters--search {
     grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  }
-}
-
-@media (max-width: 1100px) {
-  .wc-topbar__kbd {
-    display: none;
   }
 }
 
