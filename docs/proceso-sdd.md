@@ -63,7 +63,7 @@ implementación operativa:
 ```text
 Issue abierta (label ai + status: todo + variant: *)
   → adopción: comprobar labels y variante, crear tasks/task-issue-<N>.json
-  → planificación (task-architect, si la issue no trae plan)
+  → planificación (task-architect, obligatorio salvo tarea mecánica)
   → implementación (tdd-ddd-architect; ui-ux-designer si hay UI)
   → QA (qa-reviewer); si falla, vuelve a implementación
   → seguridad (security-champion); si hay HIGH, vuelve a implementación
@@ -80,20 +80,35 @@ en local antes de publicar. En tareas documentales, QA, seguridad y
 documentación se resuelven con el checklist de la sección 9 sin subagentes
 (sección 3.2).
 
-### 3.2 Orquestación proporcional al coste
+### 3.2 Orquestación proporcional y puertas obligatorias
 
 Cada subagente arranca con contexto limpio y vuelve a cargar su prompt y las
-instrucciones del proyecto, así que el flujo no invoca agentes que no aportan:
+instrucciones del proyecto, así que la proporcionalidad evita revisiones
+redundantes. Pero **no autoriza a saltarse las puertas de código** (ADR 0024):
 
+- **Cualquier cambio de código de producto** pasa por `tdd-ddd-architect`.
+  `sdd-master` no implementa por su cuenta; las correcciones que pidan QA o
+  seguridad también vuelven a él.
+- **Planificación:** `task-architect` es obligatorio en features, refactors,
+  bugfixes no triviales, integraciones, migraciones, IPC, seguridad, cambios de
+  varios módulos o planes incompletos. Un «Plan de implementación» en la issue
+  es contexto de entrada, no un sustituto. Solo se omite en una tarea mecánica
+  `variant: low` con pasos cerrados y sin decisiones abiertas, y el motivo se
+  registra en `agents.planning`.
+- **UI:** `ui-ux-designer` es obligatorio siempre que la tarea cree o modifique
+  UI, tokens, temas, layout, accesibilidad o estados visibles. La revisión
+  visual de `qa-reviewer` comprueba el resultado, no sustituye el diseño.
 - **Tareas documentales o de proceso** (solo documentación, agentes,
   configuración o `.json` de `tasks/`): no se invocan `task-architect`,
-  `ui-ux-designer`, `qa-reviewer`, `security-champion` ni `documentation-sync`.
-  El checklist de la sección 9 y el escaneo de secretos se resuelven en la
-  propia tarea y el informe se registra en el task file.
-- **Tareas de código:** solo los subagentes que la tarea necesita. Si la issue
-  ya trae un plan detallado, se usa como plan aprobado sin `task-architect`.
-- `ui-ux-designer` se invoca una sola vez por tarea de UI; la revisión visual
-  va incluida en el checklist de `qa-reviewer`.
+  `tdd-ddd-architect`, `ui-ux-designer`, `qa-reviewer`, `security-champion` ni
+  `documentation-sync`. El checklist de la sección 9 y el escaneo de secretos
+  se resuelven en la propia tarea y el informe se registra en el task file.
+- **Revisiones opcionales:** una segunda consulta a `ui-ux-designer` o a
+  `documentation-sync` solo si aporta algo nuevo; no se repiten comprobaciones
+  ya hechas.
+- **Registro:** el task file apunta en `agents` el agente usado por puerta o
+  `no aplica` con su motivo. Una puerta de código sin registro se considera no
+  superada.
 - El proceso se consulta primero en la skill `repo-map`; `docs/proceso-sdd.md`
   completo se abre solo si cambia el proceso.
 
@@ -102,8 +117,8 @@ instrucciones del proyecto, así que el flujo no invoca agentes que no aportan:
 | Transición | Responsable | Evidencia |
 |---|---|---|
 | Issue → adopción | `sdd-master` | Issue abierta con `ai`; labels corregidos, incluido un `variant: *`; `tasks/task-issue-<N>.json` creado con estado `created` y `model_variant`. |
-| `created` → `planned` | `sdd-master` + `task-architect` (solo si la issue no trae plan) | Plan escrito en el campo `plan`; alcance, riesgos, pruebas e impacto documental; aprobación del usuario registrada en `validation`. |
-| `planned` → `implemented` | `tdd-ddd-architect` (+ `ui-ux-designer`) | Diff implementado; pruebas y comprobaciones locales ejecutadas; task file actualizado. |
+| `created` → `planned` | `sdd-master` + `task-architect` (obligatorio salvo tarea mecánica `variant: low`) | Plan escrito en el campo `plan`; alcance, riesgos, pruebas e impacto documental; aprobación del usuario registrada en `validation`; `agents.planning` actualizado. |
+| `planned` → `implemented` | `tdd-ddd-architect` (siempre) + `ui-ux-designer` (si hay UI) | Diff implementado; pruebas y comprobaciones locales ejecutadas; `agents.implementation` y `agents.ui` actualizados; task file actualizado. |
 | `implemented` → `validated` | `qa-reviewer`, o checklist documental en tareas documentales | Informe de QA con criterios, ventana, temas, accesibilidad, datos y manual; `qa.result` = `PASS`. |
 | `validated` → `security-cleared` | `security-champion`, o escaneo de secretos en tareas documentales | Informe de seguridad; sin hallazgos HIGH; `security.result` = `PASS` y `findings` actualizados. |
 | `security-cleared` → `documented` | `documentation-sync`, o edición directa en tareas documentales | ADR, manual, changelog, `AGENTS.md`, `docs/proceso-sdd.md`, `docs/agentes.md` o `docs/arquitectura.md` actualizados según aplique; campos `documentation.*` completos. |
@@ -177,6 +192,16 @@ Plantilla de creación (`status: created`, sin bloque `pr`):
     "date": null,
     "notes": ""
   },
+  "agents": {
+    "planning": "pendiente",
+    "implementation": "pendiente",
+    "ui": "pendiente",
+    "qa": "pendiente",
+    "security": "pendiente",
+    "documentation": "pendiente",
+    "publisher": "pendiente",
+    "notes": ""
+  },
   "qa": {
     "result": "pendiente",
     "notes": ""
@@ -230,6 +255,14 @@ en [`tasks/task-example.json`](../tasks/task-example.json).
 | `validation.result` | string | Sí | `pendiente`, `user-approved`, `user-validated`. Se recomienda `user-approved` en archivos nuevos; `user-validated` se conserva por compatibilidad con tareas anteriores. |
 | `validation.date` | string o null | Sí | `YYYY-MM-DD` o `null` si está pendiente. |
 | `validation.notes` | string | Sí | Decisión o comentario del usuario; vacío si está pendiente. |
+| `agents.planning` | string | Sí en tareas nuevas | `task-architect`, `no aplica` o `pendiente`; `no aplica` solo en tarea mecánica `variant: low` o documental, con motivo en `agents.notes`. |
+| `agents.implementation` | string | Sí en tareas nuevas | `tdd-ddd-architect`, `no aplica` o `pendiente`; `no aplica` solo en tareas documentales. |
+| `agents.ui` | string | Sí en tareas nuevas | `ui-ux-designer`, `no aplica` o `pendiente`; `no aplica` si no hay cambio visible. |
+| `agents.qa` | string | Sí en tareas nuevas | `qa-reviewer`, `no aplica` (checklist documental) o `pendiente`. |
+| `agents.security` | string | Sí en tareas nuevas | `security-champion`, `no aplica` (escaneo documental) o `pendiente`. |
+| `agents.documentation` | string | Sí en tareas nuevas | `documentation-sync`, `no aplica` (edición directa documental) o `pendiente`. |
+| `agents.publisher` | string | Sí en tareas nuevas | `publisher`, `no aplica` (commit local directo documental) o `pendiente`. |
+| `agents.notes` | string | Sí en tareas nuevas | Motivo de los `no aplica` y cualquier incidencia de invocación. |
 | `qa.result` | string | Sí | `pendiente`, `PASS`, `FAIL`. |
 | `qa.notes` | string | Sí | Resumen del informe de QA. |
 | `security.result` | string | Sí | `pendiente`, `PASS`, `FAIL`. |
@@ -265,6 +298,10 @@ desconocidos de un task file existente se conservan al actualizarlo.
    error tipográfico evidente, y nunca para cambiar la historia de la tarea.
 8. Al adoptar la issue se copia el label `variant: *` en `model_variant`. Si el
    usuario elige otra variante, se anota en `validation.notes`.
+9. `agents` se completa en cada puerta con el subagente usado. `no aplica` solo
+   vale con el motivo en `agents.notes`; una puerta de código sin registro se
+   considera no superada. Los task files anteriores al campo no se reescriben:
+   su historial queda en `validation.notes`.
 
 ## 5. Etiquetas, estados e hitos
 
@@ -391,6 +428,7 @@ La evidencia esperada por puerta es:
 
 | Puerta | Evidencia |
 |---|---|
+| Agentes | `agents.*` con el subagente de cada puerta; los `no aplica` justificados en `agents.notes`. |
 | Implementación | Diff revisado; typecheck, lint, tests y build en verde cuando existan. |
 | QA | `qa.result` = `PASS`; informe con criterios, ventana 1024/1280/1600, temas, accesibilidad, preservación de datos y manual. |
 | Seguridad | `security.result` = `PASS`; sin HIGH; `findings` actualizados. |
@@ -729,7 +767,8 @@ task file.
 
 En tareas documentales o de proceso, este checklist sustituye a las puertas de
 QA, seguridad y documentación con subagentes (sección 3.2): el resultado se
-anota en `qa.notes` y `security.notes` del task file. El escaneo de secretos
+anota en `qa.notes` y `security.notes`, y `agents` refleja `no aplica` con el
+motivo en `agents.notes`. El escaneo de secretos
 comprueba al menos prefijos de claves (`sk-`, `ghp_`, `github_pat_`,
 `AKIA`, `xox[baprs]-`), claves privadas, URLs con credenciales y correos reales
 en el diff.
@@ -744,6 +783,7 @@ en el diff.
 | 2026-11-14 | #5 (M0-04) | Añade la protección de ramas con rulesets, el repositorio público con licencia MIT y los scripts de etiquetas y protección. |
 | 2026-11-14 | #6 (M0-05) | Define los required checks `lint`, `typecheck`, `test` y `build`. |
 | 2026-11-18 | Pivote a escritorio | Reescritura completa: aplicación Windows, SQLite local, sin auth ni servicios cloud; áreas `desktop`, `persistence` y `packaging`; hitos M0–M5 de escritorio; 46 labels; subagentes sin modelo fijo. |
+| 2026-11-21 | `task-local-subagent-routing` | Hace obligatorios `task-architect`, `tdd-ddd-architect` y `ui-ux-designer` en tareas de código, limita la proporcionalidad al coste a tareas documentales y revisiones opcionales, añade el bloque `agents` al task file y documenta la decisión en el ADR 0024. |
 
 Las issues #1–#48 citadas en este historial se eliminaron durante el pivote; se
 conservan aquí como referencia histórica y sus números no se reutilizan.

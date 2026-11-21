@@ -25,18 +25,30 @@ creada. No existe `done` local.
 | Transición | Responsable |
 |---|---|
 | Issue → adopción | `sdd-master` (labels + task file `created`) |
-| `created` → `planned` | `task-architect` (solo si la issue no trae plan) |
-| `planned` → `implemented` | `tdd-ddd-architect` (+ `ui-ux-designer` si hay UI) |
+| `created` → `planned` | `task-architect` (obligatorio salvo tarea mecánica `variant: low`; un plan en la issue no lo sustituye) |
+| `planned` → `implemented` | `tdd-ddd-architect` (siempre) + `ui-ux-designer` (siempre que haya UI) |
 | `implemented` → `validated` | `qa-reviewer` (o checklist documental) |
 | `validated` → `security-cleared` | `security-champion` (o checklist de secretos) |
 | `security-cleared` → `documented` | `documentation-sync` (o edición directa) |
 | `documented` → `review` | `publisher` en modo `preparar` |
 | `review` → `published` | `publisher` en modo `publicar`, con confirmación |
 
+Reglas no negociables en tareas de código:
+
+- `tdd-ddd-architect` implementa **todo** el código; `sdd-master` no implementa.
+- `task-architect` planifica toda feature, refactor, bugfix no trivial,
+  integración, migración, IPC, seguridad o cambio transversal. Solo se omite en
+  tarea mecánica `variant: low` con pasos cerrados y el motivo queda en
+  `agents.planning`.
+- `ui-ux-designer` se invoca siempre que haya UI nueva o modificada; QA revisa
+  el resultado, no sustituye el diseño.
+- La proporcionalidad al coste solo exime a las tareas documentales y a las
+  revisiones opcionales, nunca a estas tres puertas.
+
 **Tareas documentales o de proceso** (solo `.md`, `.json` de `tasks/`,
-`opencode.jsonc`, `.opencode/`): sin subagentes de planificación; QA, seguridad
-y documentación se resuelven con la sección 8 de esta skill y el informe se
-registra en el task file.
+`opencode.jsonc`, `.opencode/`): sin subagentes; QA, seguridad y documentación
+se resuelven con la sección 8 de esta skill y el informe se registra en el task
+file.
 
 ## 3. Estados y labels
 
@@ -59,11 +71,14 @@ tamaño `s`/`m`/`l`/`xl`. Hitos: `M0`–`M5` y `Backlog`. Bandera
 `tasks/task-issue-<N>.json` o `tasks/task-local-<slug>.json`. Campos:
 `title`, `description`, `status`, `model_variant`, `issue` (`number`, `url`,
 `title`), `acceptance_criteria[]`, `definition_of_done[]`, `plan`,
-`validation` (`result`, `date`, `notes`), `qa` (`result`, `notes`),
-`security` (`result`, `findings[]`, `notes`), `documentation` (`adr`, `manual`,
-`changelog`, `agents`). Bloque `pr` (`number`, `url`, `title`, `branch`,
-`commit`) **solo tras publicar**. No se eliminan campos desconocidos ni
-historial. `documentation.manual` = ruta, `pendiente` o `no aplica`.
+`validation` (`result`, `date`, `notes`), `agents` (`planning`,
+`implementation`, `ui`, `qa`, `security`, `documentation`, `publisher`,
+`notes`), `qa` (`result`, `notes`), `security` (`result`, `findings[]`,
+`notes`), `documentation` (`adr`, `manual`, `changelog`, `agents`). Bloque
+`pr` (`number`, `url`, `title`, `branch`, `commit`) **solo tras publicar**. No
+se eliminan campos desconocidos ni historial. `documentation.manual` = ruta,
+`pendiente` o `no aplica`. En `agents`, cada puerta lleva el agente usado,
+`pendiente` o `no aplica` con el motivo en `notes`.
 
 ## 5. Variantes
 
@@ -86,7 +101,8 @@ sección 5).
 
 ## 7. Task file en `review`: qué registrar
 
-- `status: review`, `validation`, `qa`, `security` y `documentation`.
+- `status: review`, `validation`, `agents`, `qa`, `security` y `documentation`.
+- `agents.*`: agente invocado en cada puerta; `no aplica` solo con motivo.
 - `qa.notes`: qué se comprobó y con qué resultado, con las rutas revisadas.
 - `security.notes`: escaneo de secretos (patrones HIGH) y resultado.
 - `documentation.*`: qué documento se actualizó y por qué.

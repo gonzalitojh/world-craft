@@ -1,0 +1,59 @@
+{
+  "title": "Invocación obligatoria de task-architect, tdd-ddd-architect y ui-ux-designer",
+  "description": "Tarea local de proceso: corregir las reglas de orquestación que dejaban opcionales la planificación técnica, la implementación delegada y el diseño de UI, de modo que sdd-master vuelva a invocar a task-architect, tdd-ddd-architect y ui-ux-designer en las tareas de código. Incluye el registro de agentes en el task file, la actualización de los agentes, la skill repo-map, el proceso SDD, AGENTS.md, la documentación de agentes y un ADR.",
+  "status": "review",
+  "model_variant": "high",
+  "acceptance_criteria": [
+    "sdd-master exige task-architect para features, refactors, integraciones, migraciones, IPC, seguridad y cambios transversales, y solo lo omite en tareas mecánicas con justificación registrada.",
+    "sdd-master exige tdd-ddd-architect para cualquier cambio de código y no implementa código directamente.",
+    "sdd-master exige ui-ux-designer siempre que la tarea cambie UI, tokens, temas, layout, accesibilidad o estados visibles.",
+    "La proporcionalidad al coste se limita a tareas documentales y a revisiones opcionales; no autoriza saltarse las puertas de código.",
+    "El task file registra los agentes invocados por puerta y el motivo cuando alguna no aplica.",
+    "Los documentos AGENTS.md, docs/proceso-sdd.md, docs/agentes.md, la skill repo-map y los agentes operativos cuentan la misma regla.",
+    "Se corrige la referencia a un ADR inexistente para la orquestación y se documenta la decisión en un ADR nuevo.",
+    "Los JSON son válidos, los enlaces locales resuelven y git diff --check no reporta errores.",
+    "Sin secretos, servicios de pago ni dependencias nuevas."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos.",
+    "Todos los JSON modificados son válidos con ConvertFrom-Json.",
+    "Los enlaces Markdown locales resuelven a rutas existentes.",
+    "No se presentan como existentes rutas, scripts, workflows, labels, hitos o estados que no existan.",
+    "Estados, labels, hitos y rutas coinciden con docs/proceso-sdd.md y los agentes operativos.",
+    "Los bloques de código Markdown están cerrados y git diff --check no reporta errores.",
+    "El task file refleja documentation.adr, documentation.manual, documentation.changelog y documentation.agents.",
+    "El cambio no es visible para el usuario: documentation.manual indica no aplica con justificación.",
+    "Task file actualizado con el resultado real."
+  ],
+  "plan": "1) Localizar la causa: la regla de eficiencia de sdd-master (2026-11-14) hizo opcionales task-architect, tdd-ddd-architect y ui-ux-designer, y el proceso permite usar un plan de la issue sin task-architect. 2) Sustituir la regla por un routing obligatorio: task-architect para planificación técnica no mecánica, tdd-ddd-architect para todo cambio de código y ui-ux-designer para toda tarea con UI. 3) Mantener la proporcionalidad solo para tareas documentales y revisiones opcionales. 4) Añadir al task file el bloque agents con el agente de cada puerta y el motivo de los no aplica. 5) Sincronizar sdd-master, los tres agentes implicados, la skill repo-map, docs/proceso-sdd.md, AGENTS.md y docs/agentes.md. 6) Registrar la decisión en el ADR 0024 y en el registro de decisiones, y corregir la referencia rota al ADR de orquestación. 7) Validar JSON, enlaces, fences y diff.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-21",
+    "notes": "El usuario pidió investigar por qué task-architect, tdd-ddd-architect y ui-ux-designer apenas se invocaban y corregir la causa. Variante high por ser un cambio de proceso transversal con impacto en agentes, esquema de task files y documentación. Sin issue: tarea local de proceso. El cambio no es visible para el usuario, así que documentation.manual queda en \"no aplica\". Rama chore/subagent-routing desde origin/dev."
+  },
+  "agents": {
+    "planning": "no aplica",
+    "implementation": "no aplica",
+    "ui": "no aplica",
+    "qa": "no aplica",
+    "security": "no aplica",
+    "documentation": "no aplica",
+    "publisher": "no aplica",
+    "notes": "Tarea documental y de proceso: el checklist documental sustituye a los subagentes según docs/proceso-sdd.md, sección 3.2. El cambio corrige precisamente cuándo deben invocarse. El commit local se prepara directamente, sin publisher, por ser una tarea documental."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "QA documental (2026-11-21): todos los task files son JSON válido con ConvertFrom-Json; los enlaces locales de AGENTS.md, docs y agentes resuelven; los fences Markdown están balanceados; git diff --check no reporta errores; prettier --check --end-of-line auto pasa en los 14 archivos tocados; las rutas docs/ y tasks/ citadas en AGENTS.md existen. Coherencia revisada: sdd-master, task-architect, tdd-ddd-architect, ui-ux-designer, la skill repo-map, docs/proceso-sdd.md, docs/agentes.md, AGENTS.md y el ADR 0024 dicen lo mismo sobre las tres puertas y el bloque agents. El ADR 0024 no rompe la numeración: el 0023 queda reservado para #76 (PR #121), tal como anota el índice. Sin cambios de UI, ventana, temas, accesibilidad ni datos; esas comprobaciones no aplican."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Seguridad documental (2026-11-21): escaneo del diff y de los archivos nuevos con patrones de claves (sk-, ghp_, github_pat_, AKIA, xox[baprs]-), claves privadas y correos reales; sin hallazgos. No se añaden dependencias, secretos, servicios de pago, IPC, rutas nuevas ni cambios en Electron, datos o migraciones. Los enlaces externos son los del repositorio y la documentación oficial ya existente."
+  },
+  "documentation": {
+    "adr": "docs/adr/0024-obligatory-specialized-subagents.md",
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": "docs/agentes.md"
+  }
+}

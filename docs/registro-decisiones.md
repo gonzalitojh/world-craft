@@ -173,3 +173,20 @@ arista y cómo exponer el grafo sin acoplar la ficha a su detalle.
 - Referencias: ADR 0022, ADR 0019, ADR 0020, ADR 0021, #77, #78,
   `docs/manual-de-usuario.md`, `docs/base-de-datos/esquema.md` y
   `docs/calidad/plan-de-pruebas.md`.
+
+## 2026-11-21 — Invocación obligatoria de los subagentes especializados
+
+**Contexto.** La optimización de coste del 14/11/2026 dejó opcionales la
+planificación técnica, la implementación delegada y el diseño de UI. Las tareas
+#67 y #68 registran `task-architect` y `tdd-ddd-architect`; las posteriores #69
+y #76 no dejan constancia de ellos, y la #76 ni siquiera traía el plan detallado
+que justificaba la excepción. Además, la referencia al ADR de orquestación
+quedó apuntando al ADR 0009 (i18n) tras el pivote.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-047 | Routing obligatorio de subagentes | `tdd-ddd-architect` implementa todo cambio de código y `sdd-master` no implementa; `task-architect` planifica toda feature, refactor, bugfix no trivial, integración, migración, IPC, seguridad o cambio transversal y solo se omite en tarea mecánica `variant: low` con pasos cerrados; `ui-ux-designer` interviene siempre que haya UI nueva o modificada; la proporcionalidad al coste solo exime a tareas documentales y revisiones opcionales; el task file registra en `agents` el subagente de cada puerta o el motivo de `no aplica`. | La planificación, la implementación y el diseño vuelven a tener responsable verificable; el coste de contexto sube en tareas de código y se mantiene en cero en las documentales; los task files anteriores no se reescriben. ADR 0024. |
+
+- Referencias: ADR 0024, ADR 0010, `tasks/task-local-subagent-routing.json`,
+  `AGENTS.md`, `docs/proceso-sdd.md`, `docs/agentes.md`,
+  `.opencode/agents/sdd-master.md` y `.opencode/skills/repo-map/SKILL.md`.
