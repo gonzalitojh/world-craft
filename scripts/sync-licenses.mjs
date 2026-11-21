@@ -17,6 +17,15 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUTPUT_DIR = join(ROOT, 'resources/licenses');
+/**
+ * Texto OFL de la fuente empaquetada. La copia canónica vive junto al activo
+ * (`src/renderer/assets/fonts/source-serif-4/OFL.txt`) y se replica aquí para
+ * que el instalador la publique en `licenses/`; no se edita en este script.
+ */
+const SOURCE_SERIF_OFL = join(
+  ROOT,
+  'src/renderer/assets/fonts/source-serif-4/OFL.txt',
+);
 
 /**
  * Resuelve la carpeta de un paquete instalado. `@img/sharp-win32-*` es una
@@ -173,6 +182,10 @@ async function main() {
     await copyLicense(
       join(tiptapDirectory, 'LICENSE.md'),
       'tiptap-LICENSE.txt',
+    ),
+    await copyLicense(
+      SOURCE_SERIF_OFL,
+      'source-serif-4-OFL.txt',
     ),
   ];
 

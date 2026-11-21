@@ -166,3 +166,13 @@ histórico de D-026 se conserva en el registro de decisiones.
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D13 y §4.5–4.6
 - Epic #123 y issues #124–#133
 - WCAG 2.2, criterios 1.4.3, 1.4.6, 1.4.11 y 2.3.3, consultados el 21/11/2026.
+
+## Nota de implementación (2026-11-21)
+
+#125 materializó la decisión 3: **Source Serif 4** (OFL 1.1) se empaqueta como
+activo local para contenido con dos cortes, 400 y 600, subset latin y
+`@font-face` relativo en `styles/fonts.css`; procedencia, licencia y tamaños se
+registran en `THIRD-PARTY-NOTICES.md` y en
+[`sistema-de-diseno.md`](../diseno/sistema-de-diseno.md) §5.1. No se crea un ADR
+nuevo: la familia, los pesos y el subset son detalles operativos reversibles
+dentro de una decisión ya aceptada.

@@ -58,6 +58,22 @@ function decodeHtmlEntities(text) {
     .replaceAll('&amp;', '&');
 }
 
+/**
+ * Los binarios de fuente no se leen como texto: la tabla `name` de una fuente
+ * OFL puede incluir la URL de la fundición (metadato inerte que nunca se
+ * solicita) y el escaneo la confundiría con una petición remota. En este
+ * proyecto solo se empaqueta `.woff2`; HTML, CSS y JS siguen escaneándose
+ * completos y `checkFontAssets` compensa la excepción comprobando el
+ * `@font-face` local.
+ */
+const BINARY_FONT_EXTENSIONS = ['.woff2'];
+
+function isBinaryFont(file) {
+  return BINARY_FONT_EXTENSIONS.some((extension) =>
+    file.toLowerCase().endsWith(extension),
+  );
+}
+
 const failures = [];
 
 function fail(message) {
@@ -298,6 +314,77 @@ async function checkSharpNotBundled(mainBundle) {
   }
 }
 
+/**
+ * Compensación de la exclusión de binarios en el escaneo de URLs.
+ *
+ * Comprueba que los dos cortes empaquetados viajan en `out/renderer`, que el
+ * CSS construido los referencia con una ruta relativa propia y que ningún CSS
+ * contiene un host remoto de fuentes.
+ */
+async function checkFontAssets() {
+  const files = await collectFiles(RENDERER_DIR).catch(() => []);
+  const fonts = files.filter(isBinaryFont);
+
+  for (const prefix of [
+    'source-serif-4-regular-latin-',
+    'source-serif-4-semibold-latin-',
+  ]) {
+    const match = fonts.find(
+      (file) =>
+        file.endsWith('.woff2') &&
+        file.split(/[\\/]/).some((name) => name.startsWith(prefix)),
+    );
+
+    if (match === undefined) {
+      fail(`Falta el woff2 empaquetado ${prefix}*.woff2 en out/renderer.`);
+      continue;
+    }
+
+    const info = await stat(match);
+
+    if (!info.isFile() || info.size === 0) {
+      fail(`El woff2 empaquetado ${match} está vacío.`);
+    }
+  }
+
+  const cssFiles = files.filter((file) => file.endsWith('.css'));
+  let sawFontFace = false;
+
+  for (const file of cssFiles) {
+    const css = await readFile(file, 'utf8');
+
+    checkRemoteUrls(file, css);
+
+    if (!css.includes('@font-face')) {
+      continue;
+    }
+
+    sawFontFace = true;
+
+    const relativeFonts = [...css.matchAll(/url\((['"]?)([^)'"]*\.woff2)\1\)/g)]
+      .map((match) => match[2] ?? '')
+      .filter((url) => !url.startsWith('data:') && !/^[a-z]+:/i.test(url));
+
+    if (relativeFonts.length < 2) {
+      fail(`El CSS ${file} no declara los dos @font-face locales.`);
+    }
+
+    for (const url of relativeFonts) {
+      if (!url.startsWith('./') && !url.startsWith('../')) {
+        fail(`El @font-face de ${file} no usa una ruta relativa: ${url}.`);
+      }
+    }
+  }
+
+  if (!sawFontFace) {
+    fail('Ningún CSS construido declara el @font-face de Source Serif 4.');
+  }
+
+  if (!files.some((file) => file.endsWith('.woff2'))) {
+    fail('out/renderer no contiene ningún woff2.');
+  }
+}
+
 const html = await checkArtifact('out/renderer/index.html');
 const mainBundle = await checkArtifact('out/main/index.cjs');
 const mainBundles = await Promise.all(
@@ -319,6 +406,7 @@ await checkDrizzleMigrations();
 checkExternalizedDependencies(mainBundle);
 await checkSharpNotBundled(mainBundle);
 await checkUpdaterNotBundled(mainBundles);
+await checkFontAssets();
 
 if (html !== null) {
   checkContentSecurityPolicy(html);
@@ -335,7 +423,7 @@ for (const directory of ['out/main', 'out/preload']) {
 }
 
 for (const file of builtFiles) {
-  if (file === join(RENDERER_DIR, 'index.html')) {
+  if (file === join(RENDERER_DIR, 'index.html') || isBinaryFont(file)) {
     continue;
   }
 

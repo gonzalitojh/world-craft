@@ -274,9 +274,22 @@ primera versión estable.
   borrado, restauración, reconstrucción, migración y rendimiento con 10.000
   fichas; componentes de página y paleta; E2E de flujo completo, ventana
   1024/1280/1600, dos temas y axe.
+- Tipografía de contenido v2 (#125): **Source Serif 4** (OFL 1.1) empaquetada
+  como activo local para títulos y lectura larga, con dos cortes woff2 —400 y
+  600, subset latin—, `@font-face` relativo, `font-display: swap` y la licencia
+  OFL incluida en el instalador. Sin fuentes remotas ni peticiones de red.
+- Base visual v2 (#125): primitivas nuevas de botón de icono, menú `⋯`, casilla,
+  radio, panel y esqueleto, y banco de muestras interno para revisar estados,
+  contenido largo y los dos temas.
 
 ### Cambiado
 
+- La base visual pasa a v2 (#125): tokens en tres capas con paleta neutra,
+  bosque, arena, estados y pizarra, roles `--surface-sunken`, `--border-strong`,
+  `--disabled-*`, `--skeleton*` y marcas `--entity-*`, radios 4/6/8, iconos
+  16/20/24 px con trazo 1,6 y foco 2+2. Se adaptan botón, campos, insignia,
+  tarjeta, diálogo, pestañas, toast, tooltip y estado vacío. Las pantallas
+  conservan su estructura v1 hasta #126–#133.
 - World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
   persistencia local. El renderer no accede a Node; la base de datos es SQLite y
   los assets viven en `app.getPath('userData')`.

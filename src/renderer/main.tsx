@@ -5,6 +5,7 @@ import { App } from './App';
 import { I18nProvider } from './i18n/provider';
 import { DEFAULT_LOCALE, getCatalog } from './messages';
 import { applyTheme, DEFAULT_THEME } from './theme';
+import './styles/fonts.css';
 import './styles/tokens/palette.css';
 import './styles/tokens/semantic.css';
 import './styles/tokens/scales.css';

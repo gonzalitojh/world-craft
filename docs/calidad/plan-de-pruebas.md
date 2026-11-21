@@ -105,15 +105,36 @@ renderer, la CSP, la navegación, los permisos y la red.
 ### 3.4 UI y accesibilidad
 
 Desde #65 hay una prueba unitaria estática del sistema de diseño,
-`tests/unit/design-tokens.test.ts` (14 pruebas): lee los CSS reales, resuelve los
-tokens de cada tema y calcula contraste WCAG 2.2; además, exige que solo
-`palette.css` declare colores literales, que `--bg`/`--fg` superen 7:1, que el
-deshabilitado se lea sin opacidad, que exista `prefers-reduced-motion` y que
-`html`/`body` no usen `overflow-x: hidden`. La tabla completa de ratios vive en
-el test y en el informe de #65.
+`tests/unit/design-tokens.test.ts`, reescrita en #125 para la dirección v2 (46
+pruebas): lee los CSS reales, resuelve los tokens de cada tema y calcula la
+tabla de contraste WCAG 2.2 §4.5 completa, incluidas las parejas nuevas de
+superficie hundida, foco y marcas de entidad. Además exige que solo
+`palette.css` declare colores literales, que todas las referencias `var(--x)`
+resuelvan a un token declarado, que `--paper`/`--ink` hayan desaparecido, las
+escalas de texto, radios e iconos, la elevación sin contorno en tarjetas y
+paneles, el deshabilitado sin opacidad, `prefers-reduced-motion`, la ausencia de
+`!important` fuera del reset y la licencia OFL de Source Serif 4.
 
-Desde #70, `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell real en
-los dos temas y falla ante violaciones críticas (detalle en 3.11).
+Desde #125, `tests/components/primitives.test.tsx` cubre botón de icono con
+tooltip, menú `⋯` con teclado y foco, casilla, radio, panel, esqueleto, tarjeta,
+diálogo y avisos; `tests/components/samples.test.tsx` monta el banco de muestras
+completo con el catálogo real. Los archivos woff2, el texto OFL replicado y los
+avisos de terceros se comprueban en `design-tokens.test.ts` y en
+`tests/unit/packaging/licenses.test.ts`; `scripts/check-build.mjs` verifica que
+los dos woff2 viajan en el bundle con `@font-face` relativo y sin hosts remotos.
+
+Tras la revisión de UI de #125, `tests/e2e/design-v2.spec.ts` mide en la ventana
+real a 1024 px y en ambos temas el ancho y las líneas del tooltip, la colisión
+de tooltip y menú con el borde derecho, el foco computado de la casilla inválida,
+los objetivos de 28 px, el hover perceptible, las marcas de tipo separadas de su
+etiqueta y el recorte dentro del diálogo; repite a 1280 y 1600 px con tooltip y
+menú abiertos para comprobar que no desbordan. `design-tokens.test.ts` añade las
+parejas de deshabilitado y peligro, la distinción de `--disabled-surface` y la
+prohibición de `--muted` sobre `--selection`.
+
+Desde #70, `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y, desde
+#125, también sobre Muestras en los dos temas, y falla ante violaciones críticas
+(detalle en 3.11).
 
 Desde #71, la internacionalización se prueba en `tests/unit/i18n/`: catálogo sin
 hojas vacías, claves y parámetros tipados, `Intl` para fechas, números,
@@ -170,21 +191,23 @@ lo cubre cuando aplica.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **385 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **419 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
   journal, checksum, rutas de datos, UUIDv7, logger, lógica del aviso de modo
-  seguro, tokens y contraste del sistema de diseño, servicio de assets, copias
-  (manifiesto, rutas de restauración, buckets, rotación y composición de modo
-  seguro), instalador, actualizador, instancia única, licencias, mundos, tipos
-  de entidad, fichas (descripción, esquemas IPC, handlers y tarjetas) y
-  relaciones (validación, esquemas, guardas y catálogo).
-- **25 pruebas de componentes en verde** en `tests/components/`: botón nativo,
-  pestañas, proveedor de i18n, tarjetas y formularios de mundo, tarjeta de
-  ficha, diálogos de creación, creación rápida, panel de relaciones y diálogo de
-  relación. Usan Testing Library y `jsdom`.
-- **126 pruebas de integración (125 en verde y 1 omitida)** en `tests/integration/`:
+  seguro, tokens, contraste y licencia de fuentes del sistema de diseño, servicio
+  de assets, copias (manifiesto, rutas de restauración, buckets, rotación y
+  composición de modo seguro), instalador, actualizador, instancia única,
+  licencias, mundos, tipos de entidad, fichas (descripción, esquemas IPC,
+  handlers y tarjetas) y relaciones (validación, esquemas, guardas y catálogo).
+- **58 pruebas de componentes en verde** en `tests/components/`: botón nativo,
+  botón de icono con tooltip, menú `⋯`, casilla, radio, panel, esqueleto,
+  tarjeta, diálogo, avisos, pestañas, proveedor de i18n, tarjetas y formularios
+  de mundo, ficha, diálogos de creación, creación rápida, panel de relaciones y
+  diálogo de relación, además del banco de muestras completo. Usan Testing
+  Library y `jsdom`.
+- **134 pruebas de integración (133 en verde y 1 omitida)** en `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
   base ajena, checksum alterado, rollback del lote, preservación con copia,
@@ -584,8 +607,8 @@ en `fixtures/axe.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
   y ejecuta axe en ambos temas sin violaciones críticas ni graves.
 
 **Comandos y tiempos (equipo de referencia, 2026-11-21).** `pnpm test` ejecuta
-385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida) en
-unos 80 s; `pnpm test:e2e` compila y ejecuta 18 pruebas en unos 90 s. Los E2E
+419 unitarias (4 omitidas), 58 de componentes y 134 de integración (1 omitida) en
+unos 80 s; `pnpm test:e2e` compila y ejecuta 26 pruebas en unos 100 s. Los E2E
 son Windows-only, igual que la aplicación.
 
 ## 4. Cobertura
@@ -615,7 +638,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 419 unitarias (4 omitidas), 58 de componentes y 134 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |
