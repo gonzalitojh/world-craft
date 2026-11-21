@@ -6,8 +6,10 @@ import { Tooltip } from './tooltip';
 export type IconButtonVariant = 'ghost' | 'secondary' | 'primary' | 'danger';
 export type IconButtonSize = 'md' | 'sm';
 
-export interface IconButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'> {
+export interface IconButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'children' | 'aria-label'
+> {
   /** Nombre accesible obligatorio: el icono por sí solo no describe la acción. */
   readonly label: string;
   readonly icon: ReactNode;

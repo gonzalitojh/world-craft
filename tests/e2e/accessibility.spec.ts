@@ -99,9 +99,7 @@ for (const theme of THEMES) {
       .click();
 
     if (theme.mode === 'dark') {
-      await page
-        .getByRole('button', { name: currentThemeToggleName })
-        .click();
+      await page.getByRole('button', { name: currentThemeToggleName }).click();
     }
 
     await expect(page.locator('html')).toHaveAttribute(

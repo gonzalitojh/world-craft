@@ -70,7 +70,11 @@ export function RadioGroup({
         </RadioGroupContext.Provider>
       </div>
       {error ? (
-        <p className="wc-field__error wc-radio-group__error" id={errorId} role="alert">
+        <p
+          className="wc-field__error wc-radio-group__error"
+          id={errorId}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}

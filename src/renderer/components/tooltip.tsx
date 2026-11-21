@@ -58,9 +58,7 @@ export function Tooltip({ label, children, align = 'start' }: TooltipProps) {
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = document.documentElement.clientHeight;
     const preferredLeft =
-      align === 'end'
-        ? triggerRect.right - bubbleRect.width
-        : triggerRect.left;
+      align === 'end' ? triggerRect.right - bubbleRect.width : triggerRect.left;
     const left = Math.min(
       Math.max(preferredLeft, margin),
       Math.max(margin, viewportWidth - margin - bubbleRect.width),

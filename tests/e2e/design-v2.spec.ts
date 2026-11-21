@@ -188,9 +188,7 @@ for (const theme of THEMES) {
     });
 
     expect(menuMetrics.left).toBeGreaterThanOrEqual(0);
-    expect(menuMetrics.right).toBeLessThanOrEqual(
-      menuMetrics.clientWidth + 1,
-    );
+    expect(menuMetrics.right).toBeLessThanOrEqual(menuMetrics.clientWidth + 1);
     expect(menuMetrics.top).toBeGreaterThanOrEqual(0);
     expect(menuMetrics.bottom).toBeLessThanOrEqual(
       menuMetrics.clientHeight + 1,
@@ -251,7 +249,9 @@ for (const theme of THEMES) {
     }
 
     for (const row of rows.values()) {
-      const ordered = [...row].sort((first, second) => first.left - second.left);
+      const ordered = [...row].sort(
+        (first, second) => first.left - second.left,
+      );
 
       for (let index = 1; index < ordered.length; index += 1) {
         expect(

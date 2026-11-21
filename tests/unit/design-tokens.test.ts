@@ -22,10 +22,15 @@ interface CssBlock {
 }
 
 const STYLE_ROOT = '../../src/renderer/styles/';
-const RENDERER_ROOT = fileURLToPath(new URL('../../src/renderer/', import.meta.url));
+const RENDERER_ROOT = fileURLToPath(
+  new URL('../../src/renderer/', import.meta.url),
+);
 
 const readStyle = (relativePath: string): string =>
-  readFileSync(new URL(`${STYLE_ROOT}${relativePath}`, import.meta.url), 'utf8');
+  readFileSync(
+    new URL(`${STYLE_ROOT}${relativePath}`, import.meta.url),
+    'utf8',
+  );
 
 const stripComments = (source: string): string =>
   source.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -469,7 +474,12 @@ describe('roles semánticos', () => {
   it('resuelve los tokens persistidos de tipo con marcas propias', () => {
     for (const theme of THEMES) {
       for (const mark of ENTITY_MARKS) {
-        expectContrast(theme, `--entity-${mark}`, `--entity-${mark}-surface`, 3);
+        expectContrast(
+          theme,
+          `--entity-${mark}`,
+          `--entity-${mark}-surface`,
+          3,
+        );
       }
     }
   });
@@ -495,12 +505,14 @@ describe('contraste AA de la tabla §4.5', () => {
   });
 
   it('fija los ratios documentados del deshabilitado y de muted/sunken', () => {
-    expect(
-      ratio('--disabled-text', '--disabled-surface', 'light'),
-    ).toBeCloseTo(4.72, 2);
-    expect(
-      ratio('--disabled-text', '--disabled-surface', 'dark'),
-    ).toBeCloseTo(7.74, 2);
+    expect(ratio('--disabled-text', '--disabled-surface', 'light')).toBeCloseTo(
+      4.72,
+      2,
+    );
+    expect(ratio('--disabled-text', '--disabled-surface', 'dark')).toBeCloseTo(
+      7.74,
+      2,
+    );
     expect(ratio('--muted', '--surface-sunken', 'dark')).toBeCloseTo(8.08, 2);
   });
 });
@@ -593,10 +605,7 @@ describe('correcciones de la revisión UI', () => {
   });
 
   it('da a la etiqueta de casilla y radio un objetivo de 28 px', () => {
-    for (const selector of [
-      '.wc-checkbox__label',
-      '.wc-radio__label',
-    ]) {
+    for (const selector of ['.wc-checkbox__label', '.wc-radio__label']) {
       expect(blockBody(selector), selector).toMatch(
         /min-block-size:\s*1\.75rem/,
       );
@@ -613,9 +622,7 @@ describe('correcciones de la revisión UI', () => {
   });
 
   it('marca el grupo de radio inválido con un borde de 1 px', () => {
-    const body = blockBody(
-      '.wc-radio-group--invalid .wc-radio-group__options',
-    );
+    const body = blockBody('.wc-radio-group--invalid .wc-radio-group__options');
 
     expect(body).toMatch(/border-inline-start:\s*1px/);
     expect(body).not.toMatch(/border-inline-start:\s*2px/);
@@ -623,9 +630,7 @@ describe('correcciones de la revisión UI', () => {
 
   it('separa la marca gráfica del texto de la etiqueta', () => {
     expect(blockBody('.wc-type-mark')).toMatch(/::?before|border-radius/);
-    expect(blockBody('.wc-type-mark-label')).toMatch(
-      /color:\s*var\(--fg\)/,
-    );
+    expect(blockBody('.wc-type-mark-label')).toMatch(/color:\s*var\(--fg\)/);
   });
 });
 
@@ -647,9 +652,7 @@ describe('foco 2+2', () => {
       relationsSource,
       fontsSource,
     ]) {
-      expect(stripComments(source)).not.toMatch(
-        /outline:\s*(?:none|0)\b/i,
-      );
+      expect(stripComments(source)).not.toMatch(/outline:\s*(?:none|0)\b/i);
     }
   });
 });
@@ -815,9 +818,10 @@ describe('tipografía y fuente local', () => {
   });
 
   it('declara dos cortes locales con formato, swap y rango latin', () => {
-    const faces = stripComments(fontsSource)
-      .match(/@font-face\s*\{[^}]*\}/g)
-      ?.map((face) => face.replace(/\s+/g, ' ')) ?? [];
+    const faces =
+      stripComments(fontsSource)
+        .match(/@font-face\s*\{[^}]*\}/g)
+        ?.map((face) => face.replace(/\s+/g, ' ')) ?? [];
 
     expect(faces).toHaveLength(2);
 
@@ -847,7 +851,9 @@ describe('tipografía y fuente local', () => {
       expect(stripComments(source)).not.toMatch(
         /url\(\s*['"]?(?:https?:)?\/\//i,
       );
-      expect(stripComments(source)).not.toMatch(/fonts\.googleapis|fonts\.gstatic/);
+      expect(stripComments(source)).not.toMatch(
+        /fonts\.googleapis|fonts\.gstatic/,
+      );
     }
   });
 
@@ -1074,9 +1080,9 @@ describe('licencia de Source Serif 4', () => {
 
   it('replica el texto byte a byte en el instalador', () => {
     expect(existsSync(packagedLicense)).toBe(true);
-    expect(readFileSync(packagedLicense).equals(readFileSync(assetLicense))).toBe(
-      true,
-    );
+    expect(
+      readFileSync(packagedLicense).equals(readFileSync(assetLicense)),
+    ).toBe(true);
   });
 
   it('documenta la fuente y actualiza el recuento de textos', () => {

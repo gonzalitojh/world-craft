@@ -51,7 +51,10 @@ function Section({ title, description, children }: SectionProps) {
 
   return (
     <div className="wc-page__section">
-      <h2 className="wc-page__section-title wc-samples__section-title" id={titleId}>
+      <h2
+        className="wc-page__section-title wc-samples__section-title"
+        id={titleId}
+      >
         {title}
       </h2>
       {description ? (
@@ -567,10 +570,7 @@ export function SamplesPage({ onNotify }: SamplesPageProps) {
             <Badge tone="accent">{messages.samples.card.badge}</Badge>
           </div>
         </Card>
-        <Card
-          title={messages.samples.card.plainTitle}
-          headingLevel={3}
-        >
+        <Card title={messages.samples.card.plainTitle} headingLevel={3}>
           <p>{messages.samples.card.plainBody}</p>
         </Card>
       </Section>
@@ -764,9 +764,7 @@ export function SamplesPage({ onNotify }: SamplesPageProps) {
             />
           }
           footer={
-            <Button variant="secondary">
-              {messages.samples.panel.save}
-            </Button>
+            <Button variant="secondary">{messages.samples.panel.save}</Button>
           }
         >
           <p className="wc-samples__text">{messages.samples.panel.panelBody}</p>

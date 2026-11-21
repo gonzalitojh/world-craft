@@ -78,7 +78,11 @@ export function Checkbox({
         </p>
       ) : null}
       {error ? (
-        <p className="wc-field__error wc-checkbox__error" id={errorId} role="alert">
+        <p
+          className="wc-field__error wc-checkbox__error"
+          id={errorId}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}

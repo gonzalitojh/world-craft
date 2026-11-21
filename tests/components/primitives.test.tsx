@@ -178,7 +178,9 @@ describe('Menu', () => {
 
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menu')).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Editar ficha' })).toHaveFocus();
+    expect(
+      screen.getByRole('menuitem', { name: 'Editar ficha' }),
+    ).toHaveFocus();
   });
 
   it('abre con Enter y con Espacio además de con clic', async () => {
@@ -221,7 +223,9 @@ describe('Menu', () => {
     ).toHaveFocus();
 
     await user.keyboard('{Home}');
-    expect(screen.getByRole('menuitem', { name: 'Editar ficha' })).toHaveFocus();
+    expect(
+      screen.getByRole('menuitem', { name: 'Editar ficha' }),
+    ).toHaveFocus();
 
     await user.keyboard('{End}');
     expect(
@@ -344,7 +348,9 @@ describe('Checkbox', () => {
   it('respeta el estado deshabilitado', () => {
     render(<Checkbox label="No disponible" disabled />);
 
-    expect(screen.getByRole('checkbox', { name: 'No disponible' })).toBeDisabled();
+    expect(
+      screen.getByRole('checkbox', { name: 'No disponible' }),
+    ).toBeDisabled();
   });
 });
 

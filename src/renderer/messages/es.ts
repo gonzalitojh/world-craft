@@ -733,17 +733,21 @@ export const es = {
         warning: 'Aviso',
         danger: 'Peligro',
       },
-      contrastNote: 'El texto principal supera 13:1 sobre las superficies y el secundario 4,5:1 en los dos temas.',
+      contrastNote:
+        'El texto principal supera 13:1 sobre las superficies y el secundario 4,5:1 en los dos temas.',
     },
     typography: {
       title: 'Tipografía y lectura',
       lead: 'Source Serif 4 viaja con la aplicación en dos cortes locales. La interfaz y los datos usan pilas del sistema y nunca descargan fuentes.',
       uiTitle: 'Interfaz y datos',
-      uiBody: 'La navegación, los formularios y los metadatos usan la pila del sistema a 14 px con interlineado 1,5.',
+      uiBody:
+        'La navegación, los formularios y los metadatos usan la pila del sistema a 14 px con interlineado 1,5.',
       contentTitle: 'Lectura larga (400)',
-      contentBody: 'La expedición salió del puerto de Punta Sal con tres goletas y una tripulación de cuarenta y dos personas. Durante once semanas recorrió las islas del norte, levantó actas de cada desembarco y dibujó a mano las líneas de bajamar que el atlas oficial daba por definitivas. El cuaderno recoge los nombres que los clanes usan para cada bajío y las tarifas que cobran por guiar barcos.',
+      contentBody:
+        'La expedición salió del puerto de Punta Sal con tres goletas y una tripulación de cuarenta y dos personas. Durante once semanas recorrió las islas del norte, levantó actas de cada desembarco y dibujó a mano las líneas de bajamar que el atlas oficial daba por definitivas. El cuaderno recoge los nombres que los clanes usan para cada bajío y las tarifas que cobran por guiar barcos.',
       contentStrongTitle: 'Título de contenido (600)',
-      contentStrong: 'Crónica de la expedición al archipiélago de las Mareas Grises',
+      contentStrong:
+        'Crónica de la expedición al archipiélago de las Mareas Grises',
       monoTitle: 'Datos y código',
       monoValue: 'mareas-grises/costa-norte/capa-de-rutas-1926.geojson',
       charsTitle: 'Caracteres del español',
@@ -774,10 +778,14 @@ export const es = {
       edgeLabel: 'Acciones de la ficha en el borde derecho',
       longLabel: 'Menú con muchas acciones',
       longAction: (index: number): string => `Acción ${index}`,
-      editNotice: 'Se ha abierto la ficha de ejemplo en modo edición. Demostración sin cambios reales.',
-      duplicateNotice: 'Se ha duplicado la ficha de ejemplo. Demostración sin cambios reales.',
-      archiveNotice: 'Se ha archivado la ficha de ejemplo. Demostración sin cambios reales.',
-      deleteNotice: 'La ficha de ejemplo se ha movido a la papelera. Demostración sin cambios reales.',
+      editNotice:
+        'Se ha abierto la ficha de ejemplo en modo edición. Demostración sin cambios reales.',
+      duplicateNotice:
+        'Se ha duplicado la ficha de ejemplo. Demostración sin cambios reales.',
+      archiveNotice:
+        'Se ha archivado la ficha de ejemplo. Demostración sin cambios reales.',
+      deleteNotice:
+        'La ficha de ejemplo se ha movido a la papelera. Demostración sin cambios reales.',
     },
     buttons: {
       title: 'Botones',
@@ -807,20 +815,23 @@ export const es = {
       requiredLabel: 'Autor de la crónica',
       requiredPlaceholder: 'Nombre y apellidos',
       areaLabel: 'Descripción de la escena',
-      areaValue: 'La marea baja dejó al descubierto las losas del muelle viejo. Aldo anotó la hora y el nivel del agua antes de que el viento borrara las marcas.',
+      areaValue:
+        'La marea baja dejó al descubierto las losas del muelle viejo. Aldo anotó la hora y el nivel del agua antes de que el viento borrara las marcas.',
       selectLabel: 'Estado de la ficha',
       selectActive: 'Activa',
       selectDraft: 'Borrador',
       selectArchived: 'Archivada',
       checkboxLabel: 'Mostrar la ficha en el mapa',
-      checkboxHint: 'La marca del mapa usa el color del tipo, nunca solo el color.',
+      checkboxHint:
+        'La marca del mapa usa el color del tipo, nunca solo el color.',
       checkboxErrorLabel: 'Aceptar los pactos de sal',
       checkboxError: 'Debes aceptar los pactos antes de publicar la ficha.',
       radioLegend: 'Tono de la crónica',
       radioOne: 'Épico',
       radioTwo: 'Íntimo',
       radioThree: 'Documental',
-      radioHint: 'El tono ajusta el ejemplo de escritura, no los datos de la ficha.',
+      radioHint:
+        'El tono ajusta el ejemplo de escritura, no los datos de la ficha.',
       radioError: 'Elige un tono para la crónica.',
     },
     badges: {
@@ -838,11 +849,15 @@ export const es = {
       body: 'Cartógrafo del archipiélago, especializado en costas de marea y rutas de balleneros. Mantiene un cuaderno de bitácora con los pactos de sal firmados por los clanes del norte.',
       badge: 'Personaje',
       plainTitle: 'Ficha sin tono: Mira Solís',
-      plainBody: 'Cartógrafa rival, especializada en costas occidentales y disputas de límites. La tarjeta sin tono se separa por superficie y espacio, sin borde ni sombra.',
+      plainBody:
+        'Cartógrafa rival, especializada en costas occidentales y disputas de límites. La tarjeta sin tono se separa por superficie y espacio, sin borde ni sombra.',
       menuLabel: 'Acciones de la tarjeta',
-      editNotice: 'Se ha abierto la tarjeta de ejemplo en modo edición. Demostración sin cambios reales.',
-      duplicateNotice: 'Se ha duplicado la tarjeta de ejemplo. Demostración sin cambios reales.',
-      deleteNotice: 'La tarjeta de ejemplo se ha movido a la papelera. Demostración sin cambios reales.',
+      editNotice:
+        'Se ha abierto la tarjeta de ejemplo en modo edición. Demostración sin cambios reales.',
+      duplicateNotice:
+        'Se ha duplicado la tarjeta de ejemplo. Demostración sin cambios reales.',
+      deleteNotice:
+        'La tarjeta de ejemplo se ha movido a la papelera. Demostración sin cambios reales.',
     },
     tabs: {
       sectionTitle: 'Pestañas',
@@ -866,7 +881,8 @@ export const es = {
       title: 'Mover la ficha Aldo Varela a la papelera',
       body: 'La ficha se moverá a la papelera y podrás restaurarla durante treinta días. Las relaciones con otras fichas se conservarán.',
       iconLabel: 'Copiar el identificador de la ficha',
-      iconTooltip: 'Copia el identificador interno completo de la ficha para pegarlo en otro lugar.',
+      iconTooltip:
+        'Copia el identificador interno completo de la ficha para pegarlo en otro lugar.',
       menuLabel: 'Acciones dentro del diálogo',
       cancel: 'Cancelar',
       confirm: 'Mover a la papelera',
@@ -902,13 +918,17 @@ export const es = {
       title: 'Panel',
       lead: 'Sección con encabezado real, acciones y pie opcional. Sin borde ni sombra: la jerarquía la dan la superficie y el espacio.',
       panelTitle: 'Propiedades de la ficha',
-      panelDescription: 'Datos que acompañan al documento y se editan en contexto.',
+      panelDescription:
+        'Datos que acompañan al documento y se editan en contexto.',
       panelMenuLabel: 'Acciones del panel',
-      panelBody: 'Tipo: Personaje. Estado: Activa. Etiquetas: costa, balleneros, pactos de sal.',
+      panelBody:
+        'Tipo: Personaje. Estado: Activa. Etiquetas: costa, balleneros, pactos de sal.',
       panelFooter: 'Los cambios del panel se guardan con la ficha.',
       save: 'Guardar cambios',
-      editNotice: 'El panel de ejemplo ha abierto la edición de la ficha. Demostración sin cambios reales.',
-      deleteNotice: 'La ficha del panel de ejemplo se ha movido a la papelera. Demostración sin cambios reales.',
+      editNotice:
+        'El panel de ejemplo ha abierto la edición de la ficha. Demostración sin cambios reales.',
+      deleteNotice:
+        'La ficha del panel de ejemplo se ha movido a la papelera. Demostración sin cambios reales.',
       more: 'Más acciones del panel',
     },
     skeleton: {

@@ -183,10 +183,7 @@ async function main() {
       join(tiptapDirectory, 'LICENSE.md'),
       'tiptap-LICENSE.txt',
     ),
-    await copyLicense(
-      SOURCE_SERIF_OFL,
-      'source-serif-4-OFL.txt',
-    ),
+    await copyLicense(SOURCE_SERIF_OFL, 'source-serif-4-OFL.txt'),
   ];
 
   for (const license of CURATED_LICENSES) {

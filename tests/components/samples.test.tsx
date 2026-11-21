@@ -75,9 +75,7 @@ describe('SamplesPage', () => {
       screen.getByRole('region', { name: messages.samples.panel.panelTitle }),
     ).toBeInTheDocument();
     expect(screen.getByText(messages.samples.typography.chars)).toBeVisible();
-    expect(
-      document.querySelector('[aria-busy="true"]'),
-    ).not.toBeNull();
+    expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
   });
 
   it('abre el menú de acciones y publica el aviso de la acción elegida', async () => {

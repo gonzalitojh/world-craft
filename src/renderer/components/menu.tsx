@@ -9,10 +9,7 @@ import {
 } from 'react';
 
 import { cx } from '../lib/class-names';
-import {
-  IconButton,
-  type IconButtonVariant,
-} from './icon-button';
+import { IconButton, type IconButtonVariant } from './icon-button';
 
 export type MenuItemTone = 'default' | 'danger';
 
@@ -217,9 +214,7 @@ export function Menu({
     setFocusIndex(enabledIndexes[nextPosition] ?? firstEnabled);
   };
 
-  const handleItemKeyDown = (
-    event: KeyboardEvent<HTMLButtonElement>,
-  ): void => {
+  const handleItemKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
