@@ -1,106 +1,121 @@
 /* ==========================================================================
- * World Craft · Capa 1 de 3 · Paleta cruda
+ * World Craft · Capa 1 de 3 · Paleta cruda v2
  * --------------------------------------------------------------------------
- * ÚNICA fuente de colores de la aplicación. Ningún componente ni rol
- * semántico debe declarar un color propio: la capa 2 (`semantic.css`) asigna
- * estos valores a papeles de tema y la capa 3 (`scales.css`) aporta medidas,
+ * ÚNICA fuente de colores de la aplicación. Ningún rol semántico, escala ni
+ * componente declara un color propio: la capa 2 (`semantic.css`) asigna estos
+ * valores a papeles de tema y la capa 3 (`scales.css`) aporta medidas,
  * tipografía y movimiento.
  *
- * Identidad «taller de cartógrafo»: papel cálido, tinta parda, musgo, ocre y
- * tierra. Los hex están agrupados por familia y ordenados de claro a oscuro;
- * los huecos de la escala (100, 500, 700...) no se usan todavía y se dejan
- * libres para no renumerar la paleta al crecer.
+ * Identidad v2 «estudio moderno con alma de cartógrafo» (ADR 0025): neutros
+ * casi blancos en Claro y neutros profundos en Oscuro; verde bosque como
+ * acento y marca; arena para selección y marcas cálidas; pizarra para la marca
+ * persistida `prussian`. La calidez vive en el acento y en el contenido, no en
+ * cada superficie.
  *
- * Los contrastes WCAG de cada pareja real se verifican en `semantic.css` y se
- * documentan en la tabla del informe de la issue #65. Aquí solo viven valores.
- * Sin recursos remotos: en las pilas de `scales.css`, Fraunces, Inter y
- * JetBrains Mono son la primera opción y el empaquetado OFL de sus archivos
- * sigue pendiente; hasta entonces se usan las fuentes de respaldo del sistema.
+ * Los pasos intermedios existen para resolver roles concretos y no se usan
+ * todos en componentes. Los valores con alfa (sombras y velo) también viven
+ * aquí para que no haya colores fuera de esta capa. Los contrastes de cada
+ * pareja real se verifican en `tests/unit/design-tokens.test.ts` y se
+ * documentan en `docs/diseno/sistema-de-diseno.md` §4.5.
+ *
+ * Sin recursos remotos: este archivo solo contiene valores. Las fuentes y sus
+ * licencias viven en `styles/fonts.css` y en los activos versionados.
  * ========================================================================== */
 
 :root {
   /* ------------------------------------------------------------------
-   * Papel · superficies cálidas de fondo y texto claro en tema oscuro.
-   * paper-50  se usa como superficie elevada y como texto sobre acento.
-   * paper-100 es el fondo principal en claro y el texto principal en oscuro.
-   * paper-200 es la superficie secundaria en claro.
+   * Neutro · superficies, texto y divisores.
+   * 0/50/100/200/300/400 resuelven superficies y divisores en Claro.
+   * 450/500/600 resuelven texto secundario y bordes fuertes.
+   * 700/750/800/850/900/950 resuelven texto y superficies en Oscuro.
    * ------------------------------------------------------------------ */
-  --palette-paper-50: #fcf8f0;
-  --palette-paper-100: #f8f2e6;
-  --palette-paper-200: #f1e9da;
+  --palette-neutral-0: #ffffff;
+  --palette-neutral-50: #fbfaf7;
+  --palette-neutral-100: #f6f4ef;
+  --palette-neutral-200: #efece4;
+  --palette-neutral-300: #e1ddd2;
+  --palette-neutral-400: #d8d3c7;
+  --palette-neutral-450: #a3aca5;
+  --palette-neutral-500: #7d847c;
+  --palette-neutral-600: #626a64;
+  --palette-neutral-700: #3a403c;
+  --palette-neutral-750: #343b36;
+  --palette-neutral-800: #222723;
+  --palette-neutral-850: #1b1f1c;
+  --palette-neutral-900: #141715;
+  --palette-neutral-950: #0f1210;
 
   /* ------------------------------------------------------------------
-   * Tinta · texto oscuro en tema claro y superficies del tema oscuro.
-   * ink-950 es el texto principal en claro y el fondo principal en oscuro.
-   * ink-900 e ink-800 elevan las superficies oscuras sin perder calidez.
-   * ink-600 es el texto secundario en claro.
-   * ink-500 es el borde en oscuro; ink-400, el borde en claro.
-   * ink-200 es el texto secundario en oscuro.
+   * Bosque · marca, acento y foco.
+   * 600/700 son el acento y su hover en Claro; 300/400, en Oscuro.
+   * 100 y 900 son las superficies tintadas de acento de cada tema.
    * ------------------------------------------------------------------ */
-  --palette-ink-950: #16130e;
-  --palette-ink-900: #1d1913;
-  --palette-ink-800: #262117;
-  --palette-ink-600: #6b6152;
-  --palette-ink-500: #7a7263;
-  --palette-ink-400: #897b63;
-  --palette-ink-200: #b9ae9c;
+  --palette-forest-100: #e3eee7;
+  --palette-forest-300: #9acbaf;
+  --palette-forest-400: #7fb99b;
+  --palette-forest-600: #2e5b45;
+  --palette-forest-700: #244a38;
+  --palette-forest-900: #223a2d;
 
   /* ------------------------------------------------------------------
-   * Musgo · acento principal y éxito.
-   * moss-600/700 funcionan como fondo y como texto en tema claro.
-   * moss-300/400 son las variantes claras para texto y acento en oscuro.
-   * moss-100 y moss-900 son las superficies tintadas de éxito.
+   * Arena · selección y marca cálida.
+   * 200 y 800 son los fondos de selección; 500 es una marca gráfica de
+   * tipo de entidad y nunca se usa como texto.
    * ------------------------------------------------------------------ */
-  --palette-moss-100: #e3ebd8;
-  --palette-moss-300: #a8c48c;
-  --palette-moss-400: #86ae68;
-  --palette-moss-600: #496e33;
-  --palette-moss-700: #3b5b2a;
-  --palette-moss-900: #22301b;
+  --palette-sand-200: #e8dfc8;
+  --palette-sand-500: #8c6d2f;
+  --palette-sand-800: #3b3424;
 
   /* ------------------------------------------------------------------
-   * Ocre · aviso y selección de texto.
-   * En claro el texto de aviso es ocre-700; en oscuro, ocre-300.
-   * ochre-100 y ochre-900 son las superficies tintadas de aviso.
+   * Éxito · familia propia, separada del acento.
+   * 600 es el texto en Claro; 300, en Oscuro. 100 y 900 son las
+   * superficies tintadas de cada tema.
    * ------------------------------------------------------------------ */
-  --palette-ochre-100: #f7ecd2;
-  --palette-ochre-300: #e3c67f;
-  --palette-ochre-700: #5a3f0b;
-  --palette-ochre-900: #33280f;
+  --palette-success-100: #e2f0e8;
+  --palette-success-300: #8fd3aa;
+  --palette-success-600: #2f6b4f;
+  --palette-success-900: #1e3328;
 
   /* ------------------------------------------------------------------
-   * Tierra roja · error y acciones destructivas.
-   * En claro el texto es danger-700; en oscuro, danger-300.
-   * danger-100 y danger-900 son las superficies tintadas de error.
+   * Aviso · familia propia.
+   * 600 es el texto en Claro; 300, en Oscuro. 100 y 900 son las
+   * superficies tintadas de cada tema.
    * ------------------------------------------------------------------ */
-  --palette-danger-100: #f9e3de;
-  --palette-danger-300: #e29488;
-  --palette-danger-700: #772117;
-  --palette-danger-900: #361e18;
+  --palette-warning-100: #f7ead2;
+  --palette-warning-300: #e3b878;
+  --palette-warning-600: #8a5a18;
+  --palette-warning-900: #3b3020;
 
   /* ------------------------------------------------------------------
-   * Azul prusiano · anillo de foco y selección de controles.
-   * No decora superficies grandes; se reserva a foco y trazos de mapa.
-   * prussian-700 en claro y prussian-300 en oscuro superan 3:1 sobre las
-   * tres superficies de cada tema.
+   * Peligro · error y acciones destructivas.
+   * 600 es el texto en Claro; 300, en Oscuro. 100 y 900 son las
+   * superficies tintadas de cada tema.
    * ------------------------------------------------------------------ */
-  --palette-prussian-300: #9cc7e0;
-  --palette-prussian-700: #1e4c68;
+  --palette-danger-100: #f6e2df;
+  --palette-danger-300: #efa39b;
+  --palette-danger-600: #a03a32;
+  --palette-danger-900: #3a2523;
+
+  /* ------------------------------------------------------------------
+   * Pizarra · solo la marca gráfica del token persistido `prussian`.
+   * 300 se usa en Oscuro y 600 en Claro; nunca como texto.
+   * ------------------------------------------------------------------ */
+  --palette-slate-300: #a9c2cc;
+  --palette-slate-600: #4c6672;
 
   /* ------------------------------------------------------------------
    * Sombras · no son hex porque llevan alfa, pero también son fuente única.
    * La geometría de la sombra vive en `semantic.css`; aquí solo el color.
-   * En claro la sombra deriva de la tinta; en oscuro, de un negro cálido.
    * ------------------------------------------------------------------ */
-  --palette-shadow-warm-1: rgb(34 29 22 / 8%);
-  --palette-shadow-warm-2: rgb(34 29 22 / 16%);
-  --palette-shadow-deep-1: rgb(8 7 5 / 40%);
-  --palette-shadow-deep-2: rgb(8 7 5 / 60%);
+  --palette-shadow-1: rgb(18 22 19 / 8%);
+  --palette-shadow-2: rgb(18 22 19 / 16%);
+  --palette-shadow-dark-1: rgb(0 0 0 / 40%);
+  --palette-shadow-dark-2: rgb(0 0 0 / 60%);
 
   /* ------------------------------------------------------------------
-   * Velo de los diálogos modales. Un negro cálido con alfa, válido en los
-   * dos temas: oscurece el fondo sin depender de un rol que se invierte.
-   * Comparte la única fuente de color con las sombras.
+   * Velo de los diálogos modales, distinto por tema para conservar el
+   * contraste del contenido flotante en ambos.
    * ------------------------------------------------------------------ */
-  --palette-overlay: rgb(8 7 5 / 60%);
+  --palette-overlay-light: rgb(14 18 15 / 45%);
+  --palette-overlay-dark: rgb(5 7 6 / 65%);
 }

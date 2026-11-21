@@ -2,7 +2,22 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 import { cx } from '../lib/class-names';
 import { useMessages } from '../i18n/provider';
-import { Button } from './button';
+import { IconButton } from './icon-button';
+
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      focusable="false"
+    >
+      <path d="M5 5l10 10M15 5L5 15" />
+    </svg>
+  );
+}
 
 export interface DialogProps {
   /** Apertura controlada por el componente padre. */
@@ -72,15 +87,40 @@ export function Dialog({
       ref={dialogRef}
       className={cx('wc-dialog', className)}
       aria-labelledby={titleId}
+      onCancel={(event) => {
+        // Escape se gestiona en `onKeyDown` para que un tooltip o un menú
+        // abiertos consuman el primer Escape sin cerrar el diálogo.
+        event.preventDefault();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') {
+          return;
+        }
+
+        const dialog = dialogRef.current;
+        const hasOpenPopover =
+          dialog !== null &&
+          dialog.querySelector('[role="tooltip"], [role="menu"]') !== null;
+
+        if (hasOpenPopover) {
+          return;
+        }
+
+        event.preventDefault();
+        dialog?.close();
+      }}
       onClose={onClose}
     >
       <header className="wc-dialog__header">
         <h2 className="wc-dialog__title" id={titleId}>
           {title}
         </h2>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {messages.components.dialog.close}
-        </Button>
+        <IconButton
+          label={messages.components.dialog.close}
+          icon={<CloseIcon />}
+          size="sm"
+          onClick={onClose}
+        />
       </header>
       <div className="wc-dialog__body" tabIndex={0}>
         {children}

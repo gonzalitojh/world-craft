@@ -61,7 +61,7 @@ distinguen lo implementado de lo previsto.
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
 | Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
 | Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
-| Pruebas y calidad | Implementado: 385 unitarias (4 omitidas), 33 de componentes y 134 de integración (1 omitida) (#62-#76); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones y búsqueda (#70, #72, #74, #75, #76) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 419 unitarias (4 omitidas), 58 de componentes y 134 de integración (1 omitida) (#62-#76, #125); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda y sistema v2 (#70, #72, #74, #75, #76, #125) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -94,7 +94,7 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search` y `assets`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72) y las fichas con imágenes, etiquetas y editor (#74) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 (`button`, `text-field`, `text-area-field`, `select-field`, `badge`, `card`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75 y búsqueda de #76 (resaltado seguro, iconos y paleta de comandos); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75 y búsqueda de #76 (resaltado seguro, iconos y paleta de comandos); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
 | `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
@@ -102,7 +102,7 @@ Electron separa tres procesos con permisos distintos:
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
 | `src/renderer/i18n/` | Composición del idioma: `create.ts` (`createI18n`), `provider.tsx` (`I18nProvider`, `useI18n`, `useMessages`) y `formats.ts` (fechas, números, listas y plurales con `Intl`). | Mensajes, `src/shared/` |
-| `src/renderer/styles/` | `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
+| `src/renderer/styles/` | `fonts.css` (único `@font-face` local), `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`), contrato de tipos de entidad (`entity-types.ts`), contrato de fichas y etiquetas (`entities.ts`) y contrato de assets (`assets.ts`) con guardas estructurales. | - |
 | `src/shared/entity-types/` | Catálogo del sistema en código y validación compartida con Zod de plantillas y valores de campos, reutilizable por main y por la UI de fichas. | Zod |
@@ -226,42 +226,52 @@ Reglas de dependencia:
   valida las migraciones copiadas y la externalización. El desempaquetado del
   asar y la poda x64 se completaron en #68 (sección 2.7).
 
-### 2.4 Estado implementado del sistema de diseño (#65)
+### 2.4 Estado implementado del sistema de diseño (#65 y #125)
 
-- **Tokens.** `src/renderer/styles/tokens/` contiene `palette.css` (única fuente
-  de hex y valores con alfa), `semantic.css` (roles por tema con overrides
-  agrupados en `:root`/`[data-theme="light"]` y `[data-theme="dark"]`) y
-  `scales.css` (espaciado, radios, tipografía, movimiento, z-index y medidas del
-  shell de 240/64/56 px). Se importan antes de `base.css` y `components.css` en
-  `main.tsx`.
+- **Tokens v2.** `src/renderer/styles/tokens/` contiene `palette.css` (única
+  fuente de hex y valores con alfa), `semantic.css` (roles por tema con overrides
+  agrupados en `:root`/`[data-theme="light"]` y `[data-theme="dark"]`, incluidos
+  `--surface-sunken`, `--border-strong` y las marcas `--entity-*`) y
+  `scales.css` (espaciado, radios 4/6/8, tipografía, iconos 16/20/24 con trazo
+  1,6, movimiento 120–180 ms, z-index y medidas del shell de 240/64/56 px). Se
+  importan antes de `base.css` y `components.css` en `main.tsx`.
 - **Tema.** `src/renderer/theme.ts` aplica `data-theme` en `<html>` y arranca en
   Claro (`DEFAULT_THEME`). El botón de la barra superior conmuta en memoria; la
   persistencia en `config.json` y la pantalla de Ajustes son posteriores.
-- **Componentes.** `src/renderer/components/` tiene componentes nativos
-  (botón, campo de texto, insignia, tarjeta, estado vacío, diálogo, pestañas,
-  toast y tooltip) sin Radix/shadcn ni dependencias nuevas. El diálogo usa
-  `<dialog>` con `showModal()`; las pestañas siguen el patrón ARIA con flechas e
-  Inicio/Fin.
+- **Componentes.** `src/renderer/components/` tiene primitivas nativas (botón,
+  botón de icono, menú `⋯`, campo, área, selector, casilla, radio, insignia,
+  tarjeta, panel, esqueleto, estado vacío, diálogo, pestañas, toast y tooltip)
+  sin Radix/shadcn ni dependencias nuevas. El diálogo usa `<dialog>` con
+  `showModal()`; menú y pestañas siguen sus patrones ARIA con teclado y foco.
 - **Shell.** `src/renderer/shell/app-shell.tsx` compone el enlace de salto, el
   rail de 240 px plegable a 64 px, la barra superior de 56 px, la navegación con
   `aria-current` y `main` con `tabIndex={-1}`. No hay router.
 - **Vistas.** `src/renderer/pages/home-page.tsx` muestra el estado vacío real y
-  `samples-page.tsx` revisa los componentes con contenido largo; la página de
-  muestras es solo de desarrollo.
-- **Tipografía.** Las pilas de `scales.css` usan Fraunces, Inter y JetBrains Mono
-  con respaldo del sistema; el empaquetado OFL de las fuentes sigue pendiente y
-  no hay `@font-face` ni recursos remotos.
-- **Dirección visual v2 (aprobada, #124).** El ADR 0025 revisa la lectura
-  estética del ADR 0006: pila del sistema para la interfaz, serif de contenido
-  opcional empaquetada, superficies neutras y verde bosque. La migración de
-  tokens, primitivas y pantallas se ejecuta en #125–#133; hasta entonces el
-  código sigue con las pilas y los tokens v1 descritos arriba.
+  `samples-page.tsx` es el banco interno del sistema v2: paleta, tipografía con
+  la serif empaquetada, primitivas, estados y contenido largo. Sigue accesible
+  desde el rail hasta que #126 la saque de la navegación de producto.
+- **Tipografía.** Interfaz y datos usan pilas del sistema (`Segoe UI Variable
+  Text` y `Cascadia Mono`); contenido usa Source Serif 4 (OFL 1.1), empaquetada
+  desde #125 como activo local en `src/renderer/assets/fonts/source-serif-4/`
+  con dos cortes woff2 (400 y 600, subset latin). `styles/fonts.css` es el único
+  archivo con `@font-face`, con rutas relativas, `font-display: swap` y
+  `unicode-range`; la CSP mantiene `font-src 'self'`. `--font-display` es un
+  alias temporal de `--font-content` con retirada en #126.
+- **Licencia de la fuente.** El texto OFL canónico vive junto al activo,
+  `pnpm licenses:sync` lo replica en `resources/licenses/source-serif-4-OFL.txt`
+  y `verify:package` lo exige en el instalador. La fuente no es una dependencia
+  npm y no se descarga en tiempo de ejecución.
+- **Dirección visual v2.** ADR 0025 revisa la lectura estética del ADR 0006:
+  superficies neutras, verde bosque, tipografía del sistema para interfaz y
+  jerarquía por espacio y contraste. #125 implementó tokens, tipografía y
+  primitivas; #126–#133 migran shell y pantallas.
 - **Verificación.** `tests/unit/design-tokens.test.ts` resuelve los tokens de
-  cada tema, calcula contraste WCAG y comprueba la disciplina de colores.
-  `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en los dos temas
-  y `tests/e2e/shell.spec.ts` comprueba la ventana a 1024, 1280 y 1600 px. La
-  matriz visual completa, las capturas y la auditoría de todas las pantallas
-  siguen en #93.
+  cada tema, calcula la tabla de contraste §4.5, comprueba la disciplina de
+  capas, escalas, elevación, estados, movimiento reducido y la licencia de la
+  fuente. `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y sobre
+  Muestras en los dos temas; `tests/e2e/shell.spec.ts` comprueba la ventana a
+  1024, 1280 y 1600 px. La matriz visual completa y la auditoría de todas las
+  pantallas siguen en #133.
 
 ### 2.5 Estado implementado de los assets (#66)
 
@@ -807,11 +817,11 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 385 pruebas unitarias (4 omitidas por
-  symlinks en Windows sin modo desarrollador), 33 de componentes y 134 de
+- **Pruebas.** `pnpm test` ejecuta 419 pruebas unitarias (4 omitidas por
+  symlinks en Windows sin modo desarrollador), 58 de componentes y 134 de
   integración (1 omitida): scaffold (ventana, navegación, CSP e identidad),
   contrato IPC, router IPC, API del preload, enlaces externos, journal, checksum,
-  rutas, UUIDv7, logger, modo seguro, tokens y contraste, servicio de assets
+  rutas, UUIDv7, logger, modo seguro, tokens, contraste y licencia de fuentes, servicio de assets
   (URL, rutas, formatos, importación, huérfanos, protocolo y log), copias
   (manifiesto, rutas de restauración, buckets, rotación y recuperación),
   empaquetado (configuración, iconos y licencias), actualizador (contrato,
@@ -828,8 +838,9 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
   reconstrucción y rendimiento de búsqueda, creación, restauración, rotación y
   restauración interrumpida de copias, y preservación entre instalaciones.
   `pnpm test:e2e` abre la aplicación real con Playwright Electron y un `userData`
-  temporal: shell, ventana a 1024, 1280 y 1600 px, temas, axe, CRUD de mundos,
-  fichas, relaciones y búsqueda con teclado y textos largos. `pnpm build` y
+  temporal: shell, ventana a 1024, 1280 y 1600 px, temas, axe sobre el shell y
+  Muestras, design v2 con tooltip y menú abiertos, CRUD de mundos, fichas,
+  relaciones y búsqueda con teclado y textos largos. `pnpm build` y
   `pnpm verify:build` validan los artefactos; `pnpm verify:native` comprueba
   better-sqlite3 y sharp en Node y Electron; `pnpm verify:package` valida el
   paquete y `scripts/verify-install.ps1` prueba la instalación real.

@@ -1,10 +1,14 @@
 /* ==========================================================================
- * World Craft · Estilos base
+ * World Craft · Estilos base v2
  * --------------------------------------------------------------------------
  * Reset mínimo, tipografía del documento, foco visible y utilidades comunes.
  * Solo usa tokens: los colores llegan de `semantic.css` y las medidas y las
  * pilas de `scales.css`. El tema se cambia con `data-theme` en `<html>`; aquí
  * no hay overrides por tema.
+ *
+ * El cuerpo de la interfaz va a 14 px con interlineado 1,5; la fuente serif
+ * empaquetada no se aplica al documento, solo a los títulos de contenido y a
+ * la lectura larga mediante `--font-content`.
  *
  * Regla firme: nunca se usa `overflow-x: hidden` en `html`/`body`. Los textos
  * largos se resuelven con `overflow-wrap` y `min-width: 0`, y el desplazamiento
@@ -74,14 +78,16 @@ a:hover {
   color: var(--fg);
 }
 
-/* El fondo de selección se invierte con el tema; el texto va sobre `--fg`. */
+/* El fondo de selección es arena en ambos temas; el texto va sobre `--fg`
+ * para conservar 11,44:1 en Claro y 11,22:1 en Oscuro. */
 ::selection {
   background-color: var(--selection);
   color: var(--fg);
 }
 
-/* Anillo de foco único para toda la aplicación: AA sobre las tres superficies
- * de ambos temas. `:focus-visible` evita el anillo en clics de ratón. */
+/* Anillo de foco único para toda la aplicación: 2 px con 2 px de separación,
+ * AA sobre fondo, superficie, superficie elevada y superficie hundida de ambos
+ * temas. `:focus-visible` evita el anillo en clics de ratón. */
 :focus-visible {
   outline: var(--focus-width) solid var(--focus);
   outline-offset: var(--focus-offset);

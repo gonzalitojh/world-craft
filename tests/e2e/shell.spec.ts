@@ -96,6 +96,42 @@ test('conmuta los temas Claro y Oscuro', async ({ page }) => {
   await expect(html).toHaveAttribute('data-theme', 'light');
 });
 
+test('carga Source Serif 4 desde el activo local y no pide fuentes por red', async ({
+  page,
+}) => {
+  const fonts = await page.evaluate(async () => {
+    const loaded = await Promise.all([
+      document.fonts.load('400 16px "Source Serif 4"'),
+      document.fonts.load('600 16px "Source Serif 4"'),
+    ]);
+    const faces: Array<{ weight: string; status: string }> = [];
+
+    document.fonts.forEach((face) => {
+      if (face.family.includes('Source Serif 4')) {
+        faces.push({ weight: face.weight, status: face.status });
+      }
+    });
+
+    return {
+      checkRegular: document.fonts.check('400 16px "Source Serif 4"'),
+      checkSemibold: document.fonts.check('600 16px "Source Serif 4"'),
+      loadedCount: loaded.length,
+      faces,
+      remoteResources: performance
+        .getEntriesByType('resource')
+        .map((entry) => entry.name)
+        .filter((name) => /^https?:/i.test(name)),
+    };
+  });
+
+  expect(fonts.checkRegular).toBe(true);
+  expect(fonts.checkSemibold).toBe(true);
+  expect(fonts.loadedCount).toBe(2);
+  expect(fonts.faces.map((face) => face.weight).sort()).toEqual(['400', '600']);
+  expect(fonts.faces.every((face) => face.status === 'loaded')).toBe(true);
+  expect(fonts.remoteResources).toEqual([]);
+});
+
 for (const width of [1024, 1280, 1600] as const) {
   test(`no hay scroll horizontal de página a ${width} px`, async ({
     electronApp,

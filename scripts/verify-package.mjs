@@ -23,6 +23,7 @@ const REQUIRED_LICENSE_FILES = [
   'gpl-3.0.txt',
   'electron-updater-LICENSE.txt',
   'tiptap-LICENSE.txt',
+  'source-serif-4-OFL.txt',
 ];
 
 const failures = [];

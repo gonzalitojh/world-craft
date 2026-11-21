@@ -1,10 +1,11 @@
 # Sistema de diseño de World Craft (v2)
 
 > **Estado:** dirección v2 aprobada el 21/11/2026 en la issue #124 mediante el
-> ADR 0025 y la decisión D-048. Este documento describe el sistema que se va a
-> implementar en las issues #125–#133. No presenta como existente nada que aún
-> no lo esté: hasta que cada issue migre su parte, la aplicación sigue usando
-> los tokens y componentes v1. El estado real se mantiene en la sección 17.
+> ADR 0025 y la decisión D-048. #125 implementó los tokens, la tipografía y las
+> primitivas; las pantallas se migran en #126–#133. Este documento describe el
+> contrato completo y distingue lo implementado de lo previsto, sin presentar
+> como existente nada que aún no lo esté. El estado real se mantiene en la
+> sección 17.
 > **Ámbito:** identidad, superficies, color, tipografía, iconos, espaciado,
 > radios, elevación, bordes, componentes, shell, estados, accesibilidad,
 > movimiento, patrones de escritorio, migración y verificación.
@@ -189,10 +190,14 @@ resolver roles concretos; no se usan todos en componentes.
 | `--warning-surface` | `#f7ead2` | `#3b3020` | Fondo tintado de aviso. |
 | `--danger` | `#a03a32` | `#efa39b` | Error y acción destructiva. |
 | `--danger-surface` | `#f6e2df` | `#3a2523` | Fondo tintado de error. |
+| `--danger-contrast` | `#ffffff` | `#0f1210` | Texto sobre `--danger`. |
 | `--focus` | `#2e5b45` | `#9acbaf` | Anillo de foco. |
 | `--selection` | `#e8dfc8` | `#3b3424` | Fondo de selección de texto o elemento. |
-| `--disabled-surface` | `#efece4` | `#222723` | Superficie de control deshabilitado. |
+| `--disabled-surface` | `#efece4` | `#141715` | Superficie de control deshabilitado. |
 | `--disabled-text` | `#626a64` | `#a3aca5` | Texto de control deshabilitado, sin `opacity`. |
+| `--disabled-border` | `#7d847c` | `#7d847c` | Borde de control deshabilitado. |
+| `--skeleton` | `#e1ddd2` | `#3a403c` | Base del esqueleto de carga. |
+| `--skeleton-pulse` | `#d8d3c7` | `#626a64` | Paso alto del pulso del esqueleto. |
 | `--overlay` | `rgb(14 18 15 / 45%)` | `rgb(5 7 6 / 65%)` | Velo de diálogos modales. |
 
 `--bg` y `--fg` son el único par base. Los componentes no usan colores de la
@@ -214,6 +219,11 @@ la paleta v2:
 El color es una marca gráfica, nunca el único indicador de estado. El nombre del
 tipo y su texto usan `--fg`; la marca debe superar 3:1 contra la superficie
 donde se dibuja. No se guardan hex libres.
+
+Desde #125 los roles `--entity-moss`, `--entity-ochre`, `--entity-danger` y
+`--entity-prussian` resuelven la marca con su superficie tintada
+(`--entity-*-surface`). El texto de etiquetas y tipos sigue en `--fg`: el color
+persistido nunca se usa como color de texto.
 
 ### 4.5 Tabla de contraste
 
@@ -244,12 +254,25 @@ normal y grande; se indica el mínimo de cada caso.
 | `--focus` sobre `--surface` | Foco | 7,46:1 | 9,16:1 | 3:1 |
 | `--focus` sobre `--accent-surface` | Foco | 6,54:1 | 6,74:1 | 3:1 |
 | `--fg` sobre `--selection` | Texto normal | 11,44:1 | 11,22:1 | 4,5:1 |
-| `--disabled-text` sobre `--disabled-surface` | Texto (mejora) | 4,72:1 | 6,51:1 | 4,5:1 |
+| `--disabled-text` sobre `--disabled-surface` | Texto (mejora) | 4,72:1 | 7,74:1 | 4,5:1 |
+| `--disabled-border` sobre `--disabled-surface` | Componente | 3,26:1 | 4,70:1 | 3:1 |
+| `--danger-contrast` sobre `--danger` | Texto normal | 6,68:1 | 9,32:1 | 4,5:1 |
+| `--muted` sobre `--surface-sunken` | Texto normal | 4,72:1 | 8,08:1 | 4,5:1 |
+| `--focus` sobre `--surface-sunken` | Foco | 6,59:1 | 10,35:1 | 3:1 |
+| `--entity-moss` sobre `--entity-moss-surface` | Marca de tipo | 6,54:1 | 5,44:1 | 3:1 |
+| `--entity-ochre` sobre `--entity-ochre-surface` | Marca de tipo | 3,64:1 | 6,69:1 | 3:1 |
+| `--entity-danger` sobre `--entity-danger-surface` | Marca de tipo | 5,36:1 | 7,07:1 | 3:1 |
+| `--entity-prussian` sobre `--entity-prussian-surface` | Marca de tipo | 5,15:1 | 10,12:1 | 3:1 |
 
 `--border` es un divisor decorativo (1,23:1 en Claro y 1,57:1 en Oscuro) y no
 sustituye a `--border-strong` en el límite de un control interactivo. Las
 marcas de tipo de entidad superan 3:1 contra su superficie y no se usan como
 texto; el texto del tipo usa `--fg`.
+
+`--disabled-surface` se distingue de `--surface-raised` (1,18:1 en Claro y
+1,19:1 en Oscuro) y el borde deshabilitado supera 3:1 contra su superficie.
+Sobre `--selection` solo se usa `--fg`: `--muted` sobre la selección de Claro se
+queda en 4,20:1 y no cumple AA para texto normal.
 
 ## 5. Tipografía
 
@@ -258,15 +281,28 @@ texto; el texto del tipo usa `--fg`.
 | Uso | Pila | Regla |
 |---|---|---|
 | Interfaz | `"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Noto Sans", sans-serif` | Pila del sistema; no se empaqueta ni se redistribuye Segoe. |
-| Contenido | `Fraunces, "Iowan Old Style", "Palatino Linotype", Georgia, serif` | Solo títulos de contenido y lectura larga. Si se conserva la serif, se empaqueta una OFL; hasta entonces se usa el respaldo local. |
+| Contenido | `"Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif` | Serif OFL empaquetada para títulos de contenido y lectura larga; la reserva local mantiene el aspecto si el activo no carga. |
 | Datos y código | `"Cascadia Mono", Consolas, "Liberation Mono", monospace` | Pila del sistema; sin dependencia externa. |
 
 - **Sin URLs remotas.** No hay `@font-face` con `https://` ni carga de fuentes
-  desde Internet.
+  desde Internet. `styles/fonts.css` es el único archivo con `@font-face` y
+  declara rutas relativas al activo versionado.
 - **No se redistribuye Segoe.** Es una fuente del sistema; la app la usa si
   está instalada y cae a `system-ui` si no.
-- **La serif es opcional.** Si no se empaqueta una OFL, la serif del sistema es
-  un respaldo y no se presenta como identidad definitiva.
+- **Source Serif 4 (OFL 1.1) se empaqueta desde #125.** Dos cortes —400 para
+  lectura larga y 600 para títulos de contenido— con subset latin, `font-display:
+  swap` y `unicode-range` que cubre el español completo. La procedencia (Google
+  Fonts v15 / Fontsource 5.3.1, proyecto upstream de Adobe) y los tamaños
+  medidos se registran en `THIRD-PARTY-NOTICES.md`; el texto OFL completo vive
+  en `src/renderer/assets/fonts/source-serif-4/OFL.txt` y en
+  `resources/licenses/source-serif-4-OFL.txt`.
+- **Sin ADR nuevo.** ADR 0025, decisión 3, ya fijaba la arquitectura: serif
+  reservada a contenido, empaquetada como OFL y nunca cargada de Internet. La
+  familia, los pesos y el subset son detalles operativos y reversibles; un ADR
+  nuevo duplicaría contexto sin una decisión arquitectónica distinta.
+- **Alias temporal.** `--font-display: var(--font-content)` se conserva hasta
+  #126 para las pantallas aún no migradas. Está documentado como obsoleto y
+  ninguna primitiva v2 lo usa.
 
 ### 5.2 Escala
 
@@ -373,22 +409,24 @@ como existente lo que aún no lo está.
 
 | Componente | Regla v2 | Estado | Issue |
 |---|---|---|---|
-| Botón | Primario, secundario, fantasma y destructivo; una acción primaria por pantalla; carga con `aria-busy`; deshabilitado sin `opacity`. | Existente v1; se adapta | #125 |
-| Botón de icono | Icono de 20 px, etiqueta accesible obligatoria, tooltip si el icono no es evidente. | Previsto | #125 |
-| Campo de texto | Etiqueta visible, ayuda, error con `aria-describedby`, `aria-invalid` y longitud máxima. | Existente v1; se adapta | #125 |
-| Área de texto | Misma semántica; alto mínimo y redimensionado solo vertical. | Existente v1; se adapta | #125 |
-| Selector | `<select>` nativo con etiqueta, ayuda, error y opciones tipadas. | Existente v1; se adapta | #125 |
-| Casilla y radio | Nativos, con etiqueta y foco visible; no se sustituyen por divs. | Previsto | #125 |
+| Botón | Primario, secundario, fantasma y destructivo; una acción primaria por pantalla; carga con `aria-busy`; deshabilitado sin `opacity`. | Adaptado v2 | #125 |
+| Botón de icono | Icono de 20 px, etiqueta accesible obligatoria, tooltip si el icono no es evidente. | Implementado | #125 |
+| Campo de texto | Etiqueta visible, ayuda, error con `aria-describedby`, `aria-invalid` y longitud máxima. | Adaptado v2 | #125 |
+| Área de texto | Misma semántica; alto mínimo y redimensionado solo vertical. | Adaptado v2 | #125 |
+| Selector | `<select>` nativo con etiqueta, ayuda, error y opciones tipadas. | Adaptado v2 | #125 |
+| Casilla y radio | Nativos, con etiqueta y foco visible; el objetivo de la fila y la etiqueta es de al menos 28 px. | Implementado | #125 |
 | Búsqueda | Campo con icono, limpiar y resultado anunciado; no duplica la paleta. | Previsto | #126 |
-| Insignia | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. | Existente v1; se adapta | #125 |
-| Tarjeta | Sin contorno ni sombra por defecto; título, contenido y acciones en `⋯`. | Existente v1; se adapta | #125 |
-| Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Existente v1; se adapta | #125 |
-| Menú `⋯` | Acciones secundarias; teclado, foco y cierre con Escape. | Previsto | #125 |
-| Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape. | Existente v1; se adapta | #125 |
-| Aviso toast | `aria-live="polite"`, `role="status"`, cierre manual. | Existente v1; se adapta | #125 |
-| Pestañas | Solo para formularios o Ajustes; no son pestañas de trabajo en M1.5. | Existente v1; se limita | #125 |
-| Tabla | Ordenación, filtros y selección; scroll horizontal solo dentro. | Previsto | #125 |
-| Estado vacío | Explica qué falta y cuál es la acción principal. | Existente v1; se adapta | #125 |
+| Insignia | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. | Adaptado v2 | #125 |
+| Tarjeta | Sin contorno ni sombra por defecto; título, contenido y acciones en `⋯`. | Adaptado v2 | #125 |
+| Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Adaptado v2 | #125 |
+| Menú `⋯` | Acciones secundarias; teclado, foco y cierre con Escape. Se posiciona respecto al viewport, elige el lado con más espacio, limita su altura y desplaza su contenido sin cerrar el menú. | Implementado | #125 |
+| Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape sin cerrar el diálogo que lo contiene. Ancho de contenido con máximo de 18rem y colocación arriba o abajo según el espacio. | Adaptado v2 | #125 |
+| Aviso toast | `aria-live="polite"`, `role="status"`, cierre manual. | Adaptado v2 | #125 |
+| Pestañas | Solo para formularios o Ajustes; no son pestañas de trabajo en M1.5. | Adaptado v2 | #125 |
+| Panel | Sección con encabezado real y acciones; el plegado llega con #132. | Implementado | #125 |
+| Esqueleto | Marcador decorativo con `aria-hidden`; el contenedor lleva `aria-busy`. | Implementado | #125 |
+| Tabla | Ordenación, filtros y selección; scroll horizontal solo dentro. | Previsto | — |
+| Estado vacío | Explica qué falta y cuál es la acción principal. | Adaptado v2 | #125 |
 | Paleta de comandos | `Ctrl+K`, combobox/listbox, navegación, creación, tema y reconstrucción. | Existente #76; se rediseña la entrada | #126 |
 | Cabecera de ficha | Título, tipo, favorito y acciones en `⋯`; no cinco botones. | Previsto | #129 |
 | Panel de propiedades | Plegable, 280–360 px; edita en contexto sin tapar el documento. | Previsto | #129 |
@@ -405,8 +443,9 @@ como existente lo que aún no lo está.
 - Barra superior de 56 px con el contexto de la vista, la entrada a la paleta
   `Ctrl+K`, el conmutador de tema y las acciones globales.
 - El estado plegado del rail se recuerda entre reinicios a partir de #132.
-- La navegación no muestra «Muestras»; esa página queda como herramienta de
-  desarrollo fuera del producto.
+- La navegación dejará de mostrar «Muestras» en #126; hasta entonces la página
+  sigue accesible desde el rail como herramienta de desarrollo, fuera del
+  producto.
 - La búsqueda ya implementada en #76 se conserva; no se duplica en la barra.
 - Las actualizaciones se muestran de forma discreta, sin ocupar el rail.
 
@@ -478,7 +517,7 @@ Toda pantalla debe cubrir:
 | Activo | Acento fuerte o superficie hundida; sin rebote. |
 | Foco | Anillo de 2 px de `--focus` con 2 px de separación. |
 | Seleccionado | `--selection` o `--accent-surface`, más texto o icono; no solo color. |
-| Deshabilitado | `--disabled-surface` y `--disabled-text`, sin `opacity`. |
+| Deshabilitado | `--disabled-surface`, `--disabled-border` y `--disabled-text`, sin `opacity`; la superficie se distingue de `--surface-raised`. |
 | Cargando | `aria-busy`, indicador discreto y acción bloqueada. |
 | Error | `--danger`, texto de ayuda y `aria-invalid` cuando aplica. |
 
@@ -540,8 +579,9 @@ Toda pantalla debe cubrir:
 
 ## 16. Migración de tokens
 
-La migración se ejecuta en #125. Hasta entonces, los tokens v1 siguen siendo
-los que usa la aplicación. Esta tabla es el contrato de sustitución.
+La migración de tokens y primitivas se ejecutó en #125. La tabla es el contrato
+de sustitución que se aplicó y sirve de referencia para las pantallas que
+migran en #126–#133.
 
 | v1 | v2 | Acción |
 |---|---|---|
@@ -551,14 +591,14 @@ los que usa la aplicación. Esta tabla es el contrato de sustitución.
 | `--palette-ochre-*` | `--palette-sand-*` y `--palette-warning-*` | La selección usa arena; el aviso usa su propia familia. |
 | `--palette-danger-*` | `--palette-danger-*` | Se conservan los nombres y se actualizan los valores. |
 | `--palette-prussian-*` | `--palette-slate-*` | Sale del foco de UI; el token persistido `prussian` se resuelve como marca de tipo. |
-| `--paper` y `--ink` | `--bg`, `--fg` y `--surface*` | Se retiran del contrato de componentes. Mientras dure #125 solo pueden existir como alias temporales en `semantic.css`; nunca en un componente. |
+| `--paper` y `--ink` | `--bg`, `--fg` y `--surface*` | Se retiraron del contrato de componentes en #125; no hay alias de color. |
 | `--surface` y `--surface-raised` | Se conservan | Se añade `--surface-sunken`. |
 | `--border` | `--border` (divisor) y `--border-strong` | Los campos y controles usan `--border-strong`; los divisores, `--border`. |
 | `--focus` | `--focus` | Pasa de azul prusiano a bosque; se mantiene 3:1. |
 | `--selection` | `--selection` | Pasa de ocre/musgo a arena. |
 | `--shadow-1/2` | Se conservan | Nuevos valores neutros; las tarjetas dejan de usar sombra. |
 | `--radius-sm/md/lg` | Se conservan | 4/6/8 px; se retiran los 10 px por defecto. |
-| `--font-display` | `--font-content` | La serif se reserva a contenido; la interfaz usa `--font-ui` del sistema. |
+| `--font-display` | `--font-content` | La serif se reserva a contenido; la interfaz usa `--font-ui` del sistema. `--font-display` queda como alias temporal hasta #126. |
 | `--font-ui` | Se conserva | Pasa a la pila del sistema; no se empaqueta Segoe. |
 | `--font-mono` | Se conserva | Pasa a la pila del sistema. |
 | `--text-*` | Se conservan los nombres | Nueva escala: 12, 13, 14, 16, 18, 22 y 32 px. |
@@ -596,7 +636,7 @@ Reglas de migración:
 | Entregable | Estado | Issue |
 |---|---|---|
 | ADR 0025, D-048, este documento y taxonomía de hitos | Aprobado | #124 |
-| Tokens, tipografía y primitivas v2 | Previsto | #125 |
+| Tokens, tipografía y primitivas v2 | Implementado | #125 |
 | Shell, navegación y barra superior v2 | Previsto | #126 |
 | Inicio y tarjetas de mundo | Previsto | #127 |
 | Vista de mundo modular | Previsto | #128 |
@@ -606,20 +646,39 @@ Reglas de migración:
 | Preferencias de interfaz persistentes | Previsto | #132 |
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
-Mientras una fila diga «Previsto», la aplicación sigue mostrando el sistema v1
-en esa parte. No se deben tomar capturas nuevas como si el sistema v2 ya
-estuviera implementado.
+Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
+los tokens y las primitivas ya son v2 desde #125, pero su estructura y su
+jerarquía siguen siendo las de v1 hasta que su issue la migre. No se deben tomar
+capturas nuevas como si la pantalla ya estuviera rediseñada.
 
 ### 17.2 Verificación automática
 
-- `tests/unit/design-tokens.test.ts` verifica hoy los tokens v1. En #125 se
-  actualiza para resolver la paleta v2, comprobar los ratios de la tabla 4.5 y
-  mantener la disciplina de capas.
-- `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en Claro y
-  Oscuro.
+- `tests/unit/design-tokens.test.ts` verifica la paleta v2, los roles de ambos
+  temas, la tabla §4.5 completa (incluidas las parejas nuevas de superficie
+  hundida, foco y marcas de entidad), la disciplina de capas, la ausencia de
+  tokens indefinidos, las escalas, la elevación, los estados sin opacidad, el
+  movimiento reducido y la licencia OFL de la fuente empaquetada.
+- `tests/components/primitives.test.tsx` cubre botón de icono, menú, casilla,
+  radio, panel, esqueleto, tarjeta, diálogo y avisos; `samples.test.tsx` monta el
+  banco completo con el catálogo real.
+- `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y sobre Muestras
+  en Claro y Oscuro.
+- `tests/e2e/design-v2.spec.ts` comprueba en la ventana real, a 1024 px y en los
+  dos temas, el ancho de tooltip, la colisión de tooltip y menú con el borde
+  derecho, el foco computado de la casilla inválida, los objetivos de 28 px, el
+  hover, las marcas de tipo y el recorte dentro del diálogo. Repite con tooltip
+  y menú abiertos a 1280 y 1600 px para verificar que tampoco desbordan.
+  También verifica que el primer Escape con tooltip visible solo cierra el
+  tooltip, que PageDown cierra un menú corto, que un menú largo limita su altura
+  y conserva la rueda interna, y que el menú del diálogo se mantiene dentro de
+  la tarjeta.
 - `tests/e2e/shell.spec.ts` comprueba la ventana a 1024, 1280 y 1600 px sin
-  scroll horizontal.
+  scroll horizontal, con Muestras como contenido largo y la carga de la fuente
+  local.
 - `tests/e2e/entities.spec.ts` hace lo mismo con la lista y la ficha.
+- `scripts/check-build.mjs` verifica que los dos woff2 viajan en `out/renderer`,
+  que el CSS construido los referencia con rutas relativas y que no hay hosts
+  remotos de fuentes.
 - La matriz visual completa, las capturas y la auditoría de todas las pantallas
   se completan en #133.
 

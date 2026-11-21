@@ -1,28 +1,27 @@
 /* ==========================================================================
- * World Craft · Capa 2 de 3 · Roles semánticos y temas
+ * World Craft · Capa 2 de 3 · Roles semánticos y temas v2
  * --------------------------------------------------------------------------
  * Esta capa NO contiene colores propios: solo asigna valores de
  * `palette.css` a papeles de interfaz. Los componentes usan exclusivamente
  * estos roles y nunca la paleta cruda.
  *
- * Contrato de temas (ADR 0006):
- *   Claro  → `--paper` es superficie y `--ink` es texto.
- *   Oscuro → `--ink` es superficie y `--paper` es texto.
- *
+ * Contrato de temas (ADR 0006 y ADR 0025): `--bg` es el fondo de la ventana y
+ * `--fg` el texto principal en ambos temas. Las superficies y el texto se
+ * resuelven con `--bg`, `--fg` y `--surface*`, sin roles de papel ni tinta.
  * Los overrides van agrupados y con una sola fuente de verdad por regla. Al
  * añadir un rol nuevo hay que comprobar los dos temas y actualizar la tabla de
- * contraste de la issue 65. Ratios calculados con WCAG 2.2 (sRGB).
+ * contraste de `docs/diseno/sistema-de-diseno.md` §4.5; los ratios se calculan
+ * en `tests/unit/design-tokens.test.ts` con WCAG 2.2 (sRGB).
  *
- * Aviso de verificación: en tema oscuro `--paper` es TEXTO y `--ink` es
- * SUPERFICIE. Por eso los estados (`--success`, `--warning`, `--danger`) se
- * comprueban contra `--ink`, `--surface`, `--surface-raised` y su superficie
- * tintada, no contra `--paper`. En claro se comprueban contra `--paper`,
- * `--surface`, `--surface-raised` y su superficie tintada.
+ * Regla de uso: `--bg`, `--surface*`, `--accent-surface`, `--selection`,
+ * `--overlay` y los `--*-surface` son fondos; `--fg`, `--muted`, `--accent*`,
+ * `--success`, `--warning`, `--danger`, `--focus` y `--disabled-text` son
+ * textos o trazos. Un rol no se intercambia de papel sin comprobar su pareja
+ * en los dos temas.
  *
- * Regla de uso: `--selection`, `--accent*` y los `--*-surface` son fondos;
- * `--ink`/`--paper`, `--muted`, `--success`, `--warning`, `--danger`,
- * `--accent-contrast` y `--focus` son textos o trazos. No se intercambian sin
- * verificar la pareja correspondiente.
+ * Las marcas `--entity-*` resuelven los tokens persistidos de tipo de entidad
+ * (`moss`, `ochre`, `danger`, `prussian`) sin renombrar datos. Son marcas
+ * gráficas: el texto del tipo y de la etiqueta usa `--fg`.
  * ========================================================================== */
 
 :root,
@@ -30,149 +29,183 @@
   color-scheme: light;
 
   /* --- Base de fondo y texto -------------------------------------------
-   * `--paper` y `--ink` intercambian su papel entre temas: en claro el
-   * papel es la superficie base y la tinta el texto; en oscuro es al
-   * revés. Los componentes usan `--bg`/`--fg` para ese par y no necesitan
-   * conocer el tema activo. La pareja mantiene 16,61:1 en ambos temas.
+   * fg sobre bg 13,82:1 · fg sobre surface 14,55:1 ·
+   * fg sobre surface-raised 15,19:1.
    */
-  --bg: var(--paper);
-  --fg: var(--ink);
+  --bg: var(--palette-neutral-100);
+  --fg: var(--palette-neutral-800);
 
   /* --- Superficies -----------------------------------------------------
-   * Claro: papel como base; las tarjetas suben a paper-50.
-   * ink sobre paper 16,61:1 · ink sobre surface 15,36:1 ·
-   * ink sobre surface-raised 17,49:1.
+   * El escalón de superficie hace la jerarquía; solo los elementos
+   * flotantes añaden sombra.
    */
-  --paper: var(--palette-paper-100);
-  --surface: var(--palette-paper-200);
-  --surface-raised: var(--palette-paper-50);
-  --border: var(--palette-ink-400); /* 3,43:1 sobre surface; decorativo AA. */
+  --surface: var(--palette-neutral-50);
+  --surface-raised: var(--palette-neutral-0);
+  --surface-sunken: var(--palette-neutral-200);
+  --border: var(--palette-neutral-300); /* Divisor decorativo: 1,23:1. */
+  --border-strong: var(--palette-neutral-500); /* 3,50:1 sobre bg. */
 
   /* --- Texto -----------------------------------------------------------
-   * muted sobre paper 5,45:1 · sobre surface 5,04:1 · sobre raised 5,73:1.
+   * muted sobre bg 5,07:1 · sobre surface 5,34:1 · sobre sunken 4,72:1.
    */
-  --ink: var(--palette-ink-950);
-  --muted: var(--palette-ink-600);
+  --muted: var(--palette-neutral-600);
 
   /* --- Acento ----------------------------------------------------------
-   * accent como texto sobre surface 4,89:1 y sobre raised 5,57:1.
-   * accent-contrast sobre accent 5,57:1 y sobre accent-strong 7,30:1.
-   * accent sobre accent-surface 4,81:1.
+   * accent sobre bg 7,08:1 · accent-contrast sobre accent 7,78:1 ·
+   * accent sobre accent-surface 6,54:1.
    */
-  --accent: var(--palette-moss-600);
-  --accent-strong: var(--palette-moss-700);
-  --accent-contrast: var(--palette-paper-50);
-  --accent-surface: var(--palette-moss-100);
+  --accent: var(--palette-forest-600);
+  --accent-strong: var(--palette-forest-700);
+  --accent-contrast: var(--palette-neutral-0);
+  --accent-surface: var(--palette-forest-100);
 
   /* --- Estados ---------------------------------------------------------
-   * Cada color de estado se usa como texto sobre paper, surface, raised y
-   * su propia superficie tintada; todas las parejas superan 4,5:1.
+   * Cada estado se usa como texto sobre bg y sobre su superficie tintada;
+   * todas las parejas superan 4,5:1.
    */
-  --success: var(--palette-moss-700); /* 6,31:1 sobre success-surface. */
-  --success-surface: var(--palette-moss-100);
-  --warning: var(--palette-ochre-700); /* 8,32:1 sobre warning-surface. */
-  --warning-surface: var(--palette-ochre-100);
-  --danger: var(--palette-danger-700); /* 8,47:1 sobre danger-surface. */
-  --danger-surface: var(--palette-danger-100);
+  --success: var(--palette-success-600); /* 5,73:1 sobre bg. */
+  --success-surface: var(--palette-success-100); /* 5,35:1 con success. */
+  --warning: var(--palette-warning-600); /* 5,37:1 sobre bg. */
+  --warning-surface: var(--palette-warning-100); /* 4,96:1 con warning. */
+  --danger: var(--palette-danger-600); /* 6,07:1 sobre bg. */
+  --danger-surface: var(--palette-danger-100); /* 5,36:1 con danger. */
+  --danger-contrast: var(--palette-neutral-0); /* 6,68:1 sobre danger. */
 
   /* --- Foco y selección -------------------------------------------------
-   * focus ≥ 7,61:1 sobre las tres superficies (mínimo exigido 3:1).
-   * selection es siempre un fondo; el texto encima es `--ink` (11,16:1).
+   * focus ≥ 6,54:1 sobre las cuatro superficies (mínimo 3:1).
+   * selection es siempre un fondo; el texto encima es `--fg` (11,44:1).
    */
-  --focus: var(--palette-prussian-700);
-  --selection: var(--palette-ochre-300);
+  --focus: var(--palette-forest-600);
+  --selection: var(--palette-sand-200);
 
   /* --- Velo y controles deshabilitados ----------------------------------
-   * El velo oscurece en ambos temas sin depender de `--ink`, que se invierte.
-   * El deshabilitado usa superficie y texto secundarios sin opacidad: muted
-   * sobre surface da 5,04:1 y el control sigue leyéndose.
+   * El deshabilitado usa superficie, borde y texto propios, sin opacidad:
+   * disabled-text sobre disabled-surface da 4,72:1 y el borde fuerte 3,26:1.
+   * La superficie se distingue de `--surface-raised` (1,18:1).
    */
-  --overlay: var(--palette-overlay);
-  --disabled-surface: var(--surface);
-  --disabled-text: var(--muted);
+  --overlay: var(--palette-overlay-light);
+  --disabled-surface: var(--palette-neutral-200);
+  --disabled-text: var(--palette-neutral-600);
+  --disabled-border: var(--palette-neutral-500);
+
+  /* --- Esqueleto --------------------------------------------------------
+   * Dos pasos propios para que el pulso se perciba sobre `--surface`.
+   */
+  --skeleton: var(--palette-neutral-300);
+  --skeleton-pulse: var(--palette-neutral-400);
 
   /* --- Sombras ---------------------------------------------------------
-   * Sombra cálida y contenida: eleva tarjetas sin dramatizar la interfaz.
+   * Sombra neutra y contenida para barras adhesivas y superficies flotantes.
    */
   --shadow-1:
-    0 1px 2px var(--palette-shadow-warm-1),
-    0 1px 3px var(--palette-shadow-warm-2);
+    0 1px 2px var(--palette-shadow-1), 0 1px 3px var(--palette-shadow-2);
   --shadow-2:
-    0 2px 4px var(--palette-shadow-warm-1),
-    0 12px 28px var(--palette-shadow-warm-2);
+    0 2px 4px var(--palette-shadow-1), 0 12px 28px var(--palette-shadow-2);
+
+  /* --- Marcas de tipo de entidad ---------------------------------------
+   * El nombre persistido no cambia; el rol resuelve la marca gráfica y su
+   * superficie. Todas superan 3:1 contra su superficie.
+   */
+  --entity-moss: var(--accent); /* 6,54:1 sobre su superficie. */
+  --entity-moss-surface: var(--accent-surface);
+  --entity-ochre: var(--palette-sand-500); /* 3,64:1 sobre selection. */
+  --entity-ochre-surface: var(--selection);
+  --entity-danger: var(--danger); /* 5,36:1 sobre su superficie. */
+  --entity-danger-surface: var(--danger-surface);
+  --entity-prussian: var(--palette-slate-600); /* 5,15:1 sobre sunken. */
+  --entity-prussian-surface: var(--surface-sunken);
 }
 
 [data-theme='dark'] {
   color-scheme: dark;
 
   /* --- Base de fondo y texto -------------------------------------------
-   * Aquí `--ink` es la superficie base y `--paper` el texto. Los
-   * componentes siguen usando `--bg`/`--fg`: el par se invierte solo y la
-   * pareja mantiene 16,61:1.
+   * fg sobre bg 16,43:1 · fg sobre surface 15,17:1 ·
+   * fg sobre surface-raised 13,82:1.
    */
-  --bg: var(--ink);
-  --fg: var(--paper);
+  --bg: var(--palette-neutral-900);
+  --fg: var(--palette-neutral-100);
 
   /* --- Superficies -----------------------------------------------------
-   * Oscuro: tinta como base; los paneles suben en dos pasos.
-   * paper sobre ink 16,61:1 · sobre surface 15,69:1 ·
-   * sobre surface-raised 14,35:1.
+   * En Oscuro, el escalón de superficie hace la mayor parte del trabajo y
+   * la sombra solo remata el borde de lo flotante.
    */
-  --ink: var(--palette-ink-950);
-  --paper: var(--palette-paper-100);
-  --surface: var(--palette-ink-900);
-  --surface-raised: var(--palette-ink-800);
-  --border: var(--palette-ink-500); /* 3,36:1 sobre surface-raised. */
+  --surface: var(--palette-neutral-850);
+  --surface-raised: var(--palette-neutral-800);
+  --surface-sunken: var(--palette-neutral-950);
+  --border: var(--palette-neutral-750); /* Divisor decorativo: 1,57:1. */
+  --border-strong: var(--palette-neutral-500); /* 4,70:1 sobre bg. */
 
   /* --- Texto -----------------------------------------------------------
-   * muted sobre ink 8,47:1 · sobre surface 7,99:1 · sobre raised 7,31:1.
+   * muted sobre bg 7,74:1 · sobre surface 7,15:1 · sobre sunken 8,08:1.
    */
-  --muted: var(--palette-ink-200);
+  --muted: var(--palette-neutral-450);
 
   /* --- Acento ----------------------------------------------------------
-   * accent sobre raised 6,30:1 · accent-strong sobre raised 8,34:1.
-   * accent-contrast (tinta) sobre accent 7,29:1 y sobre strong 9,65:1.
-   * accent sobre accent-surface 5,49:1.
+   * accent sobre bg 8,01:1 · accent-contrast sobre accent 8,36:1 ·
+   * accent sobre accent-surface 5,44:1.
    */
-  --accent: var(--palette-moss-400);
-  --accent-strong: var(--palette-moss-300);
-  --accent-contrast: var(--palette-ink-950);
-  --accent-surface: var(--palette-moss-900);
+  --accent: var(--palette-forest-400);
+  --accent-strong: var(--palette-forest-300);
+  --accent-contrast: var(--palette-neutral-950);
+  --accent-surface: var(--palette-forest-900);
 
   /* --- Estados ---------------------------------------------------------
-   * Tonos claros de la misma familia para mantener 4,5:1 sobre superficies
+   * Tonos claros de cada familia para mantener 4,5:1 sobre superficies
    * oscuras y sobre las tintas de estado.
    */
-  --success: var(--palette-moss-300); /* 7,26:1 sobre success-surface. */
-  --success-surface: var(--palette-moss-900);
-  --warning: var(--palette-ochre-300); /* 8,72:1 sobre warning-surface. */
-  --warning-surface: var(--palette-ochre-900);
-  --danger: var(--palette-danger-300); /* 6,51:1 sobre danger-surface. */
-  --danger-surface: var(--palette-danger-900);
+  --success: var(--palette-success-300); /* 10,37:1 sobre bg. */
+  --success-surface: var(--palette-success-900); /* 7,74:1 con success. */
+  --warning: var(--palette-warning-300); /* 9,80:1 sobre bg. */
+  --warning-surface: var(--palette-warning-900); /* 6,99:1 con warning. */
+  --danger: var(--palette-danger-300); /* 8,93:1 sobre bg. */
+  --danger-surface: var(--palette-danger-900); /* 7,07:1 con danger. */
+  --danger-contrast: var(--palette-neutral-950); /* 9,32:1 sobre danger. */
 
   /* --- Foco y selección -------------------------------------------------
-   * focus ≥ 8,88:1 sobre las tres superficies.
-   * selection es fondo; el texto encima es `--paper` (5,29:1).
+   * focus ≥ 6,74:1 sobre las cuatro superficies.
+   * selection es fondo; el texto encima es `--fg` (11,22:1).
    */
-  --focus: var(--palette-prussian-300);
-  --selection: var(--palette-moss-600);
+  --focus: var(--palette-forest-300);
+  --selection: var(--palette-sand-800);
 
   /* --- Velo y controles deshabilitados ----------------------------------
-   * Mismo velo y misma pareja de deshabilitado que en claro; en oscuro
-   * muted sobre surface da 7,99:1.
+   * disabled-text sobre disabled-surface da 7,74:1; el borde fuerte 4,70:1.
+   * La superficie (neutral-900) se distingue de `--surface-raised`
+   * (neutral-800) en 1,19:1. Sin opacidad.
    */
-  --overlay: var(--palette-overlay);
-  --disabled-surface: var(--surface);
-  --disabled-text: var(--muted);
+  --overlay: var(--palette-overlay-dark);
+  --disabled-surface: var(--palette-neutral-900);
+  --disabled-text: var(--palette-neutral-450);
+  --disabled-border: var(--palette-neutral-500);
+
+  /* --- Esqueleto --------------------------------------------------------
+   * Dos pasos propios; en Oscuro el pulso sube a neutral-600 para no perderse
+   * sobre la superficie.
+   */
+  --skeleton: var(--palette-neutral-700);
+  --skeleton-pulse: var(--palette-neutral-600);
 
   /* --- Sombras ---------------------------------------------------------
-   * En oscuro la sombra apenas separa; el escalón de superficie hace el
-   * trabajo principal y la sombra solo remata bordes de diálogos y menús.
+   * Negras y más profundas para separar lo flotante sin dramatizar.
    */
   --shadow-1:
-    0 1px 2px var(--palette-shadow-deep-1),
-    0 1px 3px var(--palette-shadow-deep-2);
+    0 1px 2px var(--palette-shadow-dark-1),
+    0 1px 3px var(--palette-shadow-dark-2);
   --shadow-2:
-    0 2px 4px var(--palette-shadow-deep-1),
-    0 16px 32px var(--palette-shadow-deep-2);
+    0 2px 4px var(--palette-shadow-dark-1),
+    0 16px 32px var(--palette-shadow-dark-2);
+
+  /* --- Marcas de tipo de entidad ---------------------------------------
+   * Pizarra y arena aclaran en Oscuro; musgo y peligro usan sus tonos
+   * claros ya definidos.
+   */
+  --entity-moss: var(--accent); /* 5,44:1 sobre su superficie. */
+  --entity-moss-surface: var(--accent-surface);
+  --entity-ochre: var(--palette-warning-300); /* 6,69:1 sobre selection. */
+  --entity-ochre-surface: var(--selection);
+  --entity-danger: var(--danger); /* 7,07:1 sobre su superficie. */
+  --entity-danger-surface: var(--danger-surface);
+  --entity-prussian: var(--palette-slate-300); /* 10,12:1 sobre sunken. */
+  --entity-prussian-surface: var(--surface-sunken);
 }

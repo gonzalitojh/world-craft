@@ -1,8 +1,8 @@
 /* ==========================================================================
- * World Craft · Capa 3 de 3 · Escalas y medidas
+ * World Craft · Capa 3 de 3 · Escalas y medidas v2
  * --------------------------------------------------------------------------
- * Espaciado, radios, tipografía, movimiento, capas y medidas del shell de
- * escritorio. No contiene colores: cualquier valor cromático pertenece a
+ * Espaciado, radios, tipografía, iconos, movimiento, capas y medidas del shell
+ * de escritorio. No contiene colores: cualquier valor cromático pertenece a
  * `palette.css` y se asigna en `semantic.css`.
  *
  * Convenciones:
@@ -11,8 +11,8 @@
  *   - La ventana mínima es 1024×700 px y las referencias de prueba son
  *     1024, 1280 y 1600 px. Las medidas de shell van en px porque describen
  *     estructura de ventana, no tipografía.
- *   - Sin `@font-face` ni URL: las fuentes se empaquetan con la aplicación en
- *     una fase posterior; aquí solo viven las pilas con respaldo local.
+ *   - Sin `@font-face` ni URL: los dos cortes empaquetados se declaran solo en
+ *     `styles/fonts.css`; aquí viven las pilas con su reserva local.
  * ========================================================================== */
 
 :root {
@@ -34,28 +34,35 @@
   --space-12: 6rem;
 
   /* --- Radios -----------------------------------------------------------
-   * Contenidos: 4–10 px. `pill` solo para insignias y contadores.
+   * 4 / 6 / 8 px para el contenido. `pill` solo en insignias y contadores;
+   * no se usan radios de 10 px o superiores como valor por defecto.
    */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
-  --radius-lg: 0.625rem;
+  --radius-lg: 0.5rem;
   --radius-pill: 999px;
 
   /* --- Tipografía -------------------------------------------------------
-   * Fraunces para display, Inter para interfaz, JetBrains Mono para datos.
-   * Las pilas de respaldo son locales y gratuitas; nunca se carga nada de
-   * Internet. El orden refleja la disponibilidad en Windows y macOS.
+   * Interfaz y datos usan pilas del sistema (sin empaquetar ni redistribuir
+   * Segoe, Cascadia ni Consolas). La serif se reserva a títulos de contenido
+   * y lectura larga: «Source Serif 4» es un activo OFL empaquetado y la
+   * reserva local garantiza el mismo aspecto si el activo no carga.
    */
-  --font-display:
-    'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia,
-    serif;
   --font-ui:
-    'Inter', 'Segoe UI', 'Noto Sans', system-ui, -apple-system, sans-serif;
-  --font-mono:
-    'JetBrains Mono', 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Noto Sans',
+    sans-serif;
+  --font-content:
+    'Source Serif 4', 'Iowan Old Style', 'Palatino Linotype', Georgia,
+    'Times New Roman', serif;
+  --font-mono: 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
 
-  /* Tamaños. `base` es el cuerpo estándar (14 px); `sm` y `xs` se reservan a
-   * metadatos y datos tabulares, nunca a párrafos largos. */
+  /* Alias obsoleto: se conserva hasta #126 para que las pantallas aún no
+   * migradas mantengan sus títulos en serif sin cambios de shell. Ninguna
+   * primitiva v2 lo usa y se retira cuando no queden referencias. */
+  --font-display: var(--font-content);
+
+  /* Tamaños: 12/13/14/16/18/22/32 px. `base` es el cuerpo estándar de la
+   * interfaz; `sm` y `xs` se reservan a metadatos y datos tabulares. */
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-base: 0.875rem;
@@ -64,19 +71,30 @@
   --text-xl: 1.375rem;
   --text-display: 2rem;
 
-  /* Pesos disponibles en las tres familias empaquetadas. */
+  /* Pesos disponibles en las familias del sistema. */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* Interlineados. Texto corrido entre 1,4 y 1,6 como pide la guía. */
+  /* Interlineados: títulos 1,2; metadatos 1,4; cuerpo de interfaz 1,5;
+   * lectura larga 1,7. */
   --leading-tight: 1.2;
   --leading-snug: 1.4;
-  --leading-normal: 1.6;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* --- Iconos -----------------------------------------------------------
+   * Tamaños 16/20/24 px y trazo único de 1,6 px. Los iconos usan
+   * `currentColor`: no llevan color propio.
+   */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-stroke: 1.6;
 
   /* --- Movimiento -------------------------------------------------------
-   * Cambios de estado entre 120 y 200 ms. Los componentes deben anular
+   * Cambios de estado entre 120 y 180 ms. Los componentes deben anular
    * transiciones bajo `prefers-reduced-motion: reduce`.
    */
   --motion-fast: 120ms;
@@ -105,8 +123,8 @@
   --topbar-height: 56px;
 
   /* --- Foco -------------------------------------------------------------
-   * Anillo de 2 px con 2 px de separación: visible sobre papel, superficie
-   * y superficie elevada en ambos temas.
+   * Anillo de 2 px con 2 px de separación: visible sobre fondo, superficie,
+   * superficie elevada y superficie hundida en ambos temas.
    */
   --focus-width: 2px;
   --focus-offset: 2px;
