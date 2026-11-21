@@ -1,7 +1,7 @@
 {
   "title": "Búsqueda global FTS5 y paleta de comandos",
   "description": "Implementar la búsqueda local con SQLite FTS5 sobre mundos, fichas y relaciones, con prefijos, tolerancia razonable a errores, filtros combinables por mundo, tipo, etiqueta y estado, resaltado seguro, recientes y favoritos, reconstrucción del índice y una paleta de comandos Ctrl+K para navegar, crear y ejecutar acciones, con teclado completo, dos temas, ventana de escritorio y pruebas de indexación, filtros y rendimiento.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 76,
@@ -47,7 +47,7 @@
   "validation": {
     "result": "user-approved",
     "date": "2026-11-20",
-    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: search, area: ui, variant: high y hito M1. Dependencias M1-01 (#72), M1-03 (#74) y M1-04 (#75) cerradas; #75 se fusionó en dev mediante la PR #120 (71df465). Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-76-search desde origin/dev. El plan y sus decisiones de indexación, filtros, recientes/favoritos, atajo y reconstrucción fueron aprobados por el usuario el 2026-11-20 antes de implementar. Implementado: contratos de búsqueda, migración 0006_search con search_documents, FTS5, vocabulario, vistas y triggers, dominio src/main/search con prefijos, tolerancia tipográfica, filtros, recientes, favoritos y rebuild, canales search:query/suggestions/rebuild en allowlist, handlers, composición, preload, página de búsqueda, paleta Ctrl+K, estilos para ambos temas y textos centralizados. Evidencia final (2026-11-21): pnpm lint OK; pnpm typecheck OK; prettier --check de todos los archivos tocados OK; pnpm test:unit 385 en verde y 4 omitidas; pnpm test:components 33 en verde; pnpm test:integration 134 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; Playwright 18 en verde. La prueba de integración mide 10.000 fichas con una consulta representativa por debajo de 150 ms y una consulta amplia acotada, y cubre indexación, prefijos, acentos, errores tipográficos, filtros combinados, borrado lógico y físico, restauración, reconstrucción y reparación de FTS, relaciones con extremos en papelera, recientes y favoritos. Migración 0006 probada sobre una base en 0005 con mundos, fichas, etiquetas y relaciones, con preservación y rollback de referencia. QA PASS y seguridad PASS registrados; documentación actualizada. Estado `review` (2026-11-21): rama feat/issue-76-search con commit local listo para la revisión del usuario; no se ha hecho push ni se ha abierto PR. La publicación queda pendiente de petición explícita."
+    "notes": "Issue adoptada el 2026-11-20 con labels ai, type: feature, status: todo, priority: p1, size: m, area: search, area: ui, variant: high y hito M1. Dependencias M1-01 (#72), M1-03 (#74) y M1-04 (#75) cerradas; #75 se fusionó en dev mediante la PR #120 (71df465). Sin needs-decision. Variante recomendada y usada: high. Rama feat/issue-76-search desde origin/dev. El plan y sus decisiones de indexación, filtros, recientes/favoritos, atajo y reconstrucción fueron aprobados por el usuario el 2026-11-20 antes de implementar. Implementado: contratos de búsqueda, migración 0006_search con search_documents, FTS5, vocabulario, vistas y triggers, dominio src/main/search con prefijos, tolerancia tipográfica, filtros, recientes, favoritos y rebuild, canales search:query/suggestions/rebuild en allowlist, handlers, composición, preload, página de búsqueda, paleta Ctrl+K, estilos para ambos temas y textos centralizados. Evidencia final (2026-11-21): pnpm lint OK; pnpm typecheck OK; prettier --check de todos los archivos tocados OK; pnpm test:unit 385 en verde y 4 omitidas; pnpm test:components 33 en verde; pnpm test:integration 134 en verde y 1 omitida; pnpm build OK; pnpm verify:build OK; pnpm db:check OK; Playwright 18 en verde. La prueba de integración mide 10.000 fichas con una consulta representativa por debajo de 150 ms y una consulta amplia acotada, y cubre indexación, prefijos, acentos, errores tipográficos, filtros combinados, borrado lógico y físico, restauración, reconstrucción y reparación de FTS, relaciones con extremos en papelera, recientes y favoritos. Migración 0006 probada sobre una base en 0005 con mundos, fichas, etiquetas y relaciones, con preservación y rollback de referencia. QA PASS y seguridad PASS registrados; documentación actualizada. Estado `review` (2026-11-21): rama feat/issue-76-search con commit local listo para la revisión del usuario; no se ha hecho push ni se ha abierto PR. La publicación queda pendiente de petición explícita. Publicado el 2026-11-21 por petición explícita del usuario: rama subida con upstream a origin/feat/issue-76-search y PR #121 abierta contra dev sin keywords de cierre; commit c7dba2f."
   },
   "qa": {
     "result": "PASS",
@@ -69,5 +69,12 @@
     "manual": "docs/manual-de-usuario.md actualizado: estado del desarrollo, barra lateral y superior, teclado, sección 10 de búsqueda y paleta, y tabla de estado de funciones. También README, arquitectura, persistencia, esquema, migraciones y plan de pruebas. Verificación documental final (2026-11-21): se corrigieron las referencias de hito de mapas (M2) y manuscritos/escenas (M3), el recuento de pruebas y el listado de canales IPC de arquitectura, la lista de tablas implementadas y la cadena de migraciones del plan de pruebas, el alcance de #93/#94 y el matiz de los filtros por tipo y etiqueta en el manual.",
     "changelog": "CHANGELOG.md actualizado en Añadido con búsqueda, paleta, migración 0006 y pruebas.",
     "agents": "no aplica"
+  },
+  "pr": {
+    "number": 121,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/121",
+    "title": "feat(search): búsqueda global FTS5 y paleta de comandos (#76)",
+    "branch": "feat/issue-76-search",
+    "commit": "c7dba2f"
   }
 }
