@@ -1,7 +1,7 @@
 {
   "title": "Invocación obligatoria de task-architect, tdd-ddd-architect y ui-ux-designer",
   "description": "Tarea local de proceso: corregir las reglas de orquestación que dejaban opcionales la planificación técnica, la implementación delegada y el diseño de UI, de modo que sdd-master vuelva a invocar a task-architect, tdd-ddd-architect y ui-ux-designer en las tareas de código. Incluye el registro de agentes en el task file, la actualización de los agentes, la skill repo-map, el proceso SDD, AGENTS.md, la documentación de agentes y un ADR.",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "acceptance_criteria": [
     "sdd-master exige task-architect para features, refactors, integraciones, migraciones, IPC, seguridad y cambios transversales, y solo lo omite en tareas mecánicas con justificación registrada.",
@@ -55,5 +55,12 @@
     "manual": "no aplica",
     "changelog": null,
     "agents": "docs/agentes.md"
+  },
+  "pr": {
+    "number": 122,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/122",
+    "title": "chore(agents): hacer obligatorios los subagentes de codigo",
+    "branch": "chore/subagent-routing",
+    "commit": "2d0fde8"
   }
 }
