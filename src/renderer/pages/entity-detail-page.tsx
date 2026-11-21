@@ -70,6 +70,11 @@ export interface EntityDetailPageProps {
   readonly entityId: string;
   readonly onBack: () => void;
   readonly onOpenEntity: (entityId: string) => void;
+  /** Avisa del nombre cargado para completar la memoria de sesión de Inicio. */
+  readonly onEntityLoaded?: (entity: {
+    readonly id: string;
+    readonly name: string;
+  }) => void;
   readonly onNotify: (tone: 'success' | 'error', message: string) => void;
 }
 
@@ -86,6 +91,7 @@ export function EntityDetailPage({
   entityId,
   onBack,
   onOpenEntity,
+  onEntityLoaded,
   onNotify,
 }: EntityDetailPageProps) {
   const { messages, formats } = useI18n();
@@ -136,6 +142,14 @@ export function EntityDetailPage({
   useEffect(() => {
     typeRef.current = type;
   }, [type]);
+
+  // Inicio necesita el nombre de la ficha para el bloque «Continuar»; se avisa
+  // en cuanto la ficha llega o cambia de nombre, sin alterar la navegación.
+  useEffect(() => {
+    if (entity !== null) {
+      onEntityLoaded?.({ id: entity.id, name: entity.name });
+    }
+  }, [entity, onEntityLoaded]);
 
   const buildInput = useCallback(() => {
     const current = draftRef.current;

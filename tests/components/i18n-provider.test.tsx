@@ -20,7 +20,9 @@ function renderHome() {
         activity={[]}
         state="ready"
         actions={actions}
+        continueTarget={null}
         onCreate={vi.fn()}
+        onContinue={vi.fn()}
         onSeeAll={vi.fn()}
         onRetry={vi.fn()}
       />
@@ -50,7 +52,9 @@ describe('I18nProvider', () => {
           activity={[]}
           state="ready"
           actions={actions}
+          continueTarget={null}
           onCreate={vi.fn()}
+          onContinue={vi.fn()}
           onSeeAll={vi.fn()}
           onRetry={vi.fn()}
         />

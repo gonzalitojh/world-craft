@@ -123,7 +123,10 @@ diálogo y avisos; `tests/components/samples.test.tsx` monta el banco de muestra
 completo con el catálogo real. Desde #126, `tests/components/shell.test.tsx`
 cubre la navegación Inicio/Mundos, el plegado con nombres accesibles y tooltip,
 la acción primaria única, el menú `⋯`, el disparador de la paleta y el título
-truncado. Los archivos woff2, el texto OFL replicado y los avisos de terceros
+truncado. Desde #127, `tests/components/home-page.test.tsx` cubre la mesa de
+trabajo de Inicio y `tests/components/worlds.test.tsx` la marca procedural, la
+portada y la fecha relativa de la tarjeta. Los archivos woff2, el texto OFL
+replicado y los avisos de terceros
 se comprueban en `design-tokens.test.ts` y en
 `tests/unit/packaging/licenses.test.ts`; `scripts/check-build.mjs` verifica que
 los dos woff2 viajan en el bundle con `@font-face` relativo y sin hosts remotos.
@@ -140,7 +143,9 @@ prohibición de `--muted` sobre `--selection`.
 Desde #70, `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y, desde
 #125, también sobre Muestras en los dos temas, y falla ante violaciones críticas
 (detalle en 3.11). Desde #126 el shell se audita además con el rail plegado en
-Claro y Oscuro, y Muestras se abre por su hash interno, no desde el rail.
+Claro y Oscuro, y Muestras se abre por su hash interno, no desde el rail. Desde
+#127, `tests/e2e/worlds.spec.ts` ejecuta axe sobre Inicio en Claro y Oscuro y
+falla ante violaciones `critical` o `serious`.
 
 Desde #71, la internacionalización se prueba en `tests/unit/i18n/`: catálogo sin
 hojas vacías, claves y parámetros tipados, `Intl` para fechas, números,
@@ -197,7 +202,7 @@ lo cubre cuando aplica.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **433 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **447 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
@@ -206,14 +211,17 @@ lo cubre cuando aplica.
   de assets, copias (manifiesto, rutas de restauración, buckets, rotación y
   composición de modo seguro), instalador, actualizador, instancia única,
   licencias, mundos, tipos de entidad, fichas (descripción, esquemas IPC,
-  handlers y tarjetas), relaciones (validación, esquemas, guardas y catálogo) y
-  vistas internas del shell (resolución de Muestras por hash).
-- **73 pruebas de componentes en verde** en `tests/components/`: botón nativo,
+  handlers y tarjetas), relaciones (validación, esquemas, guardas y catálogo),
+  vistas internas del shell (resolución de Muestras por hash), fechas relativas
+  con `Intl.RelativeTimeFormat`, marca procedural de mundo y destino de
+  «Continuar».
+- **87 pruebas de componentes en verde** en `tests/components/`: botón nativo,
   botón de icono con tooltip, menú `⋯`, casilla, radio, panel, esqueleto,
   tarjeta, diálogo, avisos, pestañas, proveedor de i18n, tarjetas y formularios
   de mundo, ficha, diálogos de creación, creación rápida, panel de relaciones y
   diálogo de relación, el shell v2 (navegación, plegado, primaria, menú y
-  paleta) y el banco de muestras completo. Usan Testing Library y `jsdom`.
+  paleta), la mesa de trabajo de Inicio y el banco de muestras completo. Usan
+  Testing Library y `jsdom`.
 - **134 pruebas de integración en verde (1 omitida)** en
   `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
@@ -627,9 +635,39 @@ en `fixtures/axe.ts` y la apertura de Muestras por hash interno en
   reconstrucción del índice y la apertura de resultados; repite 1024/1280/1600 px
   y ejecuta axe en ambos temas sin violaciones críticas ni graves.
 
+### 3.17 Inicio como mesa de trabajo y tarjetas de mundo (implementado, #127)
+
+- **Unitarias:** `tests/unit/i18n/formats.test.ts` cubre
+  `formatRelativeTime` con reloj inyectable: «ahora» con menos de 45 s, recorte
+  de fechas futuras, minutos, horas, días, semanas, meses, años y aceptación de
+  `Date`, número y cadena ISO. `tests/unit/world-mark.test.ts` fija la
+  determinación por `id`, los vectores de control, la cobertura de los 4 motivos
+  y 4 tonos y la cadena vacía. `tests/unit/recent-location.test.ts` cubre
+  `resolveContinueTarget`: sin destino, mundo ausente, mundo, ficha con nombre
+  conocido, ficha aún sin cargar y no mutación.
+- **Componentes:** `tests/components/home-page.test.tsx` verifica el orden
+  «Continuar» → «Mundos recientes» → «Actividad reciente», la ausencia de
+  contadores y accesos rápidos, el límite de cinco filas, «Ver todos los mundos»
+  solo con más de cinco, cinco entradas de actividad, «Continuar» con mundo y
+  con ficha, el texto de reserva, la omisión sin destino, la carga con
+  `aria-busy`, `role="status"` y tres esqueletos, el error con reintento y la
+  única primaria del estado vacío. `tests/components/worlds.test.tsx` cubre la
+  marca procedural (`data-motif`, `data-tone`, `aria-hidden` y sin texto), la
+  miniatura de portada, el `<time>` relativo con `dateTime` y `title`, y el menú
+  con Archivar/Restaurar.
+- **E2E:** `tests/e2e/worlds.spec.ts` comprueba «Continuar» con el último mundo,
+  su desaparición al recargar, la reanudación de una ficha, la limpieza al
+  eliminar el mundo recordado y el menú de la tarjeta con flechas, `Fin`,
+  `Escape` y retorno de foco. Recorre Inicio con un nombre de 90 caracteres, un
+  resumen de 279 y 8 géneros a 1024, 1280 y 1600 px × rail expandido/plegado ×
+  Claro/Oscuro (12 combinaciones) sin scroll horizontal, y ejecuta axe WCAG 2.1
+  A/AA en Inicio en ambos temas sin violaciones `critical` ni `serious`.
+- **Sin datos nuevos:** la memoria de «Continuar» vive en React, no se persiste
+  y no hay migraciones, IPC, CSP ni dependencias nuevas.
+
 **Comandos y recuento (equipo de referencia, 2026-11-21).** `pnpm test` ejecuta
-433 unitarias (4 omitidas), 73 de componentes y 134 de integración en verde (1
-omitida); `pnpm test:e2e` compila y ejecuta 37 pruebas. Los E2E son Windows-only,
+447 unitarias (4 omitidas), 87 de componentes y 134 de integración en verde (1
+omitida); `pnpm test:e2e` compila y ejecuta 42 pruebas. Los E2E son Windows-only,
 igual que la aplicación.
 
 ## 4. Cobertura
@@ -659,7 +697,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 433 unitarias (4 omitidas), 73 de componentes y 134 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 447 unitarias (4 omitidas), 87 de componentes y 134 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

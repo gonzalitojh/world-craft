@@ -13,8 +13,9 @@
 > lateral con la navegación **Inicio** y **Mundos**, una barra superior con el
 > título de lo que estás viendo, el buscador de la paleta `Ctrl+K`, una acción
 > principal, un menú `⋯` para las secundarias y los iconos de actualizaciones y
-> tema; el tema Claro/Oscuro se conmuta sin recargar. La página de inicio es el
-> **dashboard de mundos** o su estado vacío. También existe una **base de datos
+> tema; el tema Claro/Oscuro se conmuta sin recargar. La página de inicio es una
+> **mesa de trabajo** con los mundos recientes y la actividad, o su estado vacío.
+> También existe una **base de datos
 > local** que se crea y se comprueba al arrancar, con **copias automáticas** y
 > **restauración desde modo seguro**. Ya se pueden crear, editar, duplicar,
 > archivar y eliminar mundos con su actividad, y crear **fichas** de cualquier
@@ -94,8 +95,8 @@ sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
 La comprobación de actualizaciones es **manual y cancelable**; no se ejecuta sola.
 Los datos se quedan en este equipo, en una carpeta propia que sobrevive a las
 actualizaciones de la aplicación.
-Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, y el
-dashboard muestra tus mundos, la actividad reciente y su preparación. Dentro de
+Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, e **Inicio**
+reúne los mundos recientes y la actividad en una mesa de trabajo. Dentro de
 cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción,
 imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. También
 existe la **búsqueda global** con filtros, recientes y favoritos, y una **paleta
@@ -162,6 +163,10 @@ use la aplicación; solo se abre por su dirección interna.
   flechas recorren las acciones, `Inicio` y `Fin` van a la primera y a la última,
   `Enter` ejecuta la acción y `Escape` cierra. Al cerrarse, el foco vuelve al
   botón que lo abrió.
+- Las tarjetas de mundo tienen su propio menú `⋯`, con el mismo comportamiento:
+  `Tab` llega al botón **Abrir** y al de **Más acciones**, el menú se abre con
+  `Enter` o espacio, se recorre con las flechas y se cierra con `Escape`
+  devolviendo el foco al botón que lo abrió.
 - En las pestañas, usa las flechas izquierda y derecha para cambiar de pestaña;
   `Inicio` y `Fin` van a la primera y a la última.
 - Pulsa `Ctrl+K` para abrir la paleta de comandos. Dentro de la paleta, las
@@ -193,7 +198,7 @@ pantalla de Ajustes llegará más adelante.
 
 La ventana se puede redimensionar y el tamaño mínimo es 1024×700. El diseño está
 preparado para que a 1024, 1280 y 1600 píxeles de ancho el contenido se adapte
-sin desplazamiento horizontal de página; el dashboard, los mundos, las fichas,
+sin desplazamiento horizontal de página; el inicio, los mundos, las fichas,
 la búsqueda y el editor se comprueban en esos anchos. Solo las tablas y el lienzo
 del mapa
 podrán desplazarse dentro de su propio espacio. **Hoy la ventana aún no recuerda
@@ -209,13 +214,26 @@ Un aviso recuerda que los datos se quedan en tu equipo. Al pulsar **Crear mundo*
 se abre un formulario para ponerle nombre, resumen, descripción, géneros e
 idioma (sección 4).
 
-Cuando ya hay mundos, **Inicio** se convierte en el dashboard: muestra un
-resumen con el número de mundos activos y archivados, tarjetas con los mundos
-actualizados recientemente, la actividad reciente de todos tus mundos con el
-nombre de cada uno y accesos rápidos para crear o gestionar mundos. En ese caso
-la acción principal **Crear mundo** vive en la barra superior y no se duplica en
-el cuerpo de la página; con cero mundos, el botón vive en el estado vacío y la
-barra no lo repite.
+Cuando ya hay mundos, **Inicio** es una mesa de trabajo en una sola columna. De
+arriba abajo muestra:
+
+- **Continuar**, solo si en esta sesión ya has abierto un mundo o una ficha.
+  Indica el destino y ofrece **Abrir el mundo** o **Abrir la ficha**. Es un
+  recordatorio temporal: si cierras o recargas la aplicación, desaparece; tampoco
+  aparece si no hay destino o si el mundo recordado ya no existe. Conservarlo
+  entre sesiones llegará más adelante.
+- **Mundos recientes**, con un máximo de cinco filas. El botón **Ver todos los
+  mundos** solo aparece cuando hay más de cinco. Cada fila muestra la portada o
+  una marca gráfica, el nombre, el estado, el resumen, los géneros, la última
+  actualización y las acciones de la tarjeta (sección 4.2).
+- **Actividad reciente**, con un máximo de cinco entradas y en un segundo plano,
+  separada del resto por una línea.
+
+No hay contadores ni una rejilla de accesos rápidos. La acción principal **Crear
+mundo** vive en la barra superior y no se duplica en el cuerpo; con cero mundos,
+el botón vive en el estado vacío y la barra no lo repite. Mientras se carga la
+lista se muestra un esqueleto con un aviso para lectores de pantalla; si la
+carga falla, la pantalla explica el problema y ofrece **Volver a intentar**.
 
 La base de datos local se crea y se comprueba sola al arrancar; si hubiera un
 problema, la aplicación avisa antes de abrir la ventana (sección 15).
@@ -281,22 +299,39 @@ La **portada** todavía no se puede elegir: su selector llegará con la galería
 imágenes del mundo. El formulario lo indica para no prometer una función que aún
 no existe.
 
-### 4.2 El dashboard de Inicio
+### 4.2 Inicio como mesa de trabajo
 
-Cuando ya hay mundos, **Inicio** muestra:
+Cuando ya hay mundos, **Inicio** reúne lo que necesitas para retomar el trabajo
+sin pasar por un panel de cifras:
 
-- Un **resumen** con el total de mundos y cuántos están activos o archivados.
-- Tus **mundos recientes** como tarjetas con su nombre, resumen, géneros,
-  estado y fecha de actualización. Cada tarjeta permite abrir, editar, duplicar,
-  archivar o restaurar y eliminar.
-- La **actividad reciente** de todos tus mundos. Cada línea indica qué ocurrió,
-  en qué mundo y cuándo, de modo que no se atribuye una acción al mundo
-  equivocado.
-- **Accesos rápidos** para crear un mundo nuevo o ir a la lista completa.
+- **Continuar:** retoma el último mundo o la última ficha que abriste **durante
+  esta sesión**. El botón se llama **Abrir el mundo** o **Abrir la ficha**.
+  Desaparece al recargar y se omite si el mundo recordado ya no existe; al
+  eliminarlo, el bloque se limpia. Guardar este recordatorio entre sesiones
+  llegará con una actualización posterior.
+- **Mundos recientes:** hasta cinco filas con la portada o la marca gráfica del
+  mundo, su nombre y estado, el resumen, los géneros y la fecha de la última
+  actualización. **Ver todos los mundos** aparece solo cuando hay más de cinco.
+- **Actividad reciente:** hasta cinco entradas de todos tus mundos. Cada línea
+  indica qué ocurrió, en qué mundo y cuándo, de modo que no se atribuye una
+  acción al mundo equivocado. Es información secundaria y va separada del resto.
+
+Cada tarjeta de mundo tiene una sola acción visible, **Abrir**, y un menú `⋯`
+con **Editar**, **Duplicar**, **Archivar** o **Restaurar** y **Eliminar**. La
+misma tarjeta se usa en **Mundos**; en ambos sitios el resumen se limita a dos
+líneas sin perder el texto completo, y en Mundos las acciones pasan a un pie de
+tarjeta.
+
+La **fecha** se muestra en relativo («Actualizado ahora», «hace 5 minutos»,
+«ayer»…) y la fecha completa aparece en la ayuda emergente nativa y en el propio
+elemento de fecha. Si el mundo tiene una portada, la
+tarjeta la muestra; si no, pinta una **marca gráfica** basada en su
+identificador: el mismo mundo conserva siempre la misma marca, también en los dos
+temas. No hay iniciales gigantes.
 
 ### 4.3 La lista de Mundos
 
-**Mundos** muestra todas las tarjetas. Puedes:
+**Mundos** muestra todas las tarjetas, con el mismo diseño que en Inicio. Puedes:
 
 - **Buscar** por nombre, identificador o resumen.
 - **Filtrar** por estado: todos, activos o archivados.
@@ -320,7 +355,8 @@ descripción, identificador, idioma y fechas de creación y actualización.
 
 Dentro de un mundo, las cuatro acciones están en el menú `⋯` de la barra
 superior, junto a la acción principal **Nueva ficha**. Las tarjetas de Inicio y
-de Mundos conservan sus propios accesos.
+de Mundos muestran **Abrir** y su propio menú `⋯` con **Editar**, **Duplicar**,
+**Archivar** o **Restaurar** y **Eliminar**.
 
 - **Editar:** cambia el nombre, el identificador, el resumen, la descripción, los
   géneros o el idioma. El mundo se actualiza al guardar y queda registrado en la
@@ -758,7 +794,8 @@ Ya funciona en el shell de desarrollo:
 - Navegación completa por teclado, con enlace «Saltar al contenido principal» y
   foco visible en los dos temas; usarlo no cambia de pantalla.
 - Barra lateral plegable con nombres accesibles, `aria-expanded` y ayudas
-  emergentes al foco; menú `⋯` con flechas, `Inicio`, `Fin` y `Escape`.
+  emergentes al foco; menús `⋯` de la barra superior y de las tarjetas de mundo
+  con flechas, `Inicio`, `Fin` y `Escape`.
 - Pestañas con flechas, `Inicio` y `Fin`; diálogo con foco atrapado y `Escape`;
   ayudas emergentes que se ocultan con `Escape`.
 - Etiquetas, ayudas y errores asociados en los campos de texto.
@@ -766,9 +803,9 @@ Ya funciona en el shell de desarrollo:
   disponibilidad de una actualización también se anuncia así.
 - Respeto de `prefers-reduced-motion`: las animaciones se reducen o se
   desactivan.
-- Revisión automática de accesibilidad (axe) sin errores críticos en el shell,
-  en los dos temas y con la barra lateral expandida y plegada; el contraste se
-  comprueba con la tabla del sistema de diseño.
+- Revisión automática de accesibilidad (axe) sin errores críticos en el shell y
+  en Inicio, en los dos temas y con la barra lateral expandida y plegada; el
+  contraste se comprueba con la tabla del sistema de diseño.
 
 Sigue **previsto**:
 
@@ -831,14 +868,15 @@ las funciones correspondientes.
 | Instancia única | Implementada; abrir la aplicación de nuevo enfoca la ventana existente |
 | Aviso de SmartScreen y checksums | Documentado; el instalador sigue sin firma (ADR 0015) |
 | Componentes base (botones, campos, avisos, diálogos...) | Implementados (en desarrollo) |
-| Página de inicio con estado vacío | Implementada (en desarrollo); el botón abre el formulario de creación |
+| Inicio como mesa de trabajo con Continuar, mundos recientes y actividad | Implementada (en desarrollo); sin contadores ni accesos rápidos |
+| «Continuar» con el último mundo o ficha abiertos | Implementada (en desarrollo); memoria de la sesión, no se conserva al recargar |
+| Tarjetas de mundo con **Abrir** y menú `⋯` | Implementada (en desarrollo); portada o marca gráfica determinista y fecha relativa |
 | Página de muestras | Interna de desarrollo; solo por su dirección interna, fuera de la navegación y la paleta |
-| Dashboard con resumen, mundos recientes y actividad | Implementado (en desarrollo); sin mezclar datos entre mundos |
 | Lista de mundos con búsqueda y filtro por estado | Implementada (en desarrollo) |
 | CRUD de mundos: crear, editar, duplicar y archivar/restaurar | Implementado (en desarrollo); con validación y confirmación |
 | Borrado lógico de mundos con confirmación | Implementado (en desarrollo); la papelera visible llega con #77 |
 | Página de mundo con preparación y actividad aislada | Implementada (en desarrollo) |
-| Portada del mundo | Prevista (#115) |
+| Elegir la portada del mundo | Prevista (#115); si el mundo ya tiene una portada, Inicio y Mundos la muestran |
 | Descripción enriquecida de mundos | Prevista (#114) |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
 | Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |

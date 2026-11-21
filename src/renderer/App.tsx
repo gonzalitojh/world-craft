@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
 import type {
@@ -20,6 +20,11 @@ import { WorldFormDialog } from './components/worlds/world-form-dialog';
 import type { WorldActivityState } from './components/worlds/world-activity-list';
 import type { WorldCardActions } from './components/worlds/world-card';
 import { useMessages } from './i18n/provider';
+import {
+  resolveContinueTarget,
+  type ContinueTarget,
+  type RecentLocation,
+} from './lib/recent-location';
 import { EntitiesPage } from './pages/entities-page';
 import { EntityDetailPage } from './pages/entity-detail-page';
 import { HomePage, type WorldLibraryState } from './pages/home-page';
@@ -69,6 +74,8 @@ export function App() {
     useState<WorldLibraryState>('loading');
 
   const [selectedWorldId, setSelectedWorldId] = useState<string | null>(null);
+  const selectedWorldIdRef = useRef<string | null>(null);
+  const [lastLocation, setLastLocation] = useState<RecentLocation | null>(null);
   const [selectedWorld, setSelectedWorld] = useState<WorldDetail | null>(null);
   const [selectedState, setSelectedState] =
     useState<WorldLibraryState>('ready');
@@ -303,7 +310,9 @@ export function App() {
     async (id: string) => {
       openRequest.current += 1;
       const request = openRequest.current;
+      selectedWorldIdRef.current = id;
       setSelectedWorldId(id);
+      setLastLocation({ kind: 'world', worldId: id });
       setSelectedWorld(null);
       setSelectedState('loading');
       setSelectedActivity([]);
@@ -399,9 +408,54 @@ export function App() {
   const openEntity = useCallback(
     (id: string) => {
       setEntityId(id);
+
+      const worldId = selectedWorldIdRef.current;
+
+      if (worldId !== null) {
+        setLastLocation({
+          kind: 'entity',
+          worldId,
+          entityId: id,
+          entityName: null,
+        });
+      }
+
       goToView('entity');
     },
     [goToView],
+  );
+
+  /** Completa el nombre de la ficha recordada cuando su página termina de cargarla. */
+  const handleEntityLoaded = useCallback(
+    (entity: { readonly id: string; readonly name: string }) => {
+      setLastLocation((current) =>
+        current?.kind === 'entity' && current.entityId === entity.id
+          ? { ...current, entityName: entity.name }
+          : current,
+      );
+    },
+    [],
+  );
+
+  const continueTarget = useMemo(
+    () => resolveContinueTarget(lastLocation, worlds),
+    [lastLocation, worlds],
+  );
+
+  /**
+   * Reanuda el destino recordado. Primero se abre el mundo (mantiene su
+   * esqueleto y fija el mundo seleccionado) y después la ficha, para no caer en
+   * una ficha sin mundo.
+   */
+  const handleContinue = useCallback(
+    async (target: ContinueTarget) => {
+      await openWorld(target.worldId);
+
+      if (target.kind === 'entity' && target.entityId !== null) {
+        openEntity(target.entityId);
+      }
+    },
+    [openEntity, openWorld],
   );
 
   const openSearchPage = useCallback(
@@ -707,10 +761,14 @@ export function App() {
 
     closeDialogAfterSuccess('main');
     notify('success', messages.worlds.notices.deleted(world.name));
+    setLastLocation((current) =>
+      current?.worldId === world.id ? null : current,
+    );
     await refreshLibrary();
     document.getElementById('wc-main')?.focus();
 
     if (selectedWorldId === world.id) {
+      selectedWorldIdRef.current = null;
       setSelectedWorld(null);
       setSelectedWorldId(null);
       setSelectedState('ready');
@@ -887,7 +945,11 @@ export function App() {
       activity={activity}
       state={libraryState}
       actions={cardActions}
+      continueTarget={continueTarget}
       onCreate={openCreateWorldDialog}
+      onContinue={(target) => {
+        void handleContinue(target);
+      }}
       onSeeAll={() => {
         goToView('worlds');
       }}
@@ -976,6 +1038,7 @@ export function App() {
               goToView('entities');
             }}
             onOpenEntity={openEntity}
+            onEntityLoaded={handleEntityLoaded}
             onNotify={notify}
           />
         ) : view === 'samples' ? (

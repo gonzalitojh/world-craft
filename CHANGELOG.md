@@ -290,6 +290,21 @@ primera versión estable.
   teclado, hash interno de Muestras, rail a 64 px, barra a 56 px y axe en ambos
   temas con el rail expandido y plegado. La suite queda en 433 unitarias (4
   omitidas), 73 de componentes, 134 de integración (1 omitida) y 37 E2E.
+- Inicio como mesa de trabajo (#127): bloque «Continuar» con el último mundo o
+  ficha abiertos en la sesión, hasta cinco mundos recientes con «Ver todos los
+  mundos» solo cuando sobran y actividad reciente de cinco entradas como
+  información secundaria. Sin contadores ni rejilla de accesos rápidos.
+- Tarjeta de mundo v2 (#127): **Abrir** visible más un menú `⋯` con Editar,
+  Duplicar, Archivar/Restaurar y Eliminar; portada si existe o marca procedural
+  determinista por `id` (4 tramas × 4 tonos con `--entity-*`) en lugar de la
+  inicial gigante; fecha relativa con `Intl.RelativeTimeFormat` y fecha completa
+  en el `title` del `<time>`. La misma tarjeta sirve a Inicio y a Mundos.
+- Pruebas de Inicio y tarjetas (#127): unitarias de fechas relativas, marca
+  procedural y destino de «Continuar»; componentes de la mesa de trabajo, los
+  estados y la tarjeta; E2E de continuar mundo y ficha, pérdida al recargar,
+  borrado del mundo recordado, menú de tarjeta con teclado, 12 combinaciones de
+  ventana, rail y tema, y axe en Inicio. La suite queda en 447 unitarias (4
+  omitidas), 87 de componentes, 134 de integración (1 omitida) y 42 E2E.
 
 ### Cambiado
 
@@ -298,7 +313,7 @@ primera versión estable.
   `--disabled-*`, `--skeleton*` y marcas `--entity-*`, radios 4/6/8, iconos
   16/20/24 px con trazo 1,6 y foco 2+2. Se adaptan botón, campos, insignia,
   tarjeta, diálogo, pestañas, toast, tooltip y estado vacío. Las pantallas
-  conservan su estructura v1 hasta #127–#133.
+  conservaron su estructura v1 hasta que su issue las migró (#127–#133).
 - Las acciones de la barra superior pasan a ser declarativas por vista (#126):
   «Crear mundo» o «Nueva ficha» como primaria y editar, duplicar,
   archivar/restaurar, eliminar, gestionar tipos, reconstruir el índice o mover a
@@ -310,6 +325,14 @@ primera versión estable.
   usan `--font-ui` y el contenido, `--font-content`.
 - El enlace «Saltar al contenido principal» enfoca el contenido sin cambiar el
   hash ni la vista (#126).
+- Inicio deja de ser un dashboard (#127): una columna con «Continuar»,
+  «Mundos recientes» y «Actividad reciente», sin contadores, accesos rápidos ni
+  párrafo de presentación. Con mundos, el contenido no declara ninguna acción
+  primaria: «Crear mundo» vive en la barra superior y el estado vacío conserva la
+  suya cuando no hay ninguno.
+- Las tarjetas de mundo de Inicio y Mundos pasan al patrón de una acción
+  visible más menú `⋯` (#127), con la marca procedural como sustituto de la
+  inicial y el resumen limitado a dos líneas. El hero de la ficha no cambia.
 - World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
   persistencia local. El renderer no accede a Node; la base de datos es SQLite y
   los assets viven en `app.getPath('userData')`.
@@ -351,6 +374,9 @@ primera versión estable.
 
 ### Eliminado
 
+- Los contadores de Inicio, la rejilla de accesos rápidos, el párrafo de
+  presentación y los cinco botones por tarjeta de mundo (#127). La inicial
+  gigante desaparece en favor de la portada o la marca procedural.
 - La aplicación Next.js, Supabase, Vercel y Cloudflare R2, junto con su esquema
   PostgreSQL, migraciones, pruebas, scripts y configuración.
 - Los ADRs de la etapa web, las capturas de referencia y los task files de las

@@ -75,8 +75,17 @@ function makeActivity(
 
 const noop = (): void => {};
 
+const baseActions = {
+  onOpen: noop,
+  onEdit: noop,
+  onDuplicate: noop,
+  onArchiveToggle: noop,
+  onDelete: noop,
+};
+
 describe('tarjeta de mundo', () => {
-  it('muestra nombre, resumen, géneros y acciones con el nombre del mundo', () => {
+  it('muestra una sola acción de apertura y guarda el resto en el menú', async () => {
+    const user = userEvent.setup();
     const world = makeWorld();
     const actions = {
       onOpen: vi.fn(),
@@ -86,7 +95,9 @@ describe('tarjeta de mundo', () => {
       onDelete: vi.fn(),
     };
 
-    renderWithI18n(<WorldCard world={world} actions={actions} />);
+    renderWithI18n(
+      <WorldCard world={world} actions={actions} now={BASE_TIME} />,
+    );
 
     expect(
       screen.getByRole('heading', { level: 3, name: world.name }),
@@ -94,15 +105,82 @@ describe('tarjeta de mundo', () => {
     expect(screen.getByText(world.summary ?? '')).toBeInTheDocument();
     expect(screen.getByText('Fantasía')).toBeInTheDocument();
 
-    fireEvent.click(
+    // Una única acción visible de apertura más el disparador del menú.
+    const open = screen.getByRole('button', {
+      name: messages.worlds.card.openNamed(world.name),
+    });
+    expect(open).toHaveTextContent(messages.worlds.card.open);
+    expect(
       screen.getByRole('button', {
-        name: messages.worlds.card.duplicateNamed(world.name),
+        name: messages.worlds.card.actionsNamed(world.name),
       }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: messages.worlds.card.delete }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(open);
+    expect(actions.onOpen).toHaveBeenCalledWith(world);
+
+    await user.click(
+      screen.getByRole('button', {
+        name: messages.worlds.card.actionsNamed(world.name),
+      }),
+    );
+
+    expect(
+      screen.getAllByRole('menuitem').map((item) => item.textContent),
+    ).toEqual([
+      messages.worlds.card.edit,
+      messages.worlds.card.duplicate,
+      messages.worlds.card.archive,
+      messages.worlds.card.delete,
+    ]);
+
+    await user.click(
+      screen.getByRole('menuitem', { name: messages.worlds.card.duplicate }),
     );
     expect(actions.onDuplicate).toHaveBeenCalledWith(world);
   });
 
-  it('cambia Archivar por Restaurar en un mundo archivado', () => {
+  it('recorre el menú con teclado y devuelve el foco al cerrar', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld();
+    const actions = {
+      onOpen: noop,
+      onEdit: vi.fn(),
+      onDuplicate: noop,
+      onArchiveToggle: noop,
+      onDelete: noop,
+    };
+
+    renderWithI18n(<WorldCard world={world} actions={actions} />);
+
+    const trigger = screen.getByRole('button', {
+      name: messages.worlds.card.actionsNamed(world.name),
+    });
+
+    trigger.focus();
+    await user.keyboard('{ArrowDown}');
+
+    expect(
+      screen.getByRole('menuitem', { name: messages.worlds.card.edit }),
+    ).toHaveFocus();
+
+    await user.keyboard('{End}');
+    expect(
+      screen.getByRole('menuitem', { name: messages.worlds.card.delete }),
+    ).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it('cambia Archivar por Restaurar en un mundo archivado', async () => {
+    const user = userEvent.setup();
     const world = makeWorld({
       name: 'Mundo guardado',
       status: 'archived',
@@ -119,13 +197,63 @@ describe('tarjeta de mundo', () => {
     renderWithI18n(<WorldCard world={world} actions={actions} />);
 
     expect(
-      screen.getByRole('button', {
-        name: messages.worlds.card.restoreNamed(world.name),
-      }),
-    ).toBeInTheDocument();
-    expect(
       screen.getByText(messages.worlds.status.archived),
     ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: messages.worlds.card.actionsNamed(world.name),
+      }),
+    );
+
+    await user.click(
+      screen.getByRole('menuitem', { name: messages.worlds.card.restore }),
+    );
+
+    expect(actions.onArchiveToggle).toHaveBeenCalledWith(world);
+  });
+
+  it('dibuja una marca procedural determinista cuando no hay portada', () => {
+    const world = makeWorld({ coverAssetId: null });
+
+    renderWithI18n(<WorldCard world={world} actions={baseActions} />);
+
+    const mark = document.querySelector('.wc-world-mark');
+    expect(mark).not.toBeNull();
+    expect(mark).toHaveAttribute('aria-hidden', 'true');
+    expect(mark).toHaveAttribute('data-motif');
+    expect(mark).toHaveAttribute('data-tone');
+
+    // Nunca la inicial gigante como sustituto de portada.
+    expect(mark?.textContent).toBe('');
+  });
+
+  it('usa la miniatura de la portada cuando existe', () => {
+    const world = makeWorld({ coverAssetId: 'asset-1' });
+
+    renderWithI18n(<WorldCard world={world} actions={baseActions} />);
+
+    const image = document.querySelector('.wc-world-mark__image');
+    expect(image).toHaveAttribute('alt', '');
+    expect(image?.getAttribute('src')).toContain('wc-asset://thumb/asset-1');
+  });
+
+  it('pinta la fecha relativa en un time con fecha completa accesible', () => {
+    const world = makeWorld();
+    const now = world.updatedAt + 5 * 60_000;
+
+    renderWithI18n(<WorldCard world={world} actions={baseActions} now={now} />);
+
+    const time = screen.getByText(
+      messages.worlds.card.relativeUpdated('hace 5 minutos'),
+    );
+
+    expect(time.tagName).toBe('TIME');
+    expect(time).toHaveAttribute(
+      'dateTime',
+      new Date(world.updatedAt).toISOString(),
+    );
+    expect(time).toHaveAttribute('title');
   });
 });
 
