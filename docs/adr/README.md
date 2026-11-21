@@ -38,6 +38,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0021](0021-entities-crud-gallery-tags-editor.md) | Fichas: modelo, galería, etiquetas y editor enriquecido (#74) | Aceptado | D-044 |
 | [0022](0022-relations-backlinks-graph-api.md) | Relaciones tipadas, etiquetas inversas y API del grafo (#75) | Aceptado | D-045 |
 | [0023](0023-global-search-fts5-command-palette.md) | Búsqueda global FTS5 y paleta de comandos (#76) | Aceptado | D-046 |
+| [0024](0024-obligatory-specialized-subagents.md) | Invocación obligatoria de los subagentes especializados | Aceptado | D-047 |
 
 ## 3. Relación con otros documentos
 
@@ -84,3 +85,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-20 | Se añade el ADR 0021 (fichas, galería, etiquetas y editor enriquecido, #74). |
 | 2026-11-20 | Se añade el ADR 0022 (relaciones tipadas, etiquetas inversas y API del grafo, #75). |
 | 2026-11-20 | Se añade el ADR 0023 (búsqueda global FTS5 y paleta de comandos, #76). |
+| 2026-11-21 | Se añade el ADR 0024 (invocación obligatoria de los subagentes especializados, tarea local `subagent-routing`). |

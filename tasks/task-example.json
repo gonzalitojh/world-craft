@@ -25,6 +25,16 @@
     "date": "2026-11-12",
     "notes": "Ejemplo ficticio: el usuario aprobó el alcance."
   },
+  "agents": {
+    "planning": "no aplica",
+    "implementation": "no aplica",
+    "ui": "no aplica",
+    "qa": "no aplica",
+    "security": "no aplica",
+    "documentation": "no aplica",
+    "publisher": "publisher",
+    "notes": "Ejemplo ficticio: tarea documental; QA y seguridad se resuelven con el checklist documental y el commit local con el publisher."
+  },
   "qa": {
     "result": "PASS",
     "notes": "Ejemplo ficticio: QA superado sin bloqueantes."

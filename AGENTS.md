@@ -292,10 +292,13 @@ task file y en el informe final:
 - [ ] Datos exportables e importables si se añade o cambia un modelo de datos.
 - [ ] Sin servicios de pago ni dependencias injustificadas.
 - [ ] La variante recomendada y la usada están registradas en el task file.
-- [ ] Task file actualizado con estados, QA, seguridad y documentación.
+- [ ] Agentes obligatorios invocados y registrados en `agents`:
+      `task-architect` (salvo excepción mecánica justificada),
+      `tdd-ddd-architect` en todo cambio de código y `ui-ux-designer` si hay UI.
+- [ ] Task file actualizado con estados, agentes, QA, seguridad y documentación.
 - [ ] Coste de contexto revisado: no se cambió de modelo ni de variante a mitad
       de sesión ni se editaron `AGENTS.md` o los agentes mientras se usaban
-      (ADR 0009).
+      (ver `docs/variantes-modelo.md`, sección 5).
 - [ ] Cambio en `review` para la revisión local del usuario, o PR fusionada en
       `dev` si ya se publicó.
 
@@ -347,10 +350,13 @@ No se saltan puertas. Si QA, seguridad o documentación fallan, se vuelve a la
 fase correspondiente. Si falta una decisión, se marca `needs-decision` o
 `status: blocked` y se detiene el trabajo.
 
-La orquestación es **proporcional al coste** (ADR 0009): las tareas documentales
-o de proceso resuelven QA, seguridad y documentación con el checklist
-documental, sin invocar subagentes; el detalle está en la sección 3.2 de
-[`docs/proceso-sdd.md`](docs/proceso-sdd.md).
+La orquestación es **proporcional al coste**, pero las puertas de código no son
+opcionales (ADR 0024): `task-architect` planifica toda tarea de código no
+mecánica, `tdd-ddd-architect` implementa todo cambio de código y
+`ui-ux-designer` interviene siempre que haya UI. La proporcionalidad se aplica
+a las tareas documentales o de proceso, que resuelven QA, seguridad y
+documentación con el checklist documental sin invocar subagentes. El detalle
+está en la sección 3.2 de [`docs/proceso-sdd.md`](docs/proceso-sdd.md).
 
 ## Documentos de referencia
 

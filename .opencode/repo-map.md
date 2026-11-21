@@ -10,6 +10,7 @@ y cómo trabajar sin gastar contexto ni dinero de más.
 |---|---|---|
 | Reglas obligatorias, Ready y Done | `AGENTS.md` (ya está cargado) | `docs/proceso-sdd.md` completo |
 | Puertas, estados y transiciones | `.opencode/skills/repo-map/SKILL.md`, sección 3 | `docs/proceso-sdd.md` completo |
+| Qué subagente invocar en cada tarea | `.opencode/skills/repo-map/SKILL.md`, sección 2 | `.opencode/agents/*.md` completos |
 | Esquema de task files y labels | `.opencode/skills/repo-map/SKILL.md`, secciones 4–5 | `docs/proceso-sdd.md` completo |
 | Publicación local-first | `.opencode/skills/repo-map/SKILL.md`, sección 6 | `docs/proceso-sdd.md` completo |
 | Variante de modelo | `docs/variantes-modelo.md`, sección 3 | No |
@@ -35,7 +36,11 @@ resuelve la duda; para el día a día basta la skill `repo-map`.
    y documental, `high` para implementación estándar, `max` solo para
    problemas ambiguos, de seguridad o de datos (ver
    `docs/variantes-modelo.md`).
-5. **Cierra la conversación con lo que el usuario necesita**: rama, commit,
+5. **No omitas las puertas de código.** `task-architect`, `tdd-ddd-architect`
+   y `ui-ux-designer` son obligatorios según el routing de la sección 2 de la
+   skill; el ahorro de contexto solo exime a las tareas documentales y a las
+   revisiones opcionales.
+6. **Cierra la conversación con lo que el usuario necesita**: rama, commit,
    diff stat y siguiente paso. Nada que solo repita el task file.
 
 ## 3. Qué cuesta el contexto

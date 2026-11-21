@@ -1,7 +1,8 @@
 # Equipo de agentes de World Craft
 
 > **Estado:** vigente desde el 12/11/2026; reescrito el 18/11/2026 para el
-> pivote a aplicación de escritorio Windows.
+> pivote a aplicación de escritorio Windows y revisado el 21/11/2026 para
+> recuperar la invocación obligatoria de los subagentes de código (ADR 0024).
 > **Ámbito:** equipo de agentes, responsabilidades e invocación.
 > **Jerarquía documental:** [`AGENTS.md`](../AGENTS.md) contiene las reglas
 > obligatorias; [`docs/proceso-sdd.md`](proceso-sdd.md) es la fuente canónica
@@ -65,7 +66,13 @@ issue → adopción (variante incluida) y task file → plan → implementación
 
 - Adoptar issues: comprobar tipo, área, estado, prioridad, tamaño, hito y
   variante; crear el task file.
-- Decidir qué subagentes necesita la tarea y no invocarlos cuando no aportan.
+- Aplicar el routing obligatorio: `task-architect` en toda tarea de código no
+  mecánica, `tdd-ddd-architect` en todo cambio de código y `ui-ux-designer`
+  siempre que haya UI. La proporcionalidad solo exime a las tareas
+  documentales y a las revisiones opcionales.
+- No implementar código por su cuenta ni aceptar un plan de la issue como
+  sustituto de `task-architect`.
+- Registrar en `agents` el subagente de cada puerta o el motivo de `no aplica`.
 - Mantener el task file y los labels sincronizados.
 - Detenerse ante una decisión pendiente o una contradicción con `AGENTS.md`.
 
@@ -73,13 +80,21 @@ issue → adopción (variante incluida) y task file → plan → implementación
 
 - Diseñar el plan técnico con Electron, React, SQLite, Drizzle, IPC tipado,
   backups, instalador y funcionamiento offline.
+- Recibir toda feature, refactor, bugfix no trivial, integración, migración,
+  cambio de IPC o seguridad, y cualquier tarea de varios módulos con plan
+  incompleto. Un plan ya escrito en la issue es contexto de entrada, no un
+  sustituto.
 - Identificar riesgos de datos, migraciones, seguridad, rendimiento y
   distribución.
 - Proponer pruebas y criterios verificables.
 - No implementar ni publicar.
+- Solo se omite en tarea mecánica `variant: low` con pasos cerrados, y el
+  motivo queda en `agents.planning`.
 
 ### 4.3 `tdd-ddd-architect`
 
+- Implementar **todo** cambio de código de producto, incluidas las
+  correcciones que pidan QA o seguridad; `sdd-master` no implementa.
 - Implementar con TDD pragmático: tests primero en dominio, migraciones, IPC,
   búsqueda y lógica crítica; sin sobreingeniería en CRUDs simples.
 - Respetar la separación main/preload/renderer, el contrato IPC, la CSP y el
@@ -120,6 +135,9 @@ issue → adopción (variante incluida) y task file → plan → implementación
 
 ### 4.8 `ui-ux-designer`
 
+- Intervenir siempre que una tarea cree o modifique UI, tokens, temas, layout,
+  estados visibles o accesibilidad; QA revisa el resultado, no sustituye el
+  diseño.
 - Diseñar para ratón y teclado en ventanas de escritorio, con mínimo 1024×700.
 - Mantener los tokens, los dos temas y la estética de «taller de cartógrafo».
 - Revisar contraste, foco, estados vacíos, errores y movimiento reducido.
@@ -127,16 +145,23 @@ issue → adopción (variante incluida) y task file → plan → implementación
 
 ## 5. Cómo invocar a los agentes
 
-- **Trabajo normal:** usa `sdd-master` como agente primario. Él decide qué
-  subagentes necesita. `opencode.jsonc` lo fija como `default_agent`, así que una
-  sesión nueva arranca ya en él sin seleccionarlo a mano.
-- **Planificar:** pide `task-architect`.
-- **Implementar o corregir:** pide `tdd-ddd-architect`.
+- **Trabajo normal:** usa `sdd-master` como agente primario. Él aplica el
+  routing obligatorio y decide las revisiones opcionales. `opencode.jsonc` lo
+  fija como `default_agent`, así que una sesión nueva arranca ya en él sin
+  seleccionarlo a mano.
+- **Planificar:** `task-architect` es obligatorio en toda tarea de código no
+  mecánica. Un plan de la issue no lo sustituye; solo se omite en tarea
+  mecánica `variant: low` con pasos cerrados.
+- **Implementar o corregir:** `tdd-ddd-architect` es obligatorio en todo cambio
+  de código; `sdd-master` no implementa.
+- **Diseñar o revisar UI:** `ui-ux-designer` es obligatorio siempre que haya UI
+  nueva o modificada; la revisión de QA no sustituye el diseño.
 - **Revisar calidad:** pide `qa-reviewer`.
 - **Revisar seguridad:** pide `security-champion`.
 - **Documentar:** pide `documentation-sync`.
 - **Preparar publicación local:** pide `publisher`.
-- **Diseñar o revisar UI:** pide `ui-ux-designer`.
+- **Registro:** el task file anota en `agents` el subagente de cada puerta o
+  `no aplica` con el motivo.
 - **Antes de trabajar una issue:** revisa el label `variant: *` y elige la
   variante recomendada en OpenCode. `sdd-master` la comprueba y te la recuerda.
   No cambies de modelo ni de variante a mitad de una sesión: invalida la caché
@@ -217,5 +242,8 @@ Uso de «Allow always»:
   obligatorias, `AGENTS.md`. No dupliques esos catálogos aquí.
 - Revisa que ningún agente referencie rutas, URLs, scripts, workflows o issues
   que no existan en este repositorio.
+- ADR 0024 fija el routing obligatorio: si cambias cuándo se invoca un
+  subagente, actualiza este documento, `sdd-master`, la skill `repo-map` y
+  `docs/proceso-sdd.md` en la misma tarea.
 - `documentation-sync` comprueba la coherencia documental en cada tarea que
   cambie agentes o proceso.

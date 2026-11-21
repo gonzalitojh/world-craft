@@ -141,7 +141,9 @@ Crea `tasks/task-issue-<N>.json` con el **esquema canónico** de
 `tasks/task-example.json`.
 
 - Crea el archivo con `status: created`, `validation`, `qa` y `security` en
-  `pendiente`, y `documentation` con los valores iniciales que correspondan.
+  `pendiente`, `agents` con las puertas en `pendiente` (o `no aplica` con
+  motivo en tareas documentales) y `documentation` con los valores iniciales
+  que correspondan.
 - Copia el label `variant: *` en `model_variant` (`default`, `low`, `high` o
   `max`). Si el usuario elige otra variante, anótalo en `validation.notes`.
 - Para tareas locales sin issue, usa `tasks/task-local-<slug>.json` y omite el
@@ -151,31 +153,41 @@ Crea `tasks/task-issue-<N>.json` con el **esquema canónico** de
 
 ## Paso 2 — Orquestación
 
-### 2.0 Regla de eficiencia
+### 2.0 Routing obligatorio de subagentes
 
 Cada subagente arranca con contexto limpio y vuelve a cargar su prompt y las
-instrucciones del proyecto. Invocarlo no es gratis, así que:
+instrucciones del proyecto. La proporcionalidad al coste se aplica a las
+revisiones opcionales y a las tareas documentales, **nunca** a las puertas de
+código:
 
-- **Tareas documentales o de proceso** (solo documentación, agentes,
-  configuración o `.json` de `tasks/`): no invoques `task-architect`,
-  `ui-ux-designer`, `qa-reviewer` ni `security-champion`. Haz la planificación,
-  el checklist documental y el escaneo de secretos tú mismo, siguiendo
-  `.opencode/skills/repo-map/SKILL.md` (sección 8), y guarda el informe en el
-  task file. `documentation-sync` tampoco hace falta: la edición es el propio
-  trabajo.
-- **Tareas de código**: invoca solo los subagentes que la tarea necesita (ver
-  siguientes pasos).
+| Situación | Subagente | Regla |
+|---|---|---|
+| Cualquier cambio de código de producto | `tdd-ddd-architect` | **Obligatorio.** El maestro no implementa por su cuenta. |
+| Feature, refactor, bugfix no trivial, integración, migración, IPC, seguridad, varios módulos o plan incompleto | `task-architect` | **Obligatorio** antes de implementar. |
+| Tarea mecánica `variant: low` con pasos cerrados y sin decisiones abiertas | `task-architect` | Se puede omitir; el motivo se registra en `agents.planning`. |
+| UI, tokens, temas, layout, accesibilidad o estados visibles | `ui-ux-designer` | **Obligatorio** antes de cerrar el diseño. |
+| Solo documentación, agentes, configuración o `.json` de `tasks/` | Ninguno | Checklist documental de la skill `repo-map`, sección 8. |
+
+- **Un plan en la issue no sustituye a `task-architect`.** Se usa como contexto
+  de entrada, pero el arquitecto valida arquitectura, riesgos, pruebas e
+  impacto. Solo la tarea mecánica anterior puede omitirlo.
+- **`ui-ux-designer` no se limita a «decidir el diseño».** Si hay UI nueva o
+  modificada, se invoca antes de implementar y se vuelve a él si QA detecta un
+  problema visual. `qa-reviewer` revisa el resultado, no sustituye el diseño.
 - **Pásale al subagente solo lo necesario** (criterios, rutas, hallazgos), no
   el historial de la conversación.
 - **No repitas comprobaciones**: si un subagente ya verificó algo, no lo
   vuelvas a verificar tú.
+- **Registra la invocación** en el bloque `agents` del task file: agente usado
+  por puerta o `no aplica` con el motivo. Una puerta sin registro se considera
+  no superada.
 
 ### 2.1 Planificación
 
-Si la issue ya trae un «Plan de implementación» detallado con pasos y
-criterios, úsalo como plan aprobado y no invoques a `task-architect`. En caso
-contrario, invoca a `task-architect` con el contexto de la issue, el task file y
-las restricciones del proyecto. El plan debe incluir:
+Invoca a `task-architect` con el contexto de la issue, el task file y las
+restricciones del proyecto, salvo la excepción mecánica de la sección 2.0. Un
+«Plan de implementación» detallado en la issue es contexto de entrada, no un
+sustituto del arquitecto. El plan debe incluir:
 
 - Alcance y criterios de aceptación.
 - Arquitectura o enfoque técnico.
@@ -184,16 +196,20 @@ las restricciones del proyecto. El plan debe incluir:
 - Estrategia de pruebas.
 - Impacto en ventana/escritorio, temas, accesibilidad, datos, manual y ADR.
 
-Guarda un resumen en el campo `plan` y pasa el estado a `planned`.
+Guarda un resumen en el campo `plan`, registra `agents.planning` y pasa el
+estado a `planned`.
 
 ### 2.2 Implementación
 
-Delega el código en `tdd-ddd-architect` con el plan aprobado. Usa
-`ui-ux-designer` una sola vez, cuando haya que decidir el diseño de UI (tokens,
-temas, tamaños de ventana, accesibilidad); la revisión visual va incluida en el
-checklist de `qa-reviewer` y no requiere una segunda consulta.
+Delega **siempre** el código en `tdd-ddd-architect` con el plan aprobado. No
+escribas ni pegues código de producto tú mismo; si QA o seguridad devuelven
+hallazgos de código, vuelve a delegar en él. Invoca a `ui-ux-designer` antes de
+implementar cuando la tarea cree o modifique UI, tokens, temas, layout,
+accesibilidad o estados visibles; vuelve a consultarlo si QA detecta un
+problema visual.
 
-Al terminar, pasa el estado a `implemented`.
+Al terminar, registra `agents.implementation` y `agents.ui`, y pasa el estado a
+`implemented`.
 
 ### 2.3 QA
 
@@ -206,13 +222,14 @@ Invoca a `qa-reviewer` con:
   preservación de datos y manual.
 
 Si QA falla, vuelve a implementación con el informe completo. Repite hasta que
-pase. Entonces pasa el estado a `validated`.
+pase. Registra `agents.qa` y pasa el estado a `validated`.
 
 ### 2.4 Seguridad
 
 Invoca a `security-champion`. Si encuentra hallazgos **HIGH**, vuelve a
 implementación y repite QA + seguridad. Los hallazgos MEDIUM y LOW se anotan
-pero no bloquean. Sin HIGH, pasa el estado a `security-cleared`.
+pero no bloquean. Registra `agents.security` y, sin HIGH, pasa el estado a
+`security-cleared`.
 
 ### 2.5 Documentación
 
@@ -231,7 +248,8 @@ Invoca a `documentation-sync` para:
 - `docs/persistencia.md` o `docs/base-de-datos/*` si cambian datos, migraciones,
   assets o copias.
 
-Cuando termine, pasa el estado a `documented`.
+Cuando termine, registra `agents.documentation` y pasa el estado a
+`documented`.
 
 ### 2.6 Publicación local
 
@@ -241,7 +259,7 @@ Invoca a `publisher` en modo `preparar`. Debe:
 - Hacer un commit con los archivos de la tarea.
 - Mostrar el diff, el commit y los comandos de prueba.
 - **No hacer push ni crear PR.**
-- Dejar el task file en `review`.
+- Dejar el task file en `review` con `agents.publisher` registrado.
 
 Después, pide al usuario que pruebe en local. No publiques por iniciativa
 propia.
@@ -348,6 +366,9 @@ Antes de dar una tarea por terminada, comprueba:
 - [ ] Accesibilidad sin errores críticos.
 - [ ] Datos preservados: migración, reinicio y actualización no borran nada.
 - [ ] Seguridad Electron revisada (contextIsolation, IPC tipado, CSP).
+- [ ] Agentes obligatorios invocados: `task-architect` (salvo excepción
+  mecánica justificada), `tdd-ddd-architect` y `ui-ux-designer` si hay UI;
+  registrados en `agents` del task file.
 - [ ] Manual actualizado si el cambio es visible.
 - [ ] ADR si hay decisión arquitectónica.
 - [ ] Seguridad revisada.
