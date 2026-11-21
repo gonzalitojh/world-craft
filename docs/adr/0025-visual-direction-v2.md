@@ -146,7 +146,8 @@ La decisión se desarrolla en
 - La dirección se aprueba en #124 antes de tocar CSS.
 - #125 migra tokens, tipografía y primitivas; actualiza los tests de tokens.
 - #126 migró el shell, la navegación y la barra superior (2026-11-21).
-- #127–#131 migran Inicio, mundo, ficha, relaciones y editor.
+- #127 migró Inicio y las tarjetas de mundo (2026-11-21).
+- #128–#131 migran mundo, ficha, relaciones y editor.
 - #132 persiste las preferencias de interfaz.
 - #133 audita contraste, temas, ventana, teclado, axe y ruido visual.
 - Si cambia la identidad, la paleta o las reglas de borde, se revisa este ADR y
@@ -191,3 +192,18 @@ abre por el hash interno `#/internal/samples`, resuelto en
 `src/renderer/shell/internal-views.ts`. Se retira el alias `--font-display`: la
 marca y el chrome usan `--font-ui` y el contenido, `--font-content`. No hay
 cambios en datos, IPC ni dependencias.
+
+#127 materializó las decisiones 5 y 6 en Inicio: la pantalla pasa a una mesa de
+trabajo en una columna con «Continuar» (último mundo o ficha de la sesión),
+«Mundos recientes» (cinco filas y «Ver todos los mundos» solo con más de cinco) y
+«Actividad reciente» (cinco entradas, secundaria y tras un divisor), sin
+contadores, rejilla de accesos rápidos ni párrafo de presentación. La tarjeta de
+mundo reduce su interfaz a **Abrir** más un menú `⋯` con Editar, Duplicar,
+Archivar/Restaurar y Eliminar, y sustituye la inicial gigante por la portada o
+una marca procedural determinista derivada del `id` (4 tramas × 4 tonos con
+`--entity-*`, decorativa y estática). La fecha se pinta con
+`Intl.RelativeTimeFormat` y la fecha completa queda en `<time>` y en su `title`.
+«Continuar» es **memoria de sesión**: no se persiste, se pierde al recargar y su
+persistencia es #132. No se crea un ADR nuevo: es la aplicación concreta de una
+dirección ya aceptada, sin cambios en datos, IPC, CSP, preload, dependencias ni
+persistencia.

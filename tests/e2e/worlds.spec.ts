@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { ElectronApplication, Page } from '@playwright/test';
 
 import { es as messages } from '../../src/renderer/messages/es';
 
@@ -20,6 +20,109 @@ async function dismissToasts(page: Page) {
 async function openCreateDialog(page: Page) {
   await page.getByRole('button', { name: messages.home.emptyAction }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
+}
+
+async function goHome(page: Page) {
+  await page
+    .getByRole('navigation', { name: messages.shell.navigationLabel })
+    .getByRole('button', { name: messages.shell.views.home })
+    .click();
+}
+
+async function goWorlds(page: Page) {
+  await page
+    .getByRole('navigation', { name: messages.shell.navigationLabel })
+    .getByRole('button', { name: messages.shell.views.worlds })
+    .click();
+}
+
+async function createEntity(page: Page, name: string) {
+  await page
+    .getByRole('button', { name: messages.entities.list.title })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: messages.entities.list.title }),
+  ).toBeVisible();
+
+  await page
+    .locator('#wc-main')
+    .getByRole('button', { name: messages.entities.list.create })
+    .first()
+    .click();
+
+  const dialog = page.getByRole('dialog');
+
+  await dialog
+    .getByLabel(messages.entities.create.nameLabel, { exact: false })
+    .fill(name);
+  await dialog
+    .getByRole('button', { name: messages.entities.create.submit })
+    .click();
+
+  await expect(
+    page.getByRole('heading', { level: 2, name, exact: true }),
+  ).toBeVisible();
+  await dismissToasts(page);
+}
+
+async function openCardMenu(page: Page, name: string) {
+  await page
+    .getByRole('button', { name: messages.worlds.card.actionsNamed(name) })
+    .click();
+}
+
+async function setTheme(page: Page, theme: 'light' | 'dark') {
+  const html = page.locator('html');
+  const current = await html.getAttribute('data-theme');
+
+  if (current !== theme) {
+    const currentLabel =
+      current === 'dark'
+        ? messages.shell.theme.currentDark
+        : messages.shell.theme.currentLight;
+
+    await page
+      .getByRole('button', {
+        name: messages.shell.theme.switchLabel(currentLabel),
+      })
+      .click();
+  }
+
+  await expect(html).toHaveAttribute('data-theme', theme);
+}
+
+async function setRail(page: Page, collapsed: boolean) {
+  const collapseButton = page.getByRole('button', {
+    name: messages.shell.collapse,
+  });
+  const expanded = (await collapseButton.count()) > 0;
+
+  if (collapsed && expanded) {
+    await collapseButton.click();
+  } else if (!collapsed && !expanded) {
+    await page.getByRole('button', { name: messages.shell.expand }).click();
+  }
+}
+
+async function setContentWidth(
+  electronApp: ElectronApplication,
+  page: Page,
+  width: number,
+) {
+  await electronApp.evaluate(
+    ({ BrowserWindow }, size) => {
+      BrowserWindow.getAllWindows()[0]?.setContentSize(size.width, 700);
+    },
+    { width },
+  );
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      }),
+  );
 }
 
 async function fillWorldForm(
@@ -132,11 +235,10 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
     page.getByRole('heading', { level: 3, name: COPY_NAME, exact: true }),
   ).toBeVisible();
 
-  // Archivado del original.
+  // Archivado del original desde el menú «⋯» de la tarjeta.
+  await openCardMenu(page, WORLD_NAME);
   await page
-    .getByRole('button', {
-      name: messages.worlds.card.archiveNamed(WORLD_NAME),
-    })
+    .getByRole('menuitem', { name: messages.worlds.card.archive })
     .click();
   await page
     .getByRole('dialog')
@@ -155,10 +257,9 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
   ).toBeVisible();
 
   // Restauración.
+  await openCardMenu(page, WORLD_NAME);
   await page
-    .getByRole('button', {
-      name: messages.worlds.card.restoreNamed(WORLD_NAME),
-    })
+    .getByRole('menuitem', { name: messages.worlds.card.restore })
     .click();
   await page
     .getByRole('dialog')
@@ -174,8 +275,9 @@ test('crea, edita, duplica, archiva, restaura y elimina un mundo', async ({
 
   // Eliminación con confirmación de la copia.
   await page.getByLabel(messages.worlds.list.statusLabel).selectOption('all');
+  await openCardMenu(page, COPY_NAME);
   await page
-    .getByRole('button', { name: messages.worlds.card.deleteNamed(COPY_NAME) })
+    .getByRole('menuitem', { name: messages.worlds.card.delete })
     .click();
   await page
     .getByRole('dialog')
@@ -223,6 +325,135 @@ test('el diálogo se abre y se cierra por teclado y devuelve el foco', async ({
     .getByRole('button', { name: messages.components.dialog.close })
     .click();
   await expect(createButton).toBeFocused();
+});
+
+test('Continúa con el último mundo de la sesión y se pierde al recargar', async ({
+  page,
+}) => {
+  await createWorld(page, { name: WORLD_NAME });
+  await goHome(page);
+
+  const continueRegion = page.getByRole('region', {
+    name: messages.home.continueTitle,
+  });
+
+  await expect(continueRegion).toBeVisible();
+  await expect(
+    continueRegion.getByRole('heading', { level: 3, name: WORLD_NAME }),
+  ).toBeVisible();
+
+  await continueRegion
+    .getByRole('button', { name: messages.home.continueWorldAction })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: WORLD_NAME, exact: true }),
+  ).toBeVisible();
+
+  await goHome(page);
+  await expect(
+    page.getByRole('region', { name: messages.home.continueTitle }),
+  ).toBeVisible();
+
+  // La memoria es de sesión: al recargar desaparece y manda la estantería.
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.shell.views.home }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: messages.home.continueTitle }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { level: 3, name: WORLD_NAME, exact: true }),
+  ).toBeVisible();
+});
+
+test('Continúa con la última ficha abierta y vuelve a ella', async ({
+  page,
+}) => {
+  const entityName = 'Aldo Varela';
+
+  await createWorld(page, { name: WORLD_NAME });
+  await createEntity(page, entityName);
+  await goHome(page);
+
+  const continueRegion = page.getByRole('region', {
+    name: messages.home.continueTitle,
+  });
+
+  await expect(
+    continueRegion.getByRole('heading', { level: 3, name: entityName }),
+  ).toBeVisible();
+  await expect(
+    continueRegion.getByText(messages.home.continueEntityMeta(WORLD_NAME)),
+  ).toBeVisible();
+
+  await continueRegion
+    .getByRole('button', { name: messages.home.continueEntityAction })
+    .click();
+
+  await expect(
+    page.getByRole('heading', { level: 2, name: entityName, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: WORLD_NAME, exact: true }),
+  ).toBeVisible();
+});
+
+test('Continuar desaparece si se elimina el mundo recordado', async ({
+  page,
+}) => {
+  await createWorld(page, { name: WORLD_NAME });
+  await goHome(page);
+  await expect(
+    page.getByRole('region', { name: messages.home.continueTitle }),
+  ).toBeVisible();
+
+  await goWorlds(page);
+  await openCardMenu(page, WORLD_NAME);
+  await page
+    .getByRole('menuitem', { name: messages.worlds.card.delete })
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: messages.worlds.confirm.deleteSubmit })
+    .click();
+
+  // Al borrar el mundo abierto, App vuelve a Inicio y el destino deja de existir.
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.shell.views.home }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: messages.home.continueTitle }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { level: 2, name: messages.home.emptyTitle }),
+  ).toBeVisible();
+});
+
+test('el menú de la tarjeta funciona con teclado y devuelve el foco', async ({
+  page,
+}) => {
+  await createWorld(page, { name: WORLD_NAME });
+  await goHome(page);
+
+  const trigger = page.getByRole('button', {
+    name: messages.worlds.card.actionsNamed(WORLD_NAME),
+  });
+
+  await trigger.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(
+    page.getByRole('menuitem', { name: messages.worlds.card.edit }),
+  ).toBeFocused();
+
+  await page.keyboard.press('End');
+  await expect(
+    page.getByRole('menuitem', { name: messages.worlds.card.delete }),
+  ).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menuitem')).toHaveCount(0);
+  await expect(trigger).toBeFocused();
 });
 
 test('el dashboard y la ficha funcionan en ambos temas y sin desbordar', async ({
@@ -321,12 +552,11 @@ test('el dashboard y la ficha funcionan en ambos temas y sin desbordar', async (
     ).toBeLessThanOrEqual(worldMetrics.clientWidth);
 
     // Inicio con la tarjeta del mundo largo tampoco desborda.
-    await page
-      .getByRole('navigation', { name: messages.shell.navigationLabel })
-      .getByRole('button', { name: messages.shell.views.home })
-      .click();
+    await goHome(page);
     await expect(
-      page.getByRole('heading', { level: 3, name: longName, exact: true }),
+      page
+        .getByRole('region', { name: messages.home.recentTitle })
+        .getByRole('heading', { level: 3, name: longName, exact: true }),
     ).toBeVisible();
 
     const homeMetrics = await page.evaluate(() => ({
@@ -348,4 +578,125 @@ test('el dashboard y la ficha funcionan en ambos temas y sin desbordar', async (
       page.getByRole('heading', { level: 2, name: longName, exact: true }),
     ).toBeVisible();
   }
+});
+
+test('Inicio envuelve el contenido largo sin scroll horizontal con el rail expandido y plegado', async ({
+  page,
+  electronApp,
+}) => {
+  const longName =
+    'Crónica de la expedición al archipiélago de las Mareas Grises y los pactos de sal del alba';
+  const longSummary =
+    'La expedición recorrió las islas del norte, levantó actas de cada desembarco y dibujó a mano las líneas de bajamar que el atlas oficial daba por definitivas. '
+      .repeat(3)
+      .slice(0, 280)
+      // El formulario recorta y elimina el espacio final del resumen.
+      .trimEnd();
+  const genres = [
+    'Fantasía',
+    'Aventura',
+    'Misterio',
+    'Histórico',
+    'Marítimo',
+    'Épico',
+    'Intriga',
+    'Viajes',
+  ];
+
+  expect(longName).toHaveLength(90);
+  // El formulario y el contrato limitan el resumen a 280 caracteres y recortan
+  // el espacio final; la cadena queda en 279.
+  expect(longSummary).toHaveLength(279);
+
+  await createWorld(page, {
+    name: longName,
+    summary: longSummary,
+    genres: genres.join(', '),
+  });
+  await goHome(page);
+
+  const recent = page.getByRole('region', {
+    name: messages.home.recentTitle,
+  });
+  const card = recent.getByRole('article');
+  const summary = card.locator('.wc-world-card__summary');
+
+  await expect(
+    card.getByRole('heading', { level: 3, name: longName, exact: true }),
+  ).toBeVisible();
+  await expect(card.locator('.wc-world-card__genres li')).toHaveCount(8);
+
+  // El resumen se limita a dos líneas sin perder el texto completo del DOM.
+  expect(await summary.textContent()).toBe(longSummary);
+  expect(
+    await summary.evaluate((element) =>
+      window.getComputedStyle(element).getPropertyValue('-webkit-line-clamp'),
+    ),
+  ).toBe('2');
+
+  // axe sin críticos ni graves en Inicio, en los dos temas.
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme);
+    await goHome(page);
+
+    const results = await analyzeWithAxe(page, {
+      runOnly: {
+        type: 'tag',
+        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+      },
+    });
+
+    expect(results.testEngine.name).toBe('axe-core');
+    expect(
+      results.violations
+        .filter(
+          (violation) =>
+            violation.impact === 'critical' || violation.impact === 'serious',
+        )
+        .map((violation) => ({
+          id: violation.id,
+          help: violation.help,
+          nodes: violation.nodes.length,
+        })),
+    ).toEqual([]);
+  }
+
+  for (const collapsed of [false, true] as const) {
+    await setRail(page, collapsed);
+
+    for (const theme of ['light', 'dark'] as const) {
+      await setTheme(page, theme);
+
+      for (const width of [1024, 1280, 1600] as const) {
+        await setContentWidth(electronApp, page, width);
+        await goHome(page);
+
+        const metrics = await page.evaluate(() => ({
+          clientWidth: document.documentElement.clientWidth,
+          documentWidth: document.documentElement.scrollWidth,
+          bodyWidth: document.body.scrollWidth,
+        }));
+
+        expect(
+          metrics.documentWidth,
+          `${width}px, rail ${collapsed ? 'plegado' : 'expandido'}, tema ${theme}: ${JSON.stringify(metrics)}`,
+        ).toBeLessThanOrEqual(metrics.clientWidth);
+        expect(metrics.bodyWidth).toBeLessThanOrEqual(metrics.clientWidth);
+
+        await expect(
+          page
+            .getByRole('region', { name: messages.home.recentTitle })
+            .getByRole('heading', { level: 3, name: longName, exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('button', {
+            name: messages.worlds.card.openNamed(longName),
+          }),
+        ).toBeVisible();
+      }
+    }
+  }
+
+  // Se deja el rail expandido para no contaminar la ventana de la prueba.
+  await setRail(page, false);
 });

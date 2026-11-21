@@ -42,6 +42,20 @@ export const es = {
     },
   },
   home: {
+    continueTitle: 'Continuar',
+    continueWorldAction: 'Abrir el mundo',
+    continueEntityAction: 'Abrir la ficha',
+    continueEntityFallback: 'Última ficha abierta',
+    continueEntityMeta: (worldName: string): string => `en «${worldName}»`,
+    recentTitle: 'Mundos recientes',
+    seeAll: 'Ver todos los mundos',
+    activityTitle: 'Actividad reciente',
+    activityEmpty: 'Todavía no hay actividad registrada.',
+    loading: 'Cargando tus mundos…',
+    errorTitle: 'No se pudieron cargar los mundos',
+    errorDescription:
+      'La aplicación no pudo leer la lista de mundos. Vuelve a intentarlo; tus datos siguen guardados en este equipo.',
+    retry: 'Volver a intentar',
     emptyTitle: 'Todavía no hay ningún mundo',
     emptyDescription:
       'Un mundo reúne las fichas, las relaciones, los mapas y el manuscrito de tu historia. Cuando crees el primero aparecerá aquí, con su portada, su descripción y los accesos a cada sección.',
@@ -69,30 +83,6 @@ export const es = {
       it: 'Italiano',
     },
     dashboard: {
-      lead: 'Desde aquí ves tus mundos, lo último que ha pasado en ellos y los accesos para seguir trabajando.',
-      worldsTitle: 'Tus mundos',
-      worldsLead:
-        'Cada mundo reúne sus fichas, mapas, manuscritos y partidas. Abre uno para ver su ficha completa.',
-      activityTitle: 'Actividad reciente',
-      activityLead:
-        'Lo último que ha pasado en todos tus mundos, sin mezclar su contenido.',
-      activityEmpty: 'Todavía no hay actividad registrada.',
-      quickTitle: 'Accesos rápidos',
-      quickCreate: 'Crear un mundo nuevo',
-      quickCreateDescription:
-        'Empieza un mundo desde cero con su nombre, su resumen y sus géneros.',
-      quickManage: 'Gestionar los mundos',
-      quickManageDescription:
-        'Busca, archiva, duplica o elimina los mundos que ya tienes.',
-      statsTitle: 'Resumen',
-      statWorlds: 'Mundos',
-      statActive: 'Activos',
-      statArchived: 'Archivados',
-      seeAll: 'Ver todos los mundos',
-      loading: 'Cargando tus mundos…',
-      errorTitle: 'No se pudieron cargar los mundos',
-      errorDescription:
-        'La aplicación no pudo leer la lista de mundos. Vuelve a intentarlo; tus datos siguen guardados en este equipo.',
       retry: 'Volver a intentar',
     },
     list: {
@@ -125,17 +115,12 @@ export const es = {
       open: 'Abrir',
       openNamed: (name: string): string => `Abrir el mundo «${name}»`,
       edit: 'Editar',
-      editNamed: (name: string): string => `Editar el mundo «${name}»`,
       duplicate: 'Duplicar',
-      duplicateNamed: (name: string): string => `Duplicar el mundo «${name}»`,
       archive: 'Archivar',
-      archiveNamed: (name: string): string => `Archivar el mundo «${name}»`,
       restore: 'Restaurar',
-      restoreNamed: (name: string): string => `Restaurar el mundo «${name}»`,
       delete: 'Eliminar',
-      deleteNamed: (name: string): string =>
-        `Eliminar el mundo «${name}» (se moverá a la papelera)`,
-      updated: (date: string): string => `Actualizado el ${date}`,
+      actionsNamed: (name: string): string => `Más acciones de «${name}»`,
+      relativeUpdated: (relative: string): string => `Actualizado ${relative}`,
       noSummary: 'Sin resumen todavía.',
     },
     detail: {

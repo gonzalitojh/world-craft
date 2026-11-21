@@ -2,11 +2,11 @@
 
 > **Estado:** dirección v2 aprobada el 21/11/2026 en la issue #124 mediante el
 > ADR 0025 y la decisión D-048. #125 implementó los tokens, la tipografía y las
-> primitivas; #126 migró el shell, la navegación y la barra superior. Las
-> pantallas restantes se migran en #127–#133. Este documento describe el
-> contrato completo y distingue lo implementado de lo previsto, sin presentar
-> como existente nada que aún no lo esté. El estado real se mantiene en la
-> sección 17.
+> primitivas; #126 migró el shell, la navegación y la barra superior; #127 migró
+> Inicio y las tarjetas de mundo. Las pantallas restantes se migran en
+> #128–#133. Este documento describe el contrato completo y distingue lo
+> implementado de lo previsto, sin presentar como existente nada que aún no lo
+> esté. El estado real se mantiene en la sección 17.
 > **Ámbito:** identidad, superficies, color, tipografía, iconos, espaciado,
 > radios, elevación, bordes, componentes, shell, estados, accesibilidad,
 > movimiento, patrones de escritorio, migración y verificación.
@@ -419,7 +419,8 @@ como existente lo que aún no lo está.
 | Casilla y radio | Nativos, con etiqueta y foco visible; el objetivo de la fila y la etiqueta es de al menos 28 px. | Implementado | #125 |
 | Búsqueda | Campo con icono, limpiar y resultado anunciado; la barra solo ofrece el disparador de la paleta, sin duplicar el campo. | Implementado | #76, #126 |
 | Insignia | Tonos neutro, acento, éxito, aviso y peligro; siempre con texto. | Adaptado v2 | #125 |
-| Tarjeta | Sin contorno ni sombra por defecto; título, contenido y acciones en `⋯`. | Adaptado v2 | #125 |
+| Tarjeta | Sin contorno ni sombra por defecto; título y contenido primero. Una acción visible y las secundarias en `⋯`; portada o marca procedural, sin iniciales gigantes. La misma tarjeta sirve a la fila de Inicio y a la rejilla de Mundos. | Implementada | #125, #127 |
+| Marca procedural de mundo | Portada si existe; si no, sello determinista por `id` con 4 tramas × 4 tonos resueltos con `--entity-*`. Decorativa (`aria-hidden`), estática y legible en ambos temas. | Implementada | #127 |
 | Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Adaptado v2 | #125 |
 | Menú `⋯` | Acciones secundarias; teclado, foco y cierre con Escape. Se posiciona respecto al viewport, elige el lado con más espacio, limita su altura y desplaza su contenido sin cerrar el menú. | Implementado | #125 |
 | Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape sin cerrar el diálogo que lo contiene. Ancho de contenido con máximo de 18rem y colocación arriba o abajo según el espacio. | Adaptado v2 | #125 |
@@ -470,14 +471,47 @@ como existente lo que aún no lo está.
 
 ### 10.2 Inicio
 
-- Objetivo de #127: mesa de trabajo, no dashboard de contadores.
-- Desde #126 la acción primaria «Crear mundo» vive en la barra superior cuando ya
-  hay mundos, la creación rápida de una ficha está en `⋯` y el estado vacío
-  conserva su propio botón sin duplicarse en la barra.
-- Las tarjetas y los accesos rápidos actuales se mantienen hasta #127, que
-  reduce cada tarjeta a una acción principal y un `⋯`.
-- Acceso rápido a crear mundo, buscar y continuar donde se dejó, sin acumular
-  botones.
+Implementado en #127: Inicio es una mesa de trabajo en una sola columna, no un
+dashboard de contadores.
+
+- **Orden:** «Continuar» (condicional) → «Mundos recientes» → «Actividad
+  reciente». No hay contadores, rejilla de accesos rápidos ni párrafo de
+  presentación.
+- **Continuar** retoma el último mundo o ficha abiertos durante la sesión. Es
+  memoria de React: no se persiste, desaparece al recargar y se omite si no hay
+  destino o si el mundo recordado ya no está en la biblioteca. Al eliminar ese
+  mundo se limpia. El botón dice **Abrir el mundo** o **Abrir la ficha**; no
+  existe «continuar escribiendo» hasta que haya manuscrito. Su persistencia es
+  #132.
+- **Mundos recientes** muestra como máximo cinco filas. «Ver todos los mundos»
+  solo aparece con más de cinco y es una acción fantasma, no una primaria.
+- **Actividad reciente** muestra cinco entradas, con tipografía y peso
+  secundarios, separada por un divisor `--border`.
+- **Una sola primaria.** Con al menos un mundo, «Crear mundo» vive en la barra
+  superior y el contenido no declara ninguna primaria. Con cero mundos manda el
+  estado vacío, que conserva el único botón primario.
+- **Tarjeta compartida.** `WorldCard` es la misma en la fila de Inicio y en la
+  rejilla de Mundos. En Inicio ocupa tres columnas (marca, contenido, acciones);
+  en Mundos pasa a dos filas con las acciones a pie completo. La tarjeta no es
+  clicable entera para no anidar controles: **Abrir** y `⋯` son los únicos
+  controles.
+- **Contenido de la tarjeta:** marca o portada, nombre con `h3`, estado,
+  resumen limitado a dos líneas con el texto completo en el DOM y en `title`,
+  géneros, fecha relativa y acciones. El menú `⋯` contiene Editar, Duplicar,
+  Archivar/Restaurar y Eliminar.
+- **Fechas:** `Intl.RelativeTimeFormat` con ventanas de 45 s, 45 min, 22 h, 6
+  días, 4 semanas y 11 meses; el futuro se recorta a «ahora». El `<time>` lleva
+  `dateTime` con la fecha completa y `title` con fecha y hora.
+- **Estados:** carga con `aria-busy`, `role="status"` y tres esqueletos; error
+  con explicación y «Volver a intentar»; vacío con una sola primaria. La
+  actividad no se pinta durante la carga.
+- **Marca procedural:** `worldMarkVariant` usa FNV-1a del `id` inmutable; el
+  motivo usa los dos bits bajos y el tono los siguientes, de modo que renombrar
+  o editar el mundo no cambia la marca. Sin `Math.random`, fecha ni estado.
+  Cuatro tramas (meridianos, contornos, cruz, líneas) por cuatro pares
+  `--entity-*`; la marca es decorativa y no anima.
+- **Espacio y texto largo:** `min-width: 0`, `overflow-wrap: anywhere` y rejilla
+  que envuelve a 1024/1280/1600 px sin scroll horizontal de página.
 
 ### 10.3 Vista de mundo
 
@@ -667,7 +701,7 @@ Reglas de migración:
 | ADR 0025, D-048, este documento y taxonomía de hitos | Aprobado | #124 |
 | Tokens, tipografía y primitivas v2 | Implementado | #125 |
 | Shell, navegación y barra superior v2 | Implementado | #126 |
-| Inicio y tarjetas de mundo | Previsto | #127 |
+| Inicio y tarjetas de mundo | Implementado | #127 |
 | Vista de mundo modular | Previsto | #128 |
 | Ficha como documento y panel de propiedades | Previsto | #129 |
 | Relaciones legibles y grafo contextual | Previsto | #130 |
@@ -676,10 +710,10 @@ Reglas de migración:
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
 Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
-los tokens y las primitivas ya son v2 desde #125 y el shell desde #126, pero la
-estructura y la jerarquía de Inicio, la vista de mundo, la ficha, las relaciones
-y el editor siguen siendo las de v1 hasta que su issue las migre. No se deben
-tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
+los tokens y las primitivas ya son v2 desde #125, el shell desde #126 e Inicio
+desde #127; la vista de mundo, la ficha, las relaciones y el editor siguen siendo
+las de v1 hasta que su issue las migre. No se deben tomar capturas nuevas como si
+esas pantallas ya estuvieran rediseñadas.
 
 ### 17.2 Verificación automática
 
@@ -720,11 +754,32 @@ tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
 - `tests/e2e/search.spec.ts` entra a la búsqueda por la paleta, porque el rail ya
   no tiene ítem; `tests/components/search.test.tsx` comprueba que la paleta no
   ofrece Muestras y que el comando se llama «Abrir la página de búsqueda».
+- `tests/unit/i18n/formats.test.ts` cubre `formatRelativeTime` con reloj
+  inyectable: «ahora», recorte de futuro y las ventanas de segundos, minutos,
+  horas, días, semanas, meses y años. `tests/unit/world-mark.test.ts` fija los
+  vectores de `worldMarkVariant`, su determinismo, la cobertura de 4 motivos y 4
+  tonos y la cadena vacía. `tests/unit/recent-location.test.ts` cubre
+  `resolveContinueTarget`: sin destino, mundo ausente, mundo, ficha con y sin
+  nombre y no mutación.
+- `tests/components/home-page.test.tsx` verifica la mesa de trabajo: orden de
+  secciones, ausencia de contadores y accesos rápidos, cinco mundos y «Ver
+  todos» solo con más de cinco, cinco entradas de actividad, «Continuar» con
+  mundo y ficha, texto de reserva, omisión sin destino, carga con `aria-busy` y
+  `role="status"`, error con reintento y una sola primaria en el estado vacío.
+  `tests/components/worlds.test.tsx` cubre la marca procedural (`data-motif`,
+  `data-tone`, `aria-hidden` y sin texto), la miniatura de portada y el `<time>`
+  relativo con `dateTime` y `title`.
+- `tests/e2e/worlds.spec.ts` recorre «Continuar» con el último mundo, su pérdida
+  al recargar, la reanudación de una ficha, la desaparición al eliminar el mundo
+  recordado y el menú de la tarjeta con flechas, `Fin`, `Escape` y retorno de
+  foco. Añade Inicio con contenido largo a 1024, 1280 y 1600 px, rail expandido y
+  plegado y ambos temas (12 combinaciones), sin scroll horizontal, y ejecuta axe
+  WCAG 2.1 A/AA en Inicio en Claro y Oscuro sin violaciones críticas ni graves.
 - `scripts/check-build.mjs` verifica que los dos woff2 viajan en `out/renderer`,
   que el CSS construido los referencia con rutas relativas y que no hay hosts
   remotos de fuentes.
-- Al cerrar #126 la suite queda en 433 unitarias en verde (4 omitidas), 73 de
-  componentes, 134 de integración en verde (1 omitida) y 37 E2E en verde.
+- Al cerrar #127 la suite queda en 447 unitarias en verde (4 omitidas), 87 de
+  componentes, 134 de integración en verde (1 omitida) y 42 E2E en verde.
 - La matriz visual completa, las capturas y la auditoría de todas las pantallas
   se completan en #133.
 

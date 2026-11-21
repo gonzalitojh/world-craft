@@ -41,6 +41,16 @@ export interface Formatters {
     values: readonly string[],
     options?: Intl.ListFormatOptions,
   ) => string;
+  /**
+   * Distancia relativa entre `value` y `now` con `Intl.RelativeTimeFormat`.
+   *
+   * `now` se puede inyectar para que las pruebas sean deterministas; por
+   * defecto usa el reloj del equipo. Las fechas futuras se recortan a «ahora».
+   */
+  readonly formatRelativeTime: (
+    value: Date | number | string,
+    now?: number,
+  ) => string;
   readonly plural: (count: number, forms: PluralForms) => string;
   readonly compare: (left: string, right: string) => number;
 }
@@ -60,8 +70,21 @@ const DEFAULT_PERCENT_OPTIONS: Intl.NumberFormatOptions = {
   minimumFractionDigits: 0,
 };
 
+const SECOND = 1_000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const WEEK = 7 * DAY;
+const MONTH = 30 * DAY;
+const YEAR = 365 * DAY;
+
 function toDate(value: Date | number | string): Date {
   return value instanceof Date ? value : new Date(value);
+}
+
+/** Redondeo mínimo de una unidad para no pintar «hace 0 minutos». */
+function units(delta: number, size: number): number {
+  return Math.max(1, Math.round(delta / size));
 }
 
 /**
@@ -74,6 +97,9 @@ export function createFormatters(locale: Locale): Formatters {
   const intlLocale = toIntlLocale(locale);
   const pluralRules = new Intl.PluralRules(intlLocale);
   const collator = new Intl.Collator(intlLocale);
+  const relativeFormat = new Intl.RelativeTimeFormat(intlLocale, {
+    numeric: 'auto',
+  });
 
   const formatDate = (
     value: Date | number | string,
@@ -81,12 +107,47 @@ export function createFormatters(locale: Locale): Formatters {
   ): string =>
     new Intl.DateTimeFormat(intlLocale, options).format(toDate(value));
 
+  const formatRelativeTime = (
+    value: Date | number | string,
+    now: number = Date.now(),
+  ): string => {
+    // Un reloj desfasado no debe producir «dentro de 2 horas» en una ficha.
+    const delta = Math.max(0, now - toDate(value).getTime());
+
+    if (delta < 45 * SECOND) {
+      return relativeFormat.format(0, 'second');
+    }
+
+    if (delta < 45 * MINUTE) {
+      return relativeFormat.format(-units(delta, MINUTE), 'minute');
+    }
+
+    if (delta < 22 * HOUR) {
+      return relativeFormat.format(-units(delta, HOUR), 'hour');
+    }
+
+    if (delta < 6 * DAY) {
+      return relativeFormat.format(-units(delta, DAY), 'day');
+    }
+
+    if (delta < 4 * WEEK) {
+      return relativeFormat.format(-units(delta, WEEK), 'week');
+    }
+
+    if (delta < 11 * MONTH) {
+      return relativeFormat.format(-units(delta, MONTH), 'month');
+    }
+
+    return relativeFormat.format(-units(delta, YEAR), 'year');
+  };
+
   return {
     locale,
     intlLocale,
     formatDate,
     formatDateTime: (value, options = DEFAULT_DATE_TIME_OPTIONS) =>
       formatDate(value, options),
+    formatRelativeTime,
     formatNumber: (value, options) =>
       new Intl.NumberFormat(intlLocale, options).format(value),
     formatPercent: (value, options = DEFAULT_PERCENT_OPTIONS) =>

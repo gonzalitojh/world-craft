@@ -1253,48 +1253,104 @@
   min-width: 0;
 }
 
-.wc-section-heading__text {
+/* --- Inicio: mesa de trabajo ------------------------------------------- */
+
+.wc-continue {
+  gap: var(--space-3);
+}
+
+.wc-continue__panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  min-width: 0;
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.wc-continue__panel:focus-within {
+  background-color: var(--surface-raised);
+}
+
+.wc-continue__text {
+  display: flex;
+  flex: 1 1 20rem;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wc-continue__title {
+  max-inline-size: 68ch;
+  min-width: 0;
+  font-family: var(--font-content);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.wc-continue__meta {
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-continue__action {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+.wc-home-activity {
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border);
+}
+
+.wc-home-activity .wc-page__section-title {
+  font-size: var(--text-md);
+}
+
+.wc-home-activity .wc-activity__item {
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+.wc-home-activity .wc-activity__action {
+  font-weight: var(--weight-regular);
+}
+
+.wc-home-activity .wc-activity__world,
+.wc-home-activity .wc-activity__time {
+  font-size: var(--text-sm);
+}
+
+/* --- Mundos: fila de Inicio y rejilla de Mundos ------------------------- */
+
+.wc-world-rows {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
-}
-
-.wc-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: var(--space-3);
-  min-width: 0;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.wc-stats__item {
+.wc-world-rows > li {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
   min-width: 0;
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-raised);
-}
-
-.wc-stats__item dt {
-  color: var(--muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-
-.wc-stats__item dd {
-  margin: 0;
-  font-family: var(--font-content);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
 }
 
 .wc-world-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
   gap: var(--space-4);
   min-width: 0;
   margin: 0;
@@ -1308,60 +1364,70 @@
 }
 
 .wc-world-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--space-3);
   inline-size: 100%;
   min-width: 0;
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background-color: var(--surface-raised);
-  color: var(--fg);
-  box-shadow: var(--shadow-1);
-}
-
-.wc-world-card__cover,
-.wc-world-hero__cover {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  border: 1px solid var(--border);
+  min-block-size: 6rem;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background-color: var(--surface);
-  overflow: hidden;
+  color: var(--fg);
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
-.wc-world-card__cover {
-  block-size: 6.5rem;
+.wc-world-card:hover,
+.wc-world-card:focus-within {
+  background-color: var(--surface-raised);
 }
 
-.wc-world-card__cover-image,
-.wc-world-hero__cover-image {
-  inline-size: 100%;
+/* En la rejilla de Mundos la tarjeta pasa a dos filas: marca y contenido
+ * arriba, acciones a pie completo. La fila de Inicio mantiene tres columnas. */
+.wc-world-grid .wc-world-card {
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-areas:
+    'mark content'
+    'actions actions';
+  grid-template-rows: 1fr auto;
+  align-items: start;
   block-size: 100%;
-  object-fit: cover;
+  padding: var(--space-4);
 }
 
-.wc-world-card__initial,
-.wc-world-hero__initial {
-  color: var(--accent-strong);
-  font-family: var(--font-content);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
+.wc-world-grid .wc-world-card__mark {
+  grid-area: mark;
 }
 
-.wc-world-card__initial {
-  font-size: var(--text-display);
+.wc-world-grid .wc-world-card__content {
+  grid-area: content;
+}
+
+.wc-world-grid .wc-world-card__actions {
+  grid-area: actions;
+  justify-content: space-between;
+}
+
+.wc-world-card__mark {
+  display: block;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  min-width: 0;
+}
+
+.wc-world-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .wc-world-card__heading {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
   min-width: 0;
 }
 
@@ -1375,45 +1441,189 @@
 }
 
 .wc-world-card__summary {
-  flex: 1 1 auto;
+  display: -webkit-box;
   min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: var(--muted);
-  overflow-wrap: break-word;
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
 }
 
-.wc-world-card__genres,
-.wc-world-hero__genres {
+.wc-world-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.wc-world-card__genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
   min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wc-world-card__genres li,
-.wc-world-hero__genres li {
+.wc-world-card__genres li {
   min-width: 0;
-  max-inline-size: 100%;
+  overflow-wrap: anywhere;
 }
 
-.wc-world-card__meta {
+.wc-world-card__genres li + li::before,
+.wc-world-card__genres:not(:empty) + .wc-world-card__time::before {
+  content: '·';
+  margin-inline-end: var(--space-2);
+}
+
+.wc-world-card__time {
   min-width: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .wc-world-card__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.wc-world-card__actions > * {
-  min-width: 0;
+.wc-world-skeleton__action {
+  inline-size: 5.5rem;
+  block-size: 2rem;
+}
+
+/* --- Marca procedural de mundo ------------------------------------------ */
+
+.wc-world-mark {
+  position: relative;
+  display: block;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-sunken);
+  color: var(--muted);
+  overflow: hidden;
+}
+
+.wc-world-mark[data-tone='0'] {
+  color: var(--entity-moss);
+  background-color: var(--entity-moss-surface);
+}
+
+.wc-world-mark[data-tone='1'] {
+  color: var(--entity-ochre);
+  background-color: var(--entity-ochre-surface);
+}
+
+.wc-world-mark[data-tone='2'] {
+  color: var(--entity-prussian);
+  background-color: var(--entity-prussian-surface);
+}
+
+.wc-world-mark[data-tone='3'] {
+  color: var(--entity-danger);
+  background-color: var(--entity-danger-surface);
+}
+
+/* Motivo 0: meridianos + ecuador. */
+.wc-world-mark[data-motif='0'] {
+  background-image: repeating-linear-gradient(
+    90deg,
+    currentColor 0 1.5px,
+    transparent 1.5px 9px
+  );
+}
+
+.wc-world-mark[data-motif='0']::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  block-size: 1.5px;
+  background-color: currentColor;
+  transform: translateY(-50%);
+}
+
+/* Motivo 1: contornos + punto central. */
+.wc-world-mark[data-motif='1'] {
+  background-image: repeating-radial-gradient(
+    circle at 50% 50%,
+    currentColor 0 1.5px,
+    transparent 1.5px 8px
+  );
+}
+
+.wc-world-mark[data-motif='1']::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: var(--radius-pill);
+  background-color: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+/* Motivo 2: cruz + rombo. */
+.wc-world-mark[data-motif='2'] {
+  background-image:
+    linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size:
+    1.5px 100%,
+    100% 1.5px;
+}
+
+.wc-world-mark[data-motif='2']::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 10px;
+  block-size: 10px;
+  background-color: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Motivo 3: líneas horizontales + cuadrado de leyenda. */
+.wc-world-mark[data-motif='3'] {
+  background-image: repeating-linear-gradient(
+    0deg,
+    currentColor 0 1.5px,
+    transparent 1.5px 9px
+  );
+}
+
+.wc-world-mark[data-motif='3']::after {
+  content: '';
+  position: absolute;
+  inset-block-end: 12px;
+  inset-inline-end: 12px;
+  inline-size: 14px;
+  block-size: 14px;
+  background-color: currentColor;
+}
+
+.wc-world-mark--cover {
+  background-color: var(--surface-sunken);
+}
+
+.wc-world-mark__image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .wc-world-hero {
@@ -1429,12 +1639,45 @@
 }
 
 .wc-world-hero__cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  overflow: hidden;
   aspect-ratio: 3 / 4;
   align-self: start;
 }
 
+.wc-world-hero__cover-image {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
 .wc-world-hero__initial {
+  color: var(--accent-strong);
+  font-family: var(--font-content);
   font-size: var(--text-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.wc-world-hero__genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wc-world-hero__genres li {
+  min-width: 0;
+  max-inline-size: 100%;
 }
 
 .wc-world-hero__body {
@@ -1612,52 +1855,6 @@
   border-radius: var(--radius-md);
   background-color: var(--danger-surface);
   color: var(--fg);
-}
-
-.wc-quick-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.wc-quick-action {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  inline-size: 100%;
-  min-width: 0;
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background-color: var(--surface-raised);
-  color: var(--fg);
-  font-family: var(--font-ui);
-  text-align: start;
-  cursor: pointer;
-  transition:
-    border-color var(--motion-fast) var(--ease-standard),
-    background-color var(--motion-fast) var(--ease-standard);
-}
-
-.wc-quick-action:hover {
-  border-color: var(--accent);
-  background-color: var(--surface);
-}
-
-.wc-quick-action__title {
-  min-width: 0;
-  font-family: var(--font-content);
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.wc-quick-action__description {
-  min-width: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  overflow-wrap: break-word;
 }
 
 .wc-quick-grid {

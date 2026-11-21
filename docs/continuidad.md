@@ -1,17 +1,19 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01 a M1-04. El modo seguro, la comprobación de
-> integridad y la copia pre-migración se implementaron en M0-04 (#64); las copias
-> automáticas con retención y la restauración desde el diálogo de modo seguro,
-> en M0-07 (#67); el instalador por usuario, la actualización manual y la
-> preservación en instalación, actualización y desinstalación, en M0-08 (#68); el
-> borrado lógico de mundos con su actividad, en M1-01 (#72); los tipos de
-> entidad con sus plantillas, en M1-02 (#73); las fichas con autoguardado,
-> imágenes, etiquetas y favoritos, en M1-03 (#74); y las relaciones tipadas con
-> backlinks, en M1-04 (#75). La interfaz de copias de Ajustes, la
-> papelera visible y la purga llegan en M1; la release pública con actualización
-> real contra GitHub Releases, en M5.
+> 21/11/2026 con M0-08, M1-01 a M1-04 y M1.5-01 a M1.5-04. El modo seguro, la
+> comprobación de integridad y la copia pre-migración se implementaron en M0-04
+> (#64); las copias automáticas con retención y la restauración desde el diálogo
+> de modo seguro, en M0-07 (#67); el instalador por usuario, la actualización
+> manual y la preservación en instalación, actualización y desinstalación, en
+> M0-08 (#68); el borrado lógico de mundos con su actividad, en M1-01 (#72); los
+> tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
+> autoguardado, imágenes, etiquetas y favoritos, en M1-03 (#74); y las relaciones
+> tipadas con backlinks, en M1-04 (#75). La dirección visual v2 llegó con
+> M1.5-01 a M1.5-03 (#124–#126) y M1.5-04 (#127) rediseñó Inicio sin tocar datos;
+> el siguiente rediseño es la vista de mundo (#128). La interfaz de copias de
+> Ajustes, la papelera visible y la purga llegan en M1; la release pública con
+> actualización real contra GitHub Releases, en M5.
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
 > **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020 y ADR 0021.
@@ -254,6 +256,13 @@ no se pueden borrar mientras tengan aristas. La migración `0005_relations` es
 aditiva, conserva mundos, tipos, fichas y assets, y su prueba de preservación
 migra una base en `0004` con un mundo, un tipo y una ficha.
 
+**Implementado en M1.5-04 (#127):** Inicio y las tarjetas de mundo son solo
+renderer y estilos; no cambian datos, migraciones, copias ni persistencia. El
+bloque «Continuar» es **memoria de sesión**: vive en React, no se escribe en
+disco, se pierde al recargar y se limpia al eliminar el mundo recordado. Su
+persistencia llegará con #132, junto con el resto de preferencias de interfaz. El
+siguiente rediseño es la vista de mundo (#128), también sin cambios de datos.
+
 ## 7. Actualizaciones y desinstalación
 
 ### 7.1 Actualización (implementada en M0-08)
@@ -327,6 +336,7 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Tipos al duplicar y borrar un mundo | M1-02 | Copia transaccional, aislamiento y conservación tras el borrado lógico (integración) |
 | Fichas, etiquetas y galería | M1-03 | CRUD, borrado lógico, aislamiento, referencias, filtros y preservación de la migración `0004` (integración) |
 | Relaciones y backlinks | M1-04 | CRUD, etiquetas inversas, duplicados, simetría, aislamiento, papelera y preservación de la migración `0005` (integración y E2E) |
+| Inicio y tarjetas de mundo | M1.5-04 | Solo renderer: sin cambios de datos ni copias; «Continuar» no se persiste y se pierde al recargar (componentes y E2E) |
 | Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
 | Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
 | Copia automática y manifiesto v2 | M0-07 | Creación verificable, lectura de v1 y rechazo de bytes alterados (integración) |
