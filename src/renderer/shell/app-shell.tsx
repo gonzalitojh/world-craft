@@ -8,16 +8,18 @@ import { cx } from '../lib/class-names';
 import type { ThemeMode } from '../theme';
 
 export type AppView =
-  'home' | 'worlds' | 'world' | 'entities' | 'entity' | 'samples';
+  'home' | 'search' | 'worlds' | 'world' | 'entities' | 'entity' | 'samples';
 
 /** Vistas que aparecen en la navegación del rail. */
-export type AppNavView = 'home' | 'worlds' | 'samples';
+export type AppNavView = 'home' | 'search' | 'worlds' | 'samples';
 
 export interface AppShellProps {
   readonly view: AppView;
   /** Título de la barra superior; puede ser el nombre de un mundo. */
   readonly title: string;
   readonly onViewChange: (view: AppNavView) => void;
+  /** Abre la paleta de comandos Ctrl+K. */
+  readonly onOpenSearch: () => void;
   readonly theme: ThemeMode;
   readonly onToggleTheme: () => void;
   /** Versión visible al pie del rail; la pasa `App` desde el preload. */
@@ -41,6 +43,29 @@ function HomeIcon() {
       focusable="false"
     >
       <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1Z" />
+    </svg>
+  );
+}
+
+function SearchIcon({
+  className = 'wc-nav-item__icon',
+}: {
+  readonly className?: string;
+}) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="11" cy="11" r="6" />
+      <path d="m15.5 15.5 4.5 4.5" />
     </svg>
   );
 }
@@ -151,6 +176,7 @@ export function AppShell({
   view,
   title,
   onViewChange,
+  onOpenSearch,
   theme,
   onToggleTheme,
   version,
@@ -161,6 +187,7 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false);
   const navItems = [
     { id: 'home', label: messages.shell.views.home, icon: <HomeIcon /> },
+    { id: 'search', label: messages.shell.views.search, icon: <SearchIcon /> },
     {
       id: 'worlds',
       label: messages.shell.views.worlds,
@@ -282,6 +309,20 @@ export function AppShell({
           <header className="wc-topbar">
             <h1 className="wc-topbar__title">{title}</h1>
             <div className="wc-topbar__actions">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="wc-topbar__search"
+                onClick={onOpenSearch}
+              >
+                <SearchIcon className="wc-button__icon" />
+                <span className="wc-topbar__search-label">
+                  {messages.shell.searchAction}
+                </span>
+                <kbd className="wc-topbar__kbd">
+                  {messages.shell.searchShortcut}
+                </kbd>
+              </Button>
               {onQuickCreate !== undefined ? (
                 <Button size="sm" onClick={onQuickCreate}>
                   {messages.entities.quick.button}

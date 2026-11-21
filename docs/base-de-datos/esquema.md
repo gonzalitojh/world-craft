@@ -1,15 +1,16 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con las issues M1-03 (#74) y M1-04 (#75). La migración
+> 20/11/2026 con las issues M1-03 (#74), M1-04 (#75) y M1-05 (#76). La migración
 > `0000_init` y las tablas `schema_migrations` y `app_settings` están
 > implementadas en M0-04 (#64); la tabla `assets` en `0001_assets` (M0-06, #66);
 > `worlds` y `activity_log` en `0002_worlds` (M1-01, #72); `entity_types` en
 > `0003_entity_types` (M1-02, #73); `entities`, `tags`, `entity_tags` y
-> `entity_gallery` en `0004_entities` (M1-03, #74); y `relation_types` y
-> `relations` en `0005_relations` (M1-04, #75). El resto de tablas de contenido y
-> FTS5 llegan en M1 con sus propias migraciones; hasta entonces figuran como
-> previstas.
+> `entity_gallery` en `0004_entities` (M1-03, #74); `relation_types` y
+> `relations` en `0005_relations` (M1-04, #75); y el índice de búsqueda
+> `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
+> (M1-05, #76). El resto de tablas de contenido llega en M2, M3 y M4 con sus
+> propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -100,9 +101,13 @@ guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
 ## 4. Mundos y contenido
 
 **Implementadas:** `worlds` y `activity_log` en `0002_worlds` (M1-01, #72),
-`entity_types` en `0003_entity_types` (M1-02, #73) y `assets` en `0001_assets`
-(M0-06, #66). Las demás tablas de esta sección describen el modelo objetivo y
-todavía no existen; llegarán con sus issues de M1 y M2.
+`entity_types` en `0003_entity_types` (M1-02, #73), `entities`, `tags`,
+`entity_tags` y `entity_gallery` en `0004_entities` (M1-03, #74),
+`relation_types` y `relations` en `0005_relations` (M1-04, #75), el índice
+`search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
+(M1-05, #76) y `assets` en `0001_assets` (M0-06, #66). Las demás tablas de esta
+sección describen el modelo objetivo y todavía no existen; llegarán con sus
+issues de M2, M3 y M4.
 
 ### 4.1 `worlds`
 
@@ -575,21 +580,34 @@ dashboard hacen `JOIN` con `worlds` y excluyen los mundos en papelera; las
 consultas por mundo filtran por `world_id`, de modo que nunca se mezcla
 actividad de dos mundos.
 
-### 4.13 `search_documents` y `search_fts`
+### 4.13 `search_documents`, `search_fts` y `search_vocabulary`
 
-`search_documents`:
+`search_documents` es un índice materializado y reconstruible; nunca es la
+fuente de verdad. Cada fila resume un mundo, una ficha o una relación.
 
 | Columna | Tipo | Restricciones |
 |---|---|---|
-| `id` | TEXT | PK |
-| `world_id` | TEXT | NOT NULL, FK `worlds(id)` |
-| `kind` | TEXT | NOT NULL (`entity`, `map`, `scene`, `game`) |
-| `ref_id` | TEXT | NOT NULL |
-| `title` | TEXT | NOT NULL |
+| `id` | TEXT | PK (`<kind>:<source_id>`) |
+| `kind` | TEXT | NOT NULL (`world`, `entity`, `relation`; reserva `map`, `manuscript`, `scene`) |
+| `source_id` | TEXT | NOT NULL |
+| `context_id` | TEXT | NULL; ficha de origen de una relación |
+| `related_id` | TEXT | NULL; ficha de destino de una relación |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` con cascada |
+| `title` | TEXT | NOT NULL, 1–300 caracteres |
 | `body` | TEXT | NOT NULL DEFAULT `''` |
+| `keywords` | TEXT | NOT NULL DEFAULT `''`; alias y etiquetas |
+| `entity_type_id` | TEXT | NULL; tipo de la ficha |
+| `status` | TEXT | NOT NULL (`active`, `draft`, `archived`) |
+| `is_favorite` | INTEGER | NOT NULL DEFAULT 0, 0/1 |
+| `created_at` | INTEGER | NOT NULL |
 | `updated_at` | INTEGER | NOT NULL |
 
-Índice único: `search_documents_ref_uq (kind, ref_id)`.
+Índices: único `search_documents_kind_source_uq (kind, source_id)`;
+`search_documents_world_kind_idx (world_id, kind, updated_at)`;
+`search_documents_world_updated_idx (world_id, updated_at)`;
+`search_documents_type_idx (entity_type_id)`; `search_documents_favorite_idx
+(is_favorite)`; `search_documents_context_idx (kind, context_id)` y
+`search_documents_related_idx (kind, related_id)`.
 
 `search_fts` es una tabla virtual FTS5:
 
@@ -597,15 +615,24 @@ actividad de dos mundos.
 CREATE VIRTUAL TABLE search_fts USING fts5(
   title,
   body,
+  keywords,
   content='search_documents',
   content_rowid='rowid',
-  tokenize='unicode61 remove_diacritics 2'
+  tokenize='unicode61 remove_diacritics 2',
+  prefix='2 3 4'
 );
 ```
 
-Triggers `search_documents_ai`, `search_documents_ad` y `search_documents_au`
-mantienen el índice. La reconstrucción completa se hace con
-`INSERT INTO search_fts(search_fts) VALUES('rebuild')` desde Ajustes → Datos.
+`search_vocabulary` usa `fts5vocab(search_fts, 'row')` para la expansión
+aproximada de términos. Las vistas `search_world_documents`,
+`search_entity_documents` y `search_relation_documents` definen qué texto y
+metadatos produce cada tipo; excluyen filas borradas y mundos en papelera. Los
+triggers de `worlds`, `entities`, `relations`, `relation_types`, `entity_tags` y
+`tags` mantienen `search_documents`, y los triggers `search_documents_ai`,
+`search_documents_ad` y `search_documents_au` mantienen `search_fts`. La reconstrucción completa sanea
+FTS5, elimina los documentos que ya no existen en las vistas, los repuebla desde
+ellas y vuelve a reconstruir el índice; se ofrece desde la paleta `Ctrl+K` y más
+adelante desde Ajustes → Datos.
 
 ## 5. Reglas de integridad
 

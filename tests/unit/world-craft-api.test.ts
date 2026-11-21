@@ -79,6 +79,7 @@ describe('world-craft-api', () => {
       'tags',
       'relationTypes',
       'relations',
+      'search',
       'assets',
     ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
@@ -116,11 +117,74 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.tags)).toBe(true);
     expect(Object.isFrozen(api.relationTypes)).toBe(true);
     expect(Object.isFrozen(api.relations)).toBe(true);
+    expect(Object.isFrozen(api.search)).toBe(true);
     expect(Object.isFrozen(api.assets)).toBe(true);
 
     expect(() => {
       (api.appInfo as { version: string }).version = '9.9.9';
     }).toThrow(TypeError);
+  });
+
+  it('valida la respuesta de búsqueda y degrada una forma inesperada', async () => {
+    const response = {
+      items: [
+        {
+          id: 'entity:01900000-0000-7000-8000-000000000099',
+          kind: 'entity',
+          sourceId: '01900000-0000-7000-8000-000000000099',
+          contextId: null,
+          worldId: world.id,
+          worldName: world.name,
+          title: 'Gandalf',
+          titleHighlight: '\u0001Gandalf\u0002',
+          snippet: 'Mago',
+          status: 'active',
+          isFavorite: false,
+          updatedAt: 1_760_000_000_000,
+        },
+      ],
+      total: 1,
+      tookMs: 4,
+      fuzzyTerms: ['gandalf'],
+    };
+    const invoke = vi.fn(async (channel: string) => {
+      if (channel === IPC_CHANNELS.searchSuggestions) {
+        return { ok: true, data: { recent: [], favorites: [] } };
+      }
+
+      if (channel === IPC_CHANNELS.searchRebuild) {
+        return { ok: true, data: { documents: 1, tookMs: 2 } };
+      }
+
+      return { ok: true, data: response };
+    });
+    const api = createWorldCraftApi({ invoke });
+
+    await expect(
+      api.search.query({ query: 'gand', filters: { worldId: world.id } }),
+    ).resolves.toEqual({ ok: true, data: response });
+    await expect(api.search.suggestions()).resolves.toEqual({
+      ok: true,
+      data: { recent: [], favorites: [] },
+    });
+    await expect(api.search.rebuild()).resolves.toEqual({
+      ok: true,
+      data: { documents: 1, tookMs: 2 },
+    });
+    expect(invoke).toHaveBeenCalledWith(IPC_CHANNELS.searchSuggestions, {});
+    expect(invoke).toHaveBeenCalledWith(IPC_CHANNELS.searchRebuild, {});
+
+    const broken = createWorldCraftApi({
+      invoke: async () => ({
+        ok: true,
+        data: { ...response, items: [{ ...response.items[0], kind: 'map' }] },
+      }),
+    });
+
+    await expect(broken.search.query({ query: 'gand' })).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
   });
 
   it('no expone un invoke genérico', () => {

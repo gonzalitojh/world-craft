@@ -14,12 +14,14 @@ TypeScript estricto, el IPC tipado, una base SQLite con migraciones,
 comprobación de integridad y modo seguro, el sistema de diseño con su shell de
 escritorio y un instalador NSIS por usuario con actualizaciones manuales.
 `pnpm dev` abre una ventana segura con la barra lateral, el tema Claro/Oscuro
-conmutable, el dashboard de mundos y el CRUD de mundos con actividad; `pnpm build`
+conmutable, el dashboard de mundos, el CRUD de mundos con actividad, las fichas
+con imágenes y relaciones, y la búsqueda global con paleta de comandos;
+`pnpm build`
 compila los tres procesos en `out/` y `pnpm dist` genera
 `release/world-craft-0.1.0-setup.exe`. **Todavía no hay una release pública**:
 el instalador se genera y se prueba en local, y la publicación oficial, la
 actualización real contra GitHub Releases y el resto de funciones de producto
-(fichas, mapas y escritura) llegan con las fases siguientes.
+(mapas y escritura) llegan con las fases siguientes.
 
 El inventario de lo eliminado y las cuentas externas que hay que cerrar están en
 [`docs/cambio-a-escritorio.md`](docs/cambio-a-escritorio.md). El plan aprobado,
@@ -37,7 +39,8 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Mundos | CRUD, dashboard y actividad sobre `worlds` y `activity_log` | Implementado (#72); portada con #115 |
 | Tipos de entidad | 18 tipos del sistema, tipos personalizados y campos tipados en JSON | Implementado (#73); gestión visual con #74 |
 | Fichas | CRUD, campos tipados, galería, etiquetas, favoritos, filtros y autoguardado | Implementado (#74); papelera con #77 |
-| Búsqueda | Filtros locales por nombre, alias, resumen y descripción; SQLite FTS5 | Disponible en el binario; búsqueda global con #76 |
+| Relaciones | Aristas tipadas, etiquetas directa e inversa y backlinks | Implementado (#75) |
+| Búsqueda | FTS5 con prefijos, tolerancia tipográfica, filtros, recientes, favoritos y paleta `Ctrl+K` | Implementado (#76) |
 | Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); lista e importación de imágenes con #74 |
 | Editor | Tiptap 3 con formato básico y enlaces internos | Implementado (#74); manuscrito en M3 |
 | Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |

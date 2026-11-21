@@ -79,9 +79,10 @@ la opción de crear tu primer mundo o importar uno existente. Esa pantalla es
 
 El proyecto ya genera un **instalador local** y permite abrir la ventana de la
 aplicación instalada. Esa ventana tiene el aspecto definitivo en lo básico: una
-barra lateral con navegación, una barra superior con el botón de actualizaciones
-y el de tema, dos modos de color y componentes de interfaz ya creados (botones,
-campos, insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
+barra lateral con navegación, una barra superior con el botón de búsqueda, el de
+actualizaciones y el de tema, dos modos de color y componentes de interfaz ya
+creados (botones, campos, insignias, tarjetas, diálogos, pestañas, avisos y
+ayudas emergentes).
 
 La aplicación crea y comprueba su base de datos local, guarda copias automáticas,
 sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
@@ -91,11 +92,13 @@ actualizaciones de la aplicación.
 Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, y el
 dashboard muestra tus mundos, la actividad reciente y su preparación. Dentro de
 cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción,
-imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. Todavía
-no hay ventana de grafo, mapas, manuscritos, ajustes ni papelera visible, y la
-portada del mundo y la descripción enriquecida del mundo llegarán en
-actualizaciones posteriores. **No hay una release pública**: el instalador se
-genera y se prueba en local, y la publicación oficial llegará con M5.
+imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. También
+existe la **búsqueda global** con filtros, recientes y favoritos, y una **paleta
+de comandos** que se abre con `Ctrl+K`. Todavía no hay ventana de grafo, mapas,
+manuscritos, ajustes ni papelera visible, y la portada del mundo y la descripción
+enriquecida del mundo llegarán en actualizaciones posteriores. **No hay una
+release pública**: el instalador se genera y se prueba en local, y la publicación
+oficial llegará con M5.
 
 ## 3. La ventana
 
@@ -104,13 +107,13 @@ genera y se prueba en local, y la publicación oficial llegará con M5.
 Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
-  navegación entre **Inicio**, **Mundos** y **Muestras**, y un botón para
-  plegarla. Expandida ocupa 240 px y plegada 64 px; al plegarla quedan el
+  navegación entre **Inicio**, **Búsqueda**, **Mundos** y **Muestras**, y un botón
+  para plegarla. Expandida ocupa 240 px y plegada 64 px; al plegarla quedan el
   logotipo y los iconos.
 - **Barra superior:** muestra el nombre de la pantalla actual —o el del mundo
-  abierto—, el botón **Actualizaciones** y el botón de tema. El botón de
-  actualizaciones abre un diálogo para buscar, descargar e instalar versiones
-  nuevas (sección 3.6).
+  abierto—, el botón **Buscar** con su atajo `Ctrl+K`, el botón
+  **Actualizaciones** y el botón de tema. El botón de actualizaciones abre un
+  diálogo para buscar, descargar e instalar versiones nuevas (sección 3.6).
 - **Área central:** el contenido de la pantalla. Es el destino del enlace
   «Saltar al contenido principal» que aparece al empezar a usar el teclado.
 
@@ -120,8 +123,7 @@ barra lateral.
 
 Siguen **previstas**, para cuando existan mapas y escritura:
 
-- **Mapas, escritura, juego, búsqueda y ajustes** en la barra lateral.
-- **Barra superior con búsqueda global**.
+- **Mapas, escritura, juego y ajustes** en la barra lateral.
 - **Paneles** de detalles, filtros o propiedades.
 - **Barra de estado** con el guardado y los avisos.
 
@@ -136,6 +138,12 @@ de lo que verá quien use la aplicación.
   recorrer toda la barra lateral.
 - En las pestañas, usa las flechas izquierda y derecha para cambiar de pestaña;
   `Inicio` y `Fin` van a la primera y a la última.
+- Pulsa `Ctrl+K` para abrir la paleta de comandos. Dentro de la paleta, las
+  flechas mueven la selección, `Inicio` y `Fin` van al primer y último resultado,
+  `Enter` abre el elemento seleccionado y `Escape` cierra. El atajo no se activa
+  mientras escribes en un campo ni con un diálogo abierto.
+- En los resultados de la búsqueda, `Tab` recorre los resultados y las flechas
+  arriba y abajo mueven el foco entre ellos.
 - En un diálogo, el foco se queda dentro mientras está abierto y `Escape` lo
   cierra. Al cerrarlo, el foco vuelve al control que lo abrió o, si ya no existe,
   al contenido principal.
@@ -157,8 +165,9 @@ pantalla de Ajustes llegará más adelante.
 
 La ventana se puede redimensionar y el tamaño mínimo es 1024×700. El diseño está
 preparado para que a 1024, 1280 y 1600 píxeles de ancho el contenido se adapte
-sin desplazamiento horizontal de página; el dashboard, los mundos, las fichas y
-el editor se comprueban en esos anchos. Solo las tablas y el lienzo del mapa
+sin desplazamiento horizontal de página; el dashboard, los mundos, las fichas,
+la búsqueda y el editor se comprueban en esos anchos. Solo las tablas y el lienzo
+del mapa
 podrán desplazarse dentro de su propio espacio. **Hoy la ventana aún no recuerda
 su tamaño ni su posición**: se abre con un tamaño inicial de 1280×800 y esa
 memoria llegará en una actualización posterior.
@@ -465,12 +474,74 @@ aparecerán en esa vista.
 - **Packs:** importa y exporta contenido de juego.
 - **Sesiones:** guarda el resultado de una sesión y añade notas.
 
-## 10. Búsqueda (previsto)
+## 10. Búsqueda y paleta de comandos
 
-- **Búsqueda global:** busca en fichas, mapas, escenas y tablas.
-- **Filtros:** por mundo, tipo y etiqueta.
-- **Resultados:** muestra el contexto y abre el elemento.
-- **Reconstruir índice:** desde Ajustes → Datos si los resultados no cuadran.
+### 10.1 Buscar en toda la biblioteca
+
+La pantalla **Búsqueda** de la barra lateral busca a la vez en mundos, fichas y
+relaciones. Escribe al menos una letra en **Buscar en tu biblioteca**: se
+encuentran coincidencias por el título, el resumen, la descripción, los alias, las
+notas de una relación y las etiquetas. No hace falta conexión a Internet.
+
+- La búsqueda acepta **prefijos**: `gand` encuentra «Gandalf el Gris».
+- No importan las mayúsculas ni los acentos: `cancion` encuentra «Canción».
+- Si te equivocas en una letra, la búsqueda prueba palabras parecidas del propio
+  índice (`gandolf` encuentra «Gandalf») y avisa de que son resultados
+  aproximados.
+- El texto encontrado aparece resaltado en el título o en el fragmento cuando la
+  coincidencia está ahí; si coincide por un alias, una etiqueta o el nombre del
+  tipo de relación, el resultado aparece igualmente sin marca en el texto.
+- Cada resultado indica si es un mundo, una ficha o una relación, a qué mundo
+  pertenece y cuándo se actualizó. Al pulsarlo se abre el mundo, la ficha o la
+  ficha de origen de la relación.
+- Se muestran hasta 50 resultados por consulta; el recuento indica el total
+  encontrado y el tiempo que tardó la búsqueda.
+
+### 10.2 Filtros
+
+Los filtros se pueden combinar:
+
+- **Mundo:** limita a un mundo concreto.
+- **Tipo de contenido:** mundos, fichas o relaciones.
+- **Tipo de ficha:** se activa al elegir un mundo y filtra por el tipo de sus
+  fichas.
+- **Etiqueta:** también se activa con un mundo elegido.
+- **Estado:** activo, borrador o archivado del documento; los mundos solo
+  tienen activo y archivado.
+
+**Quitar filtros** los borra todos. Si una búsqueda no devuelve nada, prueba otra
+palabra o quita algún filtro.
+
+### 10.3 Recientes y favoritos
+
+Cuando el campo está vacío, la pantalla muestra **Recientes** (lo último que se
+ha actualizado) y **Favoritos** (las fichas marcadas como favoritas). Sirven para
+volver rápido a lo que estabas usando.
+
+### 10.4 Paleta de comandos
+
+Pulsa `Ctrl+K`, o el botón **Buscar** de la barra superior, para abrir la paleta:
+
+- Escribe para filtrar **comandos** y **resultados** al mismo tiempo.
+- Los comandos permiten ir a Inicio, Búsqueda, Mundos o Muestras, crear un mundo,
+  crear una ficha, cambiar el tema y **reconstruir el índice de búsqueda**.
+- Las flechas mueven la selección, `Enter` la ejecuta y `Escape` cierra.
+- El atajo no se activa mientras escribes en un campo ni con otro diálogo
+  abierto, para no interferir con el texto.
+
+### 10.5 Si los resultados no cuadran
+
+El índice de búsqueda es una copia local que se actualiza sola al crear, editar,
+borrar o restaurar contenido. Si sospechas que está desincronizado, abre la paleta
+con `Ctrl+K`, escribe `reconstruir` y elige **Reconstruir el índice de búsqueda**.
+No borra ningún dato: solo vuelve a leer los mundos, las fichas y las relaciones.
+La pantalla Ajustes → Datos añadirá este mismo botón más adelante.
+
+### 10.6 Lo que llegará después
+
+La búsqueda de mapas, manuscritos y escenas llegará con esas secciones. El grafo
+interactivo tendrá su propia búsqueda y navegación. La búsqueda es siempre local y
+no se envía a ningún servicio externo.
 
 ## 11. Ajustes (previsto)
 
@@ -479,8 +550,9 @@ aparecerán en esa vista.
   sesiones: elegirlo y recordarlo será parte de esta pantalla.
 - **Idioma:** español en el MVP; la estructura está preparada para más idiomas.
 - **Ventana:** recordar tamaño y posición.
-- **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda,
-  compactar y eliminar todos los datos.
+- **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda (hoy se
+  hace desde la paleta `Ctrl+K`, sección 10.5), compactar y eliminar todos los
+  datos.
 - **Copias:** dentro de Ajustes → Datos, crear, verificar y restaurar copias. La
   restauración desde el aviso de modo seguro ya existe (sección 12.3); esta
   pantalla, con la copia manual y la elección de carpeta, es prevista.
@@ -693,7 +765,7 @@ las funciones correspondientes.
 | Función | Estado |
 |---|---|
 | Barra lateral con navegación y plegado | Implementada (en desarrollo) |
-| Barra superior con el título, Actualizaciones y el botón de tema | Implementada (en desarrollo) |
+| Barra superior con el título, Buscar, Actualizaciones y el botón de tema | Implementada (en desarrollo) |
 | Tema Claro/Oscuro conmutable | Implementado (en desarrollo); no se recuerda al reiniciar |
 | Instalador por usuario, sin administrador, en `%LOCALAPPDATA%` | Implementado (local); la release pública llega con M5 |
 | Desinstalación que conserva `%APPDATA%\World Craft` | Implementada (local); el desinstalador avisa de los datos conservados |
@@ -721,11 +793,14 @@ las funciones correspondientes.
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); papelera visible y restauración con #77 |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
 | Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); los metadatos quedan en la API |
+| Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |
+| Filtros de búsqueda por mundo, tipo, etiqueta y estado | Implementados (en desarrollo) |
+| Paleta de comandos `Ctrl+K` | Implementada (en desarrollo) |
+| Recientes y favoritos en la búsqueda | Implementados (en desarrollo) |
 | Grafo | Previsto |
 | Mapas | Prevista |
 | Escritura | Prevista |
 | Juego | Prevista |
-| Búsqueda | Prevista |
 | Ajustes | Prevista |
 | Guardar la preferencia de tema | Prevista (con Ajustes) |
 | Copias manuales y elección de carpeta | Prevista (con Ajustes) |

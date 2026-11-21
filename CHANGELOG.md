@@ -257,6 +257,23 @@ primera versión estable.
   papelera, tipos del sistema y preservación; componentes del panel y el diálogo;
   E2E de creación, backlink, navegación, duplicado rechazado, tipo personalizado
   y axe en ambos temas.
+- Búsqueda global (#76): página de búsqueda sobre FTS5 con prefijos, acentos y
+  tolerancia a errores tipográficos, resultados resaltados, filtros combinables
+  por mundo, tipo, etiqueta y estado, y navegación por teclado.
+- Paleta de comandos (#76): `Ctrl+K` para navegar, crear mundos y fichas, cambiar
+  el tema, abrir la búsqueda y reconstruir el índice, con patrón combobox/listbox
+  y sin activarse dentro de campos de texto ni con un diálogo abierto.
+- Recientes y favoritos (#76): el estado vacío de la búsqueda muestra lo último
+  actualizado y las fichas favoritas, sin guardar historial nuevo.
+- Migración `0006_search` (#76): `search_documents`, FTS5 `search_fts` con
+  `unicode61`, prefijos 2/3/4 y vocabulario `fts5vocab`, vistas por tipo y
+  triggers de sincronización; `user_version` 7. Conserva mundos, tipos, fichas,
+  etiquetas y relaciones, con prueba de preservación desde `0005` y rollback.
+- Pruebas de búsqueda (#76): unitarias de consulta, esquemas, handlers y API;
+  integración de indexación, prefijos, diacríticos, errores tipográficos, filtros,
+  borrado, restauración, reconstrucción, migración y rendimiento con 10.000
+  fichas; componentes de página y paleta; E2E de flujo completo, ventana
+  1024/1280/1600, dos temas y axe.
 
 ### Cambiado
 
