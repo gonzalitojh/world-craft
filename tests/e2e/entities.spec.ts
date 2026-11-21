@@ -335,7 +335,7 @@ test('la creación rápida desde la barra superior abre la ficha en el mundo act
 
   await page
     .getByRole('banner')
-    .getByRole('button', { name: messages.entities.quick.button })
+    .getByRole('button', { name: messages.entities.list.create })
     .click();
 
   const dialog = page.getByRole('dialog');
@@ -655,7 +655,10 @@ test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos 
       .click();
 
     await page
-      .getByRole('button', { name: messages.entities.list.manageTypes })
+      .getByRole('button', { name: messages.entities.list.menuLabel })
+      .click();
+    await page
+      .getByRole('menuitem', { name: messages.entities.list.manageTypes })
       .click();
     await expect(
       page.getByRole('dialog').getByText(messages.entities.types.lead),
@@ -678,4 +681,54 @@ test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos 
     await expectAxeWithoutSerious(page);
     await backToEntities(page);
   }
+});
+
+test('mueve una ficha a la papelera desde el menú de la página', async ({
+  page,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+
+  const trigger = page.getByRole('button', {
+    name: messages.entities.detail.menuLabel,
+  });
+  const deleteDialog = page.getByRole('dialog', {
+    name: messages.entities.detail.deleteTitle('Mara Viento'),
+  });
+
+  await trigger.click();
+  await page
+    .getByRole('menuitem', { name: messages.entities.detail.delete })
+    .click();
+  await expect(deleteDialog).toBeVisible();
+
+  // Cancelar devuelve el foco al disparador del menú.
+  await page.keyboard.press('Escape');
+  await expect(deleteDialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+
+  // Confirmar anuncia el resultado y retira la ficha de la lista.
+  await trigger.click();
+  await page
+    .getByRole('menuitem', { name: messages.entities.detail.delete })
+    .click();
+  await deleteDialog
+    .getByRole('button', { name: messages.entities.detail.deleteSubmit })
+    .click();
+
+  await expect(
+    page.getByText(messages.entities.notices.removed('Mara Viento')),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 2, name: messages.entities.list.title }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Mara Viento' }),
+  ).toHaveCount(0);
+
+  // La página de la ficha desaparece, así que el foco vuelve al contenido.
+  expect(
+    await page.evaluate(() => document.activeElement?.id ?? null),
+  ).toBe('wc-main');
 });

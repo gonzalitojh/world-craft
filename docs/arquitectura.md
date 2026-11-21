@@ -1,8 +1,9 @@
 # Arquitectura de World Craft
 
 > **Estado:** vigente desde el 18/11/2026, tras el pivote a aplicación de
-> escritorio. Actualizado el 20/11/2026 con M1-05 (#76): búsqueda global y
-> paleta de comandos. Sustituye por completo la arquitectura web anterior.
+> escritorio. Actualizado el 21/11/2026 con la dirección visual v2: tokens,
+> tipografía y primitivas (#125) y shell, navegación y barra superior (#126).
+> Sustituye por completo la arquitectura web anterior.
 > **Ámbito:** procesos, módulos, flujos, datos y límites de confianza.
 > **Fuentes:** [`docs/plan-desarrollo.md`](plan-desarrollo.md) §3,
 > [`docs/adr/`](adr/README.md) y el código de `src/`.
@@ -17,18 +18,21 @@ shell de escritorio** (#65), el **servicio de assets locales con
 `wc-asset://`** (#66), las **copias de seguridad con restauración desde modo
 seguro** (#67), el **instalador NSIS con actualizador manual** (#68), los
 **mundos con CRUD, dashboard y actividad** (#72), los **tipos de entidad con
-catálogo y campos personalizados** (#73) y las **fichas con imágenes,
-etiquetas, favoritos y editor enriquecido** (#74): ventana Electron segura,
-preload nominativo, renderer React con tokens, componentes base y navegación,
-base SQLite con migraciones, comprobación de integridad y modo
+catálogo y campos personalizados** (#73), las **fichas con imágenes, etiquetas,
+favoritos y editor enriquecido** (#74), las **relaciones tipadas con backlinks**
+(#75) y la **búsqueda global con paleta de comandos** (#76): ventana Electron
+segura, preload nominativo, renderer React con tokens, componentes base y
+navegación, base SQLite con migraciones, comprobación de integridad y modo
 seguro, servicio de imágenes con protocolo propio, miniaturas y purga
 recuperable, copias automáticas con retención, verificación y restauración,
 instalación por usuario sin administrador, actualizaciones manuales, cancelables
-y consentidas, bloqueo de instancia única, gestión de mundos con su actividad y
-tipos de entidad con plantillas y transferencia. La subida y la galería
-visibles, la interfaz de Ajustes y las copias manuales llegan en M1; la release
-pública y la actualización real contra GitHub Releases, en M5. Las secciones
-distinguen lo implementado de lo previsto.
+y consentidas, bloqueo de instancia única, gestión de mundos con su actividad,
+tipos de entidad con plantillas y transferencia e índice FTS5. La dirección
+visual v2 ya cubre tokens, tipografía y primitivas (#125) y el **shell v2 con
+navegación de producto y barra superior contextual** (#126). La galería visible
+está implementada desde #74; la interfaz de Ajustes y las copias manuales llegan
+en M1; la release pública y la actualización real contra GitHub Releases, en M5.
+Las secciones distinguen lo implementado de lo previsto.
 
 ## 1. Vista general
 
@@ -53,7 +57,7 @@ distinguen lo implementado de lo previsto.
 | Instalador NSIS, actualizaciones y preservación de datos | Implementado (M0-08, #68): instalador local 0.1.0 y actualizador manual; release pública y actualización real en M5 | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
-| Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base y shell (#65); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md) |
+| Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125) y shell v2 con navegación Inicio/Mundos y barra superior contextual (#126); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md) |
 | Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74); manuscrito y exportadores en M3 | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
@@ -61,7 +65,7 @@ distinguen lo implementado de lo previsto.
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
 | Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
 | Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
-| Pruebas y calidad | Implementado: 419 unitarias (4 omitidas), 58 de componentes y 134 de integración (1 omitida) (#62-#76, #125); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda y sistema v2 (#70, #72, #74, #75, #76, #125) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 433 unitarias (4 omitidas), 73 de componentes y 134 de integración (1 omitida) (#62-#76, #125, #126); 37 E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda y sistema v2 (#70, #72, #74, #75, #76, #125, #126) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -96,8 +100,8 @@ Electron separa tres procesos con permisos distintos:
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72) y las fichas con imágenes, etiquetas y editor (#74) están implementados. | `src/shared/`, API de `window.worldCraft` |
 | `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75 y búsqueda de #76 (resaltado seguro, iconos y paleta de comandos); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
-| `src/renderer/shell/` | Shell de escritorio (`app-shell.tsx`): navegación, rail plegable, barra superior y `main` enfocable. | Componentes, mensajes, tema |
-| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (muestras de desarrollo). | Componentes, mensajes |
+| `src/renderer/shell/` | Shell v2 (`app-shell.tsx`): rail plegable con navegación Inicio/Mundos, barra superior con título contextual, disparador de la paleta, una acción primaria, menú `⋯` y utilidades de actualizaciones y tema, y `main` enfocable. `views.ts` declara las vistas de producto y la acción primaria; `internal-views.ts` resuelve la vista interna de Muestras por hash. | Componentes, mensajes, tema |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (dashboard y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (banco interno de desarrollo, solo por `#/internal/samples`). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; la persistencia llegará con Ajustes. | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
@@ -107,10 +111,10 @@ Electron separa tres procesos con permisos distintos:
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`), contrato de tipos de entidad (`entity-types.ts`), contrato de fichas y etiquetas (`entities.ts`) y contrato de assets (`assets.ts`) con guardas estructurales. | - |
 | `src/shared/entity-types/` | Catálogo del sistema en código y validación compartida con Zod de plantillas y valores de campos, reutilizable por main y por la UI de fichas. | Zod |
 | `src/shared/entities/` | Validación cerrada de la descripción de ProseMirror, extracción de texto plano y patrón UUIDv7 compartido. | Zod |
-| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación), de los tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC), de las fichas (descripción, esquemas IPC, handlers y tarjetas) y de instancia única. | `src/` |
+| `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación), de los tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC), de las fichas (descripción, esquemas IPC, handlers y tarjetas), de las vistas del shell y de instancia única. | `src/` |
 | `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; CRUD, aislamiento y actividad de mundos; CRUD, protección, aislamiento, duplicación y transferencia de tipos de entidad; CRUD, validación, referencias, etiquetas, favoritos, galería, filtros y aislamiento de fichas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones. | `src/` |
-| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados, formularios y tarjetas de mundo y de ficha, diálogos de creación y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
-| `tests/e2e/` | Playwright Electron: shell, ventana a 1024/1280/1600 px, temas, axe, CRUD de mundos, CRUD y filtros de fichas, teclado y textos largos con `userData` temporal y aislado. | `src/` |
+| `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados, formularios y tarjetas de mundo y de ficha, shell v2 (navegación, plegado, primaria y menú), diálogos de creación y lectura de textos desde el proveedor de idioma. | `src/renderer/` |
+| `tests/e2e/` | Playwright Electron: shell y medidas del rail, ventana a 1024/1280/1600 px, temas, axe con rail expandido y plegado, CRUD de mundos, CRUD y filtros de fichas, teclado y textos largos con `userData` temporal y aislado. | `src/` |
 | `resources/` | `icon.ico`, `icon.png`, `installer.nsh` y `licenses/` generados o versionados para electron-builder. | — |
 | `scripts/` | Verificación de build, nativo, paquete, checksums, iconos, licencias, instalación manual y limpieza. | Node, PowerShell |
 | `release/` | Salida de electron-builder (instalador, blockmap, `latest.yml`, `SHA256SUMS`); ignorada por git. | — |
@@ -226,7 +230,7 @@ Reglas de dependencia:
   valida las migraciones copiadas y la externalización. El desempaquetado del
   asar y la poda x64 se completaron en #68 (sección 2.7).
 
-### 2.4 Estado implementado del sistema de diseño (#65 y #125)
+### 2.4 Estado implementado del sistema de diseño (#65, #125 y #126)
 
 - **Tokens v2.** `src/renderer/styles/tokens/` contiene `palette.css` (única
   fuente de hex y valores con alfa), `semantic.css` (roles por tema con overrides
@@ -236,27 +240,39 @@ Reglas de dependencia:
   1,6, movimiento 120–180 ms, z-index y medidas del shell de 240/64/56 px). Se
   importan antes de `base.css` y `components.css` en `main.tsx`.
 - **Tema.** `src/renderer/theme.ts` aplica `data-theme` en `<html>` y arranca en
-  Claro (`DEFAULT_THEME`). El botón de la barra superior conmuta en memoria; la
-  persistencia en `config.json` y la pantalla de Ajustes son posteriores.
+  Claro (`DEFAULT_THEME`). El icono de tema de la barra superior —sol o luna con
+  etiqueta y tooltip— conmuta en memoria; la persistencia en `config.json` y la
+  pantalla de Ajustes son posteriores.
 - **Componentes.** `src/renderer/components/` tiene primitivas nativas (botón,
   botón de icono, menú `⋯`, campo, área, selector, casilla, radio, insignia,
   tarjeta, panel, esqueleto, estado vacío, diálogo, pestañas, toast y tooltip)
   sin Radix/shadcn ni dependencias nuevas. El diálogo usa `<dialog>` con
   `showModal()`; menú y pestañas siguen sus patrones ARIA con teclado y foco.
-- **Shell.** `src/renderer/shell/app-shell.tsx` compone el enlace de salto, el
-  rail de 240 px plegable a 64 px, la barra superior de 56 px, la navegación con
-  `aria-current` y `main` con `tabIndex={-1}`. No hay router.
+- **Shell v2.** `src/renderer/shell/app-shell.tsx` compone el enlace de salto, el
+  rail de 240 px plegable a 64 px sobre `--surface-sunken` con navegación solo
+  Inicio/Mundos, la barra superior de 56 px con `h1` contextual truncado, el
+  disparador `Ctrl+K`, una acción primaria, el menú `⋯`, actualizaciones y tema,
+  y `main` con `tabIndex={-1}`. No hay router. El plegado expone `aria-expanded`,
+  `aria-controls`, nombre accesible y tooltip; su estado se mantiene en la sesión
+  y la persistencia llega con #132.
+- **Acciones declarativas.** `src/renderer/shell/views.ts` define `AppView`,
+  `AppNavView` y `ShellPrimaryAction` en un módulo sin JSX, de modo que las
+  pruebas unitarias de Node lo importan sin React. `App.tsx` decide la primaria y
+  las secundarias de cada vista; la barra solo las pinta.
 - **Vistas.** `src/renderer/pages/home-page.tsx` muestra el estado vacío real y
   `samples-page.tsx` es el banco interno del sistema v2: paleta, tipografía con
-  la serif empaquetada, primitivas, estados y contenido largo. Sigue accesible
-  desde el rail hasta que #126 la saque de la navegación de producto.
+  la serif empaquetada, primitivas, estados y contenido largo. Desde #126 no está
+  en la navegación de producto: `src/renderer/shell/internal-views.ts` resuelve
+  `#/internal/samples`, cualquier otro hash vuelve a Inicio y salir de la vista
+  limpia el hash con `history.replaceState`.
 - **Tipografía.** Interfaz y datos usan pilas del sistema (`Segoe UI Variable
   Text` y `Cascadia Mono`); contenido usa Source Serif 4 (OFL 1.1), empaquetada
   desde #125 como activo local en `src/renderer/assets/fonts/source-serif-4/`
   con dos cortes woff2 (400 y 600, subset latin). `styles/fonts.css` es el único
   archivo con `@font-face`, con rutas relativas, `font-display: swap` y
-  `unicode-range`; la CSP mantiene `font-src 'self'`. `--font-display` es un
-  alias temporal de `--font-content` con retirada en #126.
+  `unicode-range`; la CSP mantiene `font-src 'self'`. El alias `--font-display`
+  se retiró en #126: la marca y el chrome usan `--font-ui` y el contenido,
+  `--font-content`.
 - **Licencia de la fuente.** El texto OFL canónico vive junto al activo,
   `pnpm licenses:sync` lo replica en `resources/licenses/source-serif-4-OFL.txt`
   y `verify:package` lo exige en el instalador. La fuente no es una dependencia
@@ -264,14 +280,16 @@ Reglas de dependencia:
 - **Dirección visual v2.** ADR 0025 revisa la lectura estética del ADR 0006:
   superficies neutras, verde bosque, tipografía del sistema para interfaz y
   jerarquía por espacio y contraste. #125 implementó tokens, tipografía y
-  primitivas; #126–#133 migran shell y pantallas.
+  primitivas; #126, el shell; #127–#133 migran las pantallas.
 - **Verificación.** `tests/unit/design-tokens.test.ts` resuelve los tokens de
   cada tema, calcula la tabla de contraste §4.5, comprueba la disciplina de
   capas, escalas, elevación, estados, movimiento reducido y la licencia de la
-  fuente. `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell y sobre
-  Muestras en los dos temas; `tests/e2e/shell.spec.ts` comprueba la ventana a
-  1024, 1280 y 1600 px. La matriz visual completa y la auditoría de todas las
-  pantallas siguen en #133.
+  fuente. `tests/components/shell.test.tsx` cubre navegación, plegado, primaria
+  única, menú `⋯`, paleta y título truncado. `tests/e2e/accessibility.spec.ts`
+  ejecuta axe sobre el shell en los dos temas con el rail expandido y plegado, y
+  sobre Muestras por su hash; `tests/e2e/shell.spec.ts` comprueba la ventana a
+  1024, 1280 y 1600 px, el rail a 64 px y la barra a 56 px. La matriz visual
+  completa y la auditoría de todas las pantallas siguen en #133.
 
 ### 2.5 Estado implementado de los assets (#66)
 
@@ -381,8 +399,9 @@ Reglas de dependencia:
   permisos se deniegan. No se envía contenido del usuario.
 - **UI e IPC.** Canales `updates:getState`, `check`, `cancel`, `download` e
   `install`, todos con `strictObject({})`, y evento `updates:stateChanged` fuera
-  de la allowlist de `invoke`. El botón de la barra superior y el diálogo
-  muestran versión, última comprobación, estado, progreso y privacidad.
+  de la allowlist de `invoke`. El icono de la barra superior —con punto y
+  `aria-live` cuando hay versión— y el diálogo muestran versión, última
+  comprobación, estado, progreso y privacidad.
 - **Persistencia.** `logs/updates.log` es JSONL con rotación a 256 KiB y sin
   URLs, rutas, versiones ni contenido. La caché de descargas vive en
   `%LOCALAPPDATA%`, fuera de `userData`.
@@ -404,9 +423,9 @@ Reglas de dependencia:
   `setArchived`, `remove` y `listActivity`, con esquemas Zod estrictos. Un error
   de dominio se traduce a `INVALID_INPUT`; el resto, a `INTERNAL_ERROR`. En modo
   seguro se registra un servicio no disponible que falla de forma estable.
-- **UI.** El shell navega entre Inicio, Mundos y Muestras; Inicio es el dashboard
-  con resumen, tarjetas, actividad global etiquetada por mundo y accesos rápidos.
-  La página de un mundo muestra su ficha, progreso de preparación, actividad
+- **UI.** El shell navega entre Inicio y Mundos; Inicio es el dashboard con
+  resumen, tarjetas, actividad global etiquetada por mundo y accesos rápidos. La
+  página de un mundo muestra su ficha, progreso de preparación, actividad
   aislada y secciones previstas. Los diálogos de crear/editar, duplicar,
   archivar/restaurar y eliminar validan antes de enviar y piden confirmación.
 - **Decisiones pendientes.** La portada se guarda y se muestra si existe, pero su
@@ -528,10 +547,60 @@ Reglas de dependencia:
   resultados resaltados con navegación por teclado y estados de carga, error y
   vacío con recientes y favoritos. La paleta `Ctrl+K` usa combobox/listbox,
   reúne comandos y resultados rápidos y se ignora en campos editables y con
-  diálogos abiertos.
+  diálogos abiertos; desde #126 se abre también con el disparador de la barra
+  superior y ya no ofrece Muestras.
 - **Rendimiento.** La prueba de integración con 10.000 fichas sintéticas mide la
   consulta por debajo de 150 ms en el equipo de referencia; la optimización fina
   es M5-02.
+
+### 2.13 Estado implementado del shell v2 (#126)
+
+- **Alcance.** Solo renderer: `src/renderer/shell/`, `App.tsx`, componentes de
+  barra y estilos. No cambian `src/main`, `src/preload`, `src/shared`, el
+  esquema, las migraciones, el IPC, la CSP ni las dependencias.
+- **Rail.** 240 px expandido y 64 px plegado sobre `--surface-sunken`. La
+  navegación de producto se reduce a **Inicio** y **Mundos**; desaparecen el
+  lema permanente, la versión y la búsqueda duplicada, y no se añaden entradas
+  de Manuscritos, Mapas ni Grafo hasta que esas pantallas existan. Mundos queda
+  como `aria-current` también en mundo, fichas y ficha.
+- **Plegado.** Iconos con `aria-label` y tooltip accesible, `aria-expanded` y
+  `aria-controls` en el botón. El estado se mantiene durante la sesión; su
+  persistencia es parte de #132. Se sustituyó el `title` nativo previsto por el
+  tooltip accesible para no duplicar bocadillos.
+- **Barra superior.** 56 px con un único `h1` contextual —nombre del mundo en
+  mundo, fichas y ficha; etiqueta de vista en el resto— truncado a una línea con
+  `title`, el disparador de la paleta `Ctrl+K` con `aria-keyshortcuts`, una sola
+  acción primaria, el menú `⋯` de secundarias, actualizaciones como icono con
+  punto y `aria-live` cuando hay versión, y el tema como icono sol/luna con
+  etiqueta y tooltip. No hay campana.
+- **Acciones por vista.** Inicio y Mundos: «Crear mundo» en la barra solo si hay
+  al menos un mundo (con cero manda el estado vacío) y «Crear una ficha» en
+  `⋯`. Mundo: «Nueva ficha» como primaria y editar, duplicar,
+  archivar/restaurar y eliminar en `⋯`. Fichas: «Nueva ficha» en la página y
+  «Gestionar tipos» en su `⋯`. Ficha: guardado en el contenido, favorito visible
+  y «Mover a la papelera» en `⋯`. Búsqueda: sin primaria y «Reconstruir el
+  índice» en `⋯`.
+- **Vistas y hash.** `src/renderer/shell/views.ts` declara `AppView`,
+  `AppNavView` y `ShellPrimaryAction` sin JSX para probarlos en Node.
+  `internal-views.ts` resuelve `#/internal/samples` como vista interna de
+  Muestras; cualquier otro hash vuelve a Inicio y salir de Muestras limpia la
+  URL con `history.replaceState`. Muestras no aparece en el rail, la paleta ni
+  el manual como pantalla de usuario.
+- **Búsqueda y paleta.** La búsqueda completa de #76 se conserva. Se entra por
+  el disparador de la barra o la paleta; el comando pasa a «Abrir la página de
+  búsqueda», se retira el comando de Muestras y la paleta mantiene la
+  reconstrucción del índice.
+- **Enlace de salto.** Enfoca `#wc-main` con `preventDefault` para no cambiar el
+  hash ni la vista; el `main` conserva `tabIndex={-1}`.
+- **Tipografía.** Se retira el alias `--font-display` de `scales.css`; la marca
+  y el chrome usan `--font-ui` y el contenido, `--font-content`.
+- **Pruebas.** `tests/unit/shell/` e `internal-views` cubren la resolución de
+  vistas; `tests/components/shell.test.tsx` la navegación, el plegado, la
+  primaria única y el menú; `tests/e2e/shell.spec.ts` las medidas de 64/56 px,
+  el hash interno, una sola primaria por vista y la ventana a 1024/1280/1600 px;
+  axe recorre los dos temas con el rail expandido y plegado. El cierre deja 433
+  unitarias (4 omitidas), 73 de componentes, 134 de integración (1 omitida) y 37
+  E2E en verde.
 
 ## 3. Flujo de una operación
 
@@ -817,8 +886,8 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
 
 ## 6. Calidad, CI y distribución
 
-- **Pruebas.** `pnpm test` ejecuta 419 pruebas unitarias (4 omitidas por
-  symlinks en Windows sin modo desarrollador), 58 de componentes y 134 de
+- **Pruebas.** `pnpm test` ejecuta 433 pruebas unitarias (4 omitidas por
+  symlinks en Windows sin modo desarrollador), 73 de componentes y 134 de
   integración (1 omitida): scaffold (ventana, navegación, CSP e identidad),
   contrato IPC, router IPC, API del preload, enlaces externos, journal, checksum,
   rutas, UUIDv7, logger, modo seguro, tokens, contraste y licencia de fuentes, servicio de assets
@@ -838,9 +907,10 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
   reconstrucción y rendimiento de búsqueda, creación, restauración, rotación y
   restauración interrumpida de copias, y preservación entre instalaciones.
   `pnpm test:e2e` abre la aplicación real con Playwright Electron y un `userData`
-  temporal: shell, ventana a 1024, 1280 y 1600 px, temas, axe sobre el shell y
-  Muestras, design v2 con tooltip y menú abiertos, CRUD de mundos, fichas,
-  relaciones y búsqueda con teclado y textos largos. `pnpm build` y
+  temporal: shell y medidas del rail, ventana a 1024, 1280 y 1600 px, temas, axe
+  sobre el shell con rail expandido y plegado y sobre Muestras por su hash,
+  design v2 con tooltip y menú abiertos, CRUD de mundos, fichas, relaciones y
+  búsqueda con teclado y textos largos. `pnpm build` y
   `pnpm verify:build` validan los artefactos; `pnpm verify:native` comprueba
   better-sqlite3 y sharp en Node y Electron; `pnpm verify:package` valida el
   paquete y `scripts/verify-install.ps1` prueba la instalación real.

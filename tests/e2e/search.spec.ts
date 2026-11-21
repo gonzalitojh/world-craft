@@ -76,9 +76,14 @@ async function createEntity(
 }
 
 async function openSearchPage(page: Page) {
-  await page
-    .getByRole('button', { name: messages.shell.views.search })
-    .first()
+  // La entrada de producto a la búsqueda es la paleta Ctrl+K; el rail ya no
+  // tiene un ítem «Búsqueda».
+  await page.keyboard.press('Control+k');
+
+  const palette = page.getByRole('dialog', { name: messages.palette.title });
+
+  await palette
+    .getByRole('option', { name: new RegExp(messages.palette.commands.search) })
     .click();
   await expect(
     page.getByRole('heading', { level: 2, name: messages.search.title }),

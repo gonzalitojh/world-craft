@@ -260,7 +260,8 @@ migra una base en `0004` con un mundo, un tipo y una ficha.
 
 La comprobación es **manual y opcional**; no hay auto-check al arrancar.
 
-1. El usuario pulsa **Actualizaciones** en la barra superior y después **Buscar
+1. El usuario pulsa el icono de **actualizaciones** de la barra superior —con
+   tooltip y un punto cuando hay una versión disponible— y después **Buscar
    actualizaciones**. La app consulta GitHub Releases con un timeout de 30 s.
 2. Si hay una versión nueva, el usuario decide si la descarga. La descarga se
    puede cancelar de verdad y nunca se instala sin consentimiento.

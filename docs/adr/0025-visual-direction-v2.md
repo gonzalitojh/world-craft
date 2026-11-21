@@ -145,7 +145,8 @@ La decisión se desarrolla en
 
 - La dirección se aprueba en #124 antes de tocar CSS.
 - #125 migra tokens, tipografía y primitivas; actualiza los tests de tokens.
-- #126–#131 migran shell, Inicio, mundo, ficha, relaciones y editor.
+- #126 migró el shell, la navegación y la barra superior (2026-11-21).
+- #127–#131 migran Inicio, mundo, ficha, relaciones y editor.
 - #132 persiste las preferencias de interfaz.
 - #133 audita contraste, temas, ventana, teclado, axe y ruido visual.
 - Si cambia la identidad, la paleta o las reglas de borde, se revisa este ADR y
@@ -176,3 +177,17 @@ registran en `THIRD-PARTY-NOTICES.md` y en
 [`sistema-de-diseno.md`](../diseno/sistema-de-diseno.md) §5.1. No se crea un ADR
 nuevo: la familia, los pesos y el subset son detalles operativos reversibles
 dentro de una decisión ya aceptada.
+
+#126 materializó las decisiones 5, 6 y 9 en el shell: el rail queda en 240/64 px
+sobre `--surface-sunken` con navegación de producto **solo Inicio y Mundos**,
+sin lema, versión ni búsqueda duplicada, y con plegado de iconos, nombre
+accesible, tooltip, `aria-expanded` y `aria-controls`; su estado se recordará con
+#132. La barra superior de 56 px concentra un único `h1` contextual, el
+disparador de la paleta `Ctrl+K`, **una sola acción primaria**, el menú `⋯` de
+secundarias, las actualizaciones como icono con punto y `aria-live`, y el tema
+como icono con etiqueta y tooltip. Las acciones se declaran por vista en
+`src/renderer/shell/views.ts`. Muestras deja de ser función de producto y solo se
+abre por el hash interno `#/internal/samples`, resuelto en
+`src/renderer/shell/internal-views.ts`. Se retira el alias `--font-display`: la
+marca y el chrome usan `--font-ui` y el contenido, `--font-content`. No hay
+cambios en datos, IPC ni dependencias.

@@ -28,6 +28,8 @@ export interface MenuProps {
   readonly items: readonly MenuItem[];
   readonly align?: 'start' | 'end';
   readonly triggerVariant?: IconButtonVariant;
+  /** Ayuda del disparador; se anuncia con `aria-describedby` y al foco. */
+  readonly triggerTooltip?: string;
   readonly className?: string;
 }
 
@@ -54,6 +56,7 @@ export function Menu({
   items,
   align = 'start',
   triggerVariant = 'ghost',
+  triggerTooltip,
   className,
 }: MenuProps) {
   const menuId = useId();
@@ -265,6 +268,7 @@ export function Menu({
       <IconButton
         ref={triggerRef}
         label={label}
+        tooltip={triggerTooltip}
         icon={<MoreIcon />}
         variant={triggerVariant}
         aria-haspopup="menu"
@@ -317,8 +321,11 @@ export function Menu({
               disabled={item.disabled}
               onKeyDown={handleItemKeyDown}
               onClick={() => {
-                item.onSelect();
+                // Cerrar y devolver el foco antes de ejecutar la acción: si el
+                // ítem abre un diálogo, este captura como disparador el botón
+                // «⋯» y al cerrarse restaura el foco en el lugar correcto.
                 closeAndReturnFocus();
+                item.onSelect();
               }}
             >
               {item.icon === undefined ? null : (

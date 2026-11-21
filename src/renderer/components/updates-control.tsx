@@ -6,17 +6,37 @@ import {
 } from '../../shared/contracts/updates';
 import type { IpcResult } from '../../shared/contracts/result';
 import { useMessages } from '../i18n/provider';
-import { Button } from './button';
+import { IconButton } from './icon-button';
 import { UpdatesDialog } from './updates-dialog';
+
+function UpdatesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 4v10" />
+      <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
+      <path d="M5 18.5h14" />
+    </svg>
+  );
+}
 
 /**
  * Control de actualizaciones de la barra superior.
  *
- * Mantiene el snapshot que llega del preload y abre el diálogo. No comprueba
- * automáticamente: la primera comprobación ocurre solo si el usuario pulsa
- * «Buscar actualizaciones». La suscripción se retira al desmontar. Si el
- * transporte IPC falla, el diálogo muestra un aviso genérico en lugar de
- * quedarse en silencio.
+ * En v2 es un icono discreto: el nombre accesible y el tooltip cambian cuando
+ * hay una versión disponible y un punto de acento lo señala visualmente. La
+ * versión instalada se consulta en el propio diálogo. No comprueba
+ * automáticamente: la primera comprobación ocurre solo si el usuario la pide.
+ * La suscripción se retira al desmontar. Si el transporte IPC falla, el diálogo
+ * muestra un aviso genérico en lugar de quedarse en silencio.
  */
 export function UpdatesControl() {
   const messages = useMessages();
@@ -76,30 +96,34 @@ export function UpdatesControl() {
 
   const hasUpdate =
     snapshot.phase === 'available' || snapshot.phase === 'downloaded';
+  const announcement =
+    hasUpdate && snapshot.availableVersion !== null
+      ? messages.updates.openWithUpdate(snapshot.availableVersion)
+      : null;
+  const label = announcement ?? messages.updates.open;
 
   return (
     <>
-      <Button
-        variant="secondary"
-        size="sm"
+      <IconButton
+        label={label}
+        tooltip={label}
+        icon={
+          <span className="wc-updates__icon">
+            <UpdatesIcon />
+            {hasUpdate ? (
+              <span className="wc-updates__dot" aria-hidden="true" />
+            ) : null}
+          </span>
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
-        {...(hasUpdate && snapshot.availableVersion !== null
-          ? {
-              'aria-label': messages.updates.openWithUpdate(
-                snapshot.availableVersion,
-              ),
-            }
-          : {})}
         onClick={() => {
           setOpen(true);
         }}
-      >
-        {messages.updates.open}
-        {hasUpdate ? (
-          <span className="wc-updates__badge" aria-hidden="true" />
-        ) : null}
-      </Button>
+      />
+      <span className="wc-visually-hidden" aria-live="polite">
+        {announcement ?? ''}
+      </span>
       <UpdatesDialog
         open={open}
         snapshot={snapshot}

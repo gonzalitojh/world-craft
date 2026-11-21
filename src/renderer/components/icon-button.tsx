@@ -16,7 +16,7 @@ export interface IconButtonProps extends Omit<
   readonly variant?: IconButtonVariant;
   readonly size?: IconButtonSize;
   /** Texto de ayuda asociado con `aria-describedby` y visible al foco. */
-  readonly tooltip?: string;
+  readonly tooltip?: string | undefined;
   /** Estado de conmutador; se anuncia con `aria-pressed`. */
   readonly pressed?: boolean;
   /** Muestra el indicador de progreso y bloquea el botón. */

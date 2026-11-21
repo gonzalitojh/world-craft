@@ -303,13 +303,6 @@ describe('página de mundo', () => {
   it('muestra la ficha, el progreso, la actividad y los accesos previstos', () => {
     const world = makeWorld();
     const onOpenEntities = vi.fn();
-    const actions = {
-      onOpen: noop,
-      onEdit: vi.fn(),
-      onDuplicate: noop,
-      onArchiveToggle: noop,
-      onDelete: vi.fn(),
-    };
 
     renderWithI18n(
       <WorldPage
@@ -317,7 +310,6 @@ describe('página de mundo', () => {
         state="ready"
         activity={[makeActivity(world, 'world.created')]}
         activityState="ready"
-        actions={actions}
         onBack={noop}
         onRetry={noop}
         onRetryActivity={noop}
@@ -343,12 +335,9 @@ describe('página de mundo', () => {
     );
     expect(onOpenEntities).toHaveBeenCalled();
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: messages.worlds.card.deleteNamed(world.name),
-      }),
-    );
-    expect(actions.onDelete).toHaveBeenCalledWith(world);
+    // Las acciones secundarias del mundo viven ahora en el menú «⋯» de la
+    // barra superior, que controla `App`; la página no las duplica.
+    expect(screen.queryByText(messages.worlds.card.delete)).not.toBeInTheDocument();
   });
 
   it('muestra el estado de error con reintento y vuelta', () => {
@@ -358,13 +347,6 @@ describe('página de mundo', () => {
         state="error"
         activity={[]}
         activityState="ready"
-        actions={{
-          onOpen: noop,
-          onEdit: noop,
-          onDuplicate: noop,
-          onArchiveToggle: noop,
-          onDelete: noop,
-        }}
         onBack={noop}
         onRetry={noop}
         onRetryActivity={noop}

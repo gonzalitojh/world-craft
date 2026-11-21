@@ -81,6 +81,7 @@ export function WorldCard({ world, actions }: WorldCardProps) {
 
       <div className="wc-world-card__actions">
         <Button
+          variant="secondary"
           size="sm"
           onClick={() => {
             actions.onOpen(world);

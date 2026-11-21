@@ -115,7 +115,6 @@ export function HomePage({
         <p className="wc-page__section-lead">
           {messages.worlds.dashboard.lead}
         </p>
-        <Button onClick={onCreate}>{messages.worlds.actions.create}</Button>
       </div>
 
       <section className="wc-page__section" aria-labelledby={statsTitleId}>

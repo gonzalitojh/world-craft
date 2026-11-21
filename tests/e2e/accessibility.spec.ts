@@ -4,6 +4,7 @@ import { es as messages } from '../../src/renderer/messages/es';
 
 import { analyzeWithAxe } from './fixtures/axe';
 import { expect, test } from './fixtures/electron-app';
+import { openSamples } from './fixtures/internal-view';
 
 /**
  * Auditoría de accesibilidad del shell y del banco de muestras con axe.
@@ -90,13 +91,7 @@ for (const theme of THEMES) {
   test(`axe no reporta errores críticos en Muestras con tema ${theme.label}`, async ({
     page,
   }) => {
-    const navigation = page.getByRole('navigation', {
-      name: messages.shell.navigationLabel,
-    });
-
-    await navigation
-      .getByRole('button', { name: messages.shell.views.samples })
-      .click();
+    await openSamples(page);
 
     if (theme.mode === 'dark') {
       await page.getByRole('button', { name: currentThemeToggleName }).click();
@@ -116,6 +111,31 @@ for (const theme of THEMES) {
     const results = await analyzeWithAxe(page, AXE_OPTIONS);
 
     expectNoCriticalViolations(results, `muestras ${theme.label}`);
+  });
+}
+
+for (const theme of THEMES) {
+  test(`axe no reporta errores críticos con el rail plegado en tema ${theme.label}`, async ({
+    page,
+  }) => {
+    const html = page.locator('html');
+
+    if (theme.mode === 'dark') {
+      await page.getByRole('button', { name: currentThemeToggleName }).click();
+    }
+
+    await expect(html).toHaveAttribute('data-theme', theme.mode);
+
+    await page
+      .getByRole('button', { name: messages.shell.collapse })
+      .click();
+    await expect(
+      page.getByRole('button', { name: messages.shell.expand }),
+    ).toHaveAttribute('aria-expanded', 'false');
+
+    const results = await analyzeWithAxe(page, AXE_OPTIONS);
+
+    expectNoCriticalViolations(results, `shell plegado ${theme.label}`);
   });
 }
 

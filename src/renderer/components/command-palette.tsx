@@ -75,6 +75,7 @@ export function CommandPalette({
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
   const listId = useId();
+  const hintsId = useId();
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -119,7 +120,7 @@ export function CommandPalette({
         id: 'go-search',
         label: messages.palette.commands.search,
         run: () => {
-          onNavigate('search');
+          onOpenSearch('');
         },
       },
       {
@@ -127,13 +128,6 @@ export function CommandPalette({
         label: messages.palette.commands.worlds,
         run: () => {
           onNavigate('worlds');
-        },
-      },
-      {
-        id: 'go-samples',
-        label: messages.palette.commands.samples,
-        run: () => {
-          onNavigate('samples');
         },
       },
       {
@@ -162,6 +156,7 @@ export function CommandPalette({
       onCreateEntity,
       onCreateWorld,
       onNavigate,
+      onOpenSearch,
       onRebuild,
       onToggleTheme,
     ],
@@ -286,6 +281,7 @@ export function CommandPalette({
           aria-activedescendant={
             activeItem === undefined ? undefined : `${listId}-${activeItem.id}`
           }
+          aria-describedby={hintsId}
           aria-label={messages.palette.inputLabel}
           placeholder={messages.palette.placeholder}
           value={query}
@@ -372,7 +368,7 @@ export function CommandPalette({
           </p>
         ) : null}
         {searchFailed ? (
-          <p className="wc-palette__status" role="status">
+          <p className="wc-palette__status" role="alert">
             {messages.palette.error}
           </p>
         ) : null}
@@ -382,7 +378,9 @@ export function CommandPalette({
           </p>
         ) : null}
 
-        <p className="wc-palette__hints">{messages.palette.hints}</p>
+        <p className="wc-palette__hints" id={hintsId}>
+          {messages.palette.hints}
+        </p>
       </div>
     </Dialog>
   );

@@ -1,0 +1,18 @@
+/**
+ * Tipos de navegación del shell.
+ *
+ * Viven en un módulo `.ts` sin JSX para que las pruebas unitarias de Node
+ * puedan importarlos sin arrastrar el renderer de React.
+ */
+export type AppView =
+  'home' | 'search' | 'worlds' | 'world' | 'entities' | 'entity' | 'samples';
+
+/** Vistas con entrada propia en la navegación del rail. */
+export type AppNavView = 'home' | 'worlds';
+
+/** Acción primaria contextual de la barra superior. */
+export interface ShellPrimaryAction {
+  readonly label: string;
+  readonly onSelect: () => void;
+  readonly disabled?: boolean;
+}

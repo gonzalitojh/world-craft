@@ -32,6 +32,8 @@
     "src/renderer/messages/**/*.ts",
     "src/renderer/i18n/create.ts",
     "src/renderer/i18n/formats.ts",
+    "src/renderer/shell/views.ts",
+    "src/renderer/shell/internal-views.ts",
     "tests/unit/**/*.ts",
     "tests/integration/**/*.ts",
     "electron.vite.config.ts",

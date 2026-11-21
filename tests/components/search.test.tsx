@@ -316,6 +316,18 @@ describe('paleta de comandos', () => {
     };
   }
 
+  it('no ofrece Muestras y renombra la búsqueda global', () => {
+    renderPalette();
+
+    expect(messages.palette.commands.search).toBe('Abrir la página de búsqueda');
+    expect(
+      screen.getByRole('option', {
+        name: new RegExp(messages.palette.commands.search),
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Muestras/ })).toBeNull();
+  });
+
   it('expone el patrón combobox y ejecuta el primer comando con Enter', async () => {
     const user = userEvent.setup();
     const { props } = renderPalette();

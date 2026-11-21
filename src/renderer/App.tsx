@@ -13,6 +13,7 @@ import type { SearchHit } from '../shared/contracts/search';
 import { ToastRegion, type Toast, type ToastTone } from './components';
 import { CommandPalette } from './components/command-palette';
 import { EntityQuickCreateDialog } from './components/entities/entity-quick-create-dialog';
+import type { MenuItem } from './components/menu';
 import { WorldConfirmDialog } from './components/worlds/world-confirm-dialog';
 import { WorldDuplicateDialog } from './components/worlds/world-duplicate-dialog';
 import { WorldFormDialog } from './components/worlds/world-form-dialog';
@@ -26,7 +27,13 @@ import { SamplesPage } from './pages/samples-page';
 import { SearchPage } from './pages/search-page';
 import { WorldPage } from './pages/world-page';
 import { WorldsPage } from './pages/worlds-page';
-import { AppShell, type AppNavView, type AppView } from './shell/app-shell';
+import {
+  AppShell,
+  type AppNavView,
+  type AppView,
+  type ShellPrimaryAction,
+} from './shell/app-shell';
+import { resolveInternalView } from './shell/internal-views';
 import { applyTheme, DEFAULT_THEME, type ThemeMode } from './theme';
 
 type DialogState =
@@ -48,8 +55,10 @@ type DialogState =
  */
 export function App() {
   const messages = useMessages();
-  const { appInfo, worlds: api, entities: entitiesApi } = window.worldCraft;
-  const [view, setView] = useState<AppView>('home');
+  const { worlds: api, entities: entitiesApi } = window.worldCraft;
+  const [view, setView] = useState<AppView>(
+    () => resolveInternalView(window.location.hash) ?? 'home',
+  );
   const [theme, setTheme] = useState<ThemeMode>(DEFAULT_THEME);
   const [toasts, setToasts] = useState<readonly Toast[]>([]);
   const nextToastId = useRef(0);
@@ -127,6 +136,45 @@ export function App() {
   const toggleTheme = useCallback(() => {
     setTheme((current) => (current === 'light' ? 'dark' : 'light'));
   }, []);
+
+  /**
+   * Cambia de vista y retira el hash interno de Muestras al salir.
+   *
+   * La limpieza usa `history.replaceState` (sin recarga) para que volver a
+   * cargar la ventana no devuelva al banco interno. Si el hash no existe, no
+   * se toca la URL.
+   */
+  const goToView = useCallback((next: AppView) => {
+    setView(next);
+
+    if (next !== 'samples' && window.location.hash.length > 0) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = (): void => {
+      const internal = resolveInternalView(window.location.hash);
+
+      if (internal !== null) {
+        setView(internal);
+        return;
+      }
+
+      // Cualquier hash desconocido vuelve a Inicio; nunca a Muestras.
+      goToView('home');
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [goToView]);
 
   const openPalette = useCallback(() => {
     // La clave remonta la paleta para que cada apertura empiece con la
@@ -261,7 +309,7 @@ export function App() {
       setSelectedActivity([]);
       setSelectedActivityState('loading');
       setEntityId(null);
-      setView('world');
+      goToView('world');
 
       const [detail, activityList] = await Promise.all([
         api.get(id),
@@ -287,7 +335,7 @@ export function App() {
         setSelectedActivityState('error');
       }
     },
-    [api],
+    [api, goToView],
   );
 
   const refreshSelected = useCallback(async () => {
@@ -345,19 +393,25 @@ export function App() {
   }, [api, selectedWorldId]);
 
   const openEntities = useCallback(() => {
-    setView('entities');
-  }, []);
+    goToView('entities');
+  }, [goToView]);
 
-  const openEntity = useCallback((id: string) => {
-    setEntityId(id);
-    setView('entity');
-  }, []);
+  const openEntity = useCallback(
+    (id: string) => {
+      setEntityId(id);
+      goToView('entity');
+    },
+    [goToView],
+  );
 
-  const openSearchPage = useCallback((query: string) => {
-    setSearchSeed(query);
-    setSearchKey((current) => current + 1);
-    setView('search');
-  }, []);
+  const openSearchPage = useCallback(
+    (query: string) => {
+      setSearchSeed(query);
+      setSearchKey((current) => current + 1);
+      goToView('search');
+    },
+    [goToView],
+  );
 
   const openSearchHit = useCallback(
     async (hit: SearchHit) => {
@@ -663,7 +717,7 @@ export function App() {
       setSelectedActivity([]);
       setSelectedActivityState('ready');
       setEntityId(null);
-      setView('home');
+      goToView('home');
     }
   }, [
     api,
@@ -674,6 +728,7 @@ export function App() {
     refreshLibrary,
     selectedWorldId,
     closeDialogAfterSuccess,
+    goToView,
   ]);
 
   const submitQuickCreate = useCallback(
@@ -735,19 +790,110 @@ export function App() {
   };
 
   const navigate = (next: AppNavView): void => {
-    if (next === 'search') {
-      openSearchPage('');
-      return;
-    }
-
-    setView(next);
+    goToView(next);
   };
+
+  const openCreateWorldDialog = useCallback(() => {
+    openDialog({ kind: 'create' });
+  }, [openDialog]);
 
   const title =
     (view === 'world' || view === 'entities' || view === 'entity') &&
     selectedWorld !== null
       ? selectedWorld.name
       : messages.shell.views[view];
+
+  // Una sola acción primaria por vista. Las secundarias viven en el menú «⋯»
+  // de la barra; Fichas y Ficha conservan las suyas en la cabecera de página.
+  const canCreateWorld = libraryState === 'ready' && worlds.length > 0;
+  let primaryAction: ShellPrimaryAction | undefined;
+  let secondaryActions: readonly MenuItem[] = [];
+
+  if (view === 'home' || view === 'worlds') {
+    if (canCreateWorld) {
+      primaryAction = {
+        label: messages.worlds.actions.create,
+        onSelect: openCreateWorldDialog,
+      };
+    }
+
+    if (worlds.length > 0) {
+      secondaryActions = [
+        {
+          id: 'create-entity',
+          label: messages.shell.quickCreate,
+          onSelect: openQuickCreate,
+        },
+      ];
+    }
+  } else if (view === 'world' && selectedWorld !== null) {
+    const archived = selectedWorld.status === 'archived';
+
+    primaryAction = {
+      label: messages.entities.list.create,
+      onSelect: openQuickCreate,
+    };
+    secondaryActions = [
+      {
+        id: 'edit-world',
+        label: messages.worlds.card.edit,
+        onSelect: () => {
+          void openEdit(selectedWorld);
+        },
+      },
+      {
+        id: 'duplicate-world',
+        label: messages.worlds.card.duplicate,
+        onSelect: () => {
+          openDialog({ kind: 'duplicate', world: selectedWorld });
+        },
+      },
+      {
+        id: archived ? 'restore-world' : 'archive-world',
+        label: archived
+          ? messages.worlds.card.restore
+          : messages.worlds.card.archive,
+        onSelect: () => {
+          openDialog({
+            kind: archived ? 'restore' : 'archive',
+            world: selectedWorld,
+          });
+        },
+      },
+      {
+        id: 'delete-world',
+        label: messages.worlds.card.delete,
+        tone: 'danger',
+        onSelect: () => {
+          openDialog({ kind: 'delete', world: selectedWorld });
+        },
+      },
+    ];
+  } else if (view === 'search') {
+    secondaryActions = [
+      {
+        id: 'rebuild-search',
+        label: messages.palette.commands.rebuild,
+        onSelect: () => {
+          void rebuildSearchIndex();
+        },
+      },
+    ];
+  }
+
+  const homePage = (
+    <HomePage
+      worlds={worlds}
+      activity={activity}
+      state={libraryState}
+      actions={cardActions}
+      onCreate={openCreateWorldDialog}
+      onSeeAll={() => {
+        goToView('worlds');
+      }}
+      onRetry={retryLibrary}
+    />
+  );
 
   const confirmKind =
     dialog?.kind === 'archive' ||
@@ -767,29 +913,15 @@ export function App() {
       <AppShell
         view={view}
         title={title}
-        onViewChange={navigate}
-        onOpenSearch={() => {
-          openPalette();
-        }}
+        onNavigate={navigate}
+        primaryAction={primaryAction}
+        secondaryActions={secondaryActions}
+        onOpenPalette={openPalette}
         theme={theme}
         onToggleTheme={toggleTheme}
-        version={appInfo.version}
-        onQuickCreate={openQuickCreate}
       >
         {view === 'home' ? (
-          <HomePage
-            worlds={worlds}
-            activity={activity}
-            state={libraryState}
-            actions={cardActions}
-            onCreate={() => {
-              openDialog({ kind: 'create' });
-            }}
-            onSeeAll={() => {
-              setView('worlds');
-            }}
-            onRetry={retryLibrary}
-          />
+          homePage
         ) : view === 'search' ? (
           <SearchPage
             key={searchKey}
@@ -804,9 +936,7 @@ export function App() {
             worlds={worlds}
             state={libraryState}
             actions={cardActions}
-            onCreate={() => {
-              openDialog({ kind: 'create' });
-            }}
+            onCreate={openCreateWorldDialog}
             onRetry={retryLibrary}
           />
         ) : view === 'world' ? (
@@ -815,9 +945,8 @@ export function App() {
             state={selectedState}
             activity={selectedActivity}
             activityState={selectedActivityState}
-            actions={cardActions}
             onBack={() => {
-              setView('home');
+              goToView('home');
             }}
             onRetry={() => {
               if (selectedWorldId !== null) {
@@ -833,7 +962,7 @@ export function App() {
           <EntitiesPage
             world={selectedWorld}
             onBack={() => {
-              setView('world');
+              goToView('world');
             }}
             onOpenEntity={openEntity}
             onNotify={notify}
@@ -844,13 +973,16 @@ export function App() {
             world={selectedWorld}
             entityId={entityId}
             onBack={() => {
-              setView('entities');
+              goToView('entities');
             }}
             onOpenEntity={openEntity}
             onNotify={notify}
           />
-        ) : (
+        ) : view === 'samples' ? (
           <SamplesPage onNotify={notify} />
+        ) : (
+          // Vista incoherente (por ejemplo, una ficha sin mundo): Inicio.
+          homePage
         )}
       </AppShell>
 

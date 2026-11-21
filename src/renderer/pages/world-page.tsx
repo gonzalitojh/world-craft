@@ -10,7 +10,6 @@ import {
   WorldActivityList,
   type WorldActivityState,
 } from '../components/worlds/world-activity-list';
-import type { WorldCardActions } from '../components/worlds/world-card';
 import { useI18n } from '../i18n/provider';
 import { assetUrl } from '../lib/asset-url';
 
@@ -19,7 +18,6 @@ export interface WorldPageProps {
   readonly state: 'loading' | 'ready' | 'error';
   readonly activity: readonly WorldActivityEntry[];
   readonly activityState: WorldActivityState;
-  readonly actions: WorldCardActions;
   readonly onBack: () => void;
   readonly onRetry: () => void;
   readonly onRetryActivity: () => void;
@@ -38,7 +36,6 @@ export function WorldPage({
   state,
   activity,
   activityState,
-  actions,
   onBack,
   onRetry,
   onRetryActivity,
@@ -121,54 +118,6 @@ export function WorldPage({
         <Button variant="ghost" onClick={onBack}>
           {messages.worlds.detail.back}
         </Button>
-        <div className="wc-world-actions">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              actions.onEdit(world);
-            }}
-            aria-label={messages.worlds.card.editNamed(world.name)}
-          >
-            {messages.worlds.card.edit}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              actions.onDuplicate(world);
-            }}
-            aria-label={messages.worlds.card.duplicateNamed(world.name)}
-          >
-            {messages.worlds.card.duplicate}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              actions.onArchiveToggle(world);
-            }}
-            aria-label={
-              archived
-                ? messages.worlds.card.restoreNamed(world.name)
-                : messages.worlds.card.archiveNamed(world.name)
-            }
-          >
-            {archived
-              ? messages.worlds.card.restore
-              : messages.worlds.card.archive}
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              actions.onDelete(world);
-            }}
-            aria-label={messages.worlds.card.deleteNamed(world.name)}
-          >
-            {messages.worlds.card.delete}
-          </Button>
-        </div>
       </div>
 
       <article className="wc-world-hero">

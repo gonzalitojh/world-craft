@@ -281,6 +281,15 @@ primera versión estable.
 - Base visual v2 (#125): primitivas nuevas de botón de icono, menú `⋯`, casilla,
   radio, panel y esqueleto, y banco de muestras interno para revisar estados,
   contenido largo y los dos temas.
+- Shell v2 (#126): navegación de producto reducida a **Inicio** y **Mundos**,
+  rail de 240/64 px sobre `--surface-sunken`, barra superior de 56 px con un
+  único título contextual, disparador de la paleta `Ctrl+K`, una sola acción
+  primaria por vista, menú `⋯` para las secundarias, actualizaciones como icono
+  con punto y `aria-live`, y tema como icono sol/luna con etiqueta y tooltip.
+- Pruebas del shell v2 (#126): navegación, plegado, primaria única, menú con
+  teclado, hash interno de Muestras, rail a 64 px, barra a 56 px y axe en ambos
+  temas con el rail expandido y plegado. La suite queda en 433 unitarias (4
+  omitidas), 73 de componentes, 134 de integración (1 omitida) y 37 E2E.
 
 ### Cambiado
 
@@ -289,7 +298,18 @@ primera versión estable.
   `--disabled-*`, `--skeleton*` y marcas `--entity-*`, radios 4/6/8, iconos
   16/20/24 px con trazo 1,6 y foco 2+2. Se adaptan botón, campos, insignia,
   tarjeta, diálogo, pestañas, toast, tooltip y estado vacío. Las pantallas
-  conservan su estructura v1 hasta #126–#133.
+  conservan su estructura v1 hasta #127–#133.
+- Las acciones de la barra superior pasan a ser declarativas por vista (#126):
+  «Crear mundo» o «Nueva ficha» como primaria y editar, duplicar,
+  archivar/restaurar, eliminar, gestionar tipos, reconstruir el índice o mover a
+  la papelera en `⋯`, con confirmación y retorno de foco.
+- **Muestras** deja de ser función de producto (#126): solo se abre por el hash
+  interno `#/internal/samples` para desarrollo y pruebas, y desaparece del rail y
+  de la paleta.
+- Se retira el alias tipográfico `--font-display` (#126): la marca y el chrome
+  usan `--font-ui` y el contenido, `--font-content`.
+- El enlace «Saltar al contenido principal» enfoca el contenido sin cambiar el
+  hash ni la vista (#126).
 - World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
   persistencia local. El renderer no accede a Node; la base de datos es SQLite y
   los assets viven en `app.getPath('userData')`.

@@ -45,6 +45,7 @@ import { EntityDescriptionEditor } from '../components/entities/entity-descripti
 import { EntityRelationDialog } from '../components/entities/entity-relation-dialog';
 import { EntityRelationsPanel } from '../components/entities/entity-relations-panel';
 import { EntityTagDialog } from '../components/entities/entity-tag-dialog';
+import { Menu } from '../components/menu';
 import { RelationTypeManager } from '../components/entities/relation-type-manager';
 import { TypeIcon } from '../components/entities/type-icon';
 import { useI18n } from '../i18n/provider';
@@ -705,7 +706,7 @@ export function EntityDetailPage({
         <Button variant="ghost" onClick={onBack}>
           {messages.entities.detail.back}
         </Button>
-        <div className="wc-world-actions">
+        <div className="wc-entity-toolbar">
           <Button
             variant="secondary"
             size="sm"
@@ -728,15 +729,21 @@ export function EntityDetailPage({
               ? messages.entities.detail.unfavorite
               : messages.entities.detail.favorite}
           </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => {
-              setDeleteOpen(true);
-            }}
-          >
-            {messages.entities.detail.delete}
-          </Button>
+          <Menu
+            label={messages.entities.detail.menuLabel}
+            triggerTooltip={messages.entities.detail.menuLabel}
+            align="end"
+            items={[
+              {
+                id: 'delete-entity',
+                label: messages.entities.detail.delete,
+                tone: 'danger',
+                onSelect: () => {
+                  setDeleteOpen(true);
+                },
+              },
+            ]}
+          />
         </div>
       </div>
 

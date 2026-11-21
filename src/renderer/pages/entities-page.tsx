@@ -11,6 +11,7 @@ import { TextField } from '../components/text-field';
 import { EntityCard } from '../components/entities/entity-card';
 import { EntityCreateDialog } from '../components/entities/entity-create-dialog';
 import { EntityTypeManager } from '../components/entities/entity-type-manager';
+import { Menu } from '../components/menu';
 import { useI18n } from '../i18n/provider';
 
 type ListState = 'loading' | 'ready' | 'error';
@@ -215,6 +216,12 @@ export function EntitiesPage({
     status.length > 0;
   const empty = state === 'ready' && entities.length === 0;
 
+  // Con el estado vacío sin filtros, la primaria es la del propio estado
+  // vacío. La cabecera retira su botón para no duplicar la acción ni el nombre
+  // accesible; con filtros activos sí lo conserva porque el vacío solo ofrece
+  // «Quitar filtros» como secundaria.
+  const showHeaderCreate = !empty || hasFilters;
+
   return (
     <div className="wc-page wc-page--entities">
       <div className="wc-page__header">
@@ -222,24 +229,32 @@ export function EntitiesPage({
           {messages.entities.list.backToWorld}
         </Button>
         <div className="wc-entity-toolbar">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setTypesKey((current) => current + 1);
-              setTypesOpen(true);
-            }}
-          >
-            {messages.entities.list.manageTypes}
-          </Button>
-          <Button
-            onClick={() => {
-              setCreateKey((current) => current + 1);
-              setCreateOpen(true);
-            }}
-            disabled={types.length === 0}
-          >
-            {messages.entities.list.create}
-          </Button>
+          {showHeaderCreate ? (
+            <Button
+              onClick={() => {
+                setCreateKey((current) => current + 1);
+                setCreateOpen(true);
+              }}
+              disabled={types.length === 0}
+            >
+              {messages.entities.list.create}
+            </Button>
+          ) : null}
+          <Menu
+            label={messages.entities.list.menuLabel}
+            triggerTooltip={messages.entities.list.menuLabel}
+            align="end"
+            items={[
+              {
+                id: 'manage-types',
+                label: messages.entities.list.manageTypes,
+                onSelect: () => {
+                  setTypesKey((current) => current + 1);
+                  setTypesOpen(true);
+                },
+              },
+            ]}
+          />
         </div>
       </div>
 
