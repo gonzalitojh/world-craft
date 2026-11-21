@@ -251,6 +251,11 @@ Reglas de dependencia:
 - **Tipografía.** Las pilas de `scales.css` usan Fraunces, Inter y JetBrains Mono
   con respaldo del sistema; el empaquetado OFL de las fuentes sigue pendiente y
   no hay `@font-face` ni recursos remotos.
+- **Dirección visual v2 (aprobada, #124).** El ADR 0025 revisa la lectura
+  estética del ADR 0006: pila del sistema para la interfaz, serif de contenido
+  opcional empaquetada, superficies neutras y verde bosque. La migración de
+  tokens, primitivas y pantallas se ejecuta en #125–#133; hasta entonces el
+  código sigue con las pilas y los tokens v1 descritos arriba.
 - **Verificación.** `tests/unit/design-tokens.test.ts` resuelve los tokens de
   cada tema, calcula contraste WCAG y comprueba la disciplina de colores.
   `tests/e2e/accessibility.spec.ts` ejecuta axe sobre el shell en los dos temas

@@ -254,9 +254,13 @@ Se crean estos hitos, que reciben los números 9–15:
 | 14 | M5 · Calidad y distribución |
 | 15 | Backlog |
 
+> **Nota (2026-11-21).** El hito `M1.5 · Rediseño visual` y las issues #114–#133
+> se añadieron después del pivote. Este apartado conserva el inventario original;
+> el catálogo vivo se consulta en GitHub.
+
 ### 5.3 Issues creadas
 
-El catálogo nuevo tiene 41 issues, numeradas #61–#101. La issue #61 es el
+El catálogo original tiene 41 issues, numeradas #61–#101. La issue #61 es el
 propio pivote y queda en `status: needs-review`; el resto empieza en
 `status: todo`. Las cuatro del hito Backlog llevan `future`; #99 y #101 llevan
 además `needs-decision`. Durante M1-01 se añadieron las issues de seguimiento

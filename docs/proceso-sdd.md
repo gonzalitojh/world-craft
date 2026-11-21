@@ -379,6 +379,7 @@ Los subagentes **no fijan modelo ni variante**: heredan el modelo de la sesión.
 
 - `M0 · Fundaciones de escritorio`
 - `M1 · Núcleo local`
+- `M1.5 · Rediseño visual`
 - `M2 · Mapas y grafo`
 - `M3 · Escritura`
 - `M4 · Juego creativo`

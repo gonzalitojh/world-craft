@@ -139,7 +139,8 @@ issue → adopción (variante incluida) y task file → plan → implementación
   estados visibles o accesibilidad; QA revisa el resultado, no sustituye el
   diseño.
 - Diseñar para ratón y teclado en ventanas de escritorio, con mínimo 1024×700.
-- Mantener los tokens, los dos temas y la estética de «taller de cartógrafo».
+- Mantener los tokens, los dos temas y la estética de «estudio moderno con alma
+  de cartógrafo» (ADR 0025).
 - Revisar contraste, foco, estados vacíos, errores y movimiento reducido.
 - No introducir requisitos móviles, táctiles ni puntos de ruptura web.
 

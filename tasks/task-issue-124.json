@@ -1,0 +1,63 @@
+{
+  "title": "Dirección visual v2, ADR y sistema de diseño",
+  "description": "Documentar la dirección visual v2 aprobada en el epic #123: crear el ADR 0025, registrar D-048, reescribir el sistema de diseño y actualizar la taxonomía de hitos. Tarea documental: no se modifica código de producto, datos ni contratos.",
+  "status": "review",
+  "model_variant": "max",
+  "issue": {
+    "number": 124,
+    "url": "https://github.com/gonzalitojh/world-craft/issues/124",
+    "title": "Dirección visual v2, ADR y sistema de diseño"
+  },
+  "acceptance_criteria": [
+    "ADR 0025 tiene contexto, decisión, alternativas, consecuencias, riesgos y referencias a las issues.",
+    "D-048 está en el registro y no contradice el histórico de D-026.",
+    "El documento de diseño describe el sistema que se va a implementar y no presenta como existente nada que no lo esté.",
+    "Los hitos M0–M5 y Backlog siguen literales y se añade M1.5 · Rediseño visual en docs/proceso-sdd.md, docs/plan-desarrollo.md y .opencode/skills/repo-map/SKILL.md.",
+    "La tabla de contraste cubre texto normal, texto grande, componentes y foco en ambos temas.",
+    "No se cambia código de producto en esta issue; lint, typecheck y tests siguen verdes.",
+    "Los enlaces Markdown locales resuelven y git diff --check no falla.",
+    "El usuario revisa y aprueba la dirección antes de M1.5-02."
+  ],
+  "definition_of_done": [
+    "Criterios de aceptación cumplidos y evidencia anotada en este task file.",
+    "Todos los JSON modificados son válidos (ConvertFrom-Json).",
+    "Los enlaces Markdown locales resuelven; los bloques de código están cerrados y git diff --check no reporta errores.",
+    "No se presentan como existentes rutas, componentes, tokens, scripts o automatizaciones que no existan.",
+    "Estados, labels y hitos citados coinciden literalmente con docs/proceso-sdd.md y la skill repo-map.",
+    "Sin secretos, credenciales, correos reales ni URLs privadas en el diff.",
+    "Lint, typecheck y tests ejecutados sin cambios de código de producto.",
+    "Task file actualizado con agentes, QA, seguridad y documentación.",
+    "Commit local en la rama docs/issue-124-visual-direction-v2, sin push ni PR."
+  ],
+  "plan": "1) Adoptar la issue y crear este task file. 2) Crear docs/adr/0025-visual-direction-v2.md con la decisión completa y enlazarlo desde el índice y el ADR 0006 sin borrar el histórico. 3) Registrar D-048 en docs/registro-decisiones.md y anotar la revisión de D-026. 4) Reescribir docs/diseno/sistema-de-diseno.md con identidad, superficies, paleta, tipografía, iconos, elevación, espaciado, radios, componentes, estados, accesibilidad, movimiento, patrones de escritorio, políticas de fuentes y material, migración de tokens y tabla de contraste. 5) Añadir M1.5 · Rediseño visual a docs/proceso-sdd.md §5.6, docs/plan-desarrollo.md §4.5 y §4.6 y .opencode/skills/repo-map/SKILL.md §3; actualizar la dirección visual de docs/plan-desarrollo.md §3.2 y la nota de implementación de docs/arquitectura.md. 6) Verificar JSON, enlaces, fences, git diff --check, lint, typecheck y tests. 7) Registrar QA, seguridad y documentación en este task file y preparar el commit local con el publisher.",
+  "validation": {
+    "result": "user-approved",
+    "date": "2026-11-21",
+    "notes": "El usuario solicitó abordar la issue #124. El alcance de la issue y la dirección visual del epic #123 están aprobados. Es una tarea documental: no se ejecuta la puerta de implementación de código. El manual de usuario no aplica porque no cambia ningún comportamiento visible: la aplicación sigue con el sistema v1 hasta #125–#133 y este cambio solo documenta la dirección aprobada."
+  },
+  "agents": {
+    "planning": "no aplica",
+    "implementation": "no aplica",
+    "ui": "no aplica",
+    "qa": "no aplica",
+    "security": "no aplica",
+    "documentation": "no aplica",
+    "publisher": "publisher",
+    "notes": "Tarea documental y de proceso conforme a la skill repo-map: no se invocan subagentes; QA, seguridad y documentación se resuelven con el checklist documental. No se modifica UI ni código de producto. Documentos actualizados: ADR 0025, índice de ADRs, ADR 0006, registro de decisiones, sistema de diseño, proceso SDD, plan de desarrollo, arquitectura, agentes, cambio a escritorio y skill repo-map. El publisher prepara el commit local sin push ni PR."
+  },
+  "qa": {
+    "result": "PASS",
+    "notes": "Checklist documental superado. JSON de tasks válido; enlaces Markdown locales resueltos en los once documentos tocados; Prettier en verde; git diff --check sin errores; lint y typecheck en verde; tests 385 unitarios + 33 de componentes + 134 de integración en verde (4 y 1 skipped preexistentes). La tabla de contraste se calculó con la fórmula de luminancia relativa WCAG 2.2 y cubre texto normal, texto grande, componentes y foco en ambos temas. No se modificó código de producto ni se presentan como existentes tokens, componentes o pantallas que aún no lo estén: el estado v2 se marca como previsto en #125–#133."
+  },
+  "security": {
+    "result": "PASS",
+    "findings": [],
+    "notes": "Diff revisado: solo documentación y el task file. Sin claves, tokens, contraseñas, correos reales, URLs privadas ni datos personales. No se añaden dependencias ni servicios. No se toca Electron, IPC, CSP, assets, migraciones ni datos de usuario."
+  },
+  "documentation": {
+    "adr": "docs/adr/0025-visual-direction-v2.md",
+    "manual": "no aplica",
+    "changelog": null,
+    "agents": "docs/agentes.md"
+  }
+}

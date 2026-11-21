@@ -7,7 +7,7 @@
 - **Decisiones del registro:** D-026
 - **Decisores:** usuario / agentes
 - **Supersede:** ADR 0010 y ADR 0018 de la etapa web
-- **Relacionados:** ADR 0001, ADR 0009
+- **Relacionados:** ADR 0001, ADR 0009, ADR 0025
 
 ## Contexto
 
@@ -115,8 +115,16 @@ La primera implementación del sistema confirma la decisión con estos matices:
   y comprueba la ventana a 1024, 1280 y 1600 px. La matriz visual real, las
   capturas y la auditoría de todas las pantallas siguen en #93.
 
+## Nota de revisión (2026-11-21, issue #124)
+
+El ADR 0025 y D-048 modernizan la lectura estética de esta decisión: mantienen
+los dos temas, los tokens en tres capas, la ventana mínima y las garantías de
+accesibilidad, y cambian la paleta, las pilas tipográficas, la elevación y las
+reglas de borde. Este ADR no se supersede; su histórico se conserva.
+
 ## Referencias
 
+- [`docs/adr/0025-visual-direction-v2.md`](0025-visual-direction-v2.md)
 - [`docs/diseno/sistema-de-diseno.md`](../diseno/sistema-de-diseno.md)
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), §3.2 D2 y D13
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-026
