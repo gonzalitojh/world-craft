@@ -20,7 +20,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0003](0003-nsis-installer-electron-updater-data-preservation.md) | Instalador NSIS, electron-updater y preservación | Aceptado | D-023, D-031 |
 | [0004](0004-electron-security-typed-ipc.md) | Seguridad Electron e IPC tipado | Aceptado | D-024, D-025 |
 | [0005](0005-local-assets-custom-protocol.md) | Assets locales y protocolo `wc-asset://` | Aceptado | D-022 |
-| [0006](0006-two-themes-desktop-design-system.md) | Dos temas y sistema de diseño de escritorio | Aceptado | D-026 |
+| [0006](0006-two-themes-desktop-design-system.md) | Dos temas y sistema de diseño de escritorio | Aceptado | D-026; revisado en D-048/0025 |
 | [0007](0007-tiptap-editor-exporters.md) | Editor Tiptap y exportadores | Aceptado | D-027 |
 | [0008](0008-maplibre-terra-draw-react-flow-elk.md) | MapLibre/Terra Draw y React Flow/ELK | Aceptado | D-028 |
 | [0009](0009-centralized-i18n.md) | Internacionalización centralizada | Aceptado | D-029 |
@@ -39,6 +39,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0022](0022-relations-backlinks-graph-api.md) | Relaciones tipadas, etiquetas inversas y API del grafo (#75) | Aceptado | D-045 |
 | [0023](0023-global-search-fts5-command-palette.md) | Búsqueda global FTS5 y paleta de comandos (#76) | Aceptado | D-046 |
 | [0024](0024-obligatory-specialized-subagents.md) | Invocación obligatoria de los subagentes especializados | Aceptado | D-047 |
+| [0025](0025-visual-direction-v2.md) | Dirección visual v2 y sistema «estudio moderno» (#124) | Aceptado | D-048 |
 
 ## 3. Relación con otros documentos
 
@@ -86,3 +87,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-20 | Se añade el ADR 0022 (relaciones tipadas, etiquetas inversas y API del grafo, #75). |
 | 2026-11-20 | Se añade el ADR 0023 (búsqueda global FTS5 y paleta de comandos, #76). |
 | 2026-11-21 | Se añade el ADR 0024 (invocación obligatoria de los subagentes especializados, tarea local `subagent-routing`). |
+| 2026-11-21 | Se añade el ADR 0025 (dirección visual v2, #124) y se anota que revisa la estética del ADR 0006 sin supersederlo. |

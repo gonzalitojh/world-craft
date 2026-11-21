@@ -63,8 +63,8 @@ file.
 Exactamente un `status: *`, un `type: *`, un `priority: *`, un `size: *` y un
 `variant: *`; al menos un `area: *`; un hito. Labels de tipo: `feature`, `bug`,
 `chore`, `docs`, `design`, `testing`, `refactor`, `content`. Prioridad `p0`–`p3`;
-tamaño `s`/`m`/`l`/`xl`. Hitos: `M0`–`M5` y `Backlog`. Bandera
-`needs-decision`: no es estado; bloquea la adopción.
+tamaño `s`/`m`/`l`/`xl`. Hitos: `M0`, `M1`, `M1.5`, `M2`–`M5` y
+`Backlog`. Bandera `needs-decision`: no es estado; bloquea la adopción.
 
 ## 4. Esquema del task file
 

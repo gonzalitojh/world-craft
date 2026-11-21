@@ -43,11 +43,11 @@ la nube: GitHub solo aloja el código y las releases, y la comprobación de
 actualizaciones es opcional. La firma de código de Windows queda como mejora
 opcional y requiere decisión y ADR porque no es gratuita.
 
-El desarrollo se organiza en **seis fases** (M0 a M5) y un backlog. El punto de
-partida es la limpieza del repositorio web y la creación de una base de
-escritorio verificable: ventana segura, base de datos local, migraciones,
-copias, IPC tipado, sistema de diseño, instalador y CI. Solo después se añade
-producto.
+El desarrollo se organiza en las **fases M0 a M5**, la **fase puente M1.5** y un
+backlog. El punto de partida es la limpieza del repositorio web y la creación de
+una base de escritorio verificable: ventana segura, base de datos local,
+migraciones, copias, IPC tipado, sistema de diseño, instalador y CI. Solo
+después se añade producto.
 
 ---
 
@@ -532,10 +532,15 @@ temas.
 > `--disabled-text`. Las fuentes aún no se empaquetan: se usan pilas con
 > respaldo del sistema hasta añadir los archivos OFL.
 
-**Dirección visual:** «taller de cartógrafo». Tipografía de display **Fraunces**
-(serif con carácter), texto de interfaz **Inter** y monoespaciada **JetBrains
-Mono** para datos. Paleta base papel/tinta con acentos tierra, musgo y ocre;
-textura de papel sutil mediante SVG, sin gradientes morados genéricos.
+**Dirección visual vigente (v2, 2026-11-21, ADR 0025 / D-048):** «estudio
+moderno con alma de cartógrafo». Superficies neutras cálidas en Claro y neutras
+profundas en Oscuro, con verde bosque como acento y arena reservada a selección
+o detalle. Tipografía del sistema para la interfaz; serif OFL solo para
+contenido si se empaqueta; sin URLs remotas. Jerarquía por espacio, tamaño, peso
+y contraste; bordes solo en campos, divisores, foco y superficies flotantes; una
+acción primaria por pantalla y documento antes que formulario. Se mantienen los
+dos temas, los tokens en tres capas, la ventana 1024×700 y AA. La migración se
+ejecuta en #125–#133.
 
 #### D14. Idioma
 
@@ -880,19 +885,21 @@ falte una decisión.
 usuario), `future` (backlog).
 
 **Hitos:** `M0 · Fundaciones de escritorio`, `M1 · Núcleo local`,
-`M2 · Mapas y grafo`, `M3 · Escritura`, `M4 · Juego creativo`,
-`M5 · Calidad y distribución`, `Backlog`.
+`M1.5 · Rediseño visual`, `M2 · Mapas y grafo`, `M3 · Escritura`,
+`M4 · Juego creativo`, `M5 · Calidad y distribución`, `Backlog`.
 
 ### 4.6 Fases y catálogo de issues
 
-El catálogo detallado vive en GitHub: 41 issues (#61–#101), organizadas en
-los hitos M0–M5 y Backlog. El inventario con títulos y números está en
-[`cambio-a-escritorio.md`](cambio-a-escritorio.md#53-issues-creadas). Resumen:
+El catálogo detallado vive en GitHub y se organiza en los hitos M0, M1, M1.5,
+M2–M5 y Backlog. El inventario original del pivote está en
+[`cambio-a-escritorio.md`](cambio-a-escritorio.md#53-issues-creadas); las
+issues posteriores se consultan en GitHub. Resumen:
 
 | Fase | Objetivo | Issues principales |
 |---|---|---|
 | **M0** | Base técnica y proceso | Pivote documental, scaffold Electron, SQLite/Drizzle, IPC, sistema de diseño, assets, backups, CI, instalador. |
 | **M1** | Núcleo local | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes, papelera y versiones. |
+| **M1.5** | Rediseño visual | Dirección v2, tokens y primitivas, shell, Inicio, mundo, ficha, relaciones, editor, preferencias y auditoría. |
 | **M2** | Mapas y grafo | Spike MapLibre/Terra Draw, editor de mapas, marcadores, grafo. |
 | **M3** | Escritura | Editor Tiptap, diálogos y enfoque, exportación/importación. |
 | **M4** | Juego | Dados y tablas, contenido inicial, tablas personalizadas y packs. |

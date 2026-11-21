@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0023.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0025.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -28,7 +28,7 @@ offline y control total de los datos.
 | D-023 | Instalador y actualizaciones | **electron-builder + NSIS por usuario** en `%LOCALAPPDATA%\Programs\World Craft`, sin admin, y **electron-updater** con GitHub Releases. | Actualizar o desinstalar nunca toca `userData`; actualización opcional y cancelable. ADR 0003. |
 | D-024 | Seguridad Electron | `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webSecurity: true`, CSP estricta, IPC allowlisted con Zod y sin contenido remoto. | El renderer no accede a Node; cada canal tiene contrato tipado. ADR 0004. |
 | D-025 | Modelo de usuario | **Aplicación local de un solo usuario**: sin auth, allowlist, invitaciones, roles por mundo ni RLS. | Desaparecen las tablas y flujos de acceso; la seguridad se centra en el aislamiento del renderer y las rutas. ADR 0011. |
-| D-026 | Temas y diseño | **Dos temas, Claro y Oscuro**, con tokens en tres capas, contraste AA y diseño para ratón/teclado. Ventana mínima **1024×700**; referencias 1024, 1280 y 1600. | Sin requisitos móviles ni responsive web; se conserva la estética de «taller de cartógrafo». ADR 0006. |
+| D-026 | Temas y diseño | **Dos temas, Claro y Oscuro**, con tokens en tres capas, contraste AA y diseño para ratón/teclado. Ventana mínima **1024×700**; referencias 1024, 1280 y 1600. | Sin requisitos móviles ni responsive web; se conserva la estética de «taller de cartógrafo». ADR 0006. Revisada estéticamente por D-048/ADR 0025 (2026-11-21). |
 | D-027 | Editor | **Tiptap 3** sobre ProseMirror, con extensiones propias y contenido JSON + texto plano. Las extensiones Pro no se contratan. | Historial por snapshots propios; colaboración fuera del MVP. ADR 0007. |
 | D-028 | Mapas y grafo | **MapLibre GL JS + Terra Draw** con GeoJSON, y **React Flow 12 + ELK.js** para el grafo. | Spike temprano para mapas y exportación SVG; layout en worker y filtros para grafos grandes. ADR 0008. |
 | D-029 | Idioma | Español en el MVP, con catálogo tipado y estructura preparada para inglés e italiano; `Intl` para fechas y números. | Sin cadenas visibles dispersas; identificadores en inglés. ADR 0009. |
@@ -207,3 +207,20 @@ quedó apuntando al ADR 0009 (i18n) tras el pivote.
 - Referencias: ADR 0024, ADR 0010, `tasks/task-local-subagent-routing.json`,
   `AGENTS.md`, `docs/proceso-sdd.md`, `docs/agentes.md`,
   `.opencode/agents/sdd-master.md` y `.opencode/skills/repo-map/SKILL.md`.
+
+## 2026-11-21 — Dirección visual v2 (M1.5-01)
+
+**Contexto.** La aplicación ya cubre mundos, fichas, tipos, etiquetas, relaciones
+y búsqueda, pero la interfaz se percibe como un gestor de bases de datos. El
+usuario revisó la aplicación y un informe externo de UX/UI y aprobó una lectura
+contemporánea de la identidad editorial: superficies neutras, verde bosque como
+acento, tipografía del sistema y jerarquía por espacio. La decisión debía quedar
+por escrito antes de tocar CSS y no podía contradecir el histórico de D-026.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-048 | Dirección visual v2 | **«Estudio moderno con alma de cartógrafo»**: superficies neutras cálidas en Claro y neutras profundas en Oscuro; verde bosque como acento y arena reservada a selección o detalle; pila del sistema para la interfaz, serif OFL solo para contenido si se empaqueta y sin URLs remotas; iconos propios de trazo 1,6 px centralizados; jerarquía por espacio, tamaño, peso y contraste; bordes solo en campos, divisores, foco y superficies flotantes; una acción primaria por pantalla y secundarias en `⋯` o paleta; documento antes que formulario; Mica solo como spike opcional de Windows 11 con fallback opaco y sin Acrylic detrás de texto. Se mantienen dos temas, tokens en tres capas, ventana 1024×700, AA, teclado, `prefers-reduced-motion` y offline. | La app gana una lectura de herramienta creativa sin perder la identidad editorial; baja el ruido de bordes, radios y botones; la migración se reparte entre #125–#133 y conserva los tokens persistidos de tipos de entidad (`moss`, `ochre`, `danger`, `prussian`); la serif de contenido queda condicionada a empaquetar una OFL; el riesgo principal es la regresión visual y de contraste, cubierto por los tests de tokens y la auditoría de #133. ADR 0025. |
+
+- Referencias: ADR 0025, ADR 0006, ADR 0009, ADR 0010, ADR 0024, #123, #125,
+  #126, #127, #128, #129, #130, #131, #132, #133,
+  `docs/diseno/sistema-de-diseno.md` y `docs/plan-desarrollo.md`.
