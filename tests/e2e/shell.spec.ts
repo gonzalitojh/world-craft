@@ -58,7 +58,12 @@ async function createWorld(page: Page, name: string): Promise<void> {
     .click();
 
   await expect(
-    page.getByRole('heading', { level: 2, name, exact: true }),
+    page.getByRole('heading', { level: 1, name, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('navigation', {
+      name: messages.worlds.detail.modules.label,
+    }),
   ).toBeVisible();
   await dismissToasts(page);
 }
@@ -396,7 +401,10 @@ test('mantiene una sola primaria por vista de producto', async ({ page }) => {
     })
     .click();
   await page
-    .getByRole('button', { name: messages.entities.list.title })
+    .getByRole('navigation', {
+      name: messages.worlds.detail.modules.label,
+    })
+    .getByRole('button', { name: messages.worlds.detail.modules.entities })
     .click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Las Mareas Grises' }),

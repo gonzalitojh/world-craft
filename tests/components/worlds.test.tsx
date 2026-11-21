@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactElement } from 'react';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import type { ComponentProps, ReactElement } from 'react';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WorldCard } from '@/renderer/components/worlds/world-card';
 import { WorldDuplicateDialog } from '@/renderer/components/worlds/world-duplicate-dialog';
@@ -10,6 +16,8 @@ import { WorldPage } from '@/renderer/pages/world-page';
 import { WorldsPage } from '@/renderer/pages/worlds-page';
 import { I18nProvider } from '@/renderer/i18n/provider';
 import { es as messages } from '@/renderer/messages/es';
+import type { EntitySummary } from '@/shared/contracts/entities';
+import type { WorldCraftApi } from '@/shared/contracts/world-craft-api';
 import type {
   WorldActivityEntry,
   WorldDetail,
@@ -428,11 +436,31 @@ describe('diálogo de duplicado', () => {
 });
 
 describe('página de mundo', () => {
-  it('muestra la ficha, el progreso, la actividad y los accesos previstos', () => {
-    const world = makeWorld();
-    const onOpenEntities = vi.fn();
+  const listEntities = vi.fn();
 
-    renderWithI18n(
+  function makeEntityList(count: number): readonly EntitySummary[] {
+    return Array.from({ length: count }, (_, index) => ({
+      id: `entity-${index}`,
+    })) as unknown as readonly EntitySummary[];
+  }
+
+  beforeEach(() => {
+    listEntities.mockReset();
+    listEntities.mockResolvedValue({ ok: true, data: [] });
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        entities: { list: listEntities },
+      } as unknown as WorldCraftApi,
+    });
+  });
+
+  function renderPage(
+    overrides: Partial<ComponentProps<typeof WorldPage>> = {},
+  ) {
+    const world = makeWorld();
+
+    return renderWithI18n(
       <WorldPage
         world={world}
         state="ready"
@@ -441,51 +469,239 @@ describe('página de mundo', () => {
         onBack={noop}
         onRetry={noop}
         onRetryActivity={noop}
-        onOpenEntities={onOpenEntities}
+        onOpenEntities={noop}
+        {...overrides}
       />,
     );
+  }
+
+  it('organiza el mundo en módulos y solo Fichas navega', () => {
+    const onOpenEntities = vi.fn();
+
+    renderPage({ onOpenEntities });
+
+    const modules = messages.worlds.detail.modules;
+    const nav = screen.getByRole('navigation', { name: modules.label });
+
+    // «Resumen» es la sección actual: enfocable, señalada y sin acción.
+    expect(
+      within(nav).getByRole('button', { name: modules.summary }),
+    ).toHaveAttribute('aria-current', 'page');
+
+    // «Fichas» es el único módulo implementado y conserva su recuento.
+    const entities = within(nav).getByRole('button', {
+      name: new RegExp(`^${modules.entities}`),
+    });
+
+    fireEvent.click(entities);
+    expect(onOpenEntities).toHaveBeenCalledTimes(1);
+
+    // Los previstos son texto estático con insignia, no botones.
+    for (const label of [modules.maps, modules.manuscript, modules.graph]) {
+      expect(within(nav).queryByRole('button', { name: label })).toBeNull();
+    }
+
+    expect(within(nav).getAllByText(modules.planned)).toHaveLength(3);
+    expect(screen.getByText(modules.plannedNote)).toBeInTheDocument();
+  });
+
+  it('no repite el nombre ni las acciones de la barra superior', () => {
+    const world = makeWorld();
+
+    renderPage({ world });
+
+    // El único título con el nombre es el h1 de la barra, fuera de la página.
+    expect(
+      screen.queryByRole('heading', { level: 2, name: world.name }),
+    ).toBeNull();
+
+    // Las acciones secundarias viven en el menú «⋯» de la barra superior.
+    for (const action of [
+      messages.worlds.card.edit,
+      messages.worlds.card.duplicate,
+      messages.worlds.card.archive,
+      messages.worlds.card.delete,
+    ]) {
+      expect(screen.queryByRole('button', { name: action })).toBeNull();
+    }
+
+    // Marca decorativa procedural en lugar de la inicial gigante.
+    const mark = document.querySelector('.wc-world-header .wc-world-mark');
+    expect(mark).toHaveAttribute('aria-hidden', 'true');
+    expect(mark).toHaveAttribute('data-motif');
+    expect(mark).toHaveAttribute('data-tone');
+    expect(mark?.textContent).toBe('');
+    expect(document.querySelector('.wc-world-hero__initial')).toBeNull();
+  });
+
+  it('jerarquiza Resumen, Preparación y Actividad', () => {
+    const world = makeWorld();
+
+    renderPage({ world });
 
     expect(
-      screen.getByRole('heading', { level: 2, name: world.name }),
-    ).toBeInTheDocument();
+      screen.getByRole('heading', {
+        level: 2,
+        name: messages.worlds.detail.summaryTitle,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: messages.worlds.detail.progressTitle,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: messages.worlds.detail.activityTitle,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', {
+        level: 3,
+        name: messages.worlds.detail.metadataTitle,
+      }),
+    ).toBeVisible();
+
+    // Descripción y datos del mundo.
+    expect(screen.getByText(world.description ?? '')).toBeInTheDocument();
+    expect(screen.getByText(world.slug)).toBeInTheDocument();
+    expect(screen.getAllByRole('term')).toHaveLength(4);
+    expect(screen.getAllByRole('definition')).toHaveLength(4);
+
+    // El progreso conserva su semántica y el mundo de prueba está completo.
+    const progress = screen.getByRole('progressbar');
+    expect(progress).toHaveAttribute('aria-valuenow', '100');
     expect(
       screen.getByText(messages.worlds.detail.progressValue(3, 3)),
     ).toBeInTheDocument();
     expect(
       screen.getByText(messages.worlds.activity.actions.created),
     ).toBeInTheDocument();
-    expect(
-      screen.getAllByText(messages.worlds.detail.quickPlanned),
-    ).toHaveLength(3);
+  });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: messages.entities.list.title }),
+  it('muestra el recuento de fichas cuando la lectura termina bien', async () => {
+    listEntities.mockResolvedValue({ ok: true, data: makeEntityList(2) });
+
+    renderPage();
+
+    expect(
+      await screen.findByText(messages.entities.list.count(2)),
+    ).toBeInTheDocument();
+    expect(listEntities).toHaveBeenCalledWith({
+      worldId: expect.any(String),
+      filter: { limit: 200 },
+    });
+  });
+
+  it('avisa del tope del recuento sin inventar un total', async () => {
+    listEntities.mockResolvedValue({ ok: true, data: makeEntityList(200) });
+
+    renderPage();
+
+    expect(
+      await screen.findByText(messages.entities.list.countAtLeast(200)),
+    ).toBeInTheDocument();
+  });
+
+  it('omite el recuento si la lectura falla y deja la página usable', async () => {
+    listEntities.mockResolvedValue({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(listEntities).toHaveBeenCalledTimes(1);
+    });
+
+    expect(screen.queryByText(/fichas?$/)).toBeNull();
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: messages.worlds.detail.summaryTitle,
+      }),
+    ).toBeVisible();
+  });
+
+  it('sigue montando la página si el puente de fichas no existe', async () => {
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: undefined,
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', {
+          level: 2,
+          name: messages.worlds.detail.summaryTitle,
+        }),
+      ).toBeVisible();
+    });
+    expect(screen.queryByText(/fichas?$/)).toBeNull();
+  });
+
+  it('muestra el estado de carga sin cabecera ni navegación', () => {
+    renderPage({ world: null, state: 'loading' });
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      messages.worlds.detail.loading,
     );
-    expect(onOpenEntities).toHaveBeenCalled();
-
-    // Las acciones secundarias del mundo viven ahora en el menú «⋯» de la
-    // barra superior, que controla `App`; la página no las duplica.
-    expect(
-      screen.queryByText(messages.worlds.card.delete),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
   });
 
   it('muestra el estado de error con reintento y vuelta', () => {
-    renderWithI18n(
-      <WorldPage
-        world={null}
-        state="error"
-        activity={[]}
-        activityState="ready"
-        onBack={noop}
-        onRetry={noop}
-        onRetryActivity={noop}
-        onOpenEntities={noop}
-      />,
-    );
+    renderPage({ world: null, state: 'error' });
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      messages.worlds.detail.errorTitle,
+    const alert = screen.getByRole('alert');
+
+    expect(alert).toHaveTextContent(messages.worlds.detail.errorTitle);
+    expect(
+      screen.getByRole('button', { name: messages.worlds.dashboard.retry }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: messages.worlds.detail.errorBack }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).toBeNull();
+  });
+
+  it('pinta contenido largo sin truncar la descripción ni los géneros', () => {
+    const description = 'Crónica de mareas y cartógrafos. '
+      .repeat(122)
+      .slice(0, 4000);
+    const genres = Array.from(
+      { length: 8 },
+      (_, index) => `Género ${index + 1} de nombre largo`,
+    );
+    const world = makeWorld({ description, genres });
+
+    expect(description).toHaveLength(4000);
+
+    renderPage({ world });
+
+    expect(screen.getByText(description)).toBeInTheDocument();
+
+    const genreList = screen.getByRole('list', {
+      name: messages.worlds.form.genresLabel,
+    });
+    expect(within(genreList).getAllByRole('listitem')).toHaveLength(8);
+  });
+
+  it('señala el resumen y la descripción ausentes sin ocultar los nodos', () => {
+    const world = makeWorld({ summary: null, description: null });
+
+    renderPage({ world });
+
+    expect(screen.getByText(messages.worlds.detail.noSummary)).toHaveClass(
+      'wc-world-header__summary--empty',
+    );
+    expect(screen.getByText(messages.worlds.detail.noDescription)).toHaveClass(
+      'wc-world-description--empty',
     );
   });
 });

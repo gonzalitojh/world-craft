@@ -305,6 +305,20 @@ primera versión estable.
   borrado del mundo recordado, menú de tarjeta con teclado, 12 combinaciones de
   ventana, rail y tema, y axe en Inicio. La suite queda en 447 unitarias (4
   omitidas), 87 de componentes, 134 de integración (1 omitida) y 42 E2E.
+- Vista de mundo modular (#128): la página de un mundo es un marco con vuelta a
+  Inicio, cabecera de identidad (portada o marca, estado, resumen y géneros),
+  navegación **Módulos del mundo** —**Resumen** actual y **Fichas** navegable con
+  recuento; **Mapas**, **Manuscrito** y **Grafo** como **Previsto**, sin
+  enlace—, **Resumen** con descripción y datos del mundo, **Preparación** con
+  barra de progreso y **Actividad de este mundo** al final como información
+  secundaria. Editar, duplicar, archivar/restaurar y eliminar siguen solo en el
+  menú `⋯` de la barra superior.
+- Pruebas de la vista de mundo modular (#128): unitarias del recuento y los
+  tokens de contraste nuevos; 11 de componentes con el puente simulado; E2E de
+  la vista modular y del bucle 1024/1280/1600 px con rail expandido y plegado,
+  ambos temas, descripción de 4.000 caracteres, ocho géneros y axe. La suite
+  queda en 453 unitarias (4 omitidas), 96 de componentes, 134 de integración (1
+  omitida) y 43 E2E.
 
 ### Cambiado
 
@@ -332,7 +346,15 @@ primera versión estable.
   suya cuando no hay ninguno.
 - Las tarjetas de mundo de Inicio y Mundos pasan al patrón de una acción
   visible más menú `⋯` (#127), con la marca procedural como sustituto de la
-  inicial y el resumen limitado a dos líneas. El hero de la ficha no cambia.
+  inicial y el resumen limitado a dos líneas. El hero de la ficha del mundo
+  sigue como estaba hasta #128.
+- La página de un mundo deja de ser un documento apilado (#128): se retira el
+  hero con la inicial gigante y la rejilla de «Accesos rápidos» con
+  descripciones. La identidad pasa a una cabecera con portada o marca procedural,
+  estado, resumen y géneros; el nombre queda solo en el `h1` de la barra superior
+  y la página no duplica la acción primaria ni las secundarias del menú `⋯`.
+  El recuento de fichas se lee con el canal `entities:list` ya existente, sin IPC
+  nuevo, y se omite mientras carga o si la lectura falla.
 - World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
   persistencia local. El renderer no accede a Node; la base de datos es SQLite y
   los assets viven en `app.getPath('userData')`.

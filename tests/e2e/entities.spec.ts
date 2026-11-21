@@ -33,14 +33,22 @@ async function createWorld(page: Page) {
     .click();
 
   await expect(
-    page.getByRole('heading', { level: 2, name: WORLD_NAME, exact: true }),
+    page.getByRole('heading', { level: 1, name: WORLD_NAME, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('navigation', {
+      name: messages.worlds.detail.modules.label,
+    }),
   ).toBeVisible();
   await dismissToasts(page);
 }
 
 async function openEntities(page: Page) {
   await page
-    .getByRole('button', { name: messages.entities.list.title })
+    .getByRole('navigation', {
+      name: messages.worlds.detail.modules.label,
+    })
+    .getByRole('button', { name: messages.worlds.detail.modules.entities })
     .click();
   await expect(
     page.getByRole('heading', { level: 2, name: messages.entities.list.title }),
