@@ -6,6 +6,7 @@ import {
   Card,
   Checkbox,
   Dialog,
+  DisclosureSection,
   IconButton,
   Menu,
   Panel,
@@ -110,6 +111,107 @@ describe('IconButton', () => {
       'aria-hidden',
       'true',
     );
+  });
+});
+
+describe('DisclosureSection', () => {
+  function renderDisclosure(
+    overrides: Partial<{
+      open: boolean;
+      onToggle: (open: boolean) => void;
+      withActions: boolean;
+    }> = {},
+  ) {
+    const onToggle = overrides.onToggle ?? vi.fn();
+
+    render(
+      <DisclosureSection
+        id="wc-entity-section-description"
+        title="Descripción"
+        open={overrides.open ?? true}
+        onToggle={onToggle}
+        meta="124 palabras"
+        actions={
+          overrides.withActions === false ? undefined : (
+            <button type="button">Editar descripción</button>
+          )
+        }
+      >
+        <p>Contenido del documento.</p>
+      </DisclosureSection>,
+    );
+
+    return { onToggle };
+  }
+
+  it('usa section nombrada, h3 > button y acciones fuera del plegado', () => {
+    renderDisclosure();
+
+    const region = screen.getByRole('region', { name: /Descripción/ });
+    const heading = within(region).getByRole('heading', {
+      level: 3,
+      name: /Descripción/,
+    });
+    const toggle = within(heading).getByRole('button', {
+      name: /Descripción/,
+    });
+    const action = within(region).getByRole('button', {
+      name: 'Editar descripción',
+    });
+
+    expect(region).toHaveAttribute('id', 'wc-entity-section-description');
+    expect(region).toHaveAttribute('data-section', 'description');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveAttribute(
+      'aria-controls',
+      'wc-entity-section-description-body',
+    );
+    expect(action.closest('button')).toBe(action);
+    expect(toggle).not.toContainElement(action);
+    expect(within(region).getByText('124 palabras')).toBeInTheDocument();
+    expect(within(region).getByText('Contenido del documento.')).toBeVisible();
+  });
+
+  it('pliega con clic, Enter y espacio sin ocultar el contenido del DOM', async () => {
+    const user = userEvent.setup();
+    const { onToggle } = renderDisclosure();
+
+    const toggle = screen.getByRole('button', { name: /Descripción/ });
+
+    await user.click(toggle);
+    expect(onToggle).toHaveBeenCalledWith(false);
+
+    toggle.focus();
+    await user.keyboard('{Enter}');
+    expect(onToggle).toHaveBeenCalledTimes(2);
+
+    await user.keyboard(' ');
+    expect(onToggle).toHaveBeenCalledTimes(3);
+  });
+
+  it('mantiene el cuerpo montado pero oculto y no accesible al cerrar', () => {
+    renderDisclosure({ open: false });
+
+    const toggle = screen.getByRole('button', { name: /Descripción/ });
+    const body = document.getElementById('wc-entity-section-description-body');
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(body).not.toBeNull();
+    expect(body).toHaveAttribute('hidden');
+    expect(
+      screen.getByText('Contenido del documento.', { exact: false }),
+    ).not.toBeVisible();
+  });
+
+  it('la acción de la cabecera no pliega la sección', async () => {
+    const user = userEvent.setup();
+    const { onToggle } = renderDisclosure();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Editar descripción' }),
+    );
+
+    expect(onToggle).not.toHaveBeenCalled();
   });
 });
 

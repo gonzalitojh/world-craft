@@ -119,14 +119,10 @@ function renderPanel(
   const props = {
     entityId: MARA_ID,
     relations: [edge],
-    types: [type],
-    candidates: [puerto],
     state: 'ready' as const,
     pending: false,
-    onAdd: vi.fn(),
     onEdit: vi.fn(),
     onRemove: vi.fn(async () => true),
-    onManageTypes: vi.fn(),
     onOpenEntity: vi.fn(),
     onRetry: vi.fn(),
     ...overrides,
@@ -156,6 +152,30 @@ describe('panel de relaciones', () => {
     expect(
       screen.getByText(messages.entities.relations.incomingTitle),
     ).toBeInTheDocument();
+  });
+
+  it('mantiene el guía y los estados dentro del contenedor de relaciones', async () => {
+    const user = userEvent.setup();
+    const { container, props } = renderPanel({
+      relations: [],
+      state: 'error',
+    });
+
+    const root = container.querySelector('.wc-relations');
+
+    expect(root).not.toBeNull();
+    expect(root?.children[0]).toHaveClass('wc-page__section-lead');
+    expect(root?.children[1]).toHaveClass('wc-alert');
+    expect(root?.querySelector('.wc-page__section')).toBeNull();
+    expect(screen.getByText(messages.entities.relations.lead)).toBeVisible();
+    expect(
+      screen.getByText(messages.entities.relations.loadError),
+    ).toBeVisible();
+
+    await user.click(
+      screen.getByRole('button', { name: messages.entities.relations.retry }),
+    );
+    expect(props.onRetry).toHaveBeenCalled();
   });
 
   it('abre la edición y elimina con confirmación explícita', async () => {

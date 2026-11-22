@@ -357,7 +357,49 @@ const CONTRAST_PAIRS = [
     min: 4.5,
     label: 'texto normal',
   },
-  { fg: '--accent-strong', bg: '--bg', min: 3, label: 'componente' },
+  { fg: '--accent-strong', bg: '--bg', min: 4.5, label: 'texto normal' },
+  {
+    fg: '--accent-contrast',
+    bg: '--accent-strong',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--fg',
+    bg: '--entity-moss-surface',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--fg',
+    bg: '--entity-ochre-surface',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--fg',
+    bg: '--entity-danger-surface',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--fg',
+    bg: '--entity-prussian-surface',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--warning',
+    bg: '--surface-raised',
+    min: 3,
+    label: 'componente gráfico',
+  },
+  {
+    fg: '--muted',
+    bg: '--surface-raised',
+    min: 3,
+    label: 'componente gráfico',
+  },
   { fg: '--accent', bg: '--surface', min: 3, label: 'componente' },
   { fg: '--accent-contrast', bg: '--accent', min: 4.5, label: 'texto normal' },
   {
@@ -510,6 +552,76 @@ describe('contraste AA de la tabla §4.5', () => {
       expect(value, `${theme}: ${value.toFixed(2)}:1`).toBeGreaterThanOrEqual(
         7,
       );
+    }
+  });
+
+  it('fija los ratios documentados de la ficha #129', () => {
+    const pairs = [
+      {
+        fg: '--accent-strong',
+        bg: '--bg',
+        light: 9.05,
+        dark: 9.92,
+      },
+      {
+        fg: '--accent-contrast',
+        bg: '--accent-strong',
+        light: 9.94,
+        dark: 10.35,
+      },
+      {
+        fg: '--fg',
+        bg: '--surface-sunken',
+        light: 12.87,
+        dark: 17.15,
+      },
+      {
+        fg: '--fg',
+        bg: '--entity-moss-surface',
+        light: 12.77,
+        dark: 11.17,
+      },
+      {
+        fg: '--fg',
+        bg: '--entity-ochre-surface',
+        light: 11.44,
+        dark: 11.22,
+      },
+      {
+        fg: '--fg',
+        bg: '--entity-danger-surface',
+        light: 12.2,
+        dark: 13.01,
+      },
+      {
+        fg: '--fg',
+        bg: '--entity-prussian-surface',
+        light: 12.87,
+        dark: 17.15,
+      },
+      {
+        fg: '--warning',
+        bg: '--surface-raised',
+        light: 5.9,
+        dark: 8.24,
+      },
+      {
+        fg: '--muted',
+        bg: '--surface-raised',
+        light: 5.58,
+        dark: 6.51,
+      },
+    ] as const;
+
+    for (const pair of pairs) {
+      expect(
+        ratio(pair.fg, pair.bg, 'light'),
+        `Claro: ${pair.fg} sobre ${pair.bg}`,
+      ).toBeCloseTo(pair.light, 2);
+      expect(
+        ratio(pair.fg, pair.bg, 'dark'),
+        `Oscuro: ${pair.fg} sobre ${pair.bg}`,
+      ).toBeCloseTo(pair.dark, 2);
     }
   });
 

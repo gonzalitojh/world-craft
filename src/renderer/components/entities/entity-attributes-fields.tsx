@@ -53,6 +53,7 @@ export function EntityAttributesFields({
             return (
               <TextField
                 key={field.key}
+                id={`wc-attribute-${field.key}`}
                 label={field.label}
                 hint={
                   field.maxLength === undefined
@@ -81,6 +82,7 @@ export function EntityAttributesFields({
             return (
               <TextField
                 key={field.key}
+                id={`wc-attribute-${field.key}`}
                 label={field.label}
                 type="number"
                 value={typeof value === 'number' ? String(value) : ''}
@@ -101,6 +103,7 @@ export function EntityAttributesFields({
             return (
               <TextField
                 key={field.key}
+                id={`wc-attribute-${field.key}`}
                 label={field.label}
                 type="date"
                 value={typeof value === 'string' ? value : ''}
@@ -122,6 +125,7 @@ export function EntityAttributesFields({
             return (
               <SelectField
                 key={field.key}
+                id={`wc-attribute-${field.key}`}
                 label={field.label}
                 value={typeof value === 'string' ? value : ''}
                 error={error}
@@ -168,6 +172,7 @@ export function EntityAttributesFields({
             return (
               <SelectField
                 key={field.key}
+                id={`wc-attribute-${field.key}`}
                 label={field.label}
                 value={typeof value === 'string' ? value : ''}
                 hint={

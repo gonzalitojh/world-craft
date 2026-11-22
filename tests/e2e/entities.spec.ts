@@ -10,12 +10,38 @@ import { expect, test } from './fixtures/electron-app';
 
 const WORLD_NAME = 'Las Mareas Grises';
 
+const LONG_NAME = 'A'.repeat(120);
+const LONG_SUMMARY = 'Mareas'.repeat(46).slice(0, 280);
+const LONG_ALIAS = 'Alias'.repeat(16);
+const LONG_ALIASES = Array.from(
+  { length: 10 },
+  (_, index) => `${LONG_ALIAS.slice(0, 77)} ${String(index).padStart(2, '0')}`,
+);
+const LONG_TAG = 'Norte'.repeat(8);
+const LONG_TEXT = 'Mareas y sal. '.repeat(80).trim();
+const LONG_FIELD_TYPE_NAME = 'Archivo extremo';
+const LONG_FIELD_LABEL = 'Campo'.repeat(16);
+const LONG_FIELD_VALUE = 'Marea'.repeat(160);
+
 async function dismissToasts(page: Page) {
   const closeButtons = page.getByRole('button', { name: /^Cerrar aviso/ });
 
   while ((await closeButtons.count()) > 0) {
     await closeButtons.first().click();
   }
+}
+
+async function settleLayout(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
+      }),
+  );
 }
 
 async function createWorld(page: Page) {
@@ -101,6 +127,82 @@ async function waitForSaved(page: Page) {
   });
 }
 
+async function enterEdit(page: Page): Promise<void> {
+  await page
+    .getByRole('button', { name: messages.entities.detail.edit, exact: true })
+    .click();
+  await expect(
+    page.getByRole('textbox', {
+      name: messages.entities.detail.nameLabel,
+      exact: true,
+    }),
+  ).toBeFocused();
+}
+
+async function doneEditing(page: Page): Promise<void> {
+  await page
+    .getByRole('button', { name: messages.entities.detail.done, exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', {
+      name: messages.entities.detail.edit,
+      exact: true,
+    }),
+  ).toBeFocused({ timeout: 10_000 });
+}
+
+async function openSection(page: Page, section: string) {
+  const region = page.locator(`[data-section="${section}"]`);
+  const toggle = region.locator('.wc-disclosure__toggle');
+
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') {
+    await toggle.click();
+  }
+
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+  return region;
+}
+
+async function setPanelOpen(page: Page, open: boolean): Promise<void> {
+  const show = page.getByRole('button', {
+    name: messages.entities.detail.propertiesShow,
+  });
+  const hide = page.getByRole('button', {
+    name: messages.entities.detail.propertiesHide,
+  });
+  const target = open ? show : hide;
+
+  if ((await target.count()) > 0 && (await target.isVisible())) {
+    await target.click();
+  }
+
+  await expect(open ? hide : show).toHaveAttribute(
+    'aria-expanded',
+    open ? 'true' : 'false',
+  );
+}
+
+async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
+  const html = page.locator('html');
+  const currentTheme = await html.getAttribute('data-theme');
+
+  if (currentTheme !== theme) {
+    const currentLabel =
+      currentTheme === 'dark'
+        ? messages.shell.theme.currentDark
+        : messages.shell.theme.currentLight;
+
+    await page
+      .getByRole('button', {
+        name: messages.shell.theme.switchLabel(currentLabel),
+      })
+      .click();
+  }
+
+  await expect(html).toHaveAttribute('data-theme', theme);
+}
+
 async function measureOverflow(page: Page) {
   return page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -143,6 +245,158 @@ async function expectAxeWithoutSerious(page: Page): Promise<void> {
   ).toEqual([]);
 }
 
+async function createRitualType(page: Page): Promise<void> {
+  await page
+    .getByRole('button', { name: messages.entities.list.menuLabel })
+    .click();
+  await page
+    .getByRole('menuitem', { name: messages.entities.list.manageTypes })
+    .click();
+
+  const manager = page.getByRole('dialog');
+
+  await manager
+    .getByRole('button', { name: messages.entities.types.create })
+    .click();
+  await manager
+    .getByLabel(messages.entities.types.nameLabel)
+    .fill('Lugar ritual');
+  await manager
+    .getByRole('button', { name: messages.entities.types.addField })
+    .click();
+  await manager
+    .getByRole('textbox', {
+      name: messages.entities.types.fieldLabel,
+      exact: true,
+    })
+    .fill('Deidad');
+  await manager
+    .getByRole('button', { name: messages.entities.types.createSubmit })
+    .click();
+
+  await expect(
+    manager.getByText('Lugar ritual', { exact: true }),
+  ).toBeVisible();
+  await manager
+    .getByRole('button', { name: messages.entities.types.close })
+    .last()
+    .click();
+  await dismissToasts(page);
+}
+
+async function markRitualFieldRequired(page: Page): Promise<void> {
+  await page
+    .getByRole('button', { name: messages.entities.list.menuLabel })
+    .click();
+  await page
+    .getByRole('menuitem', { name: messages.entities.list.manageTypes })
+    .click();
+
+  const manager = page.getByRole('dialog');
+
+  await manager
+    .getByRole('button', {
+      name: messages.entities.types.editNamed('Lugar ritual'),
+      exact: true,
+    })
+    .click();
+  await manager.getByLabel(messages.entities.types.fieldRequired).check();
+  await manager
+    .getByRole('button', { name: messages.entities.types.save })
+    .click();
+
+  await expect(
+    manager.getByText('Lugar ritual', { exact: true }),
+  ).toBeVisible();
+  await manager
+    .getByRole('button', { name: messages.entities.types.close })
+    .last()
+    .click();
+  await dismissToasts(page);
+}
+
+async function createLongFieldType(page: Page): Promise<void> {
+  await page
+    .getByRole('button', { name: messages.entities.list.menuLabel })
+    .click();
+  await page
+    .getByRole('menuitem', { name: messages.entities.list.manageTypes })
+    .click();
+
+  const manager = page.getByRole('dialog');
+
+  await manager
+    .getByRole('button', { name: messages.entities.types.create })
+    .click();
+  await manager
+    .getByLabel(messages.entities.types.nameLabel)
+    .fill(LONG_FIELD_TYPE_NAME);
+  await manager
+    .getByRole('button', { name: messages.entities.types.addField })
+    .click();
+  await manager
+    .getByRole('textbox', {
+      name: messages.entities.types.fieldLabel,
+      exact: true,
+    })
+    .fill(LONG_FIELD_LABEL);
+  await manager
+    .getByRole('button', { name: messages.entities.types.createSubmit })
+    .click();
+
+  await expect(
+    manager.getByText(LONG_FIELD_TYPE_NAME, { exact: true }),
+  ).toBeVisible();
+  await manager
+    .getByRole('button', { name: messages.entities.types.close })
+    .last()
+    .click();
+  await dismissToasts(page);
+}
+
+async function createLongEntity(
+  page: Page,
+  options: { readonly type?: string; readonly fieldLabel?: string } = {},
+): Promise<void> {
+  await createEntity(page, {
+    name: LONG_NAME,
+    ...(options.type === undefined ? {} : { type: options.type }),
+  });
+  await enterEdit(page);
+  await page
+    .getByLabel(messages.entities.detail.aliasesLabel)
+    .fill(LONG_ALIASES.join(', '));
+  await page
+    .getByLabel(messages.entities.detail.summaryLabel)
+    .fill(LONG_SUMMARY);
+
+  if (options.fieldLabel !== undefined) {
+    const attributes = await openSection(page, 'attributes');
+
+    await attributes
+      .getByLabel(options.fieldLabel, { exact: true })
+      .fill(LONG_FIELD_VALUE);
+  }
+
+  const editor = page.locator('.wc-editor__content');
+  await editor.click();
+  await page.keyboard.insertText(LONG_TEXT);
+  await waitForSaved(page);
+  await doneEditing(page);
+
+  await page
+    .getByRole('button', { name: messages.entities.detail.newTag })
+    .click();
+  const tagDialog = page.getByRole('dialog');
+
+  await tagDialog.getByLabel(messages.entities.tags.nameLabel).fill(LONG_TAG);
+  await tagDialog
+    .getByRole('button', { name: messages.entities.tags.submit })
+    .click();
+  await waitForSaved(page);
+  await dismissToasts(page);
+}
+
 test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async ({
   page,
   electronApp,
@@ -157,6 +411,14 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
 
   await createEntity(page, { name: 'Mara Viento' });
 
+  // En reposo no hay formulario permanente: se entra en edición para escribir.
+  await expect(
+    page.getByRole('textbox', {
+      name: messages.entities.detail.nameLabel,
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await enterEdit(page);
   await page
     .getByLabel(messages.entities.detail.aliasesLabel)
     .fill('La Cartógrafa');
@@ -166,6 +428,7 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
   await editor.click();
   await page.keyboard.type('Mara dibuja mapas con tinta de sal.');
   await waitForSaved(page);
+  await doneEditing(page);
 
   // Importación con el diálogo nativo: se sustituye el selector solo en el
   // proceso principal y se usa una imagen real para que sharp la procese.
@@ -188,33 +451,34 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
     })) as unknown as typeof dialog.showOpenDialog;
   }, imagePath);
 
-  const side = page.locator('.wc-entity-side');
-  await side
+  const resources = await openSection(page, 'resources');
+  await resources
     .getByRole('button', { name: messages.entities.detail.addImages })
-    .first()
     .click();
 
   const galleryThumb = page.locator('.wc-gallery__thumb').first();
   await expect(galleryThumb).toBeVisible();
   await expect(galleryThumb).toHaveAttribute('src', /^wc-asset:\/\/thumb\//);
 
-  await side
-    .getByRole('button', { name: messages.entities.detail.chooseMain })
+  const properties = page.getByRole('complementary', {
+    name: messages.entities.detail.propertiesTitle,
+  });
+
+  await properties
+    .getByRole('button', { name: messages.entities.detail.chooseCover })
     .click();
   await page
     .getByRole('dialog')
-    .getByLabel(
-      messages.entities.detail.setMainNamed(
-        messages.entities.detail.imageOption(1),
-      ),
-    )
+    .getByRole('button', {
+      name: messages.entities.detail.coverOption(1),
+    })
     .click();
-  await expect(page.locator('.wc-entity-image__picture')).toHaveAttribute(
+  await expect(page.locator('.wc-entity-cover__picture')).toHaveAttribute(
     'src',
     /^wc-asset:\/\/asset\//,
   );
 
-  await page
+  await properties
     .getByRole('button', { name: messages.entities.detail.newTag })
     .click();
   const tagDialog = page.getByRole('dialog');
@@ -224,14 +488,16 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
     .getByRole('button', { name: messages.entities.tags.submit })
     .click();
   await expect(page.getByText('Norte', { exact: true }).first()).toBeVisible();
+  await waitForSaved(page);
   await dismissToasts(page);
 
-  await page
-    .getByRole('button', { name: messages.entities.detail.favorite })
-    .click();
-  await expect(
-    page.getByRole('button', { name: messages.entities.detail.unfavorite }),
-  ).toBeVisible();
+  const favorite = page.getByRole('button', {
+    name: messages.entities.detail.favoriteLabel,
+    exact: true,
+  });
+
+  await favorite.click();
+  await expect(favorite).toHaveAttribute('aria-pressed', 'true');
   await dismissToasts(page);
 
   await backToEntities(page);
@@ -278,12 +544,13 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
     page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
   ).toBeVisible();
   await expect(
-    page.getByLabel(messages.entities.detail.aliasesLabel),
-  ).toHaveValue('La Cartógrafa');
+    page.getByText(messages.entities.detail.aliasLine('La Cartógrafa')),
+  ).toBeVisible();
   await expect(
     page.getByText('Mara dibuja mapas con tinta de sal.'),
   ).toBeVisible();
 
+  await enterEdit(page);
   await page
     .getByRole('button', { name: messages.entities.editor.link })
     .click();
@@ -293,6 +560,7 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
     .getByLabel(messages.entities.editor.linkSearch)
     .fill('Puerto Sal');
   await linkDialog.getByRole('button', { name: /Puerto Sal/ }).click();
+  await waitForSaved(page);
 
   const internalLink = page
     .locator('.wc-editor__content a')
@@ -302,35 +570,26 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
     'href',
     /^wc-entity:\/\/[0-9a-f-]{36}$/,
   );
-  await waitForSaved(page);
+  await doneEditing(page);
+
+  // En lectura un clic normal navega; no hace falta Ctrl ni «Abrir enlace».
   await internalLink.click();
-  await page
-    .getByRole('button', { name: messages.entities.editor.linkOpen })
-    .click();
   await expect(
     page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
   ).toBeVisible();
 
-  // Regresión: al volver a abrir la ficha en frío, el enlace ya existe y el
-  // toolbar debe habilitar «Abrir enlace» solo con colocar el cursor dentro.
+  // Regresión: al volver a abrir la ficha en frío, el enlace sigue navegando.
   await backToEntities(page);
   await page
     .getByRole('button', {
       name: messages.entities.card.openNamed('Mara Viento'),
     })
     .click();
-  const coldLink = page
+  await page
     .locator('.wc-editor__content a')
     .filter({ hasText: 'Puerto Sal' })
-    .first();
-
-  await coldLink.click();
-  const openLink = page.getByRole('button', {
-    name: messages.entities.editor.linkOpen,
-  });
-
-  await expect(openLink).toBeEnabled();
-  await openLink.click();
+    .first()
+    .click();
   await expect(
     page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
   ).toBeVisible();
@@ -432,12 +691,7 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
 
   await addRelation('Ubicado en / Contiene', 'Puerto Sal · Ciudad', true);
 
-  const panel = page.locator('.wc-page__section').filter({
-    has: page.getByRole('heading', {
-      level: 3,
-      name: messages.entities.relations.title,
-    }),
-  });
+  const panel = page.locator('[data-section="relations"]');
 
   await expect(panel.getByText('Ubicado en')).toBeVisible();
   await expect(
@@ -492,17 +746,7 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
       { width, height: 700 },
     );
 
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        }),
-    );
-
+    await settleLayout(page);
     await expectNoOverflow(page);
   }
 
@@ -514,12 +758,7 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
     page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
   ).toBeVisible();
 
-  const backlinks = page.locator('.wc-page__section').filter({
-    has: page.getByRole('heading', {
-      level: 3,
-      name: messages.entities.relations.title,
-    }),
-  });
+  const backlinks = await openSection(page, 'relations');
 
   await expect(backlinks.getByText('Contiene')).toBeVisible();
   await expect(backlinks.getByText('Aprendiz de')).toBeVisible();
@@ -536,23 +775,7 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
   ).toBeVisible();
 
   for (const theme of ['light', 'dark'] as const) {
-    const html = page.locator('html');
-    const currentTheme = await html.getAttribute('data-theme');
-
-    if (currentTheme !== theme) {
-      const currentLabel =
-        currentTheme === 'dark'
-          ? messages.shell.theme.currentDark
-          : messages.shell.theme.currentLight;
-
-      await page
-        .getByRole('button', {
-          name: messages.shell.theme.switchLabel(currentLabel),
-        })
-        .click();
-    }
-
-    await expect(html).toHaveAttribute('data-theme', theme);
+    await setTheme(page, theme);
     await expectAxeWithoutSerious(page);
   }
 });
@@ -561,35 +784,9 @@ test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos 
   page,
   electronApp,
 }) => {
-  const longName = 'A'.repeat(120);
-  const longSummary = 'Mareas'.repeat(46).slice(0, 280);
-  const longAlias = 'Alias'.repeat(16);
-  const longTag = 'Norte'.repeat(8);
-  const longText = 'X'.repeat(800);
-
   await createWorld(page);
   await openEntities(page);
-  await createEntity(page, { name: longName });
-
-  await page.getByLabel(messages.entities.detail.aliasesLabel).fill(longAlias);
-  await page
-    .getByLabel(messages.entities.detail.summaryLabel)
-    .fill(longSummary);
-  await page.locator('.wc-editor__content').click();
-  await page.keyboard.type(longText);
-  await waitForSaved(page);
-
-  await page
-    .getByRole('button', { name: messages.entities.detail.newTag })
-    .click();
-  const tagDialog = page.getByRole('dialog');
-
-  await tagDialog.getByLabel(messages.entities.tags.nameLabel).fill(longTag);
-  await tagDialog
-    .getByRole('button', { name: messages.entities.tags.submit })
-    .click();
-  await waitForSaved(page);
-  await dismissToasts(page);
+  await createLongEntity(page);
   await backToEntities(page);
 
   for (const width of [1024, 1280, 1600] as const) {
@@ -606,49 +803,23 @@ test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos 
       { width, height: 700 },
     );
 
-    await page.evaluate(
-      () =>
-        new Promise<void>((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        }),
-    );
-
+    await settleLayout(page);
     await expectNoOverflow(page);
 
     await page
       .getByRole('button', {
-        name: messages.entities.card.openNamed(longName),
+        name: messages.entities.card.openNamed(LONG_NAME),
       })
       .click();
     await expect(
-      page.getByRole('heading', { level: 2, name: longName }),
+      page.getByRole('heading', { level: 2, name: LONG_NAME }),
     ).toBeVisible();
     await expectNoOverflow(page);
     await backToEntities(page);
   }
 
   for (const theme of ['light', 'dark'] as const) {
-    const html = page.locator('html');
-    const currentTheme = await html.getAttribute('data-theme');
-
-    if (currentTheme !== theme) {
-      const currentLabel =
-        currentTheme === 'dark'
-          ? messages.shell.theme.currentDark
-          : messages.shell.theme.currentLight;
-
-      await page
-        .getByRole('button', {
-          name: messages.shell.theme.switchLabel(currentLabel),
-        })
-        .click();
-    }
-
-    await expect(html).toHaveAttribute('data-theme', theme);
+    await setTheme(page, theme);
     await expectAxeWithoutSerious(page);
 
     await page
@@ -680,14 +851,310 @@ test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos 
 
     await page
       .getByRole('button', {
-        name: messages.entities.card.openNamed(longName),
+        name: messages.entities.card.openNamed(LONG_NAME),
       })
       .click();
     await expect(
-      page.getByRole('heading', { level: 2, name: longName }),
+      page.getByRole('heading', { level: 2, name: LONG_NAME }),
     ).toBeVisible();
     await expectAxeWithoutSerious(page);
     await backToEntities(page);
+  }
+});
+
+test('documento vivo: lectura, foco, secciones, panel, separador y memoria de sesión', async ({
+  page,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+
+  // Lectura por defecto y sin formulario de nombre.
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('textbox', {
+      name: messages.entities.detail.nameLabel,
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', {
+      name: messages.entities.detail.edit,
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  // El clic en el título es un atajo de ratón que enfoca Nombre.
+  await page.getByRole('heading', { level: 2, name: 'Mara Viento' }).click();
+  await expect(
+    page.getByRole('textbox', {
+      name: messages.entities.detail.nameLabel,
+      exact: true,
+    }),
+  ).toBeFocused();
+  await doneEditing(page);
+
+  // Secciones plegables con estado visible y Enter/Espacio.
+  const description = page.locator('[data-section="description"]');
+  const descriptionToggle = description.locator('.wc-disclosure__toggle');
+
+  await expect(descriptionToggle).toHaveAttribute('aria-expanded', 'true');
+  await descriptionToggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(descriptionToggle).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press(' ');
+  await expect(descriptionToggle).toHaveAttribute('aria-expanded', 'true');
+
+  // Las relaciones mantienen la separación entre el texto guía y el vacío.
+  const relations = await openSection(page, 'relations');
+  const relationGap = await relations.evaluate((region) => {
+    const root = region.querySelector('.wc-relations');
+    const [lead, next] = root === null ? [] : [...root.children];
+
+    if (lead === undefined || next === undefined) {
+      return null;
+    }
+
+    return (
+      next.getBoundingClientRect().top - lead.getBoundingClientRect().bottom
+    );
+  });
+
+  expect(relationGap).not.toBeNull();
+  expect(relationGap ?? 0).toBeGreaterThanOrEqual(12);
+
+  // Panel ocultable, visible en todos los anchos y con memoria.
+  await setPanelOpen(page, true);
+
+  const separator = page.getByRole('separator', {
+    name: messages.entities.detail.propertiesResize,
+  });
+
+  await expect(separator).toHaveAttribute('aria-valuemin', '280');
+  await expect(separator).toHaveAttribute('aria-valuemax', '360');
+  await expect(separator).toHaveAttribute('aria-valuenow', '320');
+
+  await separator.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(separator).toHaveAttribute('aria-valuenow', '336');
+  await page.keyboard.press('Home');
+  await expect(separator).toHaveAttribute('aria-valuenow', '280');
+  await page.keyboard.press('End');
+  await expect(separator).toHaveAttribute('aria-valuenow', '360');
+  await page.keyboard.press('ArrowLeft');
+  await expect(separator).toHaveAttribute('aria-valuenow', '344');
+  await separator.dblclick();
+  await expect(separator).toHaveAttribute('aria-valuenow', '320');
+  await page.keyboard.press('ArrowRight');
+  await expect(separator).toHaveAttribute('aria-valuenow', '336');
+
+  await descriptionToggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(descriptionToggle).toHaveAttribute('aria-expanded', 'false');
+  await setPanelOpen(page, false);
+
+  await backToEntities(page);
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+
+  await expect(
+    page.locator('[data-section="description"] .wc-disclosure__toggle'),
+  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(
+    page.getByRole('button', { name: messages.entities.detail.propertiesShow }),
+  ).toHaveAttribute('aria-expanded', 'false');
+
+  await page
+    .getByRole('button', { name: messages.entities.detail.propertiesShow })
+    .click();
+  await expect(
+    page.getByRole('separator', {
+      name: messages.entities.detail.propertiesResize,
+    }),
+  ).toHaveAttribute('aria-valuenow', '336');
+});
+
+test('el separador se arrastra con puntero, Escape cancela y el ancho persiste', async ({
+  page,
+  electronApp,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    const main = BrowserWindow.getAllWindows()[0];
+
+    if (main === undefined) {
+      throw new Error('No hay ventana principal.');
+    }
+
+    main.setContentSize(1280, 800);
+  });
+  await settleLayout(page);
+  await setPanelOpen(page, true);
+
+  const separator = page.getByRole('separator', {
+    name: messages.entities.detail.propertiesResize,
+  });
+
+  await expect(separator).toHaveAttribute('aria-valuenow', '320');
+
+  const dragBy = async (offset: number): Promise<void> => {
+    const box = await separator.boundingBox();
+
+    if (box === null) {
+      throw new Error('El separador no tiene caja visible.');
+    }
+
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + offset, y, { steps: 5 });
+  };
+
+  await dragBy(30);
+  await page.mouse.up();
+  await expect(separator).toHaveAttribute('aria-valuenow', '350');
+
+  // Escape durante el arrastre restaura el ancho con el que se empezó.
+  await dragBy(40);
+  await expect(separator).toHaveAttribute('aria-valuenow', '360');
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(separator).toHaveAttribute('aria-valuenow', '350');
+
+  await backToEntities(page);
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('separator', {
+      name: messages.entities.detail.propertiesResize,
+    }),
+  ).toHaveAttribute('aria-valuenow', '350');
+});
+
+test('errores visibles: un campo obligatorio abre su sección y recibe el foco', async ({
+  page,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createRitualType(page);
+  await createEntity(page, { name: 'Altar de sal', type: 'Lugar ritual' });
+
+  // El campo nace opcional para poder crear la ficha; después se vuelve
+  // obligatorio y la ficha existente queda sin ese valor.
+  await backToEntities(page);
+  await markRitualFieldRequired(page);
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Altar de sal'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Altar de sal' }),
+  ).toBeVisible();
+
+  await enterEdit(page);
+
+  const attributes = page.locator('[data-section="attributes"]');
+  const attributesToggle = attributes.locator('.wc-disclosure__toggle');
+
+  await expect(attributesToggle).toHaveAttribute('aria-expanded', 'false');
+
+  await page
+    .getByRole('button', { name: messages.entities.detail.done })
+    .click();
+
+  // Sigue en edición, abre Campos del tipo, muestra el error y enfoca el control.
+  await expect(
+    page.getByRole('button', { name: messages.entities.detail.done }),
+  ).toBeVisible();
+  await expect(attributesToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.getByText(messages.entities.attributes.errors.required),
+  ).toBeVisible();
+  await expect(page.locator('#wc-attribute-deidad')).toBeFocused();
+  await expect(page.getByText(messages.entities.detail.invalid)).toBeVisible();
+
+  await page.getByLabel('Deidad').fill('La Marea');
+  await doneEditing(page);
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Altar de sal' }),
+  ).toBeVisible();
+});
+
+test('matriz 1024/1280/1600 × temas × panel abierto/cerrado sin desbordar y con axe', async ({
+  page,
+  electronApp,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createLongFieldType(page);
+  await createLongEntity(page, {
+    type: LONG_FIELD_TYPE_NAME,
+    fieldLabel: LONG_FIELD_LABEL,
+  });
+
+  await expect(
+    page.getByRole('heading', { level: 2, name: LONG_NAME }),
+  ).toBeVisible();
+  await expect(page.locator('.wc-document-header__slug')).toHaveText(
+    'a'.repeat(80),
+  );
+
+  const aliases = page.locator('.wc-document-header__aliases');
+
+  await expect(aliases).toContainText(LONG_ALIASES[0] ?? '');
+  await expect(aliases).toContainText(LONG_ALIASES.at(-1) ?? '');
+  await expect(page.getByText(LONG_FIELD_LABEL, { exact: true })).toBeVisible();
+  await expect(page.getByText(LONG_FIELD_VALUE, { exact: true })).toBeVisible();
+  await expect(page.getByText(LONG_TAG, { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.wc-editor__content')).not.toHaveAttribute(
+    'role',
+    'textbox',
+  );
+
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme);
+
+    for (const width of [1024, 1280, 1600] as const) {
+      await electronApp.evaluate(
+        ({ BrowserWindow }, size) => {
+          const main = BrowserWindow.getAllWindows()[0];
+
+          if (main === undefined) {
+            throw new Error('No hay ventana principal.');
+          }
+
+          main.setContentSize(size.width, size.height);
+        },
+        { width, height: 700 },
+      );
+      await settleLayout(page);
+
+      for (const open of [true, false] as const) {
+        await setPanelOpen(page, open);
+        await expectNoOverflow(page);
+        await expectAxeWithoutSerious(page);
+      }
+    }
   }
 });
 

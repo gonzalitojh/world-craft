@@ -117,6 +117,11 @@
   --sidebar-width-collapsed: 64px;
   --topbar-height: 56px;
 
+  /* Ancho por defecto del panel de propiedades de la ficha. Es una medida de
+   * componente: el contenedor la sobrescribe en línea según la memoria de
+   * sesión, dentro del intervalo 280–360 px. */
+  --wc-properties-width: 320px;
+
   /* --- Foco -------------------------------------------------------------
    * Anillo de 2 px con 2 px de separación: visible sobre fondo, superficie,
    * superficie elevada y superficie hundida en ambos temas.

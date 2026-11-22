@@ -1,17 +1,25 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react';
 
 import {
   ENTITY_ALIAS_MAX_LENGTH,
   ENTITY_ALIASES_MAX,
   ENTITY_GALLERY_MAX,
-  ENTITY_NAME_MAX_LENGTH,
-  ENTITY_SUMMARY_MAX_LENGTH,
   ENTITY_TAGS_MAX,
   type EntityDetail,
   type EntityRichTextDocument,
   type EntityStatus,
   type EntitySummary,
   type EntityTag,
+  type EntityUpdateInput,
 } from '../../shared/contracts/entities';
 import {
   relationForwardLabel,
@@ -25,31 +33,48 @@ import {
 } from '../../shared/contracts/relations';
 import type { AssetSummary } from '../../shared/contracts/assets';
 import type { WorldDetail } from '../../shared/contracts/worlds';
-import type {
-  EntityFieldDefinition,
-  EntityTypeSummary,
-} from '../../shared/contracts/entity-types';
+import type { EntityTypeSummary } from '../../shared/contracts/entity-types';
 import {
   validateEntityFieldValues,
   type EntityFieldValue,
 } from '../../shared/entity-types/fields';
-import { validateEntityDescription } from '../../shared/entities/description';
-import { Badge } from '../components/badge';
+import {
+  extractEntityDescriptionText,
+  validateEntityDescription,
+} from '../../shared/entities/description';
 import { Button } from '../components/button';
 import { Dialog } from '../components/dialog';
-import { SelectField } from '../components/select-field';
-import { TextAreaField } from '../components/text-area-field';
-import { TextField } from '../components/text-field';
+import { IconButton } from '../components/icon-button';
+import { Skeleton, SkeletonText } from '../components/skeleton';
+import { DisclosureSection } from '../components/disclosure-section';
 import { EntityAttributesFields } from '../components/entities/entity-attributes-fields';
+import { EntityAttributesView } from '../components/entities/entity-attributes-view';
 import { EntityDescriptionEditor } from '../components/entities/entity-description-editor';
+import {
+  EntityDocumentHeader,
+  type DocumentMode,
+  type SaveState,
+} from '../components/entities/entity-document-header';
+import { EntityPropertiesPanel } from '../components/entities/entity-properties-panel';
 import { EntityRelationDialog } from '../components/entities/entity-relation-dialog';
-import { EntityRelationsPanel } from '../components/entities/entity-relations-panel';
+import {
+  EntityRelationsActions,
+  EntityRelationsPanel,
+} from '../components/entities/entity-relations-panel';
+import { EntityResourcesSection } from '../components/entities/entity-resources-section';
 import { EntityTagDialog } from '../components/entities/entity-tag-dialog';
-import { Menu } from '../components/menu';
 import { RelationTypeManager } from '../components/entities/relation-type-manager';
-import { TypeIcon } from '../components/entities/type-icon';
 import { useI18n } from '../i18n/provider';
 import { assetUrl } from '../lib/asset-url';
+import {
+  PROPERTIES_WIDTH_DEFAULT,
+  PROPERTIES_WIDTH_MAX,
+  PROPERTIES_WIDTH_MIN,
+  clampPropertiesWidth,
+  readEntityViewMemory,
+  updateEntityViewMemory,
+  type EntitySectionId,
+} from '../lib/entity-view-memory';
 
 interface Draft {
   readonly name: string;
@@ -63,7 +88,42 @@ interface Draft {
   readonly tagIds: readonly string[];
 }
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
+type FocusTarget =
+  | 'name'
+  | 'description'
+  | 'attributes'
+  | 'edit-trigger'
+  | 'alert'
+  | 'add-images';
+
+interface FocusRequest {
+  readonly target: FocusTarget;
+  readonly token: number;
+  readonly onlyIfFocusLost: boolean;
+  readonly previousActive: HTMLElement | null;
+}
+
+interface ValidationFailure {
+  readonly ok: false;
+  readonly errors: Readonly<Record<string, string>>;
+  readonly sections: readonly EntitySectionId[];
+  readonly firstTarget: FocusTarget;
+}
+
+type ValidationResult =
+  { readonly ok: true; readonly input: EntityUpdateInput } | ValidationFailure;
+
+type FlushOutcome =
+  | { readonly status: 'saved'; readonly stale: boolean }
+  | { readonly status: 'invalid'; readonly failure: ValidationFailure }
+  | { readonly status: 'error' };
+
+interface FlushOptions {
+  readonly showState: boolean;
+  readonly explicit: boolean;
+  /** En desmontaje no se toca estado ni se mueve el foco. */
+  readonly silent?: boolean;
+}
 
 export interface EntityDetailPageProps {
   readonly world: WorldDetail;
@@ -78,13 +138,32 @@ export interface EntityDetailPageProps {
   readonly onNotify: (tone: 'success' | 'error', message: string) => void;
 }
 
+function PanelIcon() {
+  return (
+    <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
+      <rect
+        x="3"
+        y="4"
+        width="14"
+        height="12"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M12.5 4v12" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 /**
- * Detalle y edición de una ficha.
+ * Detalle de una ficha como documento vivo.
  *
- * El formulario se autoguarda con un retardo corto y también se puede guardar
- * a mano. La descripción se edita con Tiptap y se guarda como JSON validado; la
- * imagen principal y la galería solo referencian assets del mismo mundo y se
- * muestran por `wc-asset://`.
+ * Lectura por defecto y un único modo de edición de página. El contenido se
+ * autoguarda con una cola serializada; el panel de propiedades solo edita
+ * portada, estado y etiquetas. Las secciones conservan su estado de plegado en
+ * la memoria de sesión y los errores abren la sección afectada antes de mover
+ * el foco.
  */
 export function EntityDetailPage({
   world,
@@ -96,6 +175,8 @@ export function EntityDetailPage({
 }: EntityDetailPageProps) {
   const { messages, formats } = useI18n();
   const nameId = useId();
+  const propertiesTitleId = useId();
+
   const [entity, setEntity] = useState<EntityDetail | null>(null);
   const [types, setTypes] = useState<readonly EntityTypeSummary[]>([]);
   const [tags, setTags] = useState<readonly EntityTag[]>([]);
@@ -103,15 +184,17 @@ export function EntityDetailPage({
   const [candidates, setCandidates] = useState<readonly EntitySummary[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [reloadToken, setReloadToken] = useState(0);
+  const [mode, setMode] = useState<DocumentMode>('read');
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
-  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [alertKind, setAlertKind] = useState<'invalid' | 'save' | null>(null);
   const [pending, setPending] = useState(false);
+  const [favoritePending, setFavoritePending] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [mainPickerOpen, setMainPickerOpen] = useState(false);
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
   const [tagKey, setTagKey] = useState(0);
+  const [reloadToken, setReloadToken] = useState(0);
   const [relationTypes, setRelationTypes] = useState<readonly RelationType[]>(
     [],
   );
@@ -129,47 +212,183 @@ export function EntityDetailPage({
   } | null>(null);
   const [relationTypesOpen, setRelationTypesOpen] = useState(false);
   const [relationReloadToken, setRelationReloadToken] = useState(0);
+  const [viewMemory, setViewMemory] = useState(readEntityViewMemory);
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
+  const [dragWidth, setDragWidth] = useState<number | null>(null);
 
   const draftRef = useRef<Draft | null>(null);
   const typeRef = useRef<EntityTypeSummary | null>(null);
+  const modeRef = useRef<DocumentMode>('read');
   const skipAutosave = useRef(false);
-  const savingRef = useRef(false);
-  const queuedRef = useRef(false);
   const requestRef = useRef(0);
+  const relationRequestRef = useRef(0);
+  const revisionRef = useRef(0);
+  const focusTokenRef = useRef(0);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const flushRef = useRef<(options: FlushOptions) => Promise<FlushOutcome>>(
+    async () => ({ status: 'error' }),
+  );
+  const mountedRef = useRef(true);
+  const dragRef = useRef<{
+    readonly startX: number;
+    readonly startWidth: number;
+    readonly pointerId: number;
+  } | null>(null);
 
   const type = types.find((entry) => entry.id === entity?.typeId) ?? null;
+  const propertiesOpen = viewMemory.propertiesOpen;
+  const propertiesWidth = dragWidth ?? viewMemory.propertiesWidth;
 
   useEffect(() => {
     typeRef.current = type;
   }, [type]);
 
-  // Inicio necesita el nombre de la ficha para el bloque «Continuar»; se avisa
-  // en cuanto la ficha llega o cambia de nombre, sin alterar la navegación.
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
   useEffect(() => {
     if (entity !== null) {
       onEntityLoaded?.({ id: entity.id, name: entity.name });
     }
   }, [entity, onEntityLoaded]);
 
-  const buildInput = useCallback(() => {
+  const commitMemory = useCallback(
+    (patch: {
+      propertiesOpen?: boolean;
+      propertiesWidth?: number;
+      sections?: Partial<Record<EntitySectionId, boolean>>;
+    }) => {
+      updateEntityViewMemory(patch);
+      setViewMemory(readEntityViewMemory());
+    },
+    [],
+  );
+
+  const ensureSectionOpen = useCallback(
+    (section: EntitySectionId) => {
+      commitMemory({ sections: { [section]: true } });
+    },
+    [commitMemory],
+  );
+
+  const requestFocus = useCallback(
+    (
+      target: FocusTarget,
+      options: {
+        readonly onlyIfFocusLost?: boolean;
+        readonly previousActive?: HTMLElement | null;
+      } = {},
+    ) => {
+      focusTokenRef.current += 1;
+      setFocusRequest({
+        target,
+        token: focusTokenRef.current,
+        onlyIfFocusLost: options.onlyIfFocusLost ?? false,
+        previousActive: options.previousActive ?? null,
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (focusRequest === null) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      if (focusRequest.onlyIfFocusLost) {
+        const previous = focusRequest.previousActive;
+        const lost =
+          previous === null ||
+          previous === document.body ||
+          !document.contains(previous) ||
+          document.activeElement === document.body;
+
+        if (!lost) {
+          setFocusRequest(null);
+          return;
+        }
+      }
+
+      let element: HTMLElement | null = null;
+
+      switch (focusRequest.target) {
+        case 'name':
+          element = document.getElementById(nameId);
+          break;
+        case 'description':
+          element = document.querySelector<HTMLElement>(
+            '[data-section="description"] .wc-editor__content',
+          );
+          break;
+        case 'attributes': {
+          const invalid = document.querySelector<HTMLElement>(
+            '[data-section="attributes"] [aria-invalid="true"]',
+          );
+          const controls = document.querySelectorAll<HTMLElement>(
+            '[data-section="attributes"] .wc-form-grid input, [data-section="attributes"] .wc-form-grid select, [data-section="attributes"] .wc-form-grid textarea',
+          );
+          element =
+            invalid ??
+            [...controls].find(
+              (control) =>
+                !(control as HTMLInputElement | HTMLSelectElement).disabled,
+            ) ??
+            null;
+          break;
+        }
+        case 'edit-trigger':
+          element = document.getElementById('wc-entity-edit-trigger');
+          break;
+        case 'alert':
+          element = document.getElementById('wc-entity-save-alert');
+          break;
+        case 'add-images':
+          element = document.getElementById('wc-entity-add-images');
+          break;
+      }
+
+      if (element !== null) {
+        element.focus();
+
+        if (
+          focusRequest.target === 'name' &&
+          element instanceof HTMLInputElement
+        ) {
+          const end = element.value.length;
+          element.setSelectionRange(end, end);
+        }
+      }
+
+      setFocusRequest(null);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [focusRequest, nameId]);
+
+  const validateDraft = useCallback((): ValidationResult => {
     const current = draftRef.current;
     const currentType = typeRef.current;
 
     if (current === null || currentType === null) {
-      return null;
+      return {
+        ok: false,
+        errors: {},
+        sections: [],
+        firstTarget: 'alert',
+      };
     }
 
     const nextErrors: Record<string, string> = {};
+    const affected = new Set<EntitySectionId>();
+    let firstTarget: FocusTarget | null = null;
 
     if (current.name.trim().length === 0) {
       nextErrors.name = messages.components.form.requiredField;
-    }
-
-    const description = validateEntityDescription(current.description);
-
-    if (!description.ok) {
-      setGeneralError(messages.entities.detail.invalid);
-      return null;
+      firstTarget = 'name';
     }
 
     const values = validateEntityFieldValues(
@@ -183,19 +402,29 @@ export function EntityDetailPage({
           messages.entities.attributes.errors[error.code];
       }
 
-      setErrors(nextErrors);
-      setGeneralError(messages.entities.detail.invalid);
-      return null;
+      affected.add('attributes');
+
+      if (firstTarget === null) {
+        firstTarget = 'attributes';
+      }
     }
 
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      setGeneralError(messages.entities.detail.invalid);
-      return null;
+    const description = validateEntityDescription(current.description);
+
+    if (!description.ok) {
+      nextErrors.description = messages.entities.detail.invalid;
+      affected.add('description');
+      firstTarget ??= 'description';
     }
 
-    setErrors({});
-    setGeneralError(null);
+    if (Object.keys(nextErrors).length > 0 || !values.ok || !description.ok) {
+      return {
+        ok: false,
+        errors: nextErrors,
+        sections: [...affected],
+        firstTarget: firstTarget ?? 'alert',
+      };
+    }
 
     const aliases = current.aliasesText
       .split(',')
@@ -205,74 +434,138 @@ export function EntityDetailPage({
       .map((alias) => alias.slice(0, ENTITY_ALIAS_MAX_LENGTH));
 
     return {
-      worldId: world.id,
-      id: entityId,
-      name: current.name,
-      aliases,
-      summary:
-        current.summary.trim().length === 0 ? null : current.summary.trim(),
-      description: description.document,
-      attributes: values.values,
-      imageAssetId: current.imageAssetId,
-      galleryAssetIds: current.galleryAssetIds,
-      tagIds: current.tagIds,
-      status: current.status,
+      ok: true,
+      input: {
+        worldId: world.id,
+        id: entityId,
+        name: current.name,
+        aliases,
+        summary:
+          current.summary.trim().length === 0 ? null : current.summary.trim(),
+        description: description.document,
+        attributes: values.values,
+        imageAssetId: current.imageAssetId,
+        galleryAssetIds: current.galleryAssetIds,
+        tagIds: current.tagIds,
+        status: current.status,
+      },
     };
   }, [entityId, messages, world.id]);
 
-  const flushRef = useRef<(showState: boolean) => Promise<void>>(
-    async () => {},
+  const applyValidationFailure = useCallback(
+    (failure: ValidationFailure, explicit: boolean) => {
+      const previousActive =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+
+      setErrors(failure.errors);
+      setAlertKind('invalid');
+      setSaveState('dirty');
+      setMode('edit');
+      modeRef.current = 'edit';
+
+      for (const section of failure.sections) {
+        ensureSectionOpen(section);
+      }
+
+      requestFocus(failure.firstTarget, {
+        onlyIfFocusLost: !explicit,
+        previousActive,
+      });
+    },
+    [ensureSectionOpen, requestFocus],
   );
 
   const flush = useCallback(
-    async (showState: boolean): Promise<void> => {
-      if (savingRef.current) {
-        queuedRef.current = true;
-        return;
+    async (options: FlushOptions): Promise<FlushOutcome> => {
+      const validation = validateDraft();
+
+      if (!validation.ok) {
+        if (!options.silent && mountedRef.current) {
+          applyValidationFailure(validation, options.explicit);
+        }
+
+        return { status: 'invalid', failure: validation };
       }
 
-      const input = buildInput();
+      const revision = revisionRef.current;
+      const input = validation.input;
 
-      if (input === null) {
-        setSaveState('error');
-        return;
+      if (mountedRef.current && !options.silent) {
+        setErrors({});
+        setAlertKind((current) => (current === 'invalid' ? null : current));
       }
 
-      savingRef.current = true;
+      const run = async (): Promise<'saved' | 'error'> => {
+        if (options.showState && mountedRef.current && !options.silent) {
+          setSaveState('saving');
+        }
 
-      if (showState) {
-        setSaveState('saving');
-      }
+        const result = await window.worldCraft.entities.update(input);
 
-      const result = await window.worldCraft.entities.update(input);
-      savingRef.current = false;
+        if (!result.ok || result.data === null) {
+          if (mountedRef.current && !options.silent) {
+            setSaveState('error');
+            setAlertKind('save');
 
-      if (result.ok && result.data !== null) {
-        setEntity(result.data);
-        setSaveState('saved');
-      } else {
-        setSaveState('error');
-        setGeneralError(messages.entities.detail.saveError);
-      }
+            if (options.explicit) {
+              requestFocus('alert');
+            }
+          }
 
-      if (queuedRef.current) {
-        queuedRef.current = false;
-        void flushRef.current(false);
-      }
+          return 'error';
+        }
+
+        if (mountedRef.current && !options.silent) {
+          setEntity(result.data);
+          const stale = revisionRef.current !== revision;
+          setSaveState(stale ? 'dirty' : 'saved');
+
+          if (!stale) {
+            setAlertKind(null);
+          }
+        }
+
+        return 'saved';
+      };
+
+      const queued = saveQueueRef.current.then(run, run);
+      saveQueueRef.current = queued.then(
+        () => undefined,
+        () => undefined,
+      );
+      const status = await queued;
+
+      return status === 'saved'
+        ? { status: 'saved', stale: revisionRef.current !== revision }
+        : { status: 'error' };
     },
-    [buildInput, messages],
+    [applyValidationFailure, requestFocus, validateDraft],
   );
 
   useEffect(() => {
     flushRef.current = flush;
-    return () => {
-      void flush(false);
-    };
   }, [flush]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      document.body.classList.remove('wc-is-resizing');
+      void flushRef.current({
+        showState: false,
+        explicit: false,
+        silent: true,
+      });
+    };
+  }, []);
 
   useEffect(() => {
     requestRef.current += 1;
     const request = requestRef.current;
+    relationRequestRef.current += 1;
 
     void Promise.all([
       window.worldCraft.entities.get({ worldId: world.id, id: entityId }),
@@ -304,6 +597,10 @@ export function EntityDetailPage({
           setDraft(toDraft(detail.data));
           skipAutosave.current = true;
           setSaveState('saved');
+          setErrors({});
+          setAlertKind(null);
+          setMode('read');
+          modeRef.current = 'read';
           setState('ready');
         } else {
           setState('error');
@@ -331,7 +628,46 @@ export function EntityDetailPage({
         }
       },
     );
-  }, [entityId, reloadToken, relationReloadToken, world.id]);
+  }, [entityId, reloadToken, world.id]);
+
+  // Reintento aislado de relaciones y tipos de relación: no vuelve a pedir la
+  // ficha ni reemplaza el borrador, de modo que un fallo de carga de relaciones
+  // no descarta cambios sin guardar. El valor inicial 0 ya lo cubre la carga
+  // principal.
+  useEffect(() => {
+    if (relationReloadToken === 0) {
+      return;
+    }
+
+    relationRequestRef.current += 1;
+    const request = relationRequestRef.current;
+
+    void Promise.all([
+      window.worldCraft.relationTypes.list(world.id),
+      window.worldCraft.relations.list({
+        worldId: world.id,
+        filter: { entityId },
+      }),
+    ]).then(([relationTypeList, relationList]) => {
+      if (request !== relationRequestRef.current) {
+        return;
+      }
+
+      if (relationTypeList.ok) {
+        setRelationTypes(relationTypeList.data);
+        setRelationTypesState('ready');
+      } else {
+        setRelationTypesState('error');
+      }
+
+      if (relationList.ok) {
+        setRelations(relationList.data);
+        setRelationState('ready');
+      } else {
+        setRelationState('error');
+      }
+    });
+  }, [entityId, relationReloadToken, world.id]);
 
   useEffect(() => {
     draftRef.current = draft;
@@ -340,6 +676,8 @@ export function EntityDetailPage({
       return;
     }
 
+    revisionRef.current += 1;
+
     if (skipAutosave.current) {
       skipAutosave.current = false;
       return;
@@ -347,7 +685,7 @@ export function EntityDetailPage({
 
     setSaveState('dirty');
     const timer = window.setTimeout(() => {
-      void flushRef.current(true);
+      void flushRef.current({ showState: true, explicit: false });
     }, 700);
 
     return () => {
@@ -355,16 +693,82 @@ export function EntityDetailPage({
     };
   }, [draft]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (
+        !(event.ctrlKey || event.metaKey) ||
+        (event.key !== 's' && event.key !== 'S')
+      ) {
+        return;
+      }
+
+      // Siempre se evita el diálogo de «guardar página» de Electron.
+      event.preventDefault();
+
+      if (modeRef.current !== 'edit') {
+        return;
+      }
+
+      if (document.querySelector('dialog[open]') !== null) {
+        return;
+      }
+
+      void flushRef.current({ showState: true, explicit: true });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const enterEdit = useCallback(
+    (target: FocusTarget) => {
+      setMode('edit');
+      modeRef.current = 'edit';
+
+      if (target === 'description') {
+        ensureSectionOpen('description');
+      }
+
+      if (target === 'attributes') {
+        ensureSectionOpen('attributes');
+      }
+
+      requestFocus(target);
+    },
+    [ensureSectionOpen, requestFocus],
+  );
+
+  const handleDone = async (): Promise<void> => {
+    let outcome = await flush({ showState: true, explicit: true });
+    let guard = 0;
+
+    while (outcome.status === 'saved' && outcome.stale && guard < 5) {
+      outcome = await flush({ showState: true, explicit: true });
+      guard += 1;
+    }
+
+    if (outcome.status === 'saved') {
+      setMode('read');
+      modeRef.current = 'read';
+      requestFocus('edit-trigger');
+    }
+  };
+
   const toggleFavorite = async (): Promise<void> => {
-    if (entity === null) {
+    if (entity === null || favoritePending) {
       return;
     }
 
+    setFavoritePending(true);
     const result = await window.worldCraft.entities.setFavorite({
       worldId: world.id,
       id: entity.id,
       favorite: !entity.isFavorite,
     });
+    setFavoritePending(false);
 
     if (!result.ok || result.data === null) {
       onNotify('error', messages.entities.notices.failed);
@@ -385,6 +789,7 @@ export function EntityDetailPage({
       return;
     }
 
+    ensureSectionOpen('resources');
     setPending(true);
     const result = await window.worldCraft.assets.import({ worldId: world.id });
     setPending(false);
@@ -656,31 +1061,146 @@ export function EntityDetailPage({
     onBack();
   };
 
+  const commitWidth = (value: number): void => {
+    const width = clampPropertiesWidth(value);
+    setDragWidth(null);
+    commitMemory({ propertiesWidth: width });
+  };
+
+  const handleResizerKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === 'Escape' && dragRef.current !== null) {
+      event.preventDefault();
+      dragRef.current = null;
+      setDragWidth(null);
+      document.body.classList.remove('wc-is-resizing');
+      return;
+    }
+
+    let next: number | null = null;
+
+    if (event.key === 'ArrowLeft') {
+      next = propertiesWidth - 16;
+    } else if (event.key === 'ArrowRight') {
+      next = propertiesWidth + 16;
+    } else if (event.key === 'Home') {
+      next = PROPERTIES_WIDTH_MIN;
+    } else if (event.key === 'End') {
+      next = PROPERTIES_WIDTH_MAX;
+    }
+
+    if (next === null) {
+      return;
+    }
+
+    event.preventDefault();
+    commitWidth(next);
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>): void => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    // El foco explícito permite que Escape cancele el arrastre también cuando
+    // se empieza con el ratón; `preventDefault` evita que el navegador lo
+    // coloque después de iniciar la captura.
+    event.currentTarget.focus();
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      startX: event.clientX,
+      startWidth: propertiesWidth,
+      pointerId: event.pointerId,
+    };
+    setDragWidth(propertiesWidth);
+    document.body.classList.add('wc-is-resizing');
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>): void => {
+    const drag = dragRef.current;
+
+    if (drag === null) {
+      return;
+    }
+
+    setDragWidth(
+      clampPropertiesWidth(drag.startWidth + event.clientX - drag.startX),
+    );
+  };
+
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>): void => {
+    const drag = dragRef.current;
+
+    if (drag === null) {
+      return;
+    }
+
+    dragRef.current = null;
+
+    if (event.currentTarget.hasPointerCapture(drag.pointerId)) {
+      event.currentTarget.releasePointerCapture(drag.pointerId);
+    }
+
+    document.body.classList.remove('wc-is-resizing');
+    commitWidth(drag.startWidth + event.clientX - drag.startX);
+  };
+
+  const handlePointerCancel = (): void => {
+    dragRef.current = null;
+    setDragWidth(null);
+    document.body.classList.remove('wc-is-resizing');
+  };
+
   if (state === 'loading') {
     return (
-      <div className="wc-page">
-        <p className="wc-page__status" role="status">
-          {messages.entities.detail.loading}
-        </p>
+      <div className="wc-page wc-page--entity">
+        <div className="wc-page__header wc-entity-pagebar">
+          <Button variant="ghost" onClick={onBack}>
+            {messages.entities.detail.back}
+          </Button>
+        </div>
+        <div className="wc-entity-doc wc-entity-doc--loading" aria-busy="true">
+          <div className="wc-entity-doc__main">
+            <p className="wc-visually-hidden" role="status">
+              {messages.entities.detail.loading}
+            </p>
+            <div className="wc-document-header wc-document-header--skeleton">
+              <Skeleton width="8rem" height="1.25rem" />
+              <Skeleton width="70%" height="2.25rem" />
+              <SkeletonText lines={3} />
+              <Skeleton width="40%" height="1rem" />
+            </div>
+            <div className="wc-disclosure wc-disclosure--skeleton">
+              <Skeleton width="30%" height="1.5rem" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (state === 'error' || entity === null || draft === null || type === null) {
     return (
-      <div className="wc-page">
-        <section className="wc-alert" role="alert">
+      <div className="wc-page wc-page--entity">
+        <div className="wc-page__header wc-entity-pagebar">
+          <Button variant="ghost" onClick={onBack}>
+            {messages.entities.detail.back}
+          </Button>
+        </div>
+        <section
+          className="wc-alert wc-alert--inline"
+          role="alert"
+          tabIndex={-1}
+        >
           <h2 className="wc-alert__title">
             {messages.entities.detail.errorTitle}
           </h2>
           <p>{messages.entities.detail.errorDescription}</p>
           <div className="wc-alert__actions">
-            <Button variant="secondary" onClick={onBack}>
-              {messages.entities.detail.back}
-            </Button>
             <Button
-              variant="ghost"
+              variant="secondary"
               onClick={() => {
+                setState('loading');
                 setReloadToken((current) => current + 1);
               }}
             >
@@ -704,248 +1224,319 @@ export function EntityDetailPage({
     draft.imageAssetId === null
       ? null
       : (assetMap.get(draft.imageAssetId) ?? null);
-
-  const saveLabel =
-    saveState === 'saving'
-      ? messages.entities.detail.saving
-      : saveState === 'dirty'
-        ? messages.entities.detail.unsaved
-        : saveState === 'error'
-          ? messages.entities.detail.saveError
-          : messages.entities.detail.saved;
+  const descriptionText =
+    draft.description === null
+      ? ''
+      : extractEntityDescriptionText(draft.description);
+  const descriptionEmpty = descriptionText.trim().length === 0;
+  const descriptionWords = descriptionEmpty
+    ? 0
+    : descriptionText.trim().split(/\s+/).length;
+  const tagsLimitReached = draft.tagIds.length >= ENTITY_TAGS_MAX;
+  const fields = type.fields;
+  const propertiesWidthLabel = messages.entities.detail.propertiesWidth(
+    formats.formatNumber(propertiesWidth),
+  );
 
   return (
-    <div className="wc-page wc-page--entity">
-      <div className="wc-page__header">
+    <div className="wc-page wc-page--entity" data-mode={mode}>
+      <div className="wc-page__header wc-entity-pagebar">
         <Button variant="ghost" onClick={onBack}>
           {messages.entities.detail.back}
         </Button>
-        <div className="wc-entity-toolbar">
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-pressed={entity.isFavorite}
-            aria-label={
-              entity.isFavorite
-                ? messages.entities.detail.unfavorite
-                : messages.entities.detail.favorite
-            }
-            onClick={() => {
-              void toggleFavorite();
-            }}
-          >
-            <span
-              className="wc-editor__glyph"
-              data-glyph={entity.isFavorite ? '★' : '☆'}
-              aria-hidden="true"
-            />{' '}
-            {entity.isFavorite
-              ? messages.entities.detail.unfavorite
-              : messages.entities.detail.favorite}
-          </Button>
-          <Menu
-            label={messages.entities.detail.menuLabel}
-            triggerTooltip={messages.entities.detail.menuLabel}
-            align="end"
-            items={[
-              {
-                id: 'delete-entity',
-                label: messages.entities.detail.delete,
-                tone: 'danger',
-                onSelect: () => {
-                  setDeleteOpen(true);
-                },
-              },
-            ]}
-          />
-        </div>
+        <IconButton
+          className="wc-entity-pagebar__toggle"
+          label={
+            propertiesOpen
+              ? messages.entities.detail.propertiesHide
+              : messages.entities.detail.propertiesShow
+          }
+          tooltip={
+            propertiesOpen
+              ? messages.entities.detail.propertiesHide
+              : messages.entities.detail.propertiesShow
+          }
+          icon={<PanelIcon />}
+          variant={propertiesOpen ? 'secondary' : 'ghost'}
+          aria-expanded={propertiesOpen}
+          aria-controls="wc-entity-properties"
+          onClick={() => {
+            commitMemory({ propertiesOpen: !propertiesOpen });
+          }}
+        />
       </div>
 
-      <header className="wc-entity-header">
-        <span
-          className={`wc-entity-header__icon wc-type-color--${type.color}`}
-          aria-hidden="true"
-        >
-          <TypeIcon name={type.icon} />
-        </span>
-        <div className="wc-entity-header__body">
-          <Badge tone="neutral">
-            <TypeIcon name={type.icon} className="wc-badge__icon" />
-            {type.name}
-          </Badge>
-          <h2 className="wc-entity-header__name">
-            {draft.name || entity.name}
-          </h2>
-          <p className="wc-entity-header__meta">
-            {messages.entities.card.updated(
-              formats.formatDate(entity.updatedAt),
-            )}{' '}
-            · {entity.slug}
-          </p>
-        </div>
-        <p
-          className={`wc-save-state wc-save-state--${saveState}`}
-          role="status"
-          aria-live="polite"
-        >
-          {saveLabel}
-        </p>
-      </header>
-
-      {generalError !== null ? (
-        <p className="wc-alert" role="alert">
-          {generalError}
-        </p>
-      ) : null}
-
-      <div className="wc-entity-layout">
-        <div className="wc-entity-main">
-          <TextField
-            label={messages.entities.detail.nameLabel}
-            value={draft.name}
-            maxLength={ENTITY_NAME_MAX_LENGTH}
-            error={errors.name}
-            required
-            onChange={(event) => {
-              setDraft({ ...draft, name: event.target.value });
+      <div
+        className="wc-entity-doc"
+        data-properties={propertiesOpen ? 'open' : 'closed'}
+        style={
+          {
+            '--wc-properties-width': `${propertiesWidth}px`,
+          } as CSSProperties
+        }
+      >
+        <div className="wc-entity-doc__main">
+          <EntityDocumentHeader
+            entity={entity}
+            type={type}
+            mode={mode}
+            saveState={saveState}
+            name={draft.name}
+            aliasesText={draft.aliasesText}
+            summary={draft.summary}
+            status={draft.status}
+            nameError={errors.name}
+            favoritePending={favoritePending}
+            nameId={nameId}
+            onEdit={() => {
+              enterEdit('name');
             }}
-            id={nameId}
-          />
-
-          <TextField
-            label={messages.entities.detail.aliasesLabel}
-            hint={messages.entities.detail.aliasesHint}
-            value={draft.aliasesText}
-            onChange={(event) => {
-              setDraft({ ...draft, aliasesText: event.target.value });
+            onDone={() => {
+              void handleDone();
+            }}
+            onSaveNow={() => {
+              void flush({ showState: true, explicit: true });
+            }}
+            onToggleFavorite={() => {
+              void toggleFavorite();
+            }}
+            onDelete={() => {
+              setDeleteOpen(true);
+            }}
+            onChangeName={(value) => {
+              setDraft((current) =>
+                current === null ? current : { ...current, name: value },
+              );
+            }}
+            onChangeAliases={(value) => {
+              setDraft((current) =>
+                current === null ? current : { ...current, aliasesText: value },
+              );
+            }}
+            onChangeSummary={(value) => {
+              setDraft((current) =>
+                current === null ? current : { ...current, summary: value },
+              );
             }}
           />
 
-          <TextAreaField
-            label={messages.entities.detail.summaryLabel}
-            value={draft.summary}
-            maxLength={ENTITY_SUMMARY_MAX_LENGTH}
-            rows={2}
-            onChange={(event) => {
-              setDraft({ ...draft, summary: event.target.value });
-            }}
-          />
-
-          <section className="wc-page__section">
-            <h3 className="wc-page__section-title">
-              {messages.entities.detail.descriptionLabel}
-            </h3>
-            <EntityDescriptionEditor
-              document={draft.description}
-              candidates={candidates}
-              disabled={pending}
-              onChange={(description) => {
-                setDraft({ ...draft, description });
-              }}
-              onOpenEntity={onOpenEntity}
-            />
-          </section>
-
-          <section className="wc-page__section">
-            <h3 className="wc-page__section-title">
-              {messages.entities.detail.attributesTitle}
-            </h3>
-            <EntityAttributesFields
-              fields={type.fields as readonly EntityFieldDefinition[]}
-              values={draft.attributes}
-              candidates={candidates}
-              errors={errors}
-              disabled={pending}
-              onChange={(key, value) => {
-                setDraft((current) => {
-                  if (current === null) {
-                    return current;
-                  }
-
-                  const attributes = { ...current.attributes };
-
-                  if (value === undefined) {
-                    delete attributes[key];
-                  } else {
-                    attributes[key] = value;
-                  }
-
-                  return { ...current, attributes };
-                });
-              }}
-            />
-          </section>
-
-          <EntityRelationsPanel
-            entityId={entityId}
-            relations={relations}
-            types={relationTypes}
-            candidates={candidates}
-            state={relationState}
-            pending={relationPending}
-            onAdd={() => {
-              setRelationDialog({ mode: 'create', relation: null });
-            }}
-            onEdit={(relation) => {
-              setRelationDialog({ mode: 'edit', relation });
-            }}
-            onRemove={removeRelation}
-            onManageTypes={() => {
-              setRelationTypesOpen(true);
-            }}
-            onOpenEntity={onOpenEntity}
-            onRetry={() => {
-              setRelationState('loading');
-              setRelationReloadToken((current) => current + 1);
-            }}
-          />
-
-          <div className="wc-entity-save">
-            <Button
-              variant="secondary"
-              loading={saveState === 'saving'}
-              onClick={() => {
-                void flush(true);
-              }}
+          {alertKind === null ? null : (
+            <div
+              className="wc-alert wc-alert--inline"
+              role="alert"
+              tabIndex={-1}
+              id="wc-entity-save-alert"
             >
-              {messages.entities.detail.save}
-            </Button>
-          </div>
-        </div>
-
-        <aside className="wc-entity-side">
-          <section className="wc-page__section">
-            <h3 className="wc-page__section-title">
-              {messages.entities.detail.imageTitle}
-            </h3>
-            <div className="wc-entity-image">
-              {mainAsset !== null ? (
-                <img
-                  className="wc-entity-image__picture"
-                  src={assetUrl(mainAsset.id)}
-                  alt={mainAsset.alt ?? ''}
-                />
-              ) : (
-                <p className="wc-entity-image__empty">
-                  {messages.entities.detail.imageEmpty}
-                </p>
-              )}
+              <p>
+                {alertKind === 'invalid'
+                  ? messages.entities.detail.invalid
+                  : messages.entities.detail.saveError}
+              </p>
+              {alertKind === 'save' ? (
+                <div className="wc-alert__actions">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      void flush({ showState: true, explicit: true });
+                    }}
+                  >
+                    {messages.entities.detail.retry}
+                  </Button>
+                </div>
+              ) : null}
             </div>
-            <div className="wc-entity-image__actions">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setMainPickerOpen(true);
+          )}
+
+          <DisclosureSection
+            id="wc-entity-section-description"
+            title={messages.entities.detail.descriptionLabel}
+            open={viewMemory.sections.description}
+            onToggle={(open) => {
+              commitMemory({ sections: { description: open } });
+            }}
+            meta={messages.entities.detail.descriptionMeta(descriptionWords)}
+            actions={
+              mode === 'read' ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    enterEdit('description');
+                  }}
+                >
+                  {descriptionEmpty
+                    ? messages.entities.detail.addDescription
+                    : messages.entities.detail.editDescription}
+                </Button>
+              ) : undefined
+            }
+          >
+            {descriptionEmpty && mode === 'read' ? (
+              <p className="wc-entity-description__empty">
+                {messages.entities.detail.descriptionEmpty}
+              </p>
+            ) : (
+              <>
+                <EntityDescriptionEditor
+                  document={draft.description}
+                  candidates={candidates}
+                  disabled={pending}
+                  readOnly={mode === 'read'}
+                  onChange={(description) => {
+                    setDraft((current) => {
+                      if (current === null) {
+                        return current;
+                      }
+
+                      // Tiptap puede emitir un documento vacío al montarse.
+                      // Se normaliza a `null` y solo se marca el borrador
+                      // cuando el contenido cambia de verdad.
+                      const nextDescription =
+                        description === null ||
+                        extractEntityDescriptionText(description).trim()
+                          .length === 0
+                          ? null
+                          : description;
+
+                      if (
+                        JSON.stringify(current.description) ===
+                        JSON.stringify(nextDescription)
+                      ) {
+                        return current;
+                      }
+
+                      return { ...current, description: nextDescription };
+                    });
+                  }}
+                  onOpenEntity={onOpenEntity}
+                />
+                {mode === 'edit' && errors.description !== undefined ? (
+                  <p className="wc-field__error" role="alert">
+                    {errors.description}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </DisclosureSection>
+
+          <DisclosureSection
+            id="wc-entity-section-attributes"
+            title={messages.entities.detail.attributesTitle}
+            open={viewMemory.sections.attributes}
+            onToggle={(open) => {
+              commitMemory({ sections: { attributes: open } });
+            }}
+            meta={
+              fields.length === 0
+                ? undefined
+                : messages.entities.detail.fieldsMeta(fields.length)
+            }
+            actions={
+              mode === 'read' && fields.length > 0 ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    enterEdit('attributes');
+                  }}
+                >
+                  {messages.entities.detail.editFields}
+                </Button>
+              ) : undefined
+            }
+          >
+            {fields.length === 0 ? (
+              <p className="wc-page__section-lead">
+                {messages.entities.detail.attributesEmpty}
+              </p>
+            ) : mode === 'read' ? (
+              <EntityAttributesView
+                fields={fields}
+                values={draft.attributes}
+                candidates={candidates}
+                onOpenEntity={onOpenEntity}
+              />
+            ) : (
+              <EntityAttributesFields
+                fields={fields}
+                values={draft.attributes}
+                candidates={candidates}
+                errors={errors}
+                disabled={pending}
+                onChange={(key, value) => {
+                  setDraft((current) => {
+                    if (current === null) {
+                      return current;
+                    }
+
+                    const attributes = { ...current.attributes };
+
+                    if (value === undefined) {
+                      delete attributes[key];
+                    } else {
+                      attributes[key] = value;
+                    }
+
+                    return { ...current, attributes };
+                  });
                 }}
-                disabled={mainAsset === null && assets.length === 0}
-              >
-                {mainAsset === null
-                  ? messages.entities.detail.chooseMain
-                  : messages.entities.detail.changeMain}
-              </Button>
+              />
+            )}
+          </DisclosureSection>
+
+          <DisclosureSection
+            id="wc-entity-section-relations"
+            title={messages.entities.relations.title}
+            open={viewMemory.sections.relations}
+            onToggle={(open) => {
+              commitMemory({ sections: { relations: open } });
+            }}
+            meta={messages.entities.detail.relationsMeta(relations.length)}
+            actions={
+              <EntityRelationsActions
+                onAdd={() => {
+                  ensureSectionOpen('relations');
+                  setRelationDialog({ mode: 'create', relation: null });
+                }}
+                onManageTypes={() => {
+                  setRelationTypesOpen(true);
+                }}
+                addDisabled={
+                  relationTypes.length === 0 || candidates.length === 0
+                }
+              />
+            }
+          >
+            <EntityRelationsPanel
+              entityId={entityId}
+              relations={relations}
+              state={relationState}
+              pending={relationPending}
+              onEdit={(relation) => {
+                setRelationDialog({ mode: 'edit', relation });
+              }}
+              onRemove={removeRelation}
+              onOpenEntity={onOpenEntity}
+              onRetry={() => {
+                setRelationState('loading');
+                setRelationReloadToken((current) => current + 1);
+              }}
+            />
+          </DisclosureSection>
+
+          <DisclosureSection
+            id="wc-entity-section-resources"
+            title={messages.entities.detail.resourcesTitle}
+            open={viewMemory.sections.resources}
+            onToggle={(open) => {
+              commitMemory({ sections: { resources: open } });
+            }}
+            meta={messages.entities.detail.resourcesMeta(gallery.length)}
+            actions={
               <Button
-                variant="ghost"
+                id="wc-entity-add-images"
+                variant="secondary"
                 size="sm"
                 loading={pending}
                 onClick={() => {
@@ -954,193 +1545,105 @@ export function EntityDetailPage({
               >
                 {messages.entities.detail.addImages}
               </Button>
-            </div>
-          </section>
-
-          <section className="wc-page__section">
-            <h3 className="wc-page__section-title">
-              {messages.entities.detail.galleryTitle}
-            </h3>
-            {gallery.length === 0 ? (
-              <p className="wc-page__section-lead">
-                {messages.entities.detail.galleryEmpty}
-              </p>
-            ) : (
-              <ul className="wc-gallery">
-                {gallery.map((asset, index) => (
-                  <li className="wc-gallery__item" key={asset.id}>
-                    <img
-                      className="wc-gallery__thumb"
-                      src={assetUrl(asset.id, 'thumb')}
-                      alt=""
-                      loading="lazy"
-                    />
-                    <div className="wc-gallery__actions">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setMainImage(asset.id);
-                        }}
-                        disabled={draft.imageAssetId === asset.id}
-                        aria-label={messages.entities.detail.setMainNamed(
-                          asset.alt ??
-                            messages.entities.detail.imageOption(index + 1),
-                        )}
-                      >
-                        {draft.imageAssetId === asset.id
-                          ? messages.entities.detail.mainBadge
-                          : messages.entities.detail.setMain}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          removeImage(asset.id);
-                        }}
-                        aria-label={messages.entities.detail.removeImageNamed(
-                          asset.alt ??
-                            messages.entities.detail.imageOption(index + 1),
-                        )}
-                      >
-                        {messages.entities.detail.removeImage}
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              loading={pending}
-              onClick={() => {
-                void importImages();
-              }}
-            >
-              {messages.entities.detail.addImages}
-            </Button>
-          </section>
-
-          <section className="wc-page__section">
-            <h3 className="wc-page__section-title">
-              {messages.entities.detail.tagsTitle}
-            </h3>
-            {assignedTags.length === 0 ? (
-              <p className="wc-page__section-lead">
-                {messages.entities.detail.tagsEmpty}
-              </p>
-            ) : (
-              <ul className="wc-tag-list">
-                {assignedTags.map((tag) => (
-                  <li key={tag.id}>
-                    <span className={`wc-tag wc-tag--${tag.color}`}>
-                      {tag.name}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={messages.entities.detail.removeTagNamed(
-                        tag.name,
-                      )}
-                      onClick={() => {
-                        setDraft({
-                          ...draft,
-                          tagIds: draft.tagIds.filter(
-                            (tagId) => tagId !== tag.id,
-                          ),
-                        });
-                      }}
-                    >
-                      <span aria-hidden="true">×</span>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <SelectField
-              label={messages.entities.detail.tagsTitle}
-              hint={
-                draft.tagIds.length >= ENTITY_TAGS_MAX
-                  ? messages.entities.detail.tagsLimit(ENTITY_TAGS_MAX)
-                  : undefined
-              }
-              value=""
-              options={[
-                { value: '', label: messages.entities.detail.tagsEmpty },
-                ...availableTags.map((tag) => ({
-                  value: tag.id,
-                  label: tag.name,
-                })),
-              ]}
-              disabled={
-                availableTags.length === 0 ||
-                draft.tagIds.length >= ENTITY_TAGS_MAX
-              }
-              onChange={(event) => {
-                if (event.target.value.length === 0) {
-                  return;
-                }
-
-                setDraft({
-                  ...draft,
-                  tagIds: [...draft.tagIds, event.target.value],
-                });
-              }}
+            }
+          >
+            <EntityResourcesSection
+              mainAssetId={draft.imageAssetId}
+              gallery={gallery}
+              pending={pending}
+              onRemoveImage={removeImage}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={draft.tagIds.length >= ENTITY_TAGS_MAX}
-              onClick={() => {
-                setTagKey((current) => current + 1);
-                setTagOpen(true);
-              }}
-            >
-              {messages.entities.detail.newTag}
-            </Button>
-          </section>
+          </DisclosureSection>
+        </div>
 
-          <section className="wc-page__section">
-            <SelectField
-              label={messages.entities.detail.statusLabel}
-              value={draft.status}
-              options={[
-                { value: 'active', label: messages.entities.status.active },
-                { value: 'draft', label: messages.entities.status.draft },
-                {
-                  value: 'archived',
-                  label: messages.entities.status.archived,
-                },
-              ]}
-              onChange={(event) => {
-                setDraft({
-                  ...draft,
-                  status: event.target.value as EntityStatus,
-                });
-              }}
-            />
-          </section>
-        </aside>
+        <div
+          className="wc-properties-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-controls="wc-entity-properties"
+          aria-label={messages.entities.detail.propertiesResize}
+          aria-valuemin={PROPERTIES_WIDTH_MIN}
+          aria-valuemax={PROPERTIES_WIDTH_MAX}
+          aria-valuenow={propertiesWidth}
+          aria-valuetext={propertiesWidthLabel}
+          tabIndex={0}
+          onKeyDown={handleResizerKeyDown}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+          onDoubleClick={() => {
+            commitWidth(PROPERTIES_WIDTH_DEFAULT);
+          }}
+        >
+          <span className="wc-properties-resizer__pill" aria-hidden="true" />
+        </div>
+
+        <EntityPropertiesPanel
+          headingId={propertiesTitleId}
+          mainAsset={mainAsset}
+          hasAssets={assets.length > 0}
+          status={draft.status}
+          assignedTags={assignedTags}
+          availableTags={availableTags}
+          tagsLimitReached={tagsLimitReached}
+          pending={pending}
+          onChangeStatus={(status) => {
+            setDraft((current) =>
+              current === null ? current : { ...current, status },
+            );
+          }}
+          onChooseCover={() => {
+            setCoverPickerOpen(true);
+          }}
+          onAddTag={(tagId) => {
+            setDraft((current) =>
+              current === null || current.tagIds.includes(tagId)
+                ? current
+                : { ...current, tagIds: [...current.tagIds, tagId] },
+            );
+          }}
+          onRemoveTag={(tagId) => {
+            setDraft((current) =>
+              current === null
+                ? current
+                : {
+                    ...current,
+                    tagIds: current.tagIds.filter((entry) => entry !== tagId),
+                  },
+            );
+          }}
+          onCreateTag={() => {
+            setTagKey((current) => current + 1);
+            setTagOpen(true);
+          }}
+          onGoToResources={() => {
+            ensureSectionOpen('resources');
+            requestFocus('add-images');
+          }}
+        />
       </div>
 
       <Dialog
-        open={mainPickerOpen}
+        open={coverPickerOpen}
         onClose={() => {
-          setMainPickerOpen(false);
+          setCoverPickerOpen(false);
         }}
-        title={messages.entities.detail.imageTitle}
+        title={messages.entities.detail.coverPickerTitle}
         actions={
           <Button
             variant="ghost"
             onClick={() => {
-              setMainPickerOpen(false);
+              setCoverPickerOpen(false);
             }}
           >
-            {messages.entities.tags.cancel}
+            {messages.entities.detail.close}
           </Button>
         }
       >
+        <p className="wc-dialog__lead">
+          {messages.entities.detail.coverPickerLead}
+        </p>
         {assets.length === 0 ? (
           <p className="wc-dialog__lead">{messages.entities.detail.noImages}</p>
         ) : (
@@ -1151,13 +1654,10 @@ export function EntityDetailPage({
                   type="button"
                   className="wc-image-picker__item"
                   aria-pressed={draft.imageAssetId === asset.id}
-                  aria-label={messages.entities.detail.setMainNamed(
-                    asset.alt ??
-                      messages.entities.detail.imageOption(index + 1),
-                  )}
+                  aria-label={messages.entities.detail.coverOption(index + 1)}
                   onClick={() => {
                     setMainImage(asset.id);
-                    setMainPickerOpen(false);
+                    setCoverPickerOpen(false);
                   }}
                 >
                   <img

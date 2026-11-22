@@ -4,25 +4,25 @@ import {
   relationBackwardLabel,
   relationForwardLabel,
   type RelationEdge,
-  type RelationType,
 } from '../../../shared/contracts/relations';
-import type { EntitySummary } from '../../../shared/contracts/entities';
 import { Button } from '../button';
 import { useI18n } from '../../i18n/provider';
 
 export interface EntityRelationsPanelProps {
   readonly entityId: string;
   readonly relations: readonly RelationEdge[];
-  readonly types: readonly RelationType[];
-  readonly candidates: readonly EntitySummary[];
   readonly state: 'loading' | 'ready' | 'error';
   readonly pending: boolean;
-  readonly onAdd: () => void;
   readonly onEdit: (relation: RelationEdge) => void;
   readonly onRemove: (relation: RelationEdge) => Promise<boolean>;
-  readonly onManageTypes: () => void;
   readonly onOpenEntity: (entityId: string) => void;
   readonly onRetry: () => void;
+}
+
+export interface EntityRelationsActionsProps {
+  readonly onAdd: () => void;
+  readonly onManageTypes: () => void;
+  readonly addDisabled: boolean;
 }
 
 /**
@@ -36,14 +36,10 @@ export interface EntityRelationsPanelProps {
 export function EntityRelationsPanel({
   entityId,
   relations,
-  types,
-  candidates,
   state,
   pending,
-  onAdd,
   onEdit,
   onRemove,
-  onManageTypes,
   onOpenEntity,
   onRetry,
 }: EntityRelationsPanelProps) {
@@ -173,25 +169,7 @@ export function EntityRelationsPanel({
   };
 
   return (
-    <section className="wc-page__section">
-      <div className="wc-relation-head">
-        <h3 className="wc-page__section-title">
-          {messages.entities.relations.title}
-        </h3>
-        <div className="wc-relation-head__actions">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onAdd}
-            disabled={types.length === 0 || candidates.length === 0}
-          >
-            {messages.entities.relations.add}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onManageTypes}>
-            {messages.entities.relations.manageTypes}
-          </Button>
-        </div>
-      </div>
+    <div className="wc-relations">
       <p className="wc-page__section-lead">
         {messages.entities.relations.lead}
       </p>
@@ -290,6 +268,36 @@ export function EntityRelationsPanel({
           </div>
         </div>
       ) : null}
-    </section>
+    </div>
+  );
+}
+
+/**
+ * Acciones de la sección de relaciones.
+ *
+ * Viven en la cabecera de `DisclosureSection`, fuera del botón de plegado, para
+ * no anidar controles y conservar dos paradas de tabulación claras.
+ */
+export function EntityRelationsActions({
+  onAdd,
+  onManageTypes,
+  addDisabled,
+}: EntityRelationsActionsProps) {
+  const { messages } = useI18n();
+
+  return (
+    <>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={onAdd}
+        disabled={addDisabled}
+      >
+        {messages.entities.relations.add}
+      </Button>
+      <Button variant="ghost" size="sm" onClick={onManageTypes}>
+        {messages.entities.relations.manageTypes}
+      </Button>
+    </>
   );
 }
