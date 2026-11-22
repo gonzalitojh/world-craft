@@ -8,6 +8,10 @@ export {
 export { Card, type CardProps, type CardTone } from './card';
 export { Checkbox, type CheckboxProps } from './checkbox';
 export { Dialog, type DialogProps } from './dialog';
+export {
+  DisclosureSection,
+  type DisclosureSectionProps,
+} from './disclosure-section';
 export { EmptyState, type EmptyStateProps } from './empty-state';
 export {
   IconButton,

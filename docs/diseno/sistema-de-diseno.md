@@ -3,10 +3,11 @@
 > **Estado:** dirección v2 aprobada el 21/11/2026 en la issue #124 mediante el
 > ADR 0025 y la decisión D-048. #125 implementó los tokens, la tipografía y las
 > primitivas; #126 migró el shell, la navegación y la barra superior; #127 migró
-> Inicio y las tarjetas de mundo; #128 migró la vista de mundo modular. Las
-> pantallas restantes se migran en #129–#133. Este documento describe el contrato
-> completo y distingue lo implementado de lo previsto, sin presentar como
-> existente nada que aún no lo esté. El estado real se mantiene en la sección 17.
+> Inicio y las tarjetas de mundo; #128 migró la vista de mundo modular; #129
+> migró la ficha como documento y su panel de propiedades. Las pantallas
+> restantes se migran en #130–#133. Este documento describe el contrato completo
+> y distingue lo implementado de lo previsto, sin presentar como existente nada
+> que aún no lo esté. El estado real se mantiene en la sección 17.
 > **Ámbito:** identidad, superficies, color, tipografía, iconos, espaciado,
 > radios, elevación, bordes, componentes, shell, estados, accesibilidad,
 > movimiento, patrones de escritorio, migración y verificación.
@@ -428,13 +429,15 @@ como existente lo que aún no lo está.
 | Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape sin cerrar el diálogo que lo contiene. Ancho de contenido con máximo de 18rem y colocación arriba o abajo según el espacio. | Adaptado v2 | #125 |
 | Aviso toast | `aria-live="polite"`, `role="status"`, cierre manual. | Adaptado v2 | #125 |
 | Pestañas | Solo para formularios o Ajustes; no son pestañas de trabajo en M1.5. | Adaptado v2 | #125 |
-| Panel | Sección con encabezado real y acciones; el plegado llega con #132. | Implementado | #125 |
+| Panel | Sección con encabezado real y acciones; no se pliega por sí mismo. La primitiva plegable de la ficha es `DisclosureSection` desde #129; #132 persiste su estado, no añade el plegado. | Implementado | #125, #129 |
 | Esqueleto | Marcador decorativo con `aria-hidden`; el contenedor lleva `aria-busy`. | Implementado | #125 |
 | Tabla | Ordenación, filtros y selección; scroll horizontal solo dentro. | Previsto | — |
 | Estado vacío | Explica qué falta y cuál es la acción principal. | Adaptado v2 | #125 |
 | Paleta de comandos | `Ctrl+K`, combobox/listbox, navegación, creación, tema y reconstrucción. Entrada desde la barra superior y sin Muestras. | Implementado | #76, #126 |
-| Cabecera de ficha | Título, tipo, favorito y acciones en `⋯`; no cinco botones. Desde #126 el favorito es visible y el borrado vive en `⋯`; el documento y el panel llegan con #129. | Parcial | #126, #129 |
-| Panel de propiedades | Plegable, 280–360 px; edita en contexto sin tapar el documento. | Previsto | #129 |
+| Cabecera de ficha | Tipo, estado, título, alias y resumen legibles; favorito, estado de guardado, «Editar»/«Listo» y `⋯`. En lectura no existen los campos de cabecera. | Implementada | #126, #129 |
+| Panel de propiedades | Inspector de portada, estado y etiquetas; ocultable, de 280–360 px con separador accesible y sticky. No es un formulario paralelo. | Implementado | #129 |
+| Sección plegable | `h3 > button` con `aria-expanded` y `aria-controls`, chevron decorativo, recuento y acciones fuera del botón; el cuerpo sigue montado y se oculta con `hidden`. | Implementada | #129 |
+| Ficha técnica de campos | Lista `dl` de dos columnas, sin aspecto de tabla; números y fechas formateados, referencias como enlaces y «Sin valor» para los vacíos. | Implementada | #129 |
 | Lista de relaciones | Dirección, etiqueta y ficha destino legibles; backlinks claros. | Previsto | #130 |
 | Nodo de grafo | Avatar, nombre, tipo y selección; el grafo completo llega con #83. | Previsto | #130 |
 | Editor mínimo | Formato básico, menciones `@` y `[[ ]]`; sin barra permanente. | Previsto | #131 |
@@ -459,9 +462,10 @@ como existente lo que aún no lo está.
   en la barra solo con al menos un mundo (con cero manda el estado vacío) y
   «Crear una ficha» en `⋯`. Mundo ofrece «Nueva ficha» como primaria y
   editar/duplicar/archivar/eliminar en `⋯`. Fichas deja «Nueva ficha» en la
-  página y «Gestionar tipos» en `⋯`. Ficha mantiene guardado en el contenido,
-  favorito visible y «Mover a la papelera» en `⋯`. Búsqueda no tiene primaria y
-  ofrece «Reconstruir el índice» en `⋯`.
+  página y «Gestionar tipos» en `⋯`. Ficha añade el toggle del panel de
+  propiedades en su barra de página; el guardado sigue en el contenido, el
+  favorito es un botón visible y «Mover a la papelera» sigue en `⋯`. Búsqueda no
+  tiene primaria y ofrece «Reconstruir el índice» en `⋯`.
 - **Muestras sale del producto.** Ya no aparece en el rail ni en la paleta; se
   accede solo por el hash interno `#/internal/samples`, como banco de desarrollo
   y contenido largo de los E2E. Cualquier otro hash vuelve a Inicio.
@@ -560,15 +564,44 @@ documento apilado.
 
 ### 10.4 Ficha
 
-- Documento antes que formulario: título, tipo y contenido legible. La lectura
-  como documento y el panel de propiedades llegan con #129.
-- El contenido se edita en contexto; el panel de propiedades se abre cuando se
-  necesita y no tapa el documento.
-- Desde #126 el guardado y su estado viven en el contenido, el favorito es un
-  botón visible en la cabecera y «Mover a la papelera» está en el `⋯` de la
-  página. No se acumulan cinco botones.
-- Las relaciones y backlinks se leen como parte de la ficha, no como una tabla
-  aparte.
+Implementado en #129: la ficha es un documento legible con edición en contexto,
+no un formulario permanente. El contrato visual y de accesibilidad completo está
+en [`ficha-issue-129.md`](ficha-issue-129.md).
+
+- **Modo:** lectura por defecto y edición explícita desde **Editar** o el clic en
+  el título. En lectura no existen los campos de nombre, alias ni resumen; en
+  edición aparecen una sola vez, sin duplicar el texto. Una sola primaria,
+  **Listo**; no hay «Cancelar» porque el autoguardado ya persiste.
+- **Cabecera:** insignias de tipo y estado, `h2` con el nombre —«Ficha sin
+  nombre» si falta—, alias y resumen como texto, fecha y slug, favorito con
+  nombre fijo y `aria-pressed`, estado de guardado `role="status"` siempre
+  montado, **Editar** o **Guardar ahora** + **Listo**, y `⋯` con la papelera.
+- **Secciones plegables:** Descripción, Campos del tipo, Relaciones y Recursos,
+  con `h3 > button`, `aria-expanded`, chevron decorativo, recuento y acciones
+  fuera del botón. Solo Descripción abierta al entrar; el cuerpo cerrado sigue
+  montado y se oculta con `hidden`. Un error abre la sección afectada.
+- **Panel de propiedades:** `aside` llamado «Propiedades» con portada, estado y
+  etiquetas, nada más. Se oculta con el toggle de la barra de página, se
+  redimensiona entre 280 y 360 px (320 por defecto) con separador accesible y es
+  sticky bajo la barra. A ≤ 1180 px se apila después del documento y el separador
+  desaparece.
+- **Recursos:** la galería importa y quita imágenes; la portada se elige solo en
+  el panel y la miniatura que lo es lleva la insignia «Portada». Una sola
+  autoridad de portada, sin «Usar como principal» duplicado.
+- **Campos:** ficha técnica `dl` en lectura, con números y fechas formateados,
+  referencias navegables y «Sin valor»; formulario compacto solo en edición.
+- **Foco y errores:** «Editar» enfoca Nombre; «Listo» devuelve el foco a
+  «Editar»; «Editar descripción» y «Editar campos» abren su sección y enfocan su
+  destino; un error explícito enfoca el primer control inválido y el
+  autoguardado no roba el foco. La alerta en línea explica el fallo y ofrece
+  reintento solo si falló el guardado.
+- **`Ctrl+S`:** guarda en edición, evita siempre el diálogo de guardar página y
+  no actúa con un diálogo abierto.
+- **Memoria de sesión:** panel y secciones se recuerdan en un módulo puro, sin
+  `localStorage` ni IPC, y se pierden al recargar; #132 los persiste.
+- **Ventana y texto largo:** a 1024, 1280 y 1600 px no hay scroll horizontal de
+  página; el panel, las secciones, los chips y los valores largos usan
+  `min-width: 0` y `overflow-wrap`.
 
 ### 10.5 Relaciones y grafo
 
@@ -627,6 +660,14 @@ Toda pantalla debe cubrir:
 - HTML semántico y landmarks (`main`, `nav`, `aside`, `header`).
 - Formularios con etiqueta, ayuda y error asociados.
 - `aria-live` para guardado, errores y resultados de acciones largas.
+- El separador del panel de propiedades es un `role="separator"` enfocable con
+  nombre, `aria-valuemin/max/now` y `aria-valuetext`; flechas ±16 px, `Inicio` y
+  `Fin`, y `Escape` cancela el arrastre.
+- El foco se dirige al entrar y salir de edición y al primer error de un guardado
+  explícito; el autoguardado anuncia el error sin mover el foco.
+- En lectura, la descripción no conserva `role="textbox"` ni el `aria-label` de
+  Tiptap; el nombre lo aporta el encabezado de la sección.
+- `Ctrl+S` guarda en edición y evita el diálogo de guardar página de Electron.
 - `prefers-reduced-motion`: sin animaciones esenciales ni desplazamientos
   automáticos.
 - axe sin errores críticos en las pantallas principales.
@@ -654,8 +695,9 @@ Toda pantalla debe cubrir:
   menú contextual cuando aporte.
 - **Teclado:** `Ctrl+N` nueva ficha, `Ctrl+S` guardar, `Ctrl+K` paleta de
   comandos, `Ctrl+Z` deshacer, `F1` ayuda. Los atajos se documentan en la app.
-- **Paneles:** se pueden plegar; el estado se recuerda por pantalla cuando
-  #132 lo permita.
+- **Paneles:** se pueden plegar y, donde aporta valor, redimensionar (la ficha,
+  280–360 px con separador accesible). El estado por pantalla se recuerda durante
+  la sesión y su persistencia llega con #132.
 - **Ventanas:** una sola ventana principal; los diálogos no se salen de ella.
 - **Arrastrar y soltar:** para reordenar escenas, capas y fichas; siempre hay
   alternativa por teclado.
@@ -736,7 +778,7 @@ Reglas de migración:
 | Shell, navegación y barra superior v2 | Implementado | #126 |
 | Inicio y tarjetas de mundo | Implementado | #127 |
 | Vista de mundo modular | Implementado | #128 |
-| Ficha como documento y panel de propiedades | Previsto | #129 |
+| Ficha como documento y panel de propiedades | Implementado | #129 |
 | Relaciones legibles y grafo contextual | Previsto | #130 |
 | Editor mínimo y menciones | Previsto | #131 |
 | Preferencias de interfaz persistentes | Previsto | #132 |
@@ -744,9 +786,9 @@ Reglas de migración:
 
 Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
 los tokens y las primitivas ya son v2 desde #125, el shell desde #126, Inicio
-desde #127 y la vista de mundo desde #128; la ficha, las relaciones y el editor
-siguen siendo las de v1 hasta que su issue las migre. No se deben tomar capturas
-nuevas como si esas pantallas ya estuvieran rediseñadas.
+desde #127, la vista de mundo desde #128 y la ficha desde #129; las relaciones y
+el editor siguen siendo los de v1 hasta que su issue los migre. No se deben tomar
+capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
 
 ### 17.2 Verificación automática
 
@@ -756,8 +798,8 @@ nuevas como si esas pantallas ya estuvieran rediseñadas.
   tokens indefinidos, las escalas, la elevación, los estados sin opacidad, el
   movimiento reducido y la licencia OFL de la fuente empaquetada.
 - `tests/components/primitives.test.tsx` cubre botón de icono, menú, casilla,
-  radio, panel, esqueleto, tarjeta, diálogo y avisos; `samples.test.tsx` monta el
-  banco completo con el catálogo real.
+  radio, panel, sección plegable, esqueleto, tarjeta, diálogo y avisos;
+  `samples.test.tsx` monta el banco completo con el catálogo real.
 - `tests/components/shell.test.tsx` verifica que el rail muestra solo Inicio y
   Mundos, sin Muestras, lema ni versión, y que Mundos queda como página actual
   también en mundo, fichas y ficha. Cubre el plegado con nombres accesibles y
@@ -783,7 +825,13 @@ nuevas como si esas pantallas ya estuvieran rediseñadas.
   salto sin cambio de hash, la ventana a 1024, 1280 y 1600 px sin scroll
   horizontal con un nombre de mundo largo, Muestras como contenido largo y la
   carga de la fuente local.
-- `tests/e2e/entities.spec.ts` hace lo mismo con la lista y la ficha.
+- `tests/e2e/entities.spec.ts` cubre la lista y la ficha. Desde #129 incluye 9
+  E2E de entidades: creación, autoguardado, etiquetas, favorito y filtros;
+  creación rápida; relaciones y backlinks; contenido largo con axe; documento
+  vivo con lectura, foco, secciones, panel, separador y memoria de sesión;
+  arrastre del separador con `Escape`; errores que abren la sección y enfocan el
+  control; matriz 1024/1280/1600 × temas × panel abierto/cerrado; y papelera
+  desde `⋯`.
 - `tests/e2e/search.spec.ts` entra a la búsqueda por la paleta, porque el rail ya
   no tiene ítem; `tests/components/search.test.tsx` comprueba que la paleta no
   ofrece Muestras y que el comando se llama «Abrir la página de búsqueda».
@@ -823,10 +871,23 @@ nuevas como si esas pantallas ya estuvieran rediseñadas.
 - `scripts/check-build.mjs` verifica que los dos woff2 viajan en `out/renderer`,
   que el CSS construido los referencia con rutas relativas y que no hay hosts
   remotos de fuentes.
+- La ficha como documento se cubre desde #129.
+  `tests/unit/entity-view-memory.test.ts` fija los valores por defecto (panel
+  abierto a 320 px y solo Descripción desplegada), el redondeo y el límite
+  280–360, la actualización parcial, las copias sin mutación y `reset`.
+  `tests/components/entity-detail.test.tsx` añade 18 pruebas: lectura sin campos,
+  foco de «Editar» y «Listo», «Guardar ahora», autoguardado serializado, error
+  explícito y error de autoguardado sin robar foco, secciones con teclado, panel
+  con solo portada/estado/etiquetas, memoria del panel, separador con teclado,
+  galería en Recursos, `Ctrl+S`, guardado al desmontar, reintento de relaciones,
+  fallo de guardado, cola obsoleta, favorita y papelera, valores vacíos y fechas
+  en UTC. `DisclosureSection` se cubre en `primitives.test.tsx`.
 - Al cerrar #127 la suite queda en 447 unitarias en verde (4 omitidas), 87 de
   componentes, 134 de integración en verde (1 omitida) y 42 E2E en verde. Al
   cerrar #128 queda en 453 unitarias (4 omitidas), 96 de componentes, 134 de
-  integración (1 omitida) y 43 E2E.
+  integración (1 omitida) y 43 E2E. Al cerrar #129 queda en 459 unitarias (4
+  omitidas), 119 de componentes, 134 de integración (1 omitida) y 9 E2E de
+  entidades en verde; la suite E2E completa no se ejecutó en esta tarea.
 - La matriz visual completa, las capturas y la auditoría de todas las pantallas
   se completan en #133.
 
@@ -847,6 +908,7 @@ nuevas como si esas pantallas ya estuvieran rediseñadas.
 
 - [ADR 0025: dirección visual v2](../adr/0025-visual-direction-v2.md)
 - [ADR 0006: dos temas y sistema de diseño de escritorio](../adr/0006-two-themes-desktop-design-system.md)
+- [Contrato de la ficha #129](ficha-issue-129.md)
 - [Plan de desarrollo](../plan-desarrollo.md)
 - [Arquitectura](../arquitectura.md)
 - [Proceso SDD](../proceso-sdd.md)

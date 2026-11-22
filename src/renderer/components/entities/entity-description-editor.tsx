@@ -17,6 +17,8 @@ export interface EntityDescriptionEditorProps {
   readonly document: EntityRichTextDocument | null;
   readonly candidates: readonly EntitySummary[];
   readonly disabled: boolean;
+  /** Modo lectura: sin toolbar, sin ayuda y sin rol de formulario. */
+  readonly readOnly?: boolean;
   readonly onChange: (document: EntityRichTextDocument | null) => void;
   readonly onOpenEntity: (entityId: string) => void;
 }
@@ -38,6 +40,7 @@ export function EntityDescriptionEditor({
   document,
   candidates,
   disabled,
+  readOnly = false,
   onChange,
   onOpenEntity,
 }: EntityDescriptionEditorProps) {
@@ -72,7 +75,7 @@ export function EntityDescriptionEditor({
 
   const editor = useEditor({
     extensions,
-    editable: !disabled,
+    editable: !disabled && !readOnly,
     // Las marcas activas cambian al mover el cursor, no solo al editar: el
     // toolbar debe repintarse para que «Abrir enlace» y los estados
     // `aria-pressed` sean fiables sin tocar el documento.
@@ -82,7 +85,6 @@ export function EntityDescriptionEditor({
     editorProps: {
       attributes: {
         class: 'wc-editor__content',
-        'aria-label': messages.entities.detail.descriptionLabel,
       },
     },
     onUpdate: ({ editor: current }) => {
@@ -95,8 +97,31 @@ export function EntityDescriptionEditor({
       return;
     }
 
-    editor.setEditable(!disabled);
-  }, [editor, disabled]);
+    editor.setEditable(!disabled && !readOnly);
+  }, [editor, disabled, readOnly]);
+
+  // Tiptap añade `role="textbox"` y `aria-label` al nodo de ProseMirror. En
+  // lectura serían un formulario vacío para el lector de pantalla; se retiran y
+  // se restauran al volver a editar (C7). El nombre de la región lo da el `h3`.
+  useEffect(() => {
+    if (editor === null) {
+      return;
+    }
+
+    const dom = editor.view.dom;
+
+    if (readOnly) {
+      dom.removeAttribute('role');
+      dom.removeAttribute('aria-label');
+      dom.removeAttribute('aria-multiline');
+      dom.removeAttribute('tabindex');
+    } else {
+      dom.setAttribute('role', 'textbox');
+      dom.setAttribute('aria-label', messages.entities.detail.descriptionLabel);
+      dom.setAttribute('aria-multiline', 'true');
+      dom.setAttribute('tabindex', '0');
+    }
+  }, [editor, readOnly, messages.entities.detail.descriptionLabel]);
 
   useEffect(() => {
     if (editor === null) {
@@ -148,7 +173,7 @@ export function EntityDescriptionEditor({
   };
 
   const openLinkFromEvent = (event: MouseEvent<HTMLDivElement>): void => {
-    if (!event.ctrlKey && !event.metaKey) {
+    if (!readOnly && !event.ctrlKey && !event.metaKey) {
       return;
     }
 
@@ -167,229 +192,239 @@ export function EntityDescriptionEditor({
   };
 
   return (
-    <div className="wc-editor">
-      <div
-        className="wc-editor__toolbar"
-        role="toolbar"
-        aria-label={messages.entities.editor.label}
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('bold') ?? false}
-          aria-label={messages.entities.editor.bold}
-          disabled={disabled || editor === null}
-          onClick={() => {
-            editor?.chain().focus().toggleBold().run();
-          }}
+    <div className="wc-editor" data-readonly={readOnly ? 'true' : 'false'}>
+      {readOnly ? null : (
+        <div
+          className="wc-editor__toolbar"
+          role="toolbar"
+          aria-label={messages.entities.editor.label}
         >
-          <span
-            className="wc-editor__glyph"
-            data-glyph={messages.entities.editor.boldShort}
-            aria-hidden="true"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('italic') ?? false}
-          aria-label={messages.entities.editor.italic}
-          disabled={disabled || editor === null}
-          onClick={() => {
-            editor?.chain().focus().toggleItalic().run();
-          }}
-        >
-          <span
-            className="wc-editor__glyph"
-            data-glyph={messages.entities.editor.italicShort}
-            aria-hidden="true"
-          />
-        </Button>
-        {([1, 2, 3] as const).map((level) => (
           <Button
-            key={level}
             variant="ghost"
             size="sm"
-            aria-pressed={editor?.isActive('heading', { level }) ?? false}
-            aria-label={
-              level === 1
-                ? messages.entities.editor.heading1
-                : level === 2
-                  ? messages.entities.editor.heading2
-                  : messages.entities.editor.heading3
-            }
+            aria-pressed={editor?.isActive('bold') ?? false}
+            aria-label={messages.entities.editor.bold}
             disabled={disabled || editor === null}
             onClick={() => {
-              editor?.chain().focus().toggleHeading({ level }).run();
+              editor?.chain().focus().toggleBold().run();
             }}
           >
             <span
               className="wc-editor__glyph"
-              data-glyph={messages.entities.editor.headingShort(level)}
+              data-glyph={messages.entities.editor.boldShort}
               aria-hidden="true"
             />
           </Button>
-        ))}
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('bulletList') ?? false}
-          aria-label={messages.entities.editor.bulletList}
-          disabled={disabled || editor === null}
-          onClick={() => {
-            editor?.chain().focus().toggleBulletList().run();
-          }}
-        >
-          <span
-            className="wc-editor__glyph"
-            data-glyph="•"
-            aria-hidden="true"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('orderedList') ?? false}
-          aria-label={messages.entities.editor.orderedList}
-          disabled={disabled || editor === null}
-          onClick={() => {
-            editor?.chain().focus().toggleOrderedList().run();
-          }}
-        >
-          <span
-            className="wc-editor__glyph"
-            data-glyph="1."
-            aria-hidden="true"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('blockquote') ?? false}
-          aria-label={messages.entities.editor.quote}
-          disabled={disabled || editor === null}
-          onClick={() => {
-            editor?.chain().focus().toggleBlockquote().run();
-          }}
-        >
-          <span
-            className="wc-editor__glyph"
-            data-glyph="“”"
-            aria-hidden="true"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-pressed={editor?.isActive('link') ?? false}
-          aria-label={messages.entities.editor.link}
-          disabled={disabled || editor === null}
-          onClick={() => {
-            setLinkOpen(true);
-          }}
-        >
-          <span
-            className="wc-editor__glyph"
-            data-glyph="🔗"
-            aria-hidden="true"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={messages.entities.editor.linkRemove}
-          disabled={disabled || editor === null || !editor.isActive('link')}
-          onClick={() => {
-            editor?.chain().focus().extendMarkRange('link').unsetLink().run();
-          }}
-        >
-          <span
-            className="wc-editor__glyph"
-            data-glyph="⛓"
-            aria-hidden="true"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={disabled || editor === null || !editor.isActive('link')}
-          onClick={() => {
-            const href = editor?.getAttributes('link').href;
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={editor?.isActive('italic') ?? false}
+            aria-label={messages.entities.editor.italic}
+            disabled={disabled || editor === null}
+            onClick={() => {
+              editor?.chain().focus().toggleItalic().run();
+            }}
+          >
+            <span
+              className="wc-editor__glyph"
+              data-glyph={messages.entities.editor.italicShort}
+              aria-hidden="true"
+            />
+          </Button>
+          {([1, 2, 3] as const).map((level) => (
+            <Button
+              key={level}
+              variant="ghost"
+              size="sm"
+              aria-pressed={editor?.isActive('heading', { level }) ?? false}
+              aria-label={
+                level === 1
+                  ? messages.entities.editor.heading1
+                  : level === 2
+                    ? messages.entities.editor.heading2
+                    : messages.entities.editor.heading3
+              }
+              disabled={disabled || editor === null}
+              onClick={() => {
+                editor?.chain().focus().toggleHeading({ level }).run();
+              }}
+            >
+              <span
+                className="wc-editor__glyph"
+                data-glyph={messages.entities.editor.headingShort(level)}
+                aria-hidden="true"
+              />
+            </Button>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={editor?.isActive('bulletList') ?? false}
+            aria-label={messages.entities.editor.bulletList}
+            disabled={disabled || editor === null}
+            onClick={() => {
+              editor?.chain().focus().toggleBulletList().run();
+            }}
+          >
+            <span
+              className="wc-editor__glyph"
+              data-glyph="•"
+              aria-hidden="true"
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={editor?.isActive('orderedList') ?? false}
+            aria-label={messages.entities.editor.orderedList}
+            disabled={disabled || editor === null}
+            onClick={() => {
+              editor?.chain().focus().toggleOrderedList().run();
+            }}
+          >
+            <span
+              className="wc-editor__glyph"
+              data-glyph="1."
+              aria-hidden="true"
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={editor?.isActive('blockquote') ?? false}
+            aria-label={messages.entities.editor.quote}
+            disabled={disabled || editor === null}
+            onClick={() => {
+              editor?.chain().focus().toggleBlockquote().run();
+            }}
+          >
+            <span
+              className="wc-editor__glyph"
+              data-glyph="“”"
+              aria-hidden="true"
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-pressed={editor?.isActive('link') ?? false}
+            aria-label={messages.entities.editor.link}
+            disabled={disabled || editor === null}
+            onClick={() => {
+              setLinkOpen(true);
+            }}
+          >
+            <span
+              className="wc-editor__glyph"
+              data-glyph="🔗"
+              aria-hidden="true"
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={messages.entities.editor.linkRemove}
+            disabled={disabled || editor === null || !editor.isActive('link')}
+            onClick={() => {
+              editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+            }}
+          >
+            <span
+              className="wc-editor__glyph"
+              data-glyph="⛓"
+              aria-hidden="true"
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled || editor === null || !editor.isActive('link')}
+            onClick={() => {
+              const href = editor?.getAttributes('link').href;
 
-            if (
-              typeof href === 'string' &&
-              href.startsWith(ENTITY_LINK_PREFIX)
-            ) {
-              onOpenEntity(href.slice(ENTITY_LINK_PREFIX.length));
-            }
-          }}
-        >
-          {messages.entities.editor.linkOpen}
-        </Button>
-      </div>
+              if (
+                typeof href === 'string' &&
+                href.startsWith(ENTITY_LINK_PREFIX)
+              ) {
+                onOpenEntity(href.slice(ENTITY_LINK_PREFIX.length));
+              }
+            }}
+          >
+            {messages.entities.editor.linkOpen}
+          </Button>
+        </div>
+      )}
 
       <div onClickCapture={openLinkFromEvent}>
         <EditorContent editor={editor} />
       </div>
 
-      <p className="wc-field__hint">
-        {messages.entities.detail.descriptionHint}
-      </p>
+      {readOnly ? null : (
+        <>
+          <p className="wc-field__hint">
+            {messages.entities.detail.descriptionHint}
+          </p>
 
-      <Dialog
-        open={linkOpen}
-        onClose={() => {
-          setLinkOpen(false);
-          setLinkSearch('');
-        }}
-        title={messages.entities.editor.linkTitle}
-        actions={
-          <Button
-            variant="ghost"
-            onClick={() => {
+          <Dialog
+            open={linkOpen}
+            onClose={() => {
               setLinkOpen(false);
               setLinkSearch('');
             }}
+            title={messages.entities.editor.linkTitle}
+            actions={
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setLinkOpen(false);
+                  setLinkSearch('');
+                }}
+              >
+                {messages.entities.editor.linkCancel}
+              </Button>
+            }
           >
-            {messages.entities.editor.linkCancel}
-          </Button>
-        }
-      >
-        <p className="wc-dialog__lead">{messages.entities.editor.linkLead}</p>
-        <TextField
-          label={messages.entities.editor.linkSearch}
-          value={linkSearch}
-          onChange={(event) => {
-            setLinkSearch(event.target.value);
-          }}
-          autoFocus
-        />
-        {filtered.length === 0 ? (
-          <p className="wc-dialog__lead">
-            {messages.entities.editor.linkEmpty}
-          </p>
-        ) : (
-          <ul className="wc-link-list">
-            {filtered.map((candidate) => (
-              <li key={candidate.id}>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="wc-link-list__item"
-                  onClick={() => {
-                    insertLink(candidate);
-                  }}
-                >
-                  <span className="wc-link-list__name">{candidate.name}</span>
-                  <span className="wc-link-list__type">
-                    {candidate.typeName}
-                  </span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Dialog>
+            <p className="wc-dialog__lead">
+              {messages.entities.editor.linkLead}
+            </p>
+            <TextField
+              label={messages.entities.editor.linkSearch}
+              value={linkSearch}
+              onChange={(event) => {
+                setLinkSearch(event.target.value);
+              }}
+              autoFocus
+            />
+            {filtered.length === 0 ? (
+              <p className="wc-dialog__lead">
+                {messages.entities.editor.linkEmpty}
+              </p>
+            ) : (
+              <ul className="wc-link-list">
+                {filtered.map((candidate) => (
+                  <li key={candidate.id}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="wc-link-list__item"
+                      onClick={() => {
+                        insertLink(candidate);
+                      }}
+                    >
+                      <span className="wc-link-list__name">
+                        {candidate.name}
+                      </span>
+                      <span className="wc-link-list__type">
+                        {candidate.typeName}
+                      </span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }

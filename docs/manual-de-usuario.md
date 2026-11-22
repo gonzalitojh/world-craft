@@ -140,10 +140,15 @@ vive en el estado vacío y no se repite en la barra. La creación rápida de una
 ficha —con su mundo, su tipo y su nombre— está en el menú `⋯` de Inicio y Mundos
 y en la paleta de comandos.
 
+En la **ficha**, las acciones del documento —favorita, editar, guardar y el menú
+`⋯`— y el panel de propiedades viven en la propia página. La ficha se lee como un
+documento y solo muestra campos cuando entras en edición (sección 5.2); no es un
+formulario permanente.
+
 Siguen **previstas**, para cuando existan mapas y escritura:
 
 - **Mapas, escritura, juego y ajustes** en la barra lateral.
-- **Paneles** de detalles, filtros o propiedades.
+- **Paneles** de filtros o de detalles en otras pantallas.
 - **Barra de estado** con el guardado y los avisos.
 
 La **búsqueda** ya no tiene entrada propia en la navegación: se llega por el
@@ -184,6 +189,23 @@ use la aplicación; solo se abre por su dirección interna.
   al contenido principal.
 - Las ayudas emergentes (tooltip) aparecen al pasar el ratón o al llegar con el
   teclado, y se ocultan con `Escape`.
+- En la ficha, los títulos de las secciones —Descripción, Campos del tipo,
+  Relaciones y Recursos— son botones: `Enter` o espacio las pliegan y
+  despliegan, y el estado se anuncia con `aria-expanded`. El cuerpo cerrado no
+  se recorre con `Tab`.
+- El separador del panel de propiedades, cuando el panel está abierto y la
+  ventana es ancha, se enfoca con `Tab`. Con las flechas izquierda y derecha
+  cambia el ancho en pasos de 16 px; `Inicio` lo lleva a 280 px y `Fin` a 360 px.
+  Mientras arrastras con el ratón, `Escape` cancela el cambio.
+- En edición, `Ctrl+S` guarda como **Guardar ahora**. No actúa en lectura ni con
+  un diálogo abierto.
+- Al entrar en edición con **Editar** o al hacer clic en el título, el foco va al
+  campo **Nombre**. **Editar descripción** y **Editar campos** abren su sección y
+  enfocan el editor o el primer campo. Al pulsar **Listo** y guardarse, el foco
+  vuelve a **Editar**.
+- Si un dato obligatorio falla, la ficha abre la sección afectada y lleva el foco
+  al primer campo con error cuando el guardado fue explícito. El autoguardado
+  abre la sección y anuncia el error, pero no mueve el foco.
 - El foco siempre se ve, en los dos temas.
 
 ### 3.3 Tema Claro y Oscuro
@@ -423,17 +445,35 @@ la lista se titula **Fichas del mundo**.
    ofrece **Crear una ficha** y la paleta `Ctrl+K` incluye el mismo comando; los
    dos abren la creación rápida con el mundo preseleccionado cuando ya estás
    dentro de uno.
-3. Al crearla se abre la ficha para completar el resto: alias, resumen,
-   descripción, campos del tipo, imagen, galería, etiquetas y estado.
+3. Al crearla se abre como documento, en lectura. Pulsa **Editar** para completar
+   el alias, el resumen, la descripción y los campos del tipo; la portada, el
+   estado y las etiquetas se ajustan en el panel de propiedades sin entrar en
+   edición.
 
 ### 5.2 Guardado y edición
 
+- La ficha se abre en **lectura**: nombre, alias y resumen se leen como texto y
+  no hay campos permanentes. Si falta el nombre se muestra «Ficha sin nombre».
+- Pulsa **Editar** para entrar en edición; también puedes hacer clic en el título
+  con el ratón. Aparecen los campos de nombre, alias y resumen y las acciones de
+  edición, incluido **Guardar ahora**. **Listo** guarda y vuelve a la lectura; si
+  falla, la ficha permanece en edición.
+- No hay **Cancelar**: el autoguardado ya ha persistido lo escrito y cancelar
+  sugeriría descartar cambios que no se pierden.
 - El contenido se **autoguarda** poco después de dejar de escribir. La cabecera
-  de la ficha muestra **Guardando…**, **Guardado**, **Cambios sin guardar** o un
-  aviso si no se pudo guardar.
-- **Guardar ahora** fuerza el guardado en ese momento.
-- El nombre es obligatorio. Los campos marcados con `*` también.
-- Los valores inválidos se señalan en su campo y no se envían al guardado.
+  muestra **Guardando…**, **Guardado**, **Cambios sin guardar** o **No se pudo
+  guardar**.
+- **Guardar ahora** fuerza el guardado en ese momento y `Ctrl+S` hace lo mismo en
+  edición.
+- Si el guardado falla, la cabecera lo indica y aparece un aviso con **Volver a
+  intentar**; tus cambios siguen en pantalla. Si falta un dato obligatorio, la
+  ficha entra en edición y abre la sección afectada —la cabecera, **Campos del
+  tipo** o **Descripción**— con el error señalado.
+- Al salir de la ficha se guarda el último cambio pendiente, aunque el
+  autoguardado aún no hubiera llegado; al volver, el contenido sigue ahí. El
+  nombre es obligatorio y los campos marcados con `*` también.
+- El panel de propiedades y las secciones plegables recuerdan su estado mientras
+  la aplicación sigue abierta. Conservarlo entre reinicios llegará con #132.
 - El **tipo no cambia** después de crear la ficha. Si necesitas otra plantilla,
   crea una ficha nueva con ese tipo.
 
@@ -441,16 +481,31 @@ la lista se titula **Fichas del mundo**.
 
 La descripción admite **negrita**, **cursiva**, títulos de nivel 1 a 3, listas con
 viñetas, listas numeradas, citas y **enlaces internos a otras fichas** del mismo
-mundo. Los enlaces se insertan con el botón de enlace; para abrir uno, coloca el
-cursor sobre él y pulsa **Abrir enlace** en la barra del editor, o usa `Ctrl` +
-clic. No se pega HTML ni se permiten enlaces externos.
+mundo. No se pega HTML ni se permiten enlaces externos.
+
+- En **lectura**, la descripción se muestra como texto de documento, sin barra de
+  herramientas. La sección indica cuántas palabras tiene y ofrece **Añadir
+  descripción** si está vacía o **Editar descripción** si ya tiene contenido.
+- En **lectura**, un clic normal en un enlace interno abre esa ficha.
+- En **edición**, la barra del editor permite dar formato e insertar enlaces.
+  Para abrir un enlace sin salir de la edición, usa `Ctrl` + clic (`Cmd` + clic en
+  macOS) o coloca el cursor sobre el enlace y pulsa **Abrir enlace**.
+- Si falta un dato de la descripción, la sección se abre y el error queda
+  asociado.
 
 ### 5.4 Campos del tipo
 
 Cada tipo puede tener campos de **texto**, **número**, **fecha**, **selección** o
-**referencia a otra ficha**. Los campos de referencia solo ofrecen fichas del
-mismo mundo y, si el tipo lo limita, del tipo de destino. Los valores se validan
-antes de guardar.
+**referencia a otra ficha**. En lectura, los campos se leen como una **ficha
+técnica**: cada etiqueta con su valor, los números y las fechas con el formato del
+perfil, las referencias como enlaces que abren la ficha enlazada y «Sin valor»
+cuando están vacías. Una referencia rota se explica en lugar de quedar como un
+identificador sin salida.
+
+- **Editar campos** abre la sección y el primer control; en edición, cada campo
+  usa su propio formulario compacto.
+- Los campos de referencia solo ofrecen fichas del mismo mundo y, si el tipo lo
+  limita, del tipo de destino. Los valores se validan antes de guardar.
 
 ### 5.5 Tipos personalizados
 
@@ -470,32 +525,47 @@ lista de tipos del sistema y de los personalizados de ese mundo.
 - Los iconos y colores usan la paleta de la aplicación; el color nunca es el
   único indicador: siempre acompaña al icono y al nombre.
 
-### 5.6 Imágenes y galería
+### 5.6 Imágenes, portada y galería
 
-- **Imagen principal:** elige una imagen del mundo o añade una nueva. Se guarda
-  en tu equipo y se muestra sin salir de la aplicación.
-- **Galería:** añade varias imágenes, usa las miniaturas y elige cuál es la
-  principal. Puedes quitar una imagen de la galería sin borrar el archivo.
-- Las imágenes se guardan en la carpeta de datos de la aplicación. Al
-  actualizar o reinstalar no se borran.
+- **Portada:** vive en el panel de propiedades. Muestra la imagen elegida o «Sin
+  portada todavía.» y ofrece **Elegir portada** o **Cambiar portada**. El diálogo
+  lista las imágenes del mundo y marca la actual.
+- **Sin imágenes en el mundo:** el panel explica que añadas imágenes en
+  **Recursos** y ofrece **Ir a Recursos**, que abre la sección y enfoca **Añadir
+  imágenes**.
+- **Galería:** vive en la sección **Recursos**. **Añadir imágenes** abre el
+  diálogo del sistema; cada miniatura tiene **Quitar** y la que es portada muestra
+  la insignia **Portada**.
+- La portada solo se elige o cambia desde el panel; la galería solo importa y
+  quita. Al quitar de la galería la imagen que es portada, la portada también se
+  borra y el nombre accesible del botón lo advierte. Quitar una imagen de la
+  galería no borra el archivo del equipo.
+- Las imágenes se guardan en la carpeta de datos de la aplicación. Al actualizar
+  o reinstalar no se borran.
 
 ### 5.7 Etiquetas y favoritos
 
-- **Etiquetas:** crea etiquetas de color por mundo y asígnalas a las fichas. Se
-  pueden quitar de una ficha sin borrar la etiqueta.
-- **Favoritos:** la estrella marca las fichas que más usas.
+- **Etiquetas:** crea etiquetas de color por mundo y asígnalas a las fichas desde
+  el panel de propiedades. La lista muestra las asignadas como chips con su botón
+  de quitar; **Añadir etiqueta** ofrece las que faltan y **Nueva etiqueta** crea
+  una. Se pueden quitar de una ficha sin borrar la etiqueta, y cada ficha admite
+  hasta 12.
+- **Favoritos:** el botón **Favorita** de la cabecera marca las fichas que más
+  usas. Conserva siempre el mismo nombre, «Favorita», y usa `aria-pressed` para
+  anunciar si la ficha es favorita o no.
 - En la lista puedes **buscar** por nombre, alias, resumen o descripción y
   **filtrar** por tipo, etiqueta, favorito y estado.
 - Los filtros y las etiquetas nunca mezclan datos de otros mundos.
 
 ### 5.8 Estado y borrado
 
-- Cada ficha puede estar **Activa**, en **Borrador** o **Archivada**.
-- El **favorito** sigue visible como botón propio en la cabecera de la ficha.
-- **Mover a la papelera** está en el menú `⋯` de la ficha y pide confirmación.
-  La ficha deja de aparecer en la lista; la pantalla de papelera para restaurarla
-  llegará con la siguiente entrega. Hasta entonces, las copias de seguridad
-  siguen siendo la red de seguridad (sección 12).
+- Cada ficha puede estar **Activa**, en **Borrador** o **Archivada**. El estado se
+  cambia en el panel de propiedades y la insignia de la cabecera se actualiza al
+  momento; funciona también en lectura.
+- **Mover a la papelera** está en el menú `⋯` de la ficha y pide confirmación. La
+  ficha deja de aparecer en la lista; la pantalla de papelera para restaurarla
+  llegará con la siguiente entrega. Hasta entonces, las copias de seguridad siguen
+  siendo la red de seguridad (sección 12).
 
 ## 6. Relaciones y grafo
 
@@ -829,14 +899,26 @@ Ya funciona en el shell de desarrollo:
   con flechas, `Inicio`, `Fin` y `Escape`.
 - Pestañas con flechas, `Inicio` y `Fin`; diálogo con foco atrapado y `Escape`;
   ayudas emergentes que se ocultan con `Escape`.
+- En la ficha, las secciones se pliegan con `Enter` o espacio y anuncian su
+  estado con `aria-expanded`; el cuerpo cerrado no se recorre.
+- El separador del panel de propiedades tiene nombre, se enfoca con `Tab` y
+  anuncia su valor; las flechas cambian el ancho, `Inicio` y `Fin` van a los
+  extremos y `Escape` cancela el arrastre.
+- El foco se dirige al entrar y salir de edición, a la descripción o al primer
+  campo, y al primer error cuando el guardado es explícito. El autoguardado no
+  roba el foco.
+- En lectura, la descripción no se anuncia como un campo de formulario; en
+  edición recupera su barra y su nombre accesible.
+- `Ctrl+S` guarda en edición y no abre el diálogo de guardar página.
 - Etiquetas, ayudas y errores asociados en los campos de texto.
 - Avisos con `aria-live` (se anuncian sin robar el foco) y cierre manual. La
   disponibilidad de una actualización también se anuncia así.
 - Respeto de `prefers-reduced-motion`: las animaciones se reducen o se
   desactivan.
-- Revisión automática de accesibilidad (axe) sin errores críticos en el shell y
-  en Inicio, en los dos temas y con la barra lateral expandida y plegada; el
-  contraste se comprueba con la tabla del sistema de diseño.
+- Revisión automática de accesibilidad (axe) sin errores críticos en el shell,
+  Inicio, la vista de mundo, la lista de fichas y la ficha, en los dos temas y con
+  la barra lateral expandida y plegada; el contraste se comprueba con la tabla del
+  sistema de diseño.
 
 Sigue **previsto**:
 
@@ -916,7 +998,8 @@ las funciones correspondientes.
 | Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
 | Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
-| Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); papelera visible y restauración con #77 |
+| Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y la papelera visible llega con #77 |
+| Ficha como documento y panel de propiedades | Implementada (en desarrollo); lectura por defecto, edición en contexto, secciones plegables y panel de 280–360 px |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
 | Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); los metadatos quedan en la API |
 | Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |
@@ -930,6 +1013,7 @@ las funciones correspondientes.
 | Ajustes | Prevista |
 | Guardar la preferencia de tema | Prevista (con Ajustes) |
 | Recordar la barra lateral plegada | Prevista (#132); hoy se recuerda solo durante la sesión |
+| Recordar el panel de propiedades y las secciones plegables de la ficha | Prevista (#132); hoy se recuerdan solo durante la sesión |
 | Copias manuales y elección de carpeta | Prevista (con Ajustes) |
 | Ajustes de actualizaciones (interruptor y frecuencia) | Previstos (con Ajustes, M1); hoy no hay auto-check |
 | Firma de código del instalador | Opcional y de pago; fuera del MVP (ADR 0015) |

@@ -319,6 +319,20 @@ primera versión estable.
   ambos temas, descripción de 4.000 caracteres, ocho géneros y axe. La suite
   queda en 453 unitarias (4 omitidas), 96 de componentes, 134 de integración (1
   omitida) y 43 E2E.
+- Ficha como documento vivo (#129): lectura por defecto y edición en contexto
+  con **Editar** y **Listo**, cabecera con tipo, estado, alias, resumen, favorito
+  y estado de guardado, y menú `⋯` para la papelera. El panel de propiedades
+  —portada, estado y etiquetas— se oculta y se redimensiona entre 280 y 360 px
+  con un separador accesible; Descripción, Campos del tipo, Relaciones y Recursos
+  se pliegan con teclado. Los campos se leen como ficha técnica, la galería vive
+  en Recursos, los errores abren la sección afectada y `Ctrl+S` guarda en
+  edición.
+- Pruebas de la ficha como documento (#129): unitarias de la memoria de sesión,
+  18 pruebas de componentes de la ficha y la cobertura de `DisclosureSection`, y
+  9 E2E de entidades con lectura, foco, secciones, panel, separador, errores,
+  contenido largo y axe. La suite queda en 459 unitarias (4 omitidas), 119 de
+  componentes, 134 de integración (1 omitida) y 9 E2E de entidades; la suite E2E
+  completa no se ejecutó en esta tarea.
 
 ### Cambiado
 
@@ -355,6 +369,11 @@ primera versión estable.
   y la página no duplica la acción primaria ni las secundarias del menú `⋯`.
   El recuento de fichas se lee con el canal `entities:list` ya existente, sin IPC
   nuevo, y se omite mientras carga o si la lectura falla.
+- La ficha deja de ser un formulario permanente (#129): nombre, alias y resumen
+  solo existen como campos en edición; la portada se elige en el panel de
+  propiedades y la galería pasa a Recursos, sin «Usar como principal» duplicado.
+  El favorito conserva el nombre fijo **Favorita** y el panel y las secciones
+  recuerdan su estado solo durante la sesión hasta #132.
 - World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
   persistencia local. El renderer no accede a Node; la base de datos es SQLite y
   los assets viven en `app.getPath('userData')`.
