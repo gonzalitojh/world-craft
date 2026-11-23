@@ -1,7 +1,7 @@
 {
   "title": "Editor mínimo y menciones @ / [[ ]]",
   "description": "Reducir la barra del editor de la descripción a las acciones esenciales (negrita, cursiva, encabezado, enlace y mención) y añadir un typeahead de menciones que se abre con `@` o `[[`, busca fichas del mundo con teclado y escape, e inserta el enlace interno existente `wc-entity://<uuid>` sin HTML ni contenido remoto. Reutilizable por el editor de manuscritos de M3 sin implementar manuscritos aquí. Coordina con M1.5-06 (#129) para el encaje en la ficha y depende de M1.5-02 (#125).",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 131,
@@ -101,5 +101,12 @@
     "manual": "docs/manual-de-usuario.md",
     "changelog": "CHANGELOG.md",
     "agents": null
+  },
+  "pr": {
+    "number": 142,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/142",
+    "title": "feat(editor): editor mínimo y menciones @ / [[ ]] (#131)",
+    "branch": "design/issue-131-minimal-editor-mentions",
+    "commit": "fff4ffa"
   }
 }
