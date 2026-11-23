@@ -695,7 +695,9 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
 
   await expect(panel.getByText('Ubicado en')).toBeVisible();
   await expect(
-    panel.getByRole('button', { name: 'Puerto Sal', exact: true }),
+    panel.getByRole('button', {
+      name: messages.entities.relations.openEntityNamed('Puerto Sal'),
+    }),
   ).toBeVisible();
 
   await addRelation('Ubicado en / Contiene', 'Puerto Sal · Ciudad', false);
@@ -751,7 +753,9 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
   }
 
   await panel
-    .getByRole('button', { name: 'Puerto Sal', exact: true })
+    .getByRole('button', {
+      name: messages.entities.relations.openEntityNamed('Puerto Sal'),
+    })
     .first()
     .click();
   await expect(
@@ -763,11 +767,17 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
   await expect(backlinks.getByText('Contiene')).toBeVisible();
   await expect(backlinks.getByText('Aprendiz de')).toBeVisible();
   await expect(
-    backlinks.getByRole('button', { name: 'Mara Viento', exact: true }).first(),
+    backlinks
+      .getByRole('button', {
+        name: messages.entities.relations.openEntityNamed('Mara Viento'),
+      })
+      .first(),
   ).toBeVisible();
 
   await backlinks
-    .getByRole('button', { name: 'Mara Viento', exact: true })
+    .getByRole('button', {
+      name: messages.entities.relations.openEntityNamed('Mara Viento'),
+    })
     .first()
     .click();
   await expect(
@@ -778,6 +788,398 @@ test('crea relaciones, muestra la etiqueta inversa, navega a los backlinks y rec
     await setTheme(page, theme);
     await expectAxeWithoutSerious(page);
   }
+});
+
+test('relaciones legibles: dos tipos, etiqueta inversa, teclado, foco y ausencia de grafo', async ({
+  page,
+  electronApp,
+}) => {
+  const relationLabel = 'L'.repeat(80);
+  const relationNotes = 'Mareas y sal. '.repeat(150).slice(0, 2_000);
+
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+  await backToEntities(page);
+  await createEntity(page, { name: 'Puerto Sal', type: 'Ciudad' });
+  await backToEntities(page);
+  await createEntity(page, { name: LONG_NAME, type: 'Ciudad' });
+  await backToEntities(page);
+
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+
+  const panel = await openSection(page, 'relations');
+
+  const addRelation = async (
+    typeLabel: string,
+    targetLabel: string,
+    options: {
+      readonly label?: string;
+      readonly inverseLabel?: string;
+      readonly notes?: string;
+      readonly strength?: string;
+    } = {},
+  ): Promise<void> => {
+    await page
+      .getByRole('button', { name: messages.entities.relations.add })
+      .click();
+
+    const dialog = page.getByRole('dialog');
+
+    await dialog
+      .getByLabel(messages.entities.relations.typeLabel, { exact: false })
+      .selectOption({ label: typeLabel });
+    await dialog
+      .getByLabel(/^Ficha de destino/)
+      .selectOption({ label: targetLabel });
+
+    if (options.label !== undefined) {
+      await dialog
+        .getByLabel(messages.entities.relations.labelLabel)
+        .fill(options.label);
+    }
+
+    if (options.inverseLabel !== undefined) {
+      await dialog
+        .getByLabel(messages.entities.relations.inverseLabelLabel)
+        .fill(options.inverseLabel);
+    }
+
+    if (options.notes !== undefined) {
+      await dialog
+        .getByLabel(messages.entities.relations.notesLabel)
+        .fill(options.notes);
+    }
+
+    if (options.strength !== undefined) {
+      await dialog
+        .getByLabel(messages.entities.relations.strengthLabel)
+        .selectOption(options.strength);
+    }
+
+    await dialog
+      .getByRole('button', {
+        name: messages.entities.relations.submitCreate,
+      })
+      .click();
+
+    await expect(dialog).not.toBeVisible();
+    await dismissToasts(page);
+  };
+
+  await addRelation('Ubicado en / Contiene', 'Puerto Sal · Ciudad', {
+    label: relationLabel,
+    inverseLabel: 'Aliada de',
+    notes: relationNotes,
+    strength: '5',
+  });
+
+  await addRelation(
+    'Relacionado con / Relacionado con',
+    `${LONG_NAME} · Ciudad`,
+  );
+
+  // Dirección, grupo por tipo, etiqueta recíproca y sobrescritura visible.
+  await expect(
+    panel.getByRole('heading', {
+      level: 4,
+      name: messages.entities.relations.outgoingTitle,
+    }),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole('heading', {
+      level: 4,
+      name: messages.entities.relations.incomingTitle,
+    }),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole('heading', { level: 5, name: relationLabel }),
+  ).toBeVisible();
+  await expect(
+    panel.getByText(messages.entities.relations.groupInverse('Aliada de')),
+  ).toBeVisible();
+  await expect(
+    panel.getByText(messages.entities.relations.groupType('Ubicado en')),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole('heading', { level: 5, name: 'Relacionado con' }),
+  ).toBeVisible();
+  await expect(
+    panel.getByText(
+      messages.entities.relations.groupInverse('Relacionado con'),
+    ),
+  ).toHaveCount(0);
+  await expect(
+    panel.getByRole('button', {
+      name: messages.entities.relations.openEntityNamed(LONG_NAME),
+    }),
+  ).toBeVisible();
+  await expect(panel.getByText(/grafo/i)).toHaveCount(0);
+  await expect(panel.getByRole('button', { name: /grafo/i })).toHaveCount(0);
+  await expect
+    .poll(async () =>
+      panel
+        .locator('.wc-relation-item__notes')
+        .first()
+        .evaluate((node) => node.textContent?.length ?? 0),
+    )
+    .toBe(relationNotes.length);
+
+  // Tres anchos con el panel abierto y cerrado, contenido largo incluido.
+  for (const width of [1024, 1280, 1600] as const) {
+    await electronApp.evaluate(
+      ({ BrowserWindow }, size) => {
+        const main = BrowserWindow.getAllWindows()[0];
+
+        if (main === undefined) {
+          throw new Error('No hay ventana principal.');
+        }
+
+        main.setContentSize(size.width, size.height);
+      },
+      { width, height: 700 },
+    );
+
+    for (const open of [true, false] as const) {
+      await setPanelOpen(page, open);
+      await settleLayout(page);
+      await expectNoOverflow(page);
+
+      if (open) {
+        const overflowing = await panel.evaluate((section) =>
+          [
+            ...section.querySelectorAll<HTMLElement>(
+              '.wc-relations, .wc-relation-direction, .wc-relation-type-group, .wc-relation-item',
+            ),
+          ]
+            .filter((element) => element.scrollWidth > element.clientWidth + 1)
+            .map((element) => element.className),
+        );
+
+        expect(overflowing).toEqual([]);
+
+        if (width === 1024) {
+          // El «⋯» de la última entrada se posiciona respecto al viewport y no
+          // añade scroll horizontal.
+          const lastTrigger = panel
+            .locator('li[data-relation-id]')
+            .last()
+            .getByRole('button', { name: /^Acciones de la relación/ });
+
+          await lastTrigger.scrollIntoViewIfNeeded();
+          await lastTrigger.click();
+          await expect(page.getByRole('menu')).toBeVisible();
+          await expectNoOverflow(page);
+          await page.keyboard.press('Escape');
+        }
+      }
+    }
+  }
+
+  await setPanelOpen(page, true);
+
+  // Menú, diálogo y sección sin violaciones graves en ambos temas.
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme);
+    await expectAxeWithoutSerious(page);
+
+    const firstRow = panel.locator('li[data-relation-id]').first();
+    const menuTrigger = firstRow.getByRole('button', {
+      name: /^Acciones de la relación/,
+    });
+
+    await menuTrigger.click();
+    await expect(
+      page.getByRole('menuitem', {
+        name: messages.entities.relations.editMenuItem,
+      }),
+    ).toBeVisible();
+    await expectAxeWithoutSerious(page);
+    await page.keyboard.press('Escape');
+
+    await menuTrigger.click();
+    await page
+      .getByRole('menuitem', {
+        name: messages.entities.relations.removeMenuItem,
+      })
+      .click();
+
+    const dialog = page.getByRole('dialog');
+
+    await expect(
+      dialog.getByRole('button', {
+        name: messages.entities.relations.cancel,
+      }),
+    ).toBeFocused();
+    await expectAxeWithoutSerious(page);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  }
+
+  // Teclado completo del menú y retorno de foco al disparador.
+  const longRow = panel
+    .locator('li[data-relation-id]')
+    .filter({ hasText: LONG_NAME });
+  const longTrigger = longRow.getByRole('button', {
+    name: /^Acciones de la relación/,
+  });
+  const relationId = await longRow.getAttribute('data-relation-id');
+
+  expect(relationId).not.toBeNull();
+
+  await longTrigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByRole('menuitem', {
+      name: messages.entities.relations.editMenuItem,
+    }),
+  ).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(
+    page.getByRole('menuitem', {
+      name: messages.entities.relations.removeMenuItem,
+    }),
+  ).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(
+    page.getByRole('menuitem', {
+      name: messages.entities.relations.editMenuItem,
+    }),
+  ).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(longTrigger).toBeFocused();
+
+  // Edición con teclado que cambia la relación de grupo: el foco sigue en su ⋯.
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByRole('menuitem', {
+      name: messages.entities.relations.editMenuItem,
+    }),
+  ).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  const editDialog = page.getByRole('dialog');
+
+  await expect(editDialog).toBeVisible();
+  await editDialog
+    .getByLabel(messages.entities.relations.typeLabel, { exact: false })
+    .selectOption({ label: 'Ubicado en / Contiene' });
+  await editDialog
+    .getByRole('button', { name: messages.entities.relations.submitEdit })
+    .click();
+  await expect(editDialog).not.toBeVisible();
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        () =>
+          (document.activeElement as HTMLElement | null)
+            ?.closest('[data-relation-id]')
+            ?.getAttribute('data-relation-id') ?? null,
+      ),
+    )
+    .toBe(relationId);
+  await dismissToasts(page);
+
+  // Borrado modal: Cancelar enfocado, Escape no borra y confirmar recoloca el foco.
+  const idsBefore = await panel
+    .locator('li[data-relation-id]')
+    .evaluateAll((items) =>
+      items.map((item) => item.getAttribute('data-relation-id')),
+    );
+  const removedIndex = idsBefore.indexOf(relationId);
+  const expectedFocus =
+    idsBefore[removedIndex + 1] ?? idsBefore[removedIndex - 1];
+
+  await longTrigger.click();
+  await page
+    .getByRole('menuitem', {
+      name: messages.entities.relations.removeMenuItem,
+    })
+    .click();
+
+  const deleteDialog = page.getByRole('dialog');
+
+  await expect(
+    deleteDialog.getByRole('button', {
+      name: messages.entities.relations.cancel,
+    }),
+  ).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(deleteDialog).toHaveCount(0);
+  await expect(longTrigger).toBeFocused();
+
+  await longTrigger.click();
+  await page
+    .getByRole('menuitem', {
+      name: messages.entities.relations.removeMenuItem,
+    })
+    .click();
+  await deleteDialog
+    .getByRole('button', {
+      name: messages.entities.relations.removeSubmit,
+    })
+    .click();
+  await expect(deleteDialog).toHaveCount(0);
+  await expect(longRow).toHaveCount(0);
+
+  if (expectedFocus === undefined || expectedFocus === null) {
+    await expect(page.locator('#wc-entity-add-relation')).toBeFocused();
+  } else {
+    await expect(
+      panel
+        .locator(`li[data-relation-id="${expectedFocus}"]`)
+        .getByRole('button', { name: /^Acciones de la relación/ }),
+    ).toBeFocused();
+  }
+
+  // Las fichas no se borran con la relación; el backlink sigue navegando al origen.
+  await panel
+    .getByRole('button', {
+      name: messages.entities.relations.openEntityNamed('Puerto Sal'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
+  ).toBeVisible();
+
+  const backlinks = await openSection(page, 'relations');
+
+  await expect(
+    backlinks.getByRole('heading', {
+      level: 4,
+      name: messages.entities.relations.incomingTitle,
+    }),
+  ).toBeVisible();
+  await expect(backlinks.getByText('Backlink', { exact: true })).toBeVisible();
+  await expect(
+    backlinks.getByRole('heading', { level: 5, name: 'Aliada de' }),
+  ).toBeVisible();
+  await expect(
+    backlinks.getByText(
+      messages.entities.relations.groupForward(relationLabel),
+    ),
+  ).toBeVisible();
+  await expect(backlinks.getByText(/grafo/i)).toHaveCount(0);
+
+  await backlinks
+    .getByRole('button', {
+      name: messages.entities.relations.openEntityNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+
+  await backToEntities(page);
+  await expect(page.getByText('Mara Viento')).toBeVisible();
+  await expect(page.getByText('Puerto Sal')).toBeVisible();
 });
 
 test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos temas', async ({
@@ -911,14 +1313,20 @@ test('documento vivo: lectura, foco, secciones, panel, separador y memoria de se
   const relations = await openSection(page, 'relations');
   const relationGap = await relations.evaluate((region) => {
     const root = region.querySelector('.wc-relations');
-    const [lead, next] = root === null ? [] : [...root.children];
+    const lead = root?.querySelector('.wc-page__section-lead');
+    const content = root?.querySelector('.wc-relations__content');
 
-    if (lead === undefined || next === undefined) {
+    if (
+      lead === null ||
+      lead === undefined ||
+      content === null ||
+      content === undefined
+    ) {
       return null;
     }
 
     return (
-      next.getBoundingClientRect().top - lead.getBoundingClientRect().bottom
+      content.getBoundingClientRect().top - lead.getBoundingClientRect().bottom
     );
   });
 

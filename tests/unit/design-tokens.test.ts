@@ -357,7 +357,18 @@ const CONTRAST_PAIRS = [
     min: 4.5,
     label: 'texto normal',
   },
-  { fg: '--accent-strong', bg: '--bg', min: 4.5, label: 'texto normal' },
+  {
+    fg: '--accent-strong',
+    bg: '--bg',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--accent-strong',
+    bg: '--surface-sunken',
+    min: 4.5,
+    label: 'texto normal',
+  },
   {
     fg: '--accent-contrast',
     bg: '--accent-strong',
@@ -425,6 +436,18 @@ const CONTRAST_PAIRS = [
   { fg: '--danger', bg: '--bg', min: 4.5, label: 'texto normal' },
   {
     fg: '--danger',
+    bg: '--surface-raised',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--danger',
+    bg: '--surface-sunken',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--danger',
     bg: '--danger-surface',
     min: 4.5,
     label: 'texto normal',
@@ -439,6 +462,7 @@ const CONTRAST_PAIRS = [
   { fg: '--border-strong', bg: '--surface', min: 3, label: 'componente' },
   { fg: '--focus', bg: '--bg', min: 3, label: 'foco' },
   { fg: '--focus', bg: '--surface', min: 3, label: 'foco' },
+  { fg: '--focus', bg: '--surface-raised', min: 3, label: 'foco' },
   { fg: '--focus', bg: '--accent-surface', min: 3, label: 'foco' },
   { fg: '--focus', bg: '--surface-sunken', min: 3, label: 'foco' },
   { fg: '--fg', bg: '--selection', min: 4.5, label: 'texto normal' },

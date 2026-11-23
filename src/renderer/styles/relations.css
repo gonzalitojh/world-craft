@@ -1,42 +1,150 @@
-/* Relaciones entre fichas: panel, formulario y gestor de tipos. */
+/* Relaciones entre fichas: lectura por dirección y tipo, formulario y gestor. */
 .wc-relations {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
+  min-width: 0;
+  font-family: var(--font-ui);
+}
+
+.wc-relations__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
   min-width: 0;
 }
 
-.wc-relation-head {
+.wc-relations__loading {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-relations__directions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  min-width: 0;
+}
+
+/* --- Dirección ----------------------------------------------------------- */
+
+.wc-relation-direction {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-relation-direction__head {
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.wc-relation-head__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.wc-relation-direction__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  color: var(--muted);
 }
 
-.wc-relation-group {
+.wc-relation-direction__icon svg {
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+}
+
+.wc-relation-direction__title {
   min-width: 0;
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
 }
 
-.wc-relation-group__title {
-  margin: 0 0 var(--space-2);
+.wc-relation-direction__count {
+  flex: 0 0 auto;
   color: var(--muted);
   font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.wc-relation-list {
-  display: grid;
+.wc-relation-direction__lead {
+  max-inline-size: 68ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-direction__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* --- Grupo de tipo ------------------------------------------------------- */
+
+.wc-relation-type-group {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-relation-type-group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-relation-type-group__title {
+  min-width: 0;
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-type-group__count {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.wc-relation-type-group__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-inline-size: 68ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* --- Entrada ------------------------------------------------------------- */
+
+.wc-relation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -47,11 +155,12 @@
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-raised);
+  padding-block: var(--space-3);
   overflow-wrap: anywhere;
+}
+
+.wc-relation-item + .wc-relation-item {
+  border-block-start: 1px solid var(--border);
 }
 
 .wc-relation-item__head {
@@ -62,43 +171,98 @@
   min-width: 0;
 }
 
-.wc-relation-item__target {
-  min-width: 0;
-  font-weight: 600;
-  text-align: start;
+.wc-relation-item__identity {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
 }
 
-.wc-relation-item__type {
+.wc-relation-item__direction-icon {
+  display: grid;
+  place-items: center;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.wc-relation-item__direction-icon svg {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.wc-relation-item__target {
+  flex: 1 1 12rem;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  min-block-size: 1.75rem;
+  min-inline-size: 0;
+  padding-inline: var(--space-2);
+  color: var(--accent-strong);
+  text-align: start;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-item__target:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.wc-relation-item__type-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--muted);
+}
+
+.wc-relation-item__type-icon svg {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.wc-relation-item__name {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.wc-relation-item__sep,
+.wc-relation-item__entity-type {
   color: var(--muted);
   font-size: var(--text-sm);
 }
 
-.wc-relation-strength {
+.wc-relation-item__side {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-1);
   margin-inline-start: auto;
+}
+
+.wc-relation-strength {
   color: var(--accent-strong);
   font-size: var(--text-sm);
   letter-spacing: 0.12em;
   white-space: nowrap;
 }
 
-.wc-relation-item__hint,
 .wc-relation-item__notes {
+  max-inline-size: 68ch;
   margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
+  color: var(--fg);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.wc-relation-item__notes {
-  color: var(--fg);
-  white-space: pre-wrap;
-}
-
-.wc-relation-item__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
+/* --- Formulario y gestor de tipos --------------------------------------- */
 
 .wc-relation-form {
   display: grid;

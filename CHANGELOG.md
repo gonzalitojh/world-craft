@@ -333,6 +333,24 @@ primera versión estable.
   contenido largo y axe. La suite queda en 459 unitarias (4 omitidas), 119 de
   componentes, 134 de integración (1 omitida) y 9 E2E de entidades; la suite E2E
   completa no se ejecutó en esta tarea.
+- Relaciones legibles en la ficha (#130): la sección agrupa por dirección
+  —**Desde esta ficha** y **Backlinks**— y por tipo, con la etiqueta efectiva en
+  el encabezado del grupo, «Inversa: …» o «Directa: …» solo cuando la recíproca
+  difiere y «Tipo: …» cuando la etiqueta es una sobrescritura. Cada entrada es
+  una unidad de lista con insignia **Saliente**/**Backlink**, nombre de la
+  contraparte que abre su ficha, tipo de entidad, fuerza en forma y notas
+  completas; editar y eliminar viven en el menú `⋯`, el borrado confirma en un
+  diálogo con **Cancelar** como opción inicial y el foco no se pierde tras
+  guardar, borrar o reintentar. Sin tabla, sin enlace al grafo y con estados de
+  carga, vacío y error.
+- Pruebas de relaciones legibles (#130): unitarias del modelo de vista
+  (dirección, etiquetas efectiva y recíproca, sobrescrituras, orden con acentos,
+  500 relaciones, autorelación y no mutación); de componentes (panel, tarjeta,
+  menú con teclado, borrado, foco, estados y ausencia de tabla y de «grafo»); de
+  integración (salientes, backlinks, navegación al origen y preservación de
+  fichas); y E2E a 1024, 1280 y 1600 px con contenido largo, ambos temas y axe.
+  La suite queda en 471 unitarias (4 omitidas), 137 de componentes, 134 de
+  integración (1 omitida) y 48 E2E.
 
 ### Cambiado
 
@@ -374,6 +392,10 @@ primera versión estable.
   propiedades y la galería pasa a Recursos, sin «Usar como principal» duplicado.
   El favorito conserva el nombre fijo **Favorita** y el panel y las secciones
   recuerdan su estado solo durante la sesión hasta #132.
+- La sección Relaciones deja de ser dos listas planas con botones sueltos
+  (#130): las entradas se leen dentro de su dirección y su tipo, cada una abre
+  su contraparte desde el nombre y las acciones secundarias pasan al menú `⋯`.
+  No se añade ningún acceso al grafo, que sigue previsto en #83.
 - World Craft pasa de aplicación web a **aplicación de escritorio Windows** con
   persistencia local. El renderer no accede a Node; la base de datos es SQLite y
   los assets viven en `app.getPath('userData')`.

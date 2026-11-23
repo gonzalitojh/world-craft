@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +7,7 @@ import {
   Checkbox,
   Dialog,
   DisclosureSection,
+  EmptyState,
   IconButton,
   Menu,
   Panel,
@@ -31,12 +32,15 @@ beforeAll(() => {
     configurable: true,
     value(this: HTMLDialogElement) {
       this.open = true;
+      this.setAttribute('open', '');
     },
   });
   Object.defineProperty(HTMLDialogElement.prototype, 'close', {
     configurable: true,
     value(this: HTMLDialogElement) {
       this.open = false;
+      this.removeAttribute('open');
+      this.dispatchEvent(new Event('close'));
     },
   });
 });
@@ -667,6 +671,62 @@ describe('Dialog', () => {
     rerender(renderDialog(false));
 
     expect(origin).toHaveFocus();
+  });
+
+  it('bloquea Escape y el botón de cierre cuando no es descartable', () => {
+    const onClose = vi.fn();
+
+    render(
+      <I18nProvider locale="es">
+        <Dialog
+          open
+          onClose={onClose}
+          title="Guardando la relación"
+          dismissible={false}
+        >
+          <p>Espera a que termine la petición.</p>
+        </Dialog>
+      </I18nProvider>,
+    );
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Guardando la relación',
+    });
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      within(dialog).getByRole('button', { name: 'Cerrar' }),
+    ).toBeDisabled();
+  });
+});
+
+describe('EmptyState', () => {
+  it('admite un encabezado de nivel 4 dentro de una sección h3', () => {
+    render(
+      <EmptyState
+        headingLevel={4}
+        title="Todavía no hay relaciones"
+        description="Añade una relación desde la cabecera de la sección."
+      />,
+    );
+
+    const region = screen.getByRole('region', {
+      name: 'Todavía no hay relaciones',
+    });
+
+    expect(
+      within(region).getByRole('heading', {
+        level: 4,
+        name: 'Todavía no hay relaciones',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(region).getByText(
+        'Añade una relación desde la cabecera de la sección.',
+      ),
+    ).toBeInTheDocument();
   });
 });
 

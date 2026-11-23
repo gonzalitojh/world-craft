@@ -20,7 +20,7 @@ import type {
   EntityUpdateInput,
 } from '@/shared/contracts/entities';
 import type { EntityTypeSummary } from '@/shared/contracts/entity-types';
-import type { RelationType } from '@/shared/contracts/relations';
+import type { RelationEdge, RelationType } from '@/shared/contracts/relations';
 import type { IpcResult } from '@/shared/contracts/result';
 import type { WorldCraftApi } from '@/shared/contracts/world-craft-api';
 import type { WorldDetail } from '@/shared/contracts/worlds';
@@ -42,12 +42,15 @@ beforeAll(() => {
     configurable: true,
     value(this: HTMLDialogElement) {
       this.open = true;
+      this.setAttribute('open', '');
     },
   });
   Object.defineProperty(HTMLDialogElement.prototype, 'close', {
     configurable: true,
     value(this: HTMLDialogElement) {
       this.open = false;
+      this.removeAttribute('open');
+      this.dispatchEvent(new Event('close'));
     },
   });
 });
@@ -196,6 +199,66 @@ const relationType: RelationType = {
   updatedAt: BASE_TIME,
 };
 
+const RELATION_ID = '01900000-0000-7000-8000-000000000020';
+const BACKLINK_ID = '01900000-0000-7000-8000-000000000021';
+const ALTAR_ID = '01900000-0000-7000-8000-000000000022';
+
+const outgoingRelation: RelationEdge = {
+  id: RELATION_ID,
+  worldId: WORLD_ID,
+  typeId: RELATION_TYPE_ID,
+  typeKey: relationType.key,
+  typeName: relationType.name,
+  typeInverseName: relationType.inverseName,
+  typeColor: relationType.color,
+  isSystemType: true,
+  label: null,
+  inverseLabel: null,
+  notes: 'Vive aquí desde niña.',
+  strength: 4,
+  metadata: {},
+  source: {
+    id: ENTITY_ID,
+    name: 'Mara Viento',
+    typeKey: 'character',
+    typeName: 'Personaje',
+    typeIcon: 'user-round',
+    typeColor: 'moss',
+  },
+  target: {
+    id: PUERTO_ID,
+    name: 'Puerto Sal',
+    typeKey: 'city',
+    typeName: 'Ciudad',
+    typeIcon: 'building-2',
+    typeColor: 'ochre',
+  },
+  createdAt: BASE_TIME,
+  updatedAt: BASE_TIME,
+};
+
+const backlinkRelation: RelationEdge = {
+  ...outgoingRelation,
+  id: BACKLINK_ID,
+  notes: null,
+  source: {
+    id: ALTAR_ID,
+    name: 'Altar de sal',
+    typeKey: 'place',
+    typeName: 'Lugar',
+    typeIcon: 'map-pin',
+    typeColor: 'danger',
+  },
+  target: {
+    id: ENTITY_ID,
+    name: 'Mara Viento',
+    typeKey: 'character',
+    typeName: 'Personaje',
+    typeIcon: 'user-round',
+    typeColor: 'moss',
+  },
+};
+
 interface ApiOptions {
   readonly type?: EntityTypeSummary;
   readonly entity?: EntityDetail;
@@ -204,6 +267,7 @@ interface ApiOptions {
     input: EntityUpdateInput,
   ) => Promise<IpcResult<EntityDetail>>;
   readonly relationsErrorOnce?: boolean;
+  readonly relations?: readonly RelationEdge[];
 }
 
 function createApi(options: ApiOptions = {}) {
@@ -237,13 +301,17 @@ function createApi(options: ApiOptions = {}) {
 
     return options.relationsErrorOnce === true && relationListCalls === 1
       ? { ok: false as const, error: { code: 'internal', message: 'fallo' } }
-      : { ok: true as const, data: [] };
+      : { ok: true as const, data: options.relations ?? [] };
   });
   const setFavorite = vi.fn(async (input: { readonly favorite: boolean }) => ({
     ok: true as const,
     data: { ...entity, isFavorite: input.favorite },
   }));
   const remove = vi.fn(async () => ({
+    ok: true as const,
+    data: { deleted: true },
+  }));
+  const removeRelation = vi.fn(async () => ({
     ok: true as const,
     data: { deleted: true },
   }));
@@ -287,7 +355,7 @@ function createApi(options: ApiOptions = {}) {
       list: listRelations,
       create: vi.fn(),
       update: vi.fn(),
-      remove: vi.fn(),
+      remove: removeRelation,
     },
   } as unknown as WorldCraftApi;
 
@@ -302,6 +370,7 @@ function createApi(options: ApiOptions = {}) {
     update,
     setFavorite,
     remove,
+    removeRelation,
     importAssets,
   };
 }
@@ -826,7 +895,9 @@ describe('ficha como documento vivo', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(messages.entities.relations.empty)).toBeVisible();
+      expect(
+        screen.getByText(messages.entities.relations.emptyTitle),
+      ).toBeVisible();
     });
 
     expect(get).toHaveBeenCalledTimes(1);
@@ -835,6 +906,102 @@ describe('ficha como documento vivo', () => {
       screen.getByRole('button', { name: messages.entities.detail.done }),
     ).toBeVisible();
     expect(screen.queryByText(messages.entities.detail.saveError)).toBeNull();
+  });
+
+  it('integra relaciones por dirección, navega al backlink y borra sin tocar fichas', async () => {
+    const user = userEvent.setup();
+    const { remove, removeRelation, onOpenEntity } = renderPage({
+      relations: [outgoingRelation, backlinkRelation],
+    });
+    await waitForEntity();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(messages.entities.relations.title),
+      }),
+    );
+
+    const section = document.querySelector<HTMLElement>(
+      '[data-section="relations"]',
+    );
+
+    expect(section).not.toBeNull();
+
+    expect(
+      within(section as HTMLElement).getByRole('heading', {
+        level: 4,
+        name: messages.entities.relations.outgoingTitle,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(section as HTMLElement).getByRole('heading', {
+        level: 4,
+        name: messages.entities.relations.incomingTitle,
+      }),
+    ).toBeInTheDocument();
+    expect(section?.querySelector('.wc-disclosure__meta')?.textContent).toBe(
+      messages.entities.detail.relationsMeta(2),
+    );
+
+    await user.click(
+      within(section as HTMLElement).getByRole('button', {
+        name: messages.entities.relations.openEntityNamed('Altar de sal'),
+      }),
+    );
+    expect(onOpenEntity).toHaveBeenCalledWith(ALTAR_ID);
+
+    const row = section?.querySelector<HTMLElement>(
+      `li[data-relation-id="${RELATION_ID}"]`,
+    );
+
+    expect(row).not.toBeNull();
+
+    await user.click(
+      within(row as HTMLElement).getByRole('button', {
+        name: /^Acciones de la relación/,
+      }),
+    );
+    await user.click(
+      screen.getByRole('menuitem', {
+        name: messages.entities.relations.removeMenuItem,
+      }),
+    );
+
+    const dialog = document.querySelector<HTMLElement>('dialog');
+
+    await user.click(
+      within(dialog as HTMLElement).getByRole('button', {
+        name: messages.entities.relations.removeSubmit,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(removeRelation).toHaveBeenCalledWith({
+        worldId: WORLD_ID,
+        id: RELATION_ID,
+      });
+    });
+    await waitFor(() => {
+      expect(
+        section?.querySelector(`li[data-relation-id="${RELATION_ID}"]`),
+      ).toBeNull();
+    });
+
+    // Las dos fichas siguen existiendo y el backlink permanece.
+    expect(remove).not.toHaveBeenCalled();
+    expect(
+      within(section as HTMLElement).getByRole('button', {
+        name: messages.entities.relations.openEntityNamed('Altar de sal'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: messages.entities.relations.openEntityNamed('Puerto Sal'),
+      }),
+    ).toBeNull();
+    expect(section?.querySelector('.wc-disclosure__meta')?.textContent).toBe(
+      messages.entities.detail.relationsMeta(1),
+    );
   });
 
   it('un fallo al guardar conserva el borrador y el reintento lo persiste', async () => {
