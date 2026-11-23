@@ -59,14 +59,14 @@ Las secciones distinguen lo implementado de lo previsto.
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125) y shell v2 con navegación Inicio/Mundos y barra superior contextual (#126); tema en memoria hasta Ajustes | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md) |
-| Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74); manuscrito y exportadores en M3 | [ADR 0007](adr/0007-tiptap-editor-exporters.md) |
+| Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74) y convertido en editor reutilizable con barra mínima y menciones `@` / `[[ ]]` (#131); manuscrito y exportadores en M3 | [ADR 0007](adr/0007-tiptap-editor-exporters.md), [ADR 0026](adr/0026-minimal-editor-mentions.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
 | Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; gestión visual con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
 | Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
 | Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
-| Pruebas y calidad | Implementado: 447 unitarias (4 omitidas), 87 de componentes y 134 de integración (1 omitida) (#62-#76, #125, #126, #127); 42 E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2 e Inicio (#70, #72, #74, #75, #76, #125, #126, #127) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 497 unitarias (4 omitidas), 165 de componentes y 134 de integración (1 omitida) (#62-#76, #125-#131); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio y editor (#70, #72, #74, #75, #76, #125, #126, #127, #131) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -81,7 +81,7 @@ Electron separa tres procesos con permisos distintos:
 |---|---|---|
 | **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, servicio de fichas, etiquetas y galería, servicio de assets para el IPC, copias de seguridad con restauración y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
 | **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos, tipos de entidad, fichas, etiquetas y assets; nunca un `invoke` genérico. | API de Electron limitada. |
-| **Renderer** | Interfaz React, estado de UI, editor, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
+| **Renderer** | Interfaz React, estado de UI, editor enriquecido reutilizable, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
@@ -98,8 +98,8 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search` y `assets`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72) y las fichas con imágenes, etiquetas y editor (#74) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75 y búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), y la tarjeta y marca de mundo v2 de #127; `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74) y el editor reutilizable con menciones (#131) están implementados. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127 y el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/shell/` | Shell v2 (`app-shell.tsx`): rail plegable con navegación Inicio/Mundos, barra superior con título contextual, disparador de la paleta, una acción primaria, menú `⋯` y utilidades de actualizaciones y tema, y `main` enfocable. `views.ts` declara las vistas de producto y la acción primaria; `internal-views.ts` resuelve la vista interna de Muestras por hash. | Componentes, mensajes, tema |
 | `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (mesa de trabajo con Continuar, mundos recientes y actividad, y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (banco interno de desarrollo, solo por `#/internal/samples`). | Componentes, mensajes |
@@ -377,7 +377,7 @@ Reglas de dependencia:
   salida en `release/` y `--publish never` en local. `afterPack` escribe
   `app-update.yml` también en las builds `--dir` y poda los binarios nativos que
   no son win32-x64. El icono es un ICO de 7 tamaños; `licenses:sync` copia los
-  6 textos completos.
+  7 textos completos.
 - **Paquete.** `files` incluye `out/` y `package.json`; `extraFiles` añade
   `LICENSE`, `THIRD-PARTY-NOTICES.md` y `licenses/`. `asarUnpack` cubre
   `better-sqlite3`, `sharp`, `@img` y `*.node`; `npmRebuild` está desactivado.
@@ -480,7 +480,14 @@ Reglas de dependencia:
   ProseMirror con una lista cerrada de nodos y marcas, calcula el texto plano y
   rechaza HTML, nodos desconocidos y enlaces que no sean
   `wc-entity://<uuid>`. Tiptap 3 (MIT, ADR 0007) edita ese documento en el
-  renderer; nunca se inyecta HTML.
+  renderer; nunca se inyecta HTML. El editor de #131 vive en
+  `src/renderer/components/editor/`: `RichTextEditor` compone la barra mínima de
+  cinco acciones, el menú Formato, el diálogo de enlace y el typeahead de
+  menciones, y `entity-description-editor.tsx` lo conecta con la ficha. La
+  mención es texto con la marca `link` `wc-entity://<uuid>` insertado en una
+  transacción de ProseMirror, sin HTML y sin nodo propio; el plugin de
+  `extensions/mention.ts` resuelve los disparadores `@` y `[[` y el patrón
+  combobox/listbox. Sin IPC ni datos nuevos (ADR 0026).
 - **Dominio.** `src/main/entities/` no importa Electron: normaliza nombre, alias,
   resumen y estado; genera slugs únicos por mundo; valida la plantilla y los
   valores con la misma función de #73; comprueba referencias del mismo mundo y

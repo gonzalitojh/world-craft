@@ -40,6 +40,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0023](0023-global-search-fts5-command-palette.md) | Búsqueda global FTS5 y paleta de comandos (#76) | Aceptado | D-046 |
 | [0024](0024-obligatory-specialized-subagents.md) | Invocación obligatoria de los subagentes especializados | Aceptado | D-047 |
 | [0025](0025-visual-direction-v2.md) | Dirección visual v2 y sistema «estudio moderno» (#124) | Aceptado | D-048 |
+| [0026](0026-minimal-editor-mentions.md) | Editor mínimo, menú Formato y menciones `@` / `[[ ]]` (#131) | Aceptado | D-049 |
 
 ## 3. Relación con otros documentos
 
@@ -88,3 +89,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-20 | Se añade el ADR 0023 (búsqueda global FTS5 y paleta de comandos, #76). |
 | 2026-11-21 | Se añade el ADR 0024 (invocación obligatoria de los subagentes especializados, tarea local `subagent-routing`). |
 | 2026-11-21 | Se añade el ADR 0025 (dirección visual v2, #124) y se anota que revisa la estética del ADR 0006 sin supersederlo. |
+| 2026-11-23 | Se añade el ADR 0026 (editor mínimo, menú Formato y menciones `@` / `[[ ]]`, #131). |

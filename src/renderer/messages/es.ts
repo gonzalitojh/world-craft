@@ -358,7 +358,7 @@ export const es = {
       summaryPlaceholder: 'Una o dos frases para recordar de qué trata.',
       descriptionLabel: 'Descripción',
       descriptionHint:
-        'Formato básico y enlaces internos a otras fichas de este mundo.',
+        'Formato básico y enlaces internos. Escribe @ o [[ para mencionar una ficha; Enter inserta y Escape cierra el selector. Ctrl+clic abre un enlace.',
       descriptionEmpty: 'Todavía no hay descripción.',
       addDescription: 'Añadir descripción',
       editDescription: 'Editar descripción',
@@ -464,6 +464,18 @@ export const es = {
       bulletList: 'Lista con viñetas',
       orderedList: 'Lista numerada',
       quote: 'Cita',
+      format: 'Formato',
+      formatMenu: 'Formato del texto',
+      paragraph: 'Párrafo',
+      mention: 'Mención',
+      mentionListLabel: 'Fichas para mencionar',
+      mentionEmpty: 'No hay fichas que coincidan.',
+      mentionNoEntities: 'Todavía no hay fichas que mencionar en este mundo.',
+      mentionResults: (count: number): string =>
+        count === 1 ? '1 ficha' : `${count} fichas`,
+      mentionResultsLimited: (shown: number, total: number): string =>
+        `${shown} de ${total} fichas`,
+      mentionHint: 'Escribe @ o [[ en el texto y elige una ficha.',
       link: 'Enlace a una ficha',
       linkOpen: 'Abrir enlace',
       linkRemove: 'Quitar enlace',

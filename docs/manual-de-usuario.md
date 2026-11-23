@@ -97,12 +97,13 @@ Los datos se quedan en este equipo, en una carpeta propia que sobrevive a las
 actualizaciones de la aplicación.
 Ya se pueden **crear, editar, duplicar, archivar y eliminar mundos**, e **Inicio**
 reúne los mundos recientes y la actividad en una mesa de trabajo. Dentro de
-cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción,
-imágenes, etiquetas, favoritos y **relaciones tipadas con backlinks**. La página
-de un mundo ya es un **marco modular**: su cabecera reúne la identidad del mundo
-y una navegación de módulos donde **Resumen** y **Fichas** funcionan, con el
-recuento de fichas, mientras que **Mapas**, **Manuscrito** y **Grafo** aparecen
-como **Previsto** sin pantalla todavía. También existe la **búsqueda global** con
+cada mundo puedes **crear y editar fichas** con sus tipos, campos, descripción
+con formato y menciones, imágenes, etiquetas, favoritos y **relaciones tipadas con
+backlinks**. La página de un mundo ya es un **marco modular**: su cabecera reúne
+la identidad del mundo y una navegación de módulos donde **Resumen** y **Fichas**
+funcionan, con el recuento de fichas, mientras que **Mapas**, **Manuscrito** y
+**Grafo** aparecen como **Previsto** sin pantalla todavía. También existe la
+**búsqueda global** con
 filtros, recientes y favoritos, y una **paleta de comandos** que se abre con
 `Ctrl+K`. Todavía no hay ventanas de mapas, manuscritos, grafo, ajustes ni
 papelera visible, y la portada del mundo y la descripción enriquecida del mundo
@@ -424,8 +425,8 @@ o, si ese control ya no existe, al contenido principal.
 ### 4.6 Lo que llegará después
 
 - **Portada del mundo:** elegir una imagen local y verla en la cabecera del mundo.
-- **Descripción enriquecida:** formato básico, enlaces internos y texto listo
-  para buscar.
+- **Descripción enriquecida del mundo:** formato básico, enlaces internos y texto
+  listo para buscar.
 - **Exportar e importar** un mundo completo en un archivo abierto.
 - **Papelera visible** para restaurar o vaciar definitivamente.
 
@@ -479,19 +480,62 @@ la lista se titula **Fichas del mundo**.
 
 ### 5.3 Descripción enriquecida
 
-La descripción admite **negrita**, **cursiva**, títulos de nivel 1 a 3, listas con
-viñetas, listas numeradas, citas y **enlaces internos a otras fichas** del mismo
-mundo. No se pega HTML ni se permiten enlaces externos.
+La descripción admite **negrita**, **cursiva**, párrafos, títulos de nivel 1 a 3,
+listas con viñetas, listas numeradas, citas y **menciones a otras fichas** del
+mismo mundo. No se pega HTML ni se permiten enlaces externos.
 
 - En **lectura**, la descripción se muestra como texto de documento, sin barra de
   herramientas. La sección indica cuántas palabras tiene y ofrece **Añadir
   descripción** si está vacía o **Editar descripción** si ya tiene contenido.
-- En **lectura**, un clic normal en un enlace interno abre esa ficha.
-- En **edición**, la barra del editor permite dar formato e insertar enlaces.
-  Para abrir un enlace sin salir de la edición, usa `Ctrl` + clic (`Cmd` + clic en
-  macOS) o coloca el cursor sobre el enlace y pulsa **Abrir enlace**.
+- En **lectura**, un clic normal en una mención o en un enlace interno abre esa
+  ficha.
+- En **edición**, la barra del editor es una sola fila con cinco acciones:
+  **Negrita**, **Cursiva**, **Formato**, **Enlace** y **Mención**. La barra sigue
+  a la vista mientras escribes y no hay una segunda fila de botones.
+- **Negrita** y **Cursiva** indican si están activas. **Enlace** abre el diálogo
+  para enlazar una ficha del mundo.
+- El menú **Formato** reúne el resto de acciones: **Párrafo**, **Título 1**,
+  **Título 2**, **Título 3**, **Lista con viñetas**, **Lista numerada**, **Cita**,
+  **Abrir enlace** y **Quitar enlace**. Se abre con el ratón o con `Enter` o
+  espacio; las flechas recorren los elementos, `Inicio` y `Fin` van al primero y
+  al último, `Enter` o espacio aplican y `Escape` cierra sin cambiar nada. Al
+  elegir un formato, el cursor vuelve al texto para que sigas escribiendo.
+- **Abrir enlace** y **Quitar enlace** solo se pueden usar si el cursor está
+  dentro de un enlace; si no, aparecen deshabilitados. Para abrir un enlace sin
+  salir de la edición también puedes usar `Ctrl` + clic (`Cmd` + clic en macOS).
 - Si falta un dato de la descripción, la sección se abre y el error queda
   asociado.
+
+#### Mencionar una ficha en la descripción
+
+Escribe `@` o dos corchetes `[[` en el texto y aparecerá una lista con las fichas
+del mundo para elegirlas sin soltar el teclado.
+
+1. Escribe `@` (por ejemplo, después de un espacio) o abre dos corchetes `[[`.
+2. Sigue escribiendo parte del nombre: la lista se filtra al momento. Cada
+   opción muestra el nombre de la ficha y su tipo, e incluye las fichas
+   archivadas y las que están en borrador.
+3. Usa las flechas `↑` y `↓` para recorrer la lista; `Inicio` y `Fin` van a la
+   primera y a la última opción.
+4. Pulsa `Enter` o `Tab` para insertar la ficha como mención con su nombre. Si
+   prefieres el ratón, haz clic en la opción.
+5. Pulsa `Escape` para cerrar la lista sin insertar; el texto que habías escrito
+   se conserva para que lo corrijas o lo borres.
+
+- También puedes pulsar **Mención** en la barra: escribe `@` en el texto y abre
+  la misma lista, sin un diálogo aparte.
+- Si no hay coincidencias, la lista lo dice («No hay fichas que coincidan.»); si
+  el mundo todavía no tiene otras fichas, lo explica. En esos casos no se inserta
+  nada y `Enter` sigue su comportamiento normal.
+- La mención se ve y se comporta como un enlace interno: en edición, `Ctrl` +
+  clic (`Cmd` + clic en macOS) o **Abrir enlace** del menú **Formato** la abren;
+  en lectura, un clic normal.
+- La lista busca entre las fichas que la aplicación ya tiene cargadas para esa
+  ficha, hasta 200, igual que el diálogo de enlace. En un mundo con muchas más
+  fichas la búsqueda puede ser parcial y faltar alguna; está previsto mejorarlo
+  en una etapa posterior.
+- No se abre la lista si escribes `@` dentro de un enlace ni si la arroba forma
+  parte de una palabra, como en una dirección de correo.
 
 ### 5.4 Campos del tipo
 
@@ -672,7 +716,9 @@ acción** para abrirlo: la sección Relaciones solo ofrece lo descrito en 6.1 y
 
 - **Manuscritos:** agrupa libros, capítulos y escenas.
 - **Editor:** escribe con formato, diálogos y separadores de escena.
-- **Menciones:** enlaza personajes y lugares desde el texto.
+- **Menciones:** enlaza personajes y lugares desde el texto. Las menciones `@` y
+  `[[ ]]` ya funcionan en la descripción de una ficha (sección 5.3); el
+  manuscrito todavía no existe.
 - **Versiones:** guarda una versión de una escena antes de un cambio grande.
 - **Objetivos:** define una meta de palabras.
 - **Modo concentración:** oculta paneles para escribir sin distracciones.
@@ -944,6 +990,12 @@ Ya funciona en el shell de desarrollo:
   roba el foco.
 - En lectura, la descripción no se anuncia como un campo de formulario; en
   edición recupera su barra y su nombre accesible.
+- La barra del editor es una barra de herramientas con cinco paradas de
+  tabulación; el menú **Formato** se recorre con flechas, `Inicio`, `Fin` y
+  `Escape`, y los botones de formato anuncian si están activos.
+- El selector de menciones anuncia al abrir y al filtrar cuántas fichas hay,
+  mantiene el foco en el texto y se recorre con flechas, `Inicio`, `Fin`, `Enter`,
+  `Tab` y `Escape`; cerrar con `Escape` no borra lo escrito.
 - `Ctrl+S` guarda en edición y no abre el diálogo de guardar página.
 - Etiquetas, ayudas y errores asociados en los campos de texto.
 - Avisos con `aria-live` (se anuncian sin robar el foco) y cierre manual. La
@@ -951,7 +1003,8 @@ Ya funciona en el shell de desarrollo:
 - Respeto de `prefers-reduced-motion`: las animaciones se reducen o se
   desactivan.
 - Revisión automática de accesibilidad (axe) sin errores críticos en el shell,
-  Inicio, la vista de mundo, la lista de fichas y la ficha, en los dos temas y con
+  Inicio, la vista de mundo, la lista de fichas y la ficha —incluido el editor con
+  el menú **Formato** y el selector de menciones abiertos—, en los dos temas y con
   la barra lateral expandida y plegada; el contraste se comprueba con la tabla del
   sistema de diseño.
 
@@ -1035,6 +1088,7 @@ las funciones correspondientes.
 | Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y la papelera visible llega con #77 |
 | Ficha como documento y panel de propiedades | Implementada (en desarrollo); lectura por defecto, edición en contexto, secciones plegables y panel de 280–360 px |
+| Editor de la descripción con barra mínima y menciones `@` / `[[` | Implementado (en desarrollo); barra de cinco acciones, menú Formato, selector de fichas con teclado y enlaces internos; el manuscrito sigue previsto |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
 | Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); lectura por dirección y tipo, etiqueta recíproca, menú `⋯` con edición y borrado confirmado; los metadatos quedan en la API |
 | Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |

@@ -408,8 +408,20 @@ const CONTRAST_PAIRS = [
   {
     fg: '--muted',
     bg: '--surface-raised',
-    min: 3,
-    label: 'componente gráfico',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--accent',
+    bg: '--surface-raised',
+    min: 4.5,
+    label: 'texto normal',
+  },
+  {
+    fg: '--disabled-text',
+    bg: '--surface-raised',
+    min: 4.5,
+    label: 'texto normal',
   },
   { fg: '--accent', bg: '--surface', min: 3, label: 'componente' },
   { fg: '--accent-contrast', bg: '--accent', min: 4.5, label: 'texto normal' },
@@ -634,6 +646,40 @@ describe('contraste AA de la tabla §4.5', () => {
         bg: '--surface-raised',
         light: 5.58,
         dark: 6.51,
+      },
+    ] as const;
+
+    for (const pair of pairs) {
+      expect(
+        ratio(pair.fg, pair.bg, 'light'),
+        `Claro: ${pair.fg} sobre ${pair.bg}`,
+      ).toBeCloseTo(pair.light, 2);
+      expect(
+        ratio(pair.fg, pair.bg, 'dark'),
+        `Oscuro: ${pair.fg} sobre ${pair.bg}`,
+      ).toBeCloseTo(pair.dark, 2);
+    }
+  });
+
+  it('fija los ratios documentados del editor de menciones #131', () => {
+    const pairs = [
+      {
+        fg: '--accent',
+        bg: '--surface-raised',
+        light: 7.78,
+        dark: 6.74,
+      },
+      {
+        fg: '--disabled-text',
+        bg: '--surface-raised',
+        light: 5.58,
+        dark: 6.51,
+      },
+      {
+        fg: '--accent-strong',
+        bg: '--accent-surface',
+        light: 8.36,
+        dark: 6.74,
       },
     ] as const;
 

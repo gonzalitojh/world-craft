@@ -351,6 +351,23 @@ primera versión estable.
   fichas); y E2E a 1024, 1280 y 1600 px con contenido largo, ambos temas y axe.
   La suite queda en 471 unitarias (4 omitidas), 137 de componentes, 134 de
   integración (1 omitida) y 48 E2E.
+- Editor mínimo y menciones `@` / `[[ ]]` (#131): la barra de la descripción se
+  reduce a cinco acciones —Negrita, Cursiva, **Formato**, Enlace y Mención— y
+  Párrafo, Título 1–3, listas, cita, **Abrir enlace** y **Quitar enlace** pasan
+  al menú **Formato**. Escribir `@` o `[[` abre un selector con las fichas del
+  mundo —incluidas archivadas y borradores—, con nombre y tipo, que se recorre
+  con flechas, `Inicio`, `Fin`, `Enter`, `Tab` y `Escape`, anuncia el recuento y
+  mantiene el foco en el texto; la mención se inserta en una transacción como
+  enlace interno `wc-entity://` sin HTML y `]]` no cierra el selector. El editor
+  pasa a un componente reutilizable para el manuscrito de M3 y `@tiptap/core` se
+  declara como dependencia directa, ya presente en el árbol y MIT. Sin cambios de
+  IPC, datos ni migraciones; ADR 0026 y D-049.
+- Pruebas del editor y las menciones (#131): 25 unitarias —14 de consulta, 5 de
+  contenido de menciones y 6 de colocación (`floating-panel`)— y 28 de componentes
+  nuevas —26 en `editor-mentions` y una en `entity-detail` y otra en
+  `primitives`— de barra, menú, popup, teclado, enlaces internos y UUID, y modo
+  lectura, además de E2E de entidades y accesibilidad ampliados con foco real,
+  `Ctrl`/`Cmd` + clic y axe en ambos temas.
 
 ### Cambiado
 

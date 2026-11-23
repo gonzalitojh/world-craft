@@ -85,6 +85,7 @@ fija estos SHA-256 junto con el texto completo de la OFL (`OFL.txt` y
 
 | Componente | Versión | Licencia | Origen |
 |---|---|---|---|
+| `@tiptap/core` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
 | `@tiptap/react` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
 | `@tiptap/starter-kit` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |
 | `@tiptap/extension-link` | 3.34.0 | MIT | https://github.com/ueberdosis/tiptap |

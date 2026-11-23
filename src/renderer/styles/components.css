@@ -2968,18 +2968,39 @@
 .wc-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0;
   min-width: 0;
 }
 
+.wc-editor > .wc-field__hint {
+  margin-block-start: var(--space-2);
+}
+
+/* Barra y campo forman una sola pieza: la barra aporta el borde superior y las
+ * esquinas de arriba, y el campo el borde inferior y el divisor interior. */
 .wc-editor__toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: var(--space-1);
-  padding: var(--space-2);
+  padding: var(--space-1);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-block-end: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background-color: var(--surface);
+  overflow: visible;
+}
+
+.wc-editor__divider {
+  flex: 0 0 auto;
+  inline-size: 1px;
+  block-size: 1.25rem;
+  margin-inline: var(--space-1);
+  background-color: var(--border);
+}
+
+.wc-editor__surface {
+  min-width: 0;
 }
 
 .wc-editor__content {
@@ -2992,6 +3013,10 @@
   color: var(--fg);
   overflow-y: auto;
   overflow-wrap: break-word;
+}
+
+.wc-editor[data-readonly='false'] .wc-editor__content {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .wc-editor__content:focus-visible {
@@ -3046,6 +3071,203 @@
   float: inline-start;
   block-size: 0;
   pointer-events: none;
+}
+
+/* Estado conmutado de Negrita y Cursiva: fondo, glifo y barra inferior; el
+ * estado nunca se comunica solo por color. */
+.wc-editor
+  .wc-editor__toolbar
+  .wc-icon-button[aria-pressed='true']:not(:disabled) {
+  background-color: var(--accent-surface);
+  color: var(--accent-strong);
+  box-shadow: inset 0 -2px 0 var(--accent-strong);
+}
+
+.wc-editor
+  .wc-editor__toolbar
+  .wc-icon-button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: var(--accent-surface);
+}
+
+/* B, I y @ ocupan el mismo cuadro de 20 × 20 px que los iconos SVG (C4). */
+.wc-editor__glyph {
+  font-family: var(--font-ui);
+  font-size: var(--icon-md);
+  line-height: 1;
+}
+
+.wc-editor__glyph::before {
+  content: attr(data-glyph);
+}
+
+.wc-editor__glyph--bold {
+  font-weight: var(--weight-bold);
+}
+
+.wc-editor__glyph--italic {
+  font-style: italic;
+  font-weight: var(--weight-semibold);
+}
+
+/* C6: en la barra el borde de un control deshabilitado es transparente para no
+ * competir con el marco de la propia barra. Es un ajuste local: el primitivo
+ * `--disabled-border` sigue vigente en el resto de la aplicación. */
+.wc-editor__toolbar .wc-icon-button:disabled {
+  border-color: transparent;
+}
+
+/* Disparador etiquetado de «Formato»: texto y chevron, sin aspecto de icono. */
+.wc-editor__format-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  block-size: 2rem;
+  min-block-size: 2rem;
+  padding-inline: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  cursor: pointer;
+}
+
+.wc-editor__format-trigger:hover,
+.wc-editor__format-trigger[aria-expanded='true'] {
+  background-color: var(--surface-sunken);
+}
+
+.wc-editor__format-trigger svg {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.wc-editor__format-trigger[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* Popup de menciones: anclado al cursor con posición fija, nunca recortado por
+ * el overflow del editor. */
+.wc-mention {
+  position: fixed;
+  inset: auto;
+  z-index: var(--z-tooltip);
+  display: flex;
+  flex-direction: column;
+  inline-size: clamp(17rem, 22rem, calc(100vw - 2 * var(--space-6)));
+  max-block-size: min(20rem, calc(100vh - 2 * var(--space-6)));
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  animation: wc-mention-in var(--motion-fast) var(--ease-out);
+}
+
+.wc-mention[hidden],
+.wc-mention__list[hidden] {
+  display: none;
+}
+
+.wc-mention__list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-block-size: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+.wc-mention__option {
+  display: grid;
+  grid-template-columns: var(--icon-sm) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  min-block-size: 2rem;
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  box-shadow: inset 3px 0 0 transparent;
+  cursor: pointer;
+}
+
+.wc-mention__option--active {
+  background-color: var(--accent-surface);
+  color: var(--accent-strong);
+  box-shadow: inset 3px 0 0 var(--accent-strong);
+}
+
+.wc-mention__icon {
+  display: grid;
+  place-items: center;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--muted);
+}
+
+.wc-mention__option--active .wc-mention__icon {
+  color: var(--accent-strong);
+}
+
+.wc-mention__icon svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.wc-mention__label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.wc-mention__name {
+  color: inherit;
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-mention__option--active .wc-mention__name {
+  font-weight: var(--weight-semibold);
+}
+
+.wc-mention__type {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-mention__option--active .wc-mention__type {
+  color: var(--accent-strong);
+}
+
+.wc-mention__empty {
+  min-block-size: 3rem;
+  padding: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+@keyframes wc-mention-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* En lectura el editor no es un campo: no tiene borde, fondo ni alto mínimo y
@@ -3308,10 +3530,6 @@
   .wc-filters {
     grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
   }
-}
-
-.wc-editor__glyph::before {
-  content: attr(data-glyph);
 }
 
 /* --- Búsqueda global y paleta de comandos ------------------------------- */
@@ -3794,6 +4012,63 @@
   position: relative;
   display: inline-flex;
   min-width: 0;
+}
+
+/* Disparador etiquetado opcional del menú (por ejemplo «Formato»). */
+.wc-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  cursor: pointer;
+}
+
+.wc-menu__trigger:hover:not(:disabled) {
+  background-color: var(--surface-sunken);
+}
+
+.wc-menu__trigger:disabled {
+  background-color: var(--disabled-surface);
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.wc-menu__trigger svg {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.wc-menu__separator {
+  block-size: 1px;
+  margin-block: var(--space-1);
+  background-color: var(--border);
+}
+
+.wc-menu__check {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--accent-strong);
+  visibility: hidden;
+}
+
+.wc-menu__item[aria-checked='true'] .wc-menu__check {
+  visibility: visible;
+}
+
+.wc-menu__check svg {
+  inline-size: 100%;
+  block-size: 100%;
 }
 
 .wc-menu__list {
