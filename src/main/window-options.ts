@@ -21,7 +21,7 @@ export interface WindowOptionsInput {
   readonly preloadPath: string;
   /** Indica si la aplicación se está ejecutando empaquetada. */
   readonly isPackaged: boolean;
-  /** Color de fondo acorde al tema del sistema, para evitar destellos. */
+  /** Color de fondo acorde al tema persistido, para evitar destellos. */
   readonly backgroundColor: string;
 }
 

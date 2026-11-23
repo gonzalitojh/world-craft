@@ -85,7 +85,7 @@
 
 | Superficie | Rol | Uso |
 |---|---|---|
-| `--bg` | Base | Fondo de la ventana y lienzo principal. |
+| `--bg` | Base | Fondo de la ventana —también el nativo de Electron— y lienzo principal. |
 | `--surface` | Panel | Tarjetas, paneles, listas y bloques de contenido. |
 | `--surface-raised` | Flotante | Diálogos, menús, tooltips y paleta de comandos. |
 | `--surface-sunken` | Hundida | Rail, pozos, barras y zonas que retroceden. |
@@ -97,6 +97,10 @@
 - Las superficies flotantes son las únicas que combinan borde y sombra.
 - En Oscuro, el escalón entre `--bg`, `--surface` y `--surface-raised` es la
   señal principal; la sombra solo remata.
+- El **fondo nativo** de `BrowserWindow` coincide exactamente con `--bg`:
+  `#f6f4ef` en Claro y `#141715` en Oscuro. Se fija en el proceso principal antes
+  de crear la ventana y se actualiza con el tema; una prueba unitaria falla si los
+  valores se desincronizan de los tokens (#132, ADR 0027).
 
 ## 4. Color
 
@@ -438,14 +442,14 @@ como existente lo que aún no lo está.
 | Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape sin cerrar el diálogo que lo contiene. Ancho de contenido con máximo de 18rem y colocación arriba o abajo según el espacio. | Adaptado v2 | #125 |
 | Aviso toast | `aria-live="polite"`, `role="status"`, cierre manual. | Adaptado v2 | #125 |
 | Pestañas | Solo para formularios o Ajustes; no son pestañas de trabajo en M1.5. | Adaptado v2 | #125 |
-| Panel | Sección con encabezado real y acciones; no se pliega por sí mismo. La primitiva plegable de la ficha es `DisclosureSection` desde #129; #132 persiste su estado, no añade el plegado. | Implementado | #125, #129 |
+| Panel | Sección con encabezado real y acciones; no se pliega por sí mismo. La primitiva plegable de la ficha es `DisclosureSection` desde #129; #132 persiste su estado, no añade el plegado. | Implementado | #125, #129, #132 |
 | Esqueleto | Marcador decorativo con `aria-hidden`; el contenedor lleva `aria-busy`. | Implementado | #125 |
 | Tabla | Ordenación, filtros y selección; scroll horizontal solo dentro. | Previsto | — |
 | Estado vacío | Explica qué falta y cuál es la acción principal. | Adaptado v2 | #125 |
 | Paleta de comandos | `Ctrl+K`, combobox/listbox, navegación, creación, tema y reconstrucción. Entrada desde la barra superior y sin Muestras. | Implementado | #76, #126 |
 | Cabecera de ficha | Tipo, estado, título, alias y resumen legibles; favorito, estado de guardado, «Editar»/«Listo» y `⋯`. En lectura no existen los campos de cabecera. | Implementada | #126, #129 |
-| Panel de propiedades | Inspector de portada, estado y etiquetas; ocultable, de 280–360 px con separador accesible y sticky. No es un formulario paralelo. | Implementado | #129 |
-| Sección plegable | `h3 > button` con `aria-expanded` y `aria-controls`, chevron decorativo, recuento y acciones fuera del botón; el cuerpo sigue montado y se oculta con `hidden`. | Implementada | #129 |
+| Panel de propiedades | Inspector de portada, estado y etiquetas; ocultable, de 280–360 px con separador accesible y sticky. No es un formulario paralelo. Su visibilidad y ancho se persisten desde #132. | Implementado | #129, #132 |
+| Sección plegable | `h3 > button` con `aria-expanded` y `aria-controls`, chevron decorativo, recuento y acciones fuera del botón; el cuerpo sigue montado y se oculta con `hidden`. Su estado se persiste por sección desde #132, con ámbito global. | Implementada | #129, #132 |
 | Ficha técnica de campos | Lista `dl` de dos columnas, sin aspecto de tabla; números y fechas formateados, referencias como enlaces y «Sin valor» para los vacíos. | Implementada | #129 |
 | Lista de relaciones | Dirección, etiqueta efectiva y recíproca, ficha contraparte, backlinks y menú `⋯`; sin tabla. | Implementada | #130 |
 | Nodo de grafo | Avatar, nombre, tipo y selección; el grafo completo llega con #83. | Previsto | #83 |
@@ -460,8 +464,8 @@ como existente lo que aún no lo está.
   búsqueda duplicada ni actualizaciones. Los iconos de navegación conservan su
   nombre accesible y una ayuda emergente cuando el rail está plegado.
 - El plegado usa iconos, `aria-label`, tooltip accesible, `aria-expanded` y
-  `aria-controls`; el estado se mantiene durante la sesión y su persistencia
-  llega con #132.
+  `aria-controls`; el estado se persiste desde #132 y entra ya correcto en el
+  primer render, sin animación de 240 a 64 px.
 - Barra superior de 56 px con un único `h1` contextual —nombre del mundo en
   mundo, fichas y ficha; etiqueta de vista en el resto—, truncado a una línea con
   `title`, el disparador de la paleta `Ctrl+K`, **una sola acción primaria**,
@@ -492,12 +496,12 @@ dashboard de contadores.
 - **Orden:** «Continuar» (condicional) → «Mundos recientes» → «Actividad
   reciente». No hay contadores, rejilla de accesos rápidos ni párrafo de
   presentación.
-- **Continuar** retoma el último mundo o ficha abiertos durante la sesión. Es
-  memoria de React: no se persiste, desaparece al recargar y se omite si no hay
-  destino o si el mundo recordado ya no está en la biblioteca. Al eliminar ese
-  mundo se limpia. El botón dice **Abrir el mundo** o **Abrir la ficha**; no
-  existe «continuar escribiendo» hasta que haya manuscrito. Su persistencia es
-  #132.
+- **Continuar** retoma el último mundo o ficha abiertos, también entre sesiones
+  (persistido desde #132). Se omite si no hay destino o si el mundo recordado ya
+  no está en la biblioteca; al eliminar ese mundo se limpia. Si la ficha
+  desapareció, se abre su mundo y se usa el aviso existente de que la ficha ya no
+  existe. El botón dice **Abrir el mundo** o **Abrir la ficha**; no existe
+  «continuar escribiendo» hasta que haya manuscrito.
 - **Mundos recientes** muestra como máximo cinco filas. «Ver todos los mundos»
   solo aparece con más de cinco y es una acción fantasma, no una primaria.
 - **Actividad reciente** muestra cinco entradas, con tipografía y peso
@@ -535,7 +539,7 @@ documento apilado.
 
 - **Composición y orden:** vuelta a Inicio → cabecera de identidad → navegación
   «Módulos del mundo» → «Resumen» → «Preparación del mundo» → «Actividad de este
-  mundo». El orden es fijo: los paneles plegables y su memoria llegan con #132.
+  mundo». El orden es fijo y la vista no tiene paneles plegables.
   No hay hero con inicial gigante, ni rejilla de «Accesos rápidos» con
   descripciones, ni párrafo de presentación.
 - **Cabecera de identidad:** portada o `WorldMark` (4,5 rem) y un bloque con la
@@ -606,8 +610,9 @@ en [`ficha-issue-129.md`](ficha-issue-129.md).
   reintento solo si falló el guardado.
 - **`Ctrl+S`:** guarda en edición, evita siempre el diálogo de guardar página y
   no actúa con un diálogo abierto.
-- **Memoria de sesión:** panel y secciones se recuerdan en un módulo puro, sin
-  `localStorage` ni IPC, y se pierden al recargar; #132 los persiste.
+- **Persistencia:** el panel, su ancho y las secciones se persisten desde #132
+  con ámbito global, no por ficha ni por tipo, y se aplican en el primer render.
+  El detalle está en §10.8 y en el ADR 0027.
 - **Ventana y texto largo:** a 1024, 1280 y 1600 px no hay scroll horizontal de
   página; el panel, las secciones, los chips y los valores largos usan
   `min-width: 0` y `overflow-wrap`.
@@ -686,9 +691,64 @@ extensa de once controles y cualquier segunda fila.
 
 ### 10.7 Ajustes
 
-- Tema, rail y panel se persisten a partir de #132.
+- Tema, rail, panel, ancho y secciones se persisten desde #132; el detalle de
+  arranque y escritura está en §10.8.
 - Las preferencias se aplican antes del primer pintado para evitar parpadeo.
+- El **restablecimiento** de las preferencias existe solo como API desde #132
+  (`window.worldCraft.preferences.reset`) y **no tiene control visible**: llegará
+  con Ajustes (#79). Solo afecta a las preferencias de interfaz.
 - «Datos y copias» y el borrado completo siguen su propio flujo confirmado.
+
+### 10.8 Preferencias persistentes de interfaz
+
+Implementado en #132 (ADR 0027). El estado de interfaz que antes vivía en memoria
+se guarda en la base local y se aplica antes del primer pintado. No hay pantalla,
+control ni texto nuevos: Ajustes (#79) consumirá la misma capa.
+
+**Matriz de estados persistidos**
+
+| Preferencia | Al abrir | Defecto | Valor inválido | Ámbito | Cuándo se escribe |
+|---|---|---|---|---|---|
+| Tema | Toda la UI en el tema guardado; `data-theme` antes de `createRoot` y fondo de ventana coherente | Claro | Claro | Aplicación | Toggle de la barra y comando de la paleta (un solo `toggleTheme`) |
+| Rail plegado | 240/64 px desde el primer frame, sin animación | Expandido | Expandido | Aplicación | Al plegar o expandir |
+| Panel visible | `aside` Propiedades como se dejó | Visible | Visible | Global, no por ficha | Toggle de la barra de página |
+| Ancho del panel | Ancho guardado entre 280 y 360 px | 320 | Redondeo o recorte; no finito → 320 | Global | Solo en commits explícitos: soltar arrastre, flechas, Inicio/Fin, doble clic y toggle |
+| Secciones | Descripción, Campos, Relaciones y Recursos como se dejaron | Solo Descripción abierta | Solo Descripción abierta, por sección | Global | Al plegar o expandir; también cuando un error abre una sección |
+| Última vista | No se ve: la aplicación abre siempre en Inicio | Inicio | Inicio | Aplicación | Cada cambio de vista salvo Muestras |
+| Último mundo o ficha | Tarjeta Continuar | Ausente | Se limpia | Aplicación | Abrir mundo o ficha, cargar el nombre, borrar y degradar |
+
+**Reglas de arranque**
+
+1. El proceso principal lee el tema **antes de crear la ventana** y aplica
+   `nativeTheme` y el fondo nativo (`#f6f4ef` en Claro, `#141715` en Oscuro, igual
+   que `--bg`).
+2. La ventana nace oculta y solo se muestra cuando coinciden `ready-to-show` y
+   `did-finish-load`, con un límite de 2.500 ms para no dejarla invisible. Enfocar
+   una segunda instancia no adelanta esa compuerta.
+3. El renderer lee el snapshot antes de montar React, fija `data-theme` antes de
+   `createRoot` y descarta una respuesta tardía tras 1.500 ms; así `StrictMode`
+   no duplica la lectura ni hay cambio de tema tras el primer pintado.
+4. Un fallo de lectura, una forma inválida o una API ausente caen en los valores
+   por defecto sin bloquear el arranque. Un fallo de escritura conserva el estado
+   de la sesión y no muestra aviso, toast ni `aria-live`: el tema ya aplicado no se
+   revierte y el cromo de la ventana sigue coherente.
+5. `lastView` se guarda pero **nunca navega** ni toca el hash. «Continuar» es la
+   única reanudación y se valida contra la biblioteca; `samples` no se persiste.
+
+**Escritura y restablecimiento**
+
+- Leer no crea filas ni repara valores: cada clave cae a su defecto sin contagiar
+  a las demás. La primera escritura crea su fila.
+- Se escribe solo lo que cambia, con `updated_at` y en una transacción.
+- El restablecimiento borra únicamente las claves `ui.*` y devuelve los valores
+  por defecto; no toca mundos, fichas, imágenes, relaciones, copias ni
+  migraciones. Se adopta en caliente, sin recargar ni cerrar diálogos. **No hay
+  botón todavía**: llegará con Ajustes (#79).
+- A **≤ 1180 px** el panel se apila y el ancho guardado no se aplica; al volver a
+  más de 1180 px se recupera el ancho persistido.
+
+El contrato completo de la decisión está en el
+[ADR 0027](../adr/0027-ui-preferences-persistence.md).
 
 ## 11. Estados
 
@@ -767,8 +827,8 @@ Toda pantalla debe cubrir:
 - **Teclado:** `Ctrl+N` nueva ficha, `Ctrl+S` guardar, `Ctrl+K` paleta de
   comandos, `Ctrl+Z` deshacer, `F1` ayuda. Los atajos se documentan en la app.
 - **Paneles:** se pueden plegar y, donde aporta valor, redimensionar (la ficha,
-  280–360 px con separador accesible). El estado por pantalla se recuerda durante
-  la sesión y su persistencia llega con #132.
+  280–360 px con separador accesible). El estado del panel, su ancho y las
+  secciones de la ficha se persisten desde #132.
 - **Ventanas:** una sola ventana principal; los diálogos no se salen de ella.
 - **Arrastrar y soltar:** para reordenar escenas, capas y fichas; siempre hay
   alternativa por teclado.
@@ -852,15 +912,15 @@ Reglas de migración:
 | Ficha como documento y panel de propiedades | Implementado | #129 |
 | Relaciones legibles y grafo contextual | Implementado (relaciones); grafo previsto en #83 | #130 |
 | Editor mínimo y menciones | Implementado | #131 |
-| Preferencias de interfaz persistentes | Previsto | #132 |
+| Preferencias de interfaz persistentes | Implementado | #132 |
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
 Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2.
 La composición v2 ya está aplicada en tokens y primitivas (#125), shell (#126),
-Inicio (#127), vista de mundo (#128), ficha (#129), relaciones (#130) y editor
-(#131). Las filas pendientes son las preferencias persistentes de #132 y la
-auditoría visual de #133. El grafo completo continúa previsto en #83. No se deben
-tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
+Inicio (#127), vista de mundo (#128), ficha (#129), relaciones (#130), editor
+(#131) y preferencias persistentes (#132). La fila pendiente es la auditoría
+visual de #133. El grafo completo continúa previsto en #83. No se deben tomar
+capturas nuevas de esa auditoría como si ya estuviera hecha.
 
 ### 17.2 Verificación automática
 
@@ -901,7 +961,7 @@ tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
 - `tests/e2e/entities.spec.ts` cubre la lista y la ficha. Desde #129 incluye 9
   E2E de entidades: creación, autoguardado, etiquetas, favorito y filtros;
   creación rápida; relaciones y backlinks; contenido largo con axe; documento
-  vivo con lectura, foco, secciones, panel, separador y memoria de sesión;
+  vivo con lectura, foco, secciones, panel, separador y persistencia de la vista;
   arrastre del separador con `Escape`; errores que abren la sección y enfocan el
   control; matriz 1024/1280/1600 × temas × panel abierto/cerrado; y papelera
   desde `⋯`.
@@ -923,12 +983,13 @@ tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
   `tests/components/worlds.test.tsx` cubre la marca procedural (`data-motif`,
   `data-tone`, `aria-hidden` y sin texto), la miniatura de portada y el `<time>`
   relativo con `dateTime` y `title`.
-- `tests/e2e/worlds.spec.ts` recorre «Continuar» con el último mundo, su pérdida
-  al recargar, la reanudación de una ficha, la desaparición al eliminar el mundo
-  recordado y el menú de la tarjeta con flechas, `Fin`, `Escape` y retorno de
-  foco. Añade Inicio con contenido largo a 1024, 1280 y 1600 px, rail expandido y
-  plegado y ambos temas (12 combinaciones), sin scroll horizontal, y ejecuta axe
-  WCAG 2.1 A/AA en Inicio en Claro y Oscuro sin violaciones críticas ni graves.
+- `tests/e2e/worlds.spec.ts` recorre «Continuar» con el último mundo, su
+  conservación al recargar —persistida desde #132—, la reanudación de una ficha,
+  la desaparición al eliminar el mundo recordado y el menú de la tarjeta con
+  flechas, `Fin`, `Escape` y retorno de foco. Añade Inicio con contenido largo a
+  1024, 1280 y 1600 px, rail expandido y plegado y ambos temas (12
+  combinaciones), sin scroll horizontal, y ejecuta axe WCAG 2.1 A/AA en Inicio en
+  Claro y Oscuro sin violaciones críticas ni graves.
 - La vista de mundo modular se cubre desde #128. `tests/unit/entity-count.test.ts`
   fija el recuento: resultado correcto, límite alcanzado («N o más»), error,
   lista vacía y no mutación. `tests/components/worlds.test.tsx` añade 11 pruebas
@@ -955,12 +1016,25 @@ tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
   galería en Recursos, `Ctrl+S`, guardado al desmontar, reintento de relaciones,
   fallo de guardado, cola obsoleta, favorita y papelera, valores vacíos y fechas
   en UTC. `DisclosureSection` se cubre en `primitives.test.tsx`.
+- Las preferencias de interfaz se cubren desde #132:
+  `tests/unit/preferences/contracts.test.ts` fija los valores por defecto, los
+  límites 280–360 y las guardas; `validation.test.ts` cubre la lectura tolerante y
+  el rechazo estricto del parche; `handlers.test.ts` y
+  `tests/unit/ipc-registry.test.ts` comprueban los tres canales. `tests/integration/preferences/service.test.ts`
+  verifica la persistencia, la transacción, el borrado de `recentLocation`, el
+  reset por prefijo y la preservación de datos. `tests/components/preferences.test.tsx`
+  cubre el hook y la adopción optimista. `tests/e2e/preferences.spec.ts` reinicia
+  la aplicación con tema, rail, panel y secciones persistidos, comprueba el reset
+  por API sin pérdida de mundos ni fichas y recorre 1024/1280/1600 px en ambos
+  temas con axe. La matriz visual completa sigue en #133.
 - Al cerrar #127 la suite queda en 447 unitarias en verde (4 omitidas), 87 de
   componentes, 134 de integración en verde (1 omitida) y 42 E2E en verde. Al
   cerrar #128 queda en 453 unitarias (4 omitidas), 96 de componentes, 134 de
   integración (1 omitida) y 43 E2E. Al cerrar #129 queda en 459 unitarias (4
   omitidas), 119 de componentes, 134 de integración (1 omitida) y 9 E2E de
-  entidades en verde; la suite E2E completa no se ejecutó en esta tarea.
+  entidades en verde; la suite E2E completa no se ejecutó en esta tarea. Al cerrar
+  #132 queda en 518 unitarias (4 omitidas), 171 de componentes, 146 de integración
+  (1 omitida) y 53 E2E en verde.
 - La matriz visual completa, las capturas y la auditoría de todas las pantallas
   se completan en #133.
 
@@ -981,6 +1055,7 @@ tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
 
 - [ADR 0025: dirección visual v2](../adr/0025-visual-direction-v2.md)
 - [ADR 0006: dos temas y sistema de diseño de escritorio](../adr/0006-two-themes-desktop-design-system.md)
+- [ADR 0027: preferencias de interfaz persistentes](../adr/0027-ui-preferences-persistence.md)
 - [Contrato de la ficha #129](ficha-issue-129.md)
 - [Contrato del editor mínimo #131](editor-issue-131.md)
 - [Plan de desarrollo](../plan-desarrollo.md)

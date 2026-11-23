@@ -1,30 +1,27 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   PROPERTIES_WIDTH_DEFAULT,
   PROPERTIES_WIDTH_MAX,
   PROPERTIES_WIDTH_MIN,
   clampPropertiesWidth,
-  readEntityViewMemory,
-  resetEntityViewMemory,
-  updateEntityViewMemory,
 } from '../../src/renderer/lib/entity-view-memory';
+import {
+  DEFAULT_UI_PREFERENCES,
+  createDefaultUiPreferences,
+} from '../../src/shared/contracts/preferences';
 
-describe('memoria de sesión de la ficha', () => {
-  beforeEach(() => {
-    resetEntityViewMemory();
-  });
-
+describe('límites compartidos de la vista de ficha', () => {
   it('parte del panel abierto a 320 px y solo Descripción desplegada', () => {
-    const memory = readEntityViewMemory();
-
-    expect(memory.propertiesOpen).toBe(true);
-    expect(memory.propertiesWidth).toBe(320);
-    expect(memory.sections).toEqual({
-      description: true,
-      attributes: false,
-      relations: false,
-      resources: false,
+    expect(createDefaultUiPreferences().entityView).toEqual({
+      propertiesOpen: true,
+      propertiesWidth: 320,
+      sections: {
+        description: true,
+        attributes: false,
+        relations: false,
+        resources: false,
+      },
     });
   });
 
@@ -39,68 +36,11 @@ describe('memoria de sesión de la ficha', () => {
     );
   });
 
-  it('actualiza solo las claves indicadas y conserva el resto', () => {
-    updateEntityViewMemory({
-      propertiesOpen: false,
-      propertiesWidth: 999,
-      sections: { attributes: true },
-    });
-
-    const memory = readEntityViewMemory();
-
-    expect(memory.propertiesOpen).toBe(false);
-    expect(memory.propertiesWidth).toBe(PROPERTIES_WIDTH_MAX);
-    expect(memory.sections).toEqual({
-      description: true,
-      attributes: true,
-      relations: false,
-      resources: false,
-    });
-
-    updateEntityViewMemory({ sections: { description: false } });
-
-    expect(readEntityViewMemory().sections.description).toBe(false);
-    expect(readEntityViewMemory().sections.attributes).toBe(true);
-    expect(readEntityViewMemory().propertiesWidth).toBe(PROPERTIES_WIDTH_MAX);
-  });
-
-  it('devuelve copias y no muta las instantáneas anteriores', () => {
-    const before = readEntityViewMemory();
-
-    updateEntityViewMemory({
-      propertiesWidth: 340,
-      sections: { relations: true },
-    });
-
-    expect(before.propertiesWidth).toBe(320);
-    expect(before.sections.relations).toBe(false);
-    expect(readEntityViewMemory()).not.toBe(before);
-    expect(readEntityViewMemory().sections).not.toBe(before.sections);
-  });
-
-  it('vuelve a los valores por defecto con reset', () => {
-    updateEntityViewMemory({
-      propertiesOpen: false,
-      propertiesWidth: 280,
-      sections: {
-        description: false,
-        attributes: true,
-        relations: true,
-        resources: true,
-      },
-    });
-
-    resetEntityViewMemory();
-
-    expect(readEntityViewMemory()).toEqual({
-      propertiesOpen: true,
-      propertiesWidth: PROPERTIES_WIDTH_DEFAULT,
-      sections: {
-        description: true,
-        attributes: false,
-        relations: false,
-        resources: false,
-      },
-    });
+  it('congela los valores por defecto canónicos', () => {
+    expect(Object.isFrozen(DEFAULT_UI_PREFERENCES)).toBe(true);
+    expect(Object.isFrozen(DEFAULT_UI_PREFERENCES.entityView)).toBe(true);
+    expect(Object.isFrozen(DEFAULT_UI_PREFERENCES.entityView.sections)).toBe(
+      true,
+    );
   });
 });

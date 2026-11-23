@@ -933,3 +933,14 @@ editor mínimo y menciones (#131), persistencia de preferencias en
 **Pruebas mínimas de UI:** las 12 del plan (§7, paso 7), más las de contraste de
 §9, la matriz de estados de §7, la matriz de anchos de §10 y axe en Claro y
 Oscuro con panel abierto/cerrado y una alerta visible.
+
+---
+
+## Nota de revisión (2026-11-24, #132)
+
+Este contrato se conserva como registro de #129. Donde dice «memoria de sesión»,
+#132 ya **persiste** el panel, su ancho y las secciones en `app_settings` con las
+claves `ui.*`, junto con el tema, la barra lateral y el último destino de
+«Continuar» (ADR 0027, D-050). No cambian las medidas de 280–360 px ni el ancho
+por defecto de 320, las reglas de foco, el apilado a ≤ 1180 px ni el ámbito
+visual: el estado persistido es **global**, no por ficha ni por tipo.

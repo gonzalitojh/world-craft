@@ -6,12 +6,18 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EntityDetailPage } from '@/renderer/pages/entity-detail-page';
 import { I18nProvider } from '@/renderer/i18n/provider';
-import { resetEntityViewMemory } from '@/renderer/lib/entity-view-memory';
 import { es as messages } from '@/renderer/messages/es';
+import {
+  applyEntityViewPatch,
+  createDefaultUiPreferences,
+  type EntityViewPatch,
+  type EntityViewPreferences,
+} from '@/shared/contracts/preferences';
 import type { AssetSummary } from '@/shared/contracts/assets';
 import type {
   EntityDetail,
@@ -375,24 +381,53 @@ function createApi(options: ApiOptions = {}) {
   };
 }
 
+let viewState: EntityViewPreferences =
+  createDefaultUiPreferences().entityView;
+
 function renderPage(options: ApiOptions = {}) {
   const mocks = createApi(options);
   const onBack = vi.fn();
   const onNotify = vi.fn();
   const onOpenEntity = vi.fn();
-  const view = render(
-    <I18nProvider locale="es">
+  const onEntityRemoved = vi.fn();
+
+  function Harness() {
+    const [entityView, setEntityView] = useState<EntityViewPreferences>(
+      () => viewState,
+    );
+    const onEntityViewChange = (patch: EntityViewPatch): void => {
+      viewState = applyEntityViewPatch(viewState, patch);
+      setEntityView(viewState);
+    };
+
+    return (
       <EntityDetailPage
         world={world}
         entityId={ENTITY_ID}
         onBack={onBack}
         onOpenEntity={onOpenEntity}
         onNotify={onNotify}
+        onEntityRemoved={onEntityRemoved}
+        entityView={entityView}
+        onEntityViewChange={onEntityViewChange}
       />
+    );
+  }
+
+  const view = render(
+    <I18nProvider locale="es">
+      <Harness />
     </I18nProvider>,
   );
 
-  return { ...view, ...mocks, onBack, onNotify, onOpenEntity };
+  return {
+    ...view,
+    ...mocks,
+    onBack,
+    onNotify,
+    onOpenEntity,
+    onEntityRemoved,
+  };
 }
 
 async function waitForEntity(name = 'Mara Viento'): Promise<void> {
@@ -451,7 +486,7 @@ async function enterEdit(
 }
 
 beforeEach(() => {
-  resetEntityViewMemory();
+  viewState = createDefaultUiPreferences().entityView;
 });
 
 describe('ficha como documento vivo', () => {
@@ -1190,7 +1225,7 @@ describe('ficha como documento vivo', () => {
 
   it('favorita conserva su nombre y la papelera confirma el borrado', async () => {
     const user = userEvent.setup();
-    const { setFavorite, remove, onBack } = renderPage();
+    const { setFavorite, remove, onBack, onEntityRemoved } = renderPage();
     await waitForEntity();
 
     const favorite = screen.getByRole('button', {
@@ -1235,6 +1270,7 @@ describe('ficha como documento vivo', () => {
         worldId: WORLD_ID,
         id: ENTITY_ID,
       });
+      expect(onEntityRemoved).toHaveBeenCalledWith(ENTITY_ID);
       expect(onBack).toHaveBeenCalled();
     });
   });

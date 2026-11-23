@@ -243,3 +243,22 @@ usar `@tiptap/suggestion` o un plugin propio, y cómo anunciar un
 - Referencias: ADR 0026, ADR 0007, ADR 0021, ADR 0023, ADR 0025, #74, #85,
   #123, #129, #131, `docs/diseno/editor-issue-131.md`,
   `docs/diseno/sistema-de-diseno.md` y `docs/manual-de-usuario.md`.
+
+## 2026-11-24 — Preferencias de interfaz persistentes (#132, M1.5)
+
+**Contexto.** El tema, la barra lateral, el panel de propiedades, su ancho, las
+secciones de la ficha y el último destino de «Continuar» vivían en memoria. Al
+cerrar la aplicación se perdían y el tema volvía a Claro. La issue #132 pedía
+persistirlos sin parpadeo y sin exponer canales inseguros, con un restablecimiento
+que no borrara datos de dominio y con una base reutilizable por Ajustes (#79).
+Las dudas eran dónde guardarlos, cómo leerlos antes del primer pintado y si la
+última vista debía restaurarse.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-050 | Preferencias de interfaz persistentes | Claves `ui.*` en `app_settings`, **una fila por preferencia** y valor JSON: `ui.theme`, `ui.rail-collapsed`, `ui.entity-view`, `ui.last-view` y `ui.recent-location`. **Tres canales** nominativos (`preferences:get`, `update` y `reset`) con Zod estricto, revalidación en el servicio, guardas `isUiPreferences` en el preload y API congelada; sin `sendSync`, `invoke` genérico, `localStorage` ni red. **Bootstrap sin parpadeo:** el main lee el tema antes de crear la ventana y aplica `nativeTheme` y un fondo exactamente igual a `--bg` (`#f6f4ef`/`#141715`); la ventana se muestra al coincidir `ready-to-show` y `did-finish-load`, con fallback de 2.500 ms; el renderer fija `data-theme` antes de `createRoot`, con timeout de 1.500 ms y descarte de respuestas tardías. **Reset limitado** al prefijo `ui.` con `GLOB` sensible a mayúsculas, sin control visible hasta Ajustes (#79), que devuelve los defectos y se adopta en caliente. **Sin auto-restauración de vista:** la app abre siempre en Inicio y «Continuar» persiste el último mundo o ficha. **Modo seguro:** lectura con defectos, escritura fallida y tema aplicado al cromo. Sin migración nueva ni dependencias. | La interfaz arranca como se dejó, sin destello ni saltos de layout; las preferencias entran en las copias y una restauración las recupera; el reset no puede borrar mundos, fichas, imágenes, relaciones, copias ni migraciones; Ajustes reutiliza contrato, servicio y hook; el ámbito es global y no por ficha; un fallo de escritura no anuncia ni revierte la sesión; el parseo sin cota es un residual LOW local. ADR 0027. |
+
+- Referencias: ADR 0027, ADR 0004, ADR 0006, ADR 0016, ADR 0021, ADR 0025,
+  #123, #129, #132, #79, #133, `docs/diseno/sistema-de-diseno.md`,
+  `docs/persistencia.md`, `docs/base-de-datos/esquema.md` y
+  `docs/manual-de-usuario.md`.

@@ -47,6 +47,11 @@ import {
   type EntityTypeUpdateInput,
   type WorldCraftEntityTypesApi,
 } from './entity-types';
+import {
+  isUiPreferences,
+  type UiPreferences,
+  type UiPreferencesPatch,
+} from './preferences';
 import { ipcErr, isIpcResult, type IpcResult } from './result';
 import {
   isRelationDeleteResult,
@@ -153,11 +158,21 @@ export interface WorldCraftUpdatesApi {
   ) => () => void;
 }
 
+/** Puente nominativo de preferencias de interfaz (#132). */
+export interface WorldCraftPreferencesApi {
+  readonly get: () => Promise<IpcResult<UiPreferences>>;
+  readonly update: (
+    patch: UiPreferencesPatch,
+  ) => Promise<IpcResult<UiPreferences>>;
+  readonly reset: () => Promise<IpcResult<UiPreferences>>;
+}
+
 /** API mínima disponible en `window.worldCraft`. */
 export interface WorldCraftApi {
   readonly appInfo: AppInfo;
   readonly shell: WorldCraftShellApi;
   readonly updates: WorldCraftUpdatesApi;
+  readonly preferences: WorldCraftPreferencesApi;
   readonly worlds: WorldCraftWorldsApi;
   readonly entityTypes: WorldCraftEntityTypesApi;
   readonly entities: WorldCraftEntitiesApi;
@@ -277,9 +292,10 @@ function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
 /**
  * Construye la API congelada del preload.
  *
- * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `worlds`,
- * `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search` y
- * `assets` para que el renderer no pueda sustituirlos en tiempo de ejecución.
+ * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `preferences`,
+ * `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`,
+ * `search` y `assets` para que el renderer no pueda sustituirlos en tiempo de
+ * ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -360,6 +376,19 @@ export function createWorldCraftApi(
       return ipcErr('INTERNAL_ERROR');
     }
   };
+
+  const preferences: WorldCraftPreferencesApi = Object.freeze({
+    get: () =>
+      invokeWorldCommand(IPC_CHANNELS.preferencesGet, {}, isUiPreferences),
+    update: (patch: UiPreferencesPatch) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.preferencesUpdate,
+        patch,
+        isUiPreferences,
+      ),
+    reset: () =>
+      invokeWorldCommand(IPC_CHANNELS.preferencesReset, {}, isUiPreferences),
+  });
 
   const worlds: WorldCraftWorldsApi = Object.freeze({
     list: () =>
@@ -541,6 +570,7 @@ export function createWorldCraftApi(
     appInfo,
     shell,
     updates,
+    preferences,
     worlds,
     entityTypes,
     entities,

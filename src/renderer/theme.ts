@@ -1,14 +1,20 @@
 /**
- * Modos de tema admitidos (ADR 0006).
+ * Tema visual del renderer.
  *
- * No hay modo «sistema» en el MVP: el usuario elige Claro u Oscuro. Hasta que
- * Ajustes persista la preferencia en `config.json`, el tema vive en memoria y
- * el arranque usa `DEFAULT_THEME`.
+ * El tipo y el valor por defecto viven en el contrato compartido de
+ * preferencias (#132): el tema se persiste en `app_settings` y se aplica antes
+ * del primer render. Este módulo conserva el acceso al documento.
  */
-export type ThemeMode = 'light' | 'dark';
+import {
+  DEFAULT_UI_PREFERENCES,
+  type ThemePreference,
+} from '../shared/contracts/preferences';
 
-/** Tema inicial mientras la preferencia no se persiste. */
-export const DEFAULT_THEME: ThemeMode = 'light';
+/** Modos de tema admitidos (ADR 0006). */
+export type ThemeMode = ThemePreference;
+
+/** Tema de respaldo cuando no hay preferencia válida. */
+export const DEFAULT_THEME: ThemeMode = DEFAULT_UI_PREFERENCES.theme;
 
 /**
  * Aplica el tema al documento con `data-theme`.

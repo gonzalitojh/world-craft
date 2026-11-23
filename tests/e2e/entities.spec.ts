@@ -1491,7 +1491,7 @@ test('la lista y la ficha con contenido largo no desbordan y pasan axe en ambos 
   }
 });
 
-test('documento vivo: lectura, foco, secciones, panel, separador y memoria de sesión', async ({
+test('documento vivo: lectura, foco, secciones, panel, separador y preferencias persistentes', async ({
   page,
 }) => {
   await createWorld(page);
@@ -1600,6 +1600,44 @@ test('documento vivo: lectura, foco, secciones, panel, separador y memoria de se
     page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
   ).toBeVisible();
 
+  await expect(
+    page.locator('[data-section="description"] .wc-disclosure__toggle'),
+  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(
+    page.getByRole('button', { name: messages.entities.detail.propertiesShow }),
+  ).toHaveAttribute('aria-expanded', 'false');
+
+  await page
+    .getByRole('button', { name: messages.entities.detail.propertiesShow })
+    .click();
+  await expect(
+    page.getByRole('separator', {
+      name: messages.entities.detail.propertiesResize,
+    }),
+  ).toHaveAttribute('aria-valuenow', '336');
+
+  // Se vuelve a cerrar el panel para comprobar su persistencia tras recargar.
+  await page
+    .getByRole('button', { name: messages.entities.detail.propertiesHide })
+    .click();
+  await expect(
+    page.getByRole('button', { name: messages.entities.detail.propertiesShow }),
+  ).toHaveAttribute('aria-expanded', 'false');
+
+  // Ya no es memoria de sesión: tras recargar se conserva el panel cerrado,
+  // Descripción plegada y el ancho 336. «Continuar» reabre la ficha.
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.shell.views.home }),
+  ).toBeVisible();
+
+  await page
+    .getByRole('region', { name: messages.home.continueTitle })
+    .getByRole('button', { name: messages.home.continueEntityAction })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
   await expect(
     page.locator('[data-section="description"] .wc-disclosure__toggle'),
   ).toHaveAttribute('aria-expanded', 'false');

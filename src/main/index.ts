@@ -10,6 +10,10 @@
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 
 import { APP_ID, APP_NAME } from '../shared/app-info';
+import {
+  DEFAULT_UI_PREFERENCES,
+  type ThemePreference,
+} from '../shared/contracts/preferences';
 import { UPDATE_STATE_CHANGED_CHANNEL } from '../shared/contracts/updates';
 import {
   registerLocalAssetProtocol,
@@ -33,6 +37,10 @@ import {
 import { createIpcHandlers } from './ipc/handlers';
 import { registerIpcHandlers } from './ipc/registry';
 import {
+  createPreferencesService,
+  createUnavailablePreferencesService,
+} from './preferences/service';
+import {
   createRelationsService,
   createUnavailableRelationsService,
 } from './relations/service';
@@ -54,7 +62,13 @@ import {
   createUnavailableWorldsService,
   createWorldsService,
 } from './worlds/service';
-import { createMainWindow, focusMainWindow, getMainWindow } from './window';
+import {
+  applyAppTheme,
+  createMainWindow,
+  focusMainWindow,
+  getCurrentTheme,
+  getMainWindow,
+} from './window';
 
 // El nombre debe fijarse antes de llamar a `app.getPath('userData')`: define la
 // carpeta de datos que el instalador y el desinstalador nunca tocan.
@@ -186,6 +200,16 @@ if (!hasSingleInstanceLock) {
         database === null
           ? createUnavailableSearchService()
           : createSearchService({ sqlite: database.sqlite });
+      const preferences =
+        database === null
+          ? createUnavailablePreferencesService({
+              onThemeChanged: applyAppTheme,
+            })
+          : createPreferencesService({
+              database: database.orm,
+              sqlite: database.sqlite,
+              onThemeChanged: applyAppTheme,
+            });
       const worlds =
         database === null
           ? createUnavailableWorldsService()
@@ -201,6 +225,7 @@ if (!hasSingleInstanceLock) {
         createIpcHandlers({
           openExternal,
           updates: updatesService,
+          preferences,
           worlds,
           entityTypes,
           entities,
@@ -211,11 +236,23 @@ if (!hasSingleInstanceLock) {
         }),
       );
 
-      createMainWindow();
+      // El tema se lee antes de crear la ventana. `get()` lanza si la consulta
+      // falla; el `catch` aporta Claro sin bloquear el arranque ni ocultar el
+      // error con datos inventados. En modo seguro `get()` ya devuelve Claro.
+      let startupTheme: ThemePreference = DEFAULT_UI_PREFERENCES.theme;
+
+      try {
+        startupTheme = preferences.get().theme;
+      } catch {
+        // La base no respondió: se mantiene Claro sin bloquear el arranque.
+      }
+
+      createMainWindow(startupTheme);
 
       app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
-          createMainWindow();
+          // Una ventana recreada conserva el tema vivo de la sesión.
+          createMainWindow(getCurrentTheme());
         }
       });
     })

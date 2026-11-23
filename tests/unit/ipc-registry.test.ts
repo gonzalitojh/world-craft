@@ -11,6 +11,7 @@ import {
   defineIpcHandler,
   registerIpcHandlers,
 } from '@/main/ipc/registry';
+import { createUnavailablePreferencesService } from '@/main/preferences/service';
 import { createUnavailableRelationsService } from '@/main/relations/service';
 import { createUnavailableSearchService } from '@/main/search/service';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
@@ -24,6 +25,7 @@ const createHandlers = () =>
       reason: 'not-packaged',
       currentVersion: '0.1.0',
     }),
+    preferences: createUnavailablePreferencesService(),
     worlds: createUnavailableWorldsService(),
     entityTypes: createUnavailableEntityTypesService(),
     entities: createUnavailableEntitiesService(),
@@ -163,6 +165,58 @@ describe('createIpcHandlers', () => {
     expect(Object.keys(handlers).sort()).toEqual([...IPC_CHANNEL_LIST].sort());
   });
 
+  it('valida el parche de preferencias y no persiste en modo seguro', async () => {
+    const route = createIpcRouter(createHandlers());
+
+    await expect(route(IPC_CHANNELS.preferencesGet, {})).resolves.toEqual({
+      ok: true,
+      data: {
+        theme: 'light',
+        railCollapsed: false,
+        entityView: {
+          propertiesOpen: true,
+          propertiesWidth: 320,
+          sections: {
+            description: true,
+            attributes: false,
+            relations: false,
+            resources: false,
+          },
+        },
+        lastView: 'home',
+        recentLocation: null,
+      },
+    });
+
+    for (const payload of [
+      {},
+      { theme: 'sepia' },
+      { entityView: { propertiesWidth: 361 } },
+      { lastView: 'samples' },
+      { theme: 'dark', extra: true },
+    ]) {
+      await expect(
+        route(IPC_CHANNELS.preferencesUpdate, payload),
+      ).resolves.toEqual({
+        ok: false,
+        error: { code: 'INVALID_INPUT' },
+      });
+    }
+
+    // Un parche válido no puede escribir en modo seguro: el servicio
+    // unavailable lanza y el router devuelve INTERNAL_ERROR sin detalles.
+    await expect(
+      route(IPC_CHANNELS.preferencesUpdate, { theme: 'dark' }),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
+
+    await expect(route(IPC_CHANNELS.preferencesGet, { extra: true })).resolves.toEqual(
+      { ok: false, error: { code: 'INVALID_INPUT' } },
+    );
+  });
+
   it('atiende las órdenes de actualizaciones con un objeto vacío estricto', async () => {
     const route = createIpcRouter(createHandlers());
 
@@ -211,6 +265,7 @@ describe('registerIpcHandlers', () => {
           reason: 'not-packaged',
           currentVersion: '0.1.0',
         }),
+        preferences: createUnavailablePreferencesService(),
         worlds: createUnavailableWorldsService(),
         entityTypes: createUnavailableEntityTypesService(),
         entities: createUnavailableEntitiesService(),

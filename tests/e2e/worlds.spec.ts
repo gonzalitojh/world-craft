@@ -355,7 +355,7 @@ test('el diálogo se abre y se cierra por teclado y devuelve el foco', async ({
   await expect(createButton).toBeFocused();
 });
 
-test('Continúa con el último mundo de la sesión y se pierde al recargar', async ({
+test('Continúa con el último mundo y se conserva al recargar', async ({
   page,
 }) => {
   await createWorld(page, { name: WORLD_NAME });
@@ -383,16 +383,19 @@ test('Continúa con el último mundo de la sesión y se pierde al recargar', asy
     page.getByRole('region', { name: messages.home.continueTitle }),
   ).toBeVisible();
 
-  // La memoria es de sesión: al recargar desaparece y manda la estantería.
+  // La preferencia persiste: al recargar, «Continuar» sigue apuntando al mundo
+  // y la aplicación abre en Inicio (nunca en la última vista).
   await page.reload();
   await expect(
     page.getByRole('heading', { level: 1, name: messages.shell.views.home }),
   ).toBeVisible();
   await expect(
     page.getByRole('region', { name: messages.home.continueTitle }),
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
-    page.getByRole('heading', { level: 3, name: WORLD_NAME, exact: true }),
+    page
+      .getByRole('region', { name: messages.home.continueTitle })
+      .getByRole('heading', { level: 3, name: WORLD_NAME, exact: true }),
   ).toBeVisible();
 });
 

@@ -368,6 +368,23 @@ primera versión estable.
   `primitives`— de barra, menú, popup, teclado, enlaces internos y UUID, y modo
   lectura, además de E2E de entidades y accesibilidad ampliados con foco real,
   `Ctrl`/`Cmd` + clic y axe en ambos temas.
+- Preferencias de interfaz persistentes (#132): el tema, la barra lateral
+  plegada, el panel de propiedades con su ancho, las secciones de la ficha y el
+  último mundo o ficha de «Continuar» se guardan en `app_settings` con claves
+  `ui.*` y se aplican antes del primer pintado, sin destello. La ventana usa el
+  fondo exacto de `--bg` y el tema se aplica a `nativeTheme`; «Continuar» se
+  conserva entre sesiones, se valida contra la biblioteca y degrada al mundo si la
+  ficha ya no existe. El restablecimiento existe solo como API
+  (`window.worldCraft.preferences.reset`), sin control visible hasta Ajustes
+  (#79), y solo borra `ui.*`: no toca mundos, fichas, imágenes, relaciones, copias
+  ni migraciones. Sin migración, dependencias ni textos nuevos; ADR 0027 y D-050.
+- Pruebas de las preferencias persistentes (#132): unitarias de contrato,
+  validación y handlers; integración de lectura tolerante, transacción,
+  `recentLocation: null`, reset por prefijo y preservación; componentes del hook
+  con adopción optimista; y E2E de reinicio con tema, rail, panel y secciones,
+  reset por API sin pérdida de datos, y matriz 1024/1280/1600 px en ambos temas
+  con axe. La suite queda en 518 unitarias (4 omitidas), 171 de componentes, 146
+  de integración (1 omitida) y 53 E2E.
 
 ### Cambiado
 
@@ -409,6 +426,10 @@ primera versión estable.
   propiedades y la galería pasa a Recursos, sin «Usar como principal» duplicado.
   El favorito conserva el nombre fijo **Favorita** y el panel y las secciones
   recuerdan su estado solo durante la sesión hasta #132.
+- El tema, la barra lateral, el panel de propiedades y las secciones de la ficha
+  dejan de ser memoria de sesión (#132): se persisten en `app_settings` y se
+  aplican al arrancar. El tema inicial ya no es siempre Claro. La aplicación sigue
+  abriendo en Inicio y la reanudación explícita sigue en «Continuar».
 - La sección Relaciones deja de ser dos listas planas con botones sueltos
   (#130): las entradas se leen dentro de su dirección y su tipo, cada una abre
   su contraparte desde el nombre y las acciones secundarias pasan al menú `⋯`.

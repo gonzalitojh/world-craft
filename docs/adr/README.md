@@ -20,7 +20,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0003](0003-nsis-installer-electron-updater-data-preservation.md) | Instalador NSIS, electron-updater y preservación | Aceptado | D-023, D-031 |
 | [0004](0004-electron-security-typed-ipc.md) | Seguridad Electron e IPC tipado | Aceptado | D-024, D-025 |
 | [0005](0005-local-assets-custom-protocol.md) | Assets locales y protocolo `wc-asset://` | Aceptado | D-022 |
-| [0006](0006-two-themes-desktop-design-system.md) | Dos temas y sistema de diseño de escritorio | Aceptado | D-026; revisado en D-048/0025 |
+| [0006](0006-two-themes-desktop-design-system.md) | Dos temas y sistema de diseño de escritorio | Aceptado | D-026; revisado en D-048/0025 y D-050/0027 |
 | [0007](0007-tiptap-editor-exporters.md) | Editor Tiptap y exportadores | Aceptado | D-027 |
 | [0008](0008-maplibre-terra-draw-react-flow-elk.md) | MapLibre/Terra Draw y React Flow/ELK | Aceptado | D-028 |
 | [0009](0009-centralized-i18n.md) | Internacionalización centralizada | Aceptado | D-029 |
@@ -39,8 +39,9 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0022](0022-relations-backlinks-graph-api.md) | Relaciones tipadas, etiquetas inversas y API del grafo (#75) | Aceptado | D-045 |
 | [0023](0023-global-search-fts5-command-palette.md) | Búsqueda global FTS5 y paleta de comandos (#76) | Aceptado | D-046 |
 | [0024](0024-obligatory-specialized-subagents.md) | Invocación obligatoria de los subagentes especializados | Aceptado | D-047 |
-| [0025](0025-visual-direction-v2.md) | Dirección visual v2 y sistema «estudio moderno» (#124) | Aceptado | D-048 |
+| [0025](0025-visual-direction-v2.md) | Dirección visual v2 y sistema «estudio moderno» (#124) | Aceptado | D-048; nota de D-050/0027 |
 | [0026](0026-minimal-editor-mentions.md) | Editor mínimo, menú Formato y menciones `@` / `[[ ]]` (#131) | Aceptado | D-049 |
+| [0027](0027-ui-preferences-persistence.md) | Preferencias de interfaz persistentes: claves `ui.*`, tres canales y arranque sin parpadeo (#132) | Aceptado | D-050 |
 
 ## 3. Relación con otros documentos
 
@@ -90,3 +91,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-21 | Se añade el ADR 0024 (invocación obligatoria de los subagentes especializados, tarea local `subagent-routing`). |
 | 2026-11-21 | Se añade el ADR 0025 (dirección visual v2, #124) y se anota que revisa la estética del ADR 0006 sin supersederlo. |
 | 2026-11-23 | Se añade el ADR 0026 (editor mínimo, menú Formato y menciones `@` / `[[ ]]`, #131). |
+| 2026-11-24 | Se añade el ADR 0027 (preferencias de interfaz persistentes, #132) y se anota que revisa el arranque del tema en los ADR 0006 y 0025 sin supersederlos. |

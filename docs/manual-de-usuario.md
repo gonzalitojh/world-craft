@@ -20,10 +20,12 @@
 > **restauración desde modo seguro**. Ya se pueden crear, editar, duplicar,
 > archivar y eliminar mundos con su actividad, y crear **fichas** de cualquier
 > tipo con campos personalizados, descripción enriquecida, imágenes, etiquetas y
-> favoritos. Todavía no hay mapas, manuscritos, ajustes ni papelera visible, y la
-> preferencia de tema no se recuerda al reiniciar. Las **muestras** de
-> componentes siguen existiendo solo como página interna de desarrollo y no
-> aparecen en la navegación ni en la búsqueda.
+> favoritos. Todavía no hay mapas, manuscritos, ajustes ni papelera visible. La
+> aplicación **recuerda entre sesiones** el tema, la barra lateral plegada, el
+> panel de propiedades con su ancho y las secciones de la ficha, y **Continuar**
+> retoma el último mundo o ficha aunque cierres y vuelvas a abrir. Las
+> **muestras** de componentes siguen existiendo solo como página interna de
+> desarrollo y no aparecen en la navegación ni en la búsqueda.
 
 ## 1. Qué es World Craft
 
@@ -120,8 +122,8 @@ Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
   navegación entre **Inicio** y **Mundos**, y un botón para plegarla. Expandida
   ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos, con
-  su nombre accesible y una ayuda emergente. No muestra lema permanente ni
-  versión.
+  su nombre accesible y una ayuda emergente. La aplicación recuerda si la
+  dejaste plegada o expandida. No muestra lema permanente ni versión.
 - **Barra superior:** ocupa 56 px y muestra un único **título contextual**: el
   nombre del mundo cuando estás en un mundo, en sus fichas o en una ficha, y el
   nombre de la vista en el resto. A su lado están el disparador de la **paleta
@@ -217,9 +219,11 @@ con esa misma información. Al pulsarlo, el cambio es inmediato y afecta a toda
 la ventana: los mismos contenidos, la misma jerarquía y el mismo contraste en
 ambos temas.
 
-**La preferencia no se recuerda al reiniciar:** cada vez que se abre la
-aplicación empieza en el tema Claro. Guardar la elección y elegirla desde una
-pantalla de Ajustes llegará más adelante.
+El tema elegido **se recuerda**: al cerrar y volver a abrir la aplicación se
+aplica el mismo tema desde el primer momento, sin un destello del otro modo. Si
+la preferencia guardada no se puede leer, la aplicación abre en Claro. El tema
+también se puede cambiar desde la paleta `Ctrl+K`; elegirlo desde una pantalla de
+Ajustes llegará más adelante.
 
 ### 3.4 Tamaño de ventana
 
@@ -244,11 +248,11 @@ idioma (sección 4).
 Cuando ya hay mundos, **Inicio** es una mesa de trabajo en una sola columna. De
 arriba abajo muestra:
 
-- **Continuar**, solo si en esta sesión ya has abierto un mundo o una ficha.
-  Indica el destino y ofrece **Abrir el mundo** o **Abrir la ficha**. Es un
-  recordatorio temporal: si cierras o recargas la aplicación, desaparece; tampoco
-  aparece si no hay destino o si el mundo recordado ya no existe. Conservarlo
-  entre sesiones llegará más adelante.
+- **Continuar**, solo si has abierto un mundo o una ficha, también en sesiones
+  anteriores. Indica el destino y ofrece **Abrir el mundo** o **Abrir la ficha**.
+  Si el mundo o la ficha ya no existen —por ejemplo, porque los borraste—, el
+  bloque se limpia. Si al pulsarlo la ficha ya no está, se abre el mundo al que
+  pertenecía y se avisa de que la ficha ya no existe.
 - **Mundos recientes**, con un máximo de cinco filas. El botón **Ver todos los
   mundos** solo aparece cuando hay más de cinco. Cada fila muestra la portada o
   una marca gráfica, el nombre, el estado, el resumen, los géneros, la última
@@ -331,11 +335,11 @@ no existe.
 Cuando ya hay mundos, **Inicio** reúne lo que necesitas para retomar el trabajo
 sin pasar por un panel de cifras:
 
-- **Continuar:** retoma el último mundo o la última ficha que abriste **durante
-  esta sesión**. El botón se llama **Abrir el mundo** o **Abrir la ficha**.
-  Desaparece al recargar y se omite si el mundo recordado ya no existe; al
-  eliminarlo, el bloque se limpia. Guardar este recordatorio entre sesiones
-  llegará con una actualización posterior.
+- **Continuar:** retoma el último mundo o la última ficha que abriste, aunque
+  hayas cerrado y vuelto a abrir la aplicación. El botón se llama **Abrir el
+  mundo** o **Abrir la ficha**. Se omite si no hay destino o si el mundo
+  recordado ya no existe; al eliminarlo, el bloque se limpia. Si la ficha
+  desapareció, se abre su mundo y se avisa de que la ficha ya no existe.
 - **Mundos recientes:** hasta cinco filas con la portada o la marca gráfica del
   mundo, su nombre y estado, el resumen, los géneros y la fecha de la última
   actualización. **Ver todos los mundos** aparece solo cuando hay más de cinco.
@@ -473,8 +477,11 @@ la lista se titula **Fichas del mundo**.
 - Al salir de la ficha se guarda el último cambio pendiente, aunque el
   autoguardado aún no hubiera llegado; al volver, el contenido sigue ahí. El
   nombre es obligatorio y los campos marcados con `*` también.
-- El panel de propiedades y las secciones plegables recuerdan su estado mientras
-  la aplicación sigue abierta. Conservarlo entre reinicios llegará con #132.
+- El panel de propiedades, su ancho y las secciones plegables **se recuerdan**
+  aunque cierres y vuelvas a abrir la aplicación. Son preferencias de la
+  aplicación, no de cada ficha: el mismo estado se aplica a todas las fichas y
+  tipos. En ventanas estrechas el panel se coloca debajo del documento y, al
+  volver a ensanchar, recupera el ancho guardado.
 - El **tipo no cambia** después de crear la ficha. Si necesitas otra plantilla,
   crea una ficha nueva con ese tipo.
 
@@ -814,9 +821,13 @@ no se envía a ningún servicio externo.
 
 ## 11. Ajustes (previsto)
 
-- **Apariencia:** tema Claro u Oscuro; se aplica a toda la aplicación. Hoy el
-  tema ya se cambia desde la barra superior, pero **todavía no se guarda** entre
-  sesiones: elegirlo y recordarlo será parte de esta pantalla.
+- **Apariencia:** tema Claro u Oscuro; se aplica a toda la aplicación y **se
+  recuerda** entre sesiones desde el icono de la barra superior o la paleta
+  `Ctrl+K` (sección 3.3). Esta pantalla reunirá además el **restablecimiento** de
+  las preferencias de interfaz a sus valores iniciales —tema Claro, barra
+  lateral expandida, panel visible con su ancho inicial y solo la descripción
+  abierta—, que **todavía no tiene un control visible**: llegará con Ajustes.
+  Restablecerlas no borrará mundos, fichas, imágenes, relaciones ni copias.
 - **Idioma:** español en el MVP; la estructura está preparada para más idiomas.
 - **Ventana:** recordar tamaño y posición.
 - **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda (hoy se
@@ -847,6 +858,13 @@ no se envía a ningún servicio externo.
   fichas ni el contenido de tus archivos. Las descargas de actualizaciones se
   guardan en una carpeta temporal de Windows, fuera de `userData`; al instalar
   o cancelar no se mezclan con tus datos.
+- Tus **preferencias de interfaz** —el tema, la barra lateral plegada, el panel
+  de propiedades con su ancho, las secciones plegables y el último mundo o ficha
+  de **Continuar**— se guardan en la misma base de datos local. Entran en las
+  copias automáticas, de modo que una restauración las recupera, y **no** forman
+  parte de la exportación de un mundo. Restablecerlas, cuando exista el control
+  en Ajustes, solo devuelve sus valores iniciales: **no borra** mundos, fichas,
+  imágenes, relaciones ni copias.
 - No hay sincronización automática entre equipos ni subida de datos a Internet.
 
 ### 12.2 Copias automáticas
@@ -867,8 +885,9 @@ Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
 - **Cuántas se conservan:** 7 diarias, 4 semanales, 12 mensuales y 5
   pre-migración. Las más antiguas se van borrando automáticamente. Las copias
   **pre-restauración** no se borran solas.
-- **Qué contienen:** solo la base de datos. **Las imágenes y los archivos
-  (assets) no van dentro de la copia** y no se sustituyen al restaurar.
+- **Qué contienen:** solo la base de datos, incluidas tus preferencias de
+  interfaz. **Las imágenes y los archivos (assets) no van dentro de la copia** y
+  no se sustituyen al restaurar.
 - **Copias dañadas:** si una copia no supera la comprobación, no se te ofrece,
   no cuenta para el límite y **no se borra automáticamente**. Se queda donde
   está por si sirve para un diagnóstico.
@@ -1061,7 +1080,7 @@ las funciones correspondientes.
 |---|---|
 | Barra lateral con navegación Inicio/Mundos y plegado | Implementada (en desarrollo); sin lema ni versión |
 | Barra superior con título contextual, buscador `Ctrl+K`, acción primaria, menú `⋯` e iconos de actualizaciones y tema | Implementada (en desarrollo) |
-| Tema Claro/Oscuro conmutable | Implementado (en desarrollo); no se recuerda al reiniciar |
+| Tema Claro/Oscuro conmutable | Implementado (en desarrollo); se recuerda al reiniciar y se aplica sin destello |
 | Instalador por usuario, sin administrador, en `%LOCALAPPDATA%` | Implementado (local); la release pública llega con M5 |
 | Desinstalación que conserva `%APPDATA%\World Craft` | Implementada (local); el desinstalador avisa de los datos conservados |
 | Comprobación manual de actualizaciones con descarga y cancelación | Implementada (en desarrollo); requiere una versión instalada y una release publicada para probarse de extremo a extremo |
@@ -1070,7 +1089,7 @@ las funciones correspondientes.
 | Aviso de SmartScreen y checksums | Documentado; el instalador sigue sin firma (ADR 0015) |
 | Componentes base (botones, campos, avisos, diálogos...) | Implementados (en desarrollo) |
 | Inicio como mesa de trabajo con Continuar, mundos recientes y actividad | Implementada (en desarrollo); sin contadores ni accesos rápidos |
-| «Continuar» con el último mundo o ficha abiertos | Implementada (en desarrollo); memoria de la sesión, no se conserva al recargar |
+| «Continuar» con el último mundo o ficha abiertos | Implementada (en desarrollo); se conserva entre sesiones y se limpia si el destino ya no existe |
 | Tarjetas de mundo con **Abrir** y menú `⋯` | Implementada (en desarrollo); portada o marca gráfica determinista y fecha relativa |
 | Página de muestras | Interna de desarrollo; solo por su dirección interna, fuera de la navegación y la paleta |
 | Lista de mundos con búsqueda y filtro por estado | Implementada (en desarrollo) |
@@ -1100,9 +1119,10 @@ las funciones correspondientes.
 | Escritura | Prevista |
 | Juego | Prevista |
 | Ajustes | Prevista |
-| Guardar la preferencia de tema | Prevista (con Ajustes) |
-| Recordar la barra lateral plegada | Prevista (#132); hoy se recuerda solo durante la sesión |
-| Recordar el panel de propiedades y las secciones plegables de la ficha | Prevista (#132); hoy se recuerdan solo durante la sesión |
+| Guardar la preferencia de tema | Implementada (en desarrollo); también se podrá cambiar desde Ajustes |
+| Recordar la barra lateral plegada | Implementada (en desarrollo) |
+| Recordar el panel de propiedades, su ancho y las secciones plegables de la ficha | Implementada (en desarrollo); estado global, no por ficha |
+| Restablecer las preferencias de interfaz | Prevista (con Ajustes); la base ya lo permite, pero todavía no hay control visible |
 | Copias manuales y elección de carpeta | Prevista (con Ajustes) |
 | Ajustes de actualizaciones (interruptor y frecuencia) | Previstos (con Ajustes, M1); hoy no hay auto-check |
 | Firma de código del instalador | Opcional y de pago; fuera del MVP (ADR 0015) |
