@@ -604,23 +604,31 @@ export const es = {
     },
     relations: {
       title: 'Relaciones',
-      lead: 'Une esta ficha con otras del mundo. Cada relación se lee con una etiqueta desde el origen y con su inversa desde el destino.',
+      lead: 'Cada relación se agrupa por dirección y tipo. La etiqueta del grupo se lee desde esta ficha; la recíproca, desde la otra.',
       outgoingTitle: 'Desde esta ficha',
       incomingTitle: 'Backlinks',
+      outgoingLead: 'Relaciones que salen de esta ficha hacia otras.',
       incomingLead:
-        'Fichas que apuntan a esta; la etiqueta es la inversa de cada relación.',
-      empty:
-        'Todavía no hay relaciones. Une esta ficha con otra para empezar a tejer el mundo.',
+        'Fichas que apuntan a esta. La etiqueta del grupo es la inversa de la relación.',
+      directionOutgoing: 'Saliente',
+      directionIncoming: 'Backlink',
+      groupCount: (count: number): string =>
+        count === 1 ? '1 relación' : `${count} relaciones`,
+      groupInverse: (label: string): string => `Inversa: ${label}`,
+      groupForward: (label: string): string => `Directa: ${label}`,
+      groupType: (typeName: string): string => `Tipo: ${typeName}`,
+      openEntityNamed: (name: string): string => `Abrir la ficha ${name}`,
+      menuLabel: (label: string, name: string): string =>
+        `Acciones de la relación «${label}» con ${name}`,
+      editMenuItem: 'Editar relación',
+      removeMenuItem: 'Eliminar relación',
+      emptyTitle: 'Todavía no hay relaciones',
+      emptyDescription:
+        'Una relación une esta ficha con otra del mundo y se lee en las dos. Empieza con «Añadir relación», en la cabecera de esta sección.',
       outgoingEmpty: 'Esta ficha todavía no apunta a ninguna otra.',
       incomingEmpty: 'Ninguna ficha apunta todavía a esta.',
       add: 'Añadir relación',
       manageTypes: 'Tipos de relación',
-      edit: 'Editar',
-      editNamed: (label: string, name: string): string =>
-        `Editar la relación «${label}» con ${name}`,
-      remove: 'Eliminar',
-      removeNamed: (label: string, name: string): string =>
-        `Eliminar la relación «${label}» con ${name}`,
       removeTitle: (label: string, name: string): string =>
         `¿Eliminar la relación «${label}» con ${name}?`,
       removeBody:
@@ -663,11 +671,12 @@ export const es = {
       updated: 'Relación guardada.',
       removed: 'Relación eliminada.',
       error: 'Revisa los datos de la relación e inténtalo de nuevo.',
-      deleteError: 'No se pudo eliminar la relación.',
+      deleteError: 'No se pudo eliminar la relación. Inténtalo de nuevo.',
       loading: 'Cargando las relaciones…',
       loadError: 'No se pudieron cargar las relaciones.',
+      loadErrorHint:
+        'El resto de la ficha sigue disponible. Vuelve a intentarlo.',
       retry: 'Volver a intentar',
-      backlinkHint: (name: string): string => `Se lee desde ${name}`,
       relationWith: (name: string): string => `Relación con ${name}`,
       types: {
         title: 'Tipos de relación',

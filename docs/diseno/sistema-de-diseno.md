@@ -262,6 +262,10 @@ normal y grande; se indica el mínimo de cada caso.
 | `--danger-contrast` sobre `--danger` | Texto normal | 6,68:1 | 9,32:1 | 4,5:1 |
 | `--muted` sobre `--surface-sunken` | Texto normal | 4,72:1 | 8,08:1 | 4,5:1 |
 | `--focus` sobre `--surface-sunken` | Foco | 6,59:1 | 10,35:1 | 3:1 |
+| `--danger` sobre `--surface-raised` | Texto normal | 6,68:1 | 7,51:1 | 4,5:1 |
+| `--danger` sobre `--surface-sunken` | Texto normal | 5,65:1 | 9,32:1 | 4,5:1 |
+| `--focus` sobre `--surface-raised` | Foco | 7,78:1 | 8,34:1 | 3:1 |
+| `--accent-strong` sobre `--surface-sunken` | Texto normal | 8,42:1 | 10,35:1 | 4,5:1 |
 | `--entity-moss` sobre `--entity-moss-surface` | Marca de tipo | 6,54:1 | 5,44:1 | 3:1 |
 | `--entity-ochre` sobre `--entity-ochre-surface` | Marca de tipo | 3,64:1 | 6,69:1 | 3:1 |
 | `--entity-danger` sobre `--entity-danger-surface` | Marca de tipo | 5,36:1 | 7,07:1 | 3:1 |
@@ -438,8 +442,8 @@ como existente lo que aún no lo está.
 | Panel de propiedades | Inspector de portada, estado y etiquetas; ocultable, de 280–360 px con separador accesible y sticky. No es un formulario paralelo. | Implementado | #129 |
 | Sección plegable | `h3 > button` con `aria-expanded` y `aria-controls`, chevron decorativo, recuento y acciones fuera del botón; el cuerpo sigue montado y se oculta con `hidden`. | Implementada | #129 |
 | Ficha técnica de campos | Lista `dl` de dos columnas, sin aspecto de tabla; números y fechas formateados, referencias como enlaces y «Sin valor» para los vacíos. | Implementada | #129 |
-| Lista de relaciones | Dirección, etiqueta y ficha destino legibles; backlinks claros. | Previsto | #130 |
-| Nodo de grafo | Avatar, nombre, tipo y selección; el grafo completo llega con #83. | Previsto | #130 |
+| Lista de relaciones | Dirección, etiqueta efectiva y recíproca, ficha contraparte, backlinks y menú `⋯`; sin tabla. | Implementada | #130 |
+| Nodo de grafo | Avatar, nombre, tipo y selección; el grafo completo llega con #83. | Previsto | #83 |
 | Editor mínimo | Formato básico, menciones `@` y `[[ ]]`; sin barra permanente. | Previsto | #131 |
 
 ## 10. Shell y pantallas
@@ -605,10 +609,32 @@ en [`ficha-issue-129.md`](ficha-issue-129.md).
 
 ### 10.5 Relaciones y grafo
 
-- La lista de relaciones muestra dirección, tipo, etiqueta y ficha destino.
-- El grafo contextual se enlaza desde la ficha y no duplica el grafo de #83.
-- El color de tipo es una marca; la relación se entiende por texto y por
-  posición.
+Contrato aprobado en [`relaciones-issue-130.md`](relaciones-issue-130.md).
+**Implementado en #130**; la fila «Lista de relaciones» de §9 y la de §17 ya
+figuran como implementadas. El grafo completo sigue previsto en #83.
+
+- **Lectura:** dirección primero (salientes y backlinks) y, dentro, grupos por
+  etiqueta efectiva. La recíproca solo aparece si difiere («Inversa: …» en
+  salientes, «Directa: …» en entrantes); los tipos simétricos no la repiten. Si
+  la etiqueta es una sobrescritura, el grupo añade «Tipo: …».
+- **Entradas:** no son una tabla ni una tarjeta. Lista `ul > li` separada por
+  divisores `--border`, con insignia de dirección (texto e icono), nombre de la
+  contraparte con `TypeIcon` y aspecto de enlace, tipo de entidad, fuerza en
+  forma con nombre accesible, notas completas y menú `⋯`. Sin tercera
+  superficie.
+- **Acciones:** abrir la ficha contraparte es la única acción visible; editar y
+  eliminar viven en `⋯`. El borrado es modal, empieza con el foco en «Cancelar»
+  y no se puede cerrar mientras la petición está en curso.
+- **Backlinks:** se rotulan como tales en la sección y en cada entrada, y
+  navegan a la ficha de origen.
+- **Grafo:** no hay enlace, botón, ítem deshabilitado, tooltip, texto ni clave de
+  i18n de grafo mientras #83 no exista. El grafo contextual no duplicará el de
+  #83.
+- **Color:** la marca del tipo y las insignias son decorativas o van con texto;
+  la relación se entiende por jerarquía, texto y forma, no por color.
+- **Ventana:** la sección no tiene punto de ruptura propio; a 1024, 1280 y 1600 px
+  envuelve en una columna sin scroll horizontal y con `min-width: 0` en todos
+  los hijos de flex/grid.
 
 ### 10.6 Editor
 
@@ -779,16 +805,17 @@ Reglas de migración:
 | Inicio y tarjetas de mundo | Implementado | #127 |
 | Vista de mundo modular | Implementado | #128 |
 | Ficha como documento y panel de propiedades | Implementado | #129 |
-| Relaciones legibles y grafo contextual | Previsto | #130 |
+| Relaciones legibles y grafo contextual | Implementado (relaciones); grafo previsto en #83 | #130 |
 | Editor mínimo y menciones | Previsto | #131 |
 | Preferencias de interfaz persistentes | Previsto | #132 |
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
 Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
 los tokens y las primitivas ya son v2 desde #125, el shell desde #126, Inicio
-desde #127, la vista de mundo desde #128 y la ficha desde #129; las relaciones y
-el editor siguen siendo los de v1 hasta que su issue los migre. No se deben tomar
-capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
+desde #127, la vista de mundo desde #128, la ficha desde #129 y las relaciones
+desde #130; el editor sigue siendo el de v1 hasta que su issue lo migre. El grafo
+completo continúa previsto en #83. No se deben tomar capturas nuevas como si esas
+pantallas ya estuvieran rediseñadas.
 
 ### 17.2 Verificación automática
 

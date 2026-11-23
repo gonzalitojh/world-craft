@@ -94,7 +94,8 @@ type FocusTarget =
   | 'attributes'
   | 'edit-trigger'
   | 'alert'
-  | 'add-images';
+  | 'add-images'
+  | 'add-relation';
 
 interface FocusRequest {
   readonly target: FocusTarget;
@@ -346,6 +347,9 @@ export function EntityDetailPage({
           break;
         case 'add-images':
           element = document.getElementById('wc-entity-add-images');
+          break;
+        case 'add-relation':
+          element = document.getElementById('wc-entity-add-relation');
           break;
       }
 
@@ -918,6 +922,7 @@ export function EntityDetailPage({
 
     setRelations((current) => [result.data, ...current]);
     setRelationDialog(null);
+    requestFocus('add-relation');
     onNotify(
       'success',
       messages.entities.relations.created(
@@ -1513,6 +1518,11 @@ export function EntityDetailPage({
               relations={relations}
               state={relationState}
               pending={relationPending}
+              editingRelationId={
+                relationDialog?.mode === 'edit'
+                  ? (relationDialog.relation?.id ?? null)
+                  : null
+              }
               onEdit={(relation) => {
                 setRelationDialog({ mode: 'edit', relation });
               }}
@@ -1695,7 +1705,12 @@ export function EntityDetailPage({
           candidates={candidates}
           pending={relationPending}
           onClose={() => {
+            const wasCreate = relationDialog.mode === 'create';
             setRelationDialog(null);
+
+            if (wasCreate) {
+              requestFocus('add-relation');
+            }
           }}
           onSubmit={submitRelation}
         />

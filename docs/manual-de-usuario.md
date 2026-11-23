@@ -584,18 +584,49 @@ la misma relación aparece como **tiene como aliado a** Mara Viento.
    del tipo.
 5. Pulsa **Crear relación**.
 
-Las relaciones de la ficha actual se muestran en **Desde esta ficha** con la
-etiqueta directa. En **Backlinks** aparecen las fichas que apuntan a esta, con la
-etiqueta inversa. En ambos casos puedes pulsar el nombre de la otra ficha para
-abrirla.
+La sección **Relaciones** se lee como una red de lore, agrupada primero por
+dirección y después por tipo:
+
+- **Desde esta ficha** reúne las relaciones que salen de la ficha abierta. Cada
+  entrada lleva la insignia **Saliente**.
+- **Backlinks** reúne las relaciones creadas desde otras fichas que apuntan a
+  esta. Un **backlink** es, por tanto, una relación que ves aquí porque la
+  creaste en la ficha de origen; cada entrada lleva la insignia **Backlink** y el
+  nombre que se abre es el de esa ficha de origen.
+
+Dentro de cada dirección, los grupos se ordenan por el nombre que muestran. El
+título del grupo es la **etiqueta que se lee en esta ficha**:
+
+- En **Desde esta ficha** es la etiqueta directa; si la ficha de destino usa otra
+  palabra para el mismo vínculo, el grupo añade **Inversa: …**.
+- En **Backlinks** es la etiqueta inversa; si la ficha de origen usa otra, el
+  grupo añade **Directa: …**.
+- Si las dos etiquetas coinciden, como en «Relacionado con», no se repiten.
+- Cuando has personalizado la etiqueta de una relación, el grupo añade
+  **Tipo: …** con el nombre del tipo, para que la etiqueta libre no pierda su
+  identidad.
+
+Cada entrada muestra la insignia de dirección, el nombre de la ficha contraparte
+con su tipo de entidad, la fuerza en cinco marcas y las notas. El nombre es la
+acción visible: al pulsarlo se abre esa ficha. Los nombres largos y las notas se
+muestran completos y envuelven en varias líneas.
 
 ### 6.2 Editar y eliminar relaciones
 
-- **Editar** permite cambiar el tipo, las etiquetas, las notas y la fuerza. El
-  origen y el destino no cambian; para invertirlos, crea la relación desde la
-  otra ficha.
-- **Eliminar** pide confirmación y quita la relación de las dos fichas. Las
-  fichas y sus datos no se borran.
+- **Abrir la ficha contraparte** es la acción visible de cada entrada.
+- **Editar relación** y **Eliminar relación** están en el menú `⋯` de la
+  entrada. El menú se abre con `Enter` o espacio, se recorre con las flechas y se
+  cierra con `Escape` devolviendo el foco al botón que lo abrió.
+- **Editar relación** permite cambiar el tipo, las etiquetas, las notas y la
+  fuerza. El origen y el destino no cambian; para invertirlos, crea la relación
+  desde la otra ficha. Al guardar, el foco vuelve al botón `⋯` de la misma
+  relación, aunque haya cambiado de grupo.
+- **Eliminar relación** abre un diálogo de confirmación que indica qué relación
+  se va a borrar. La opción inicial es **Cancelar**; `Escape` también cancela. Al
+  confirmar, la relación desaparece de las dos fichas, pero las fichas y sus
+  datos no se borran. Mientras se envía la petición, el diálogo no se puede
+  cerrar y, al terminar, el foco pasa a la siguiente entrada o a **Añadir
+  relación** si no queda ninguna.
 - No se permiten relaciones de una ficha consigo misma ni relaciones repetidas.
   En los tipos simétricos, como «Relacionado con», tampoco se permite la misma
   relación en el sentido contrario.
@@ -622,6 +653,10 @@ La vista de grafo llegará en una etapa posterior. Mostrará las relaciones como
 un mapa de nodos, con zoom, filtros por tipo o etiqueta, encuadre y apertura de
 la ficha al seleccionar un nodo. Las relaciones que crees ahora se conservarán y
 aparecerán en esa vista.
+
+Mientras el grafo esté previsto, la ficha **no incluye ningún botón, enlace ni
+acción** para abrirlo: la sección Relaciones solo ofrece lo descrito en 6.1 y
+6.2. Cuando la vista llegue, se añadirá su acceso en la misma tarea.
 
 ## 7. Mapas (previsto)
 
@@ -1001,7 +1036,7 @@ las funciones correspondientes.
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y la papelera visible llega con #77 |
 | Ficha como documento y panel de propiedades | Implementada (en desarrollo); lectura por defecto, edición en contexto, secciones plegables y panel de 280–360 px |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
-| Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); los metadatos quedan en la API |
+| Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); lectura por dirección y tipo, etiqueta recíproca, menú `⋯` con edición y borrado confirmado; los metadatos quedan en la API |
 | Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |
 | Filtros de búsqueda por mundo, tipo, etiqueta y estado | Implementados (en desarrollo) |
 | Paleta de comandos `Ctrl+K` | Implementada (en desarrollo); sin entrada a Muestras |

@@ -28,6 +28,11 @@ export interface DialogProps {
   readonly children?: ReactNode;
   /** Acciones del pie; los botones se alinean al final. */
   readonly actions?: ReactNode;
+  /**
+   * Permite cerrar con Escape y con el botón «Cerrar». Con `false`, el cierre
+   * se bloquea mientras hay una petición en curso (C2).
+   */
+  readonly dismissible?: boolean;
   readonly className?: string;
 }
 
@@ -44,6 +49,7 @@ export function Dialog({
   title,
   children,
   actions,
+  dismissible = true,
   className,
 }: DialogProps) {
   const messages = useMessages();
@@ -97,6 +103,11 @@ export function Dialog({
           return;
         }
 
+        if (!dismissible) {
+          event.preventDefault();
+          return;
+        }
+
         const dialog = dialogRef.current;
         const hasOpenPopover =
           dialog !== null &&
@@ -119,6 +130,7 @@ export function Dialog({
           label={messages.components.dialog.close}
           icon={<CloseIcon />}
           size="sm"
+          disabled={!dismissible}
           onClick={onClose}
         />
       </header>

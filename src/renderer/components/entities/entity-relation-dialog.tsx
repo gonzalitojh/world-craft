@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   RELATION_LABEL_MAX_LENGTH,
@@ -92,6 +92,38 @@ export function EntityRelationDialog({
   const selectedType = types.find((type) => type.id === typeId) ?? null;
   const otherRelation = other;
 
+  // Mientras la petición está en curso el botón pulsado se deshabilita y el
+  // foco caería en `body`; se mueve al cuerpo del diálogo (C4). Al fallar, el
+  // foco vuelve al primer campo inválido o a la alerta de envío.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const dialog = document.querySelector<HTMLDialogElement>('dialog[open]');
+
+    if (dialog === null) {
+      return;
+    }
+
+    if (pending) {
+      dialog.querySelector<HTMLElement>('.wc-dialog__body')?.focus();
+      return;
+    }
+
+    if (error === undefined && targetError === undefined) {
+      return;
+    }
+
+    if (targetError !== undefined) {
+      document.getElementById('wc-relation-target')?.focus();
+    } else {
+      dialog
+        .querySelector<HTMLElement>('[data-relation-dialog-error]')
+        ?.focus();
+    }
+  }, [error, open, pending, targetError]);
+
   const submit = async (): Promise<void> => {
     if (typeId.length === 0) {
       setError(messages.entities.relations.error);
@@ -100,11 +132,13 @@ export function EntityRelationDialog({
 
     if (mode === 'create' && targetId.length === 0) {
       setTargetError(messages.components.form.requiredField);
+      document.getElementById('wc-relation-target')?.focus();
       return;
     }
 
     if (mode === 'create' && targetId === entityId) {
       setTargetError(messages.entities.relations.error);
+      document.getElementById('wc-relation-target')?.focus();
       return;
     }
 
@@ -146,6 +180,7 @@ export function EntityRelationDialog({
     <Dialog
       open={open}
       onClose={onClose}
+      dismissible={!pending}
       title={
         mode === 'create'
           ? messages.entities.relations.createTitle
@@ -177,6 +212,7 @@ export function EntityRelationDialog({
 
       <div className="wc-relation-form">
         <SelectField
+          id="wc-relation-type"
           label={messages.entities.relations.typeLabel}
           value={typeId}
           onChange={(event) => {
@@ -212,6 +248,7 @@ export function EntityRelationDialog({
               }}
             />
             <SelectField
+              id="wc-relation-target"
               label={messages.entities.relations.targetLabel}
               value={targetId}
               onChange={(event) => {
@@ -304,7 +341,12 @@ export function EntityRelationDialog({
       </div>
 
       {error !== undefined ? (
-        <p className="wc-alert" role="alert">
+        <p
+          className="wc-alert wc-alert--inline"
+          role="alert"
+          tabIndex={-1}
+          data-relation-dialog-error="true"
+        >
           {error}
         </p>
       ) : null}

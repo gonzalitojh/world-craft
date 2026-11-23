@@ -9,7 +9,7 @@ export interface EmptyStateProps {
   readonly icon?: ReactNode;
   /** Acción principal; suele ser un botón. */
   readonly action?: ReactNode;
-  readonly headingLevel?: 2 | 3;
+  readonly headingLevel?: 2 | 3 | 4;
   readonly className?: string;
 }
 
@@ -30,7 +30,7 @@ export function EmptyState({
   className,
 }: EmptyStateProps) {
   const titleId = useId();
-  const Heading = headingLevel === 3 ? 'h3' : 'h2';
+  const Heading = headingLevel === 4 ? 'h4' : headingLevel === 3 ? 'h3' : 'h2';
 
   return (
     <section className={cx('wc-empty', className)} aria-labelledby={titleId}>
