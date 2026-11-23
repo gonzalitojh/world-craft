@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0025.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0026.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -224,3 +224,22 @@ por escrito antes de tocar CSS y no podía contradecir el histórico de D-026.
 - Referencias: ADR 0025, ADR 0006, ADR 0009, ADR 0010, ADR 0024, #123, #125,
   #126, #127, #128, #129, #130, #131, #132, #133,
   `docs/diseno/sistema-de-diseno.md` y `docs/plan-desarrollo.md`.
+
+## 2026-11-23 — Editor mínimo y menciones `@` / `[[ ]]` (M1.5-08)
+
+**Contexto.** El editor de la descripción heredado de #74 mostraba once
+controles y solo permitía enlazar fichas con un diálogo. La dirección visual v2
+pedía menos barra y más documento, y M3 necesitaba un editor reutilizable sin
+reimplementarlo. La issue #131 debía reducir la barra, añadir un typeahead de
+menciones con teclado y accesibilidad completa, y no cambiar datos, IPC ni
+esquema: la mención ya era un enlace interno validado. La duda principal era si
+usar `@tiptap/suggestion` o un plugin propio, y cómo anunciar un
+`contenteditable` multipárrafo como combobox sin romper axe.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-049 | Editor mínimo, menú Formato y menciones | Typeahead con **plugin propio sobre `@tiptap/pm`** en `components/editor/extensions/mention.ts`, sin `@tiptap/suggestion`, porque hacen falta dos disparadores con límites distintos (`@` tras inicio, espacio o puntuación; `[[` en cualquier posición), cierre por `]`, control del foco y anuncio de resultados. **Barra mínima permanente de cinco acciones** —Negrita, Cursiva, Formato, Enlace y Mención— y el resto en el menú **Formato** (Párrafo y Título 1–3 como `menuitemradio`, listas y cita como `menuitemcheckbox`, Abrir/Quitar enlace como `menuitem` contextual); se corrige «sin barra de herramientas permanente» del sistema v2, porque lo que se retira es la barra extensa y la segunda fila. En edición el `contenteditable` es `role="combobox"` con `aria-expanded` y `aria-controls` **siempre**, `aria-autocomplete="list"`, `aria-activedescendant` solo con opción activa y **sin `aria-multiline`**; el `listbox` existe siempre, se oculta con `hidden` y `display: none`, y el foco permanece en el editor. La mención se inserta en **una transacción** como texto con marca `link` `wc-entity://<uuid>` más un espacio sin marca, sin HTML; `Escape` cierra sin borrar y `]]` **no** se acepta como cierre. El universo son las **200 fichas ya cargadas**, incluidas archivadas y borradores, sin consulta por tecla ni estado de carga. Se descartan `BubbleMenu` y los comandos `/`. Componente reutilizable `RichTextEditor` para #85 y `@tiptap/core` como dependencia directa, ya presente en el árbol y MIT. | La barra deja de competir con el texto y hay una sola forma de insertar una mención; el documento guardado sigue siendo el mismo y no hay migración, IPC ni canal nuevo; el patrón combobox es verificable con axe y teclado, a costa de retirar `aria-multiline` y mantener el `listbox` montado; la búsqueda es parcial en mundos con más de 200 fichas, limitación conocida; el plugin propio pasa a mantenerse en el proyecto; M3 reutiliza barra, menciones y accesibilidad sin reimplementarlas. ADR 0026. |
+
+- Referencias: ADR 0026, ADR 0007, ADR 0021, ADR 0023, ADR 0025, #74, #85,
+  #123, #129, #131, `docs/diseno/editor-issue-131.md`,
+  `docs/diseno/sistema-de-diseno.md` y `docs/manual-de-usuario.md`.

@@ -72,6 +72,7 @@
     "vitest": "^5.1.0"
   },
   "dependencies": {
+    "@tiptap/core": "^3.34.0",
     "@tiptap/extension-link": "^3.34.0",
     "@tiptap/pm": "^3.34.0",
     "@tiptap/react": "^3.34.0",

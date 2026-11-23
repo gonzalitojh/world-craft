@@ -44,6 +44,13 @@ async function settleLayout(page: Page): Promise<void> {
   );
 }
 
+/** Convierte un `animation-duration` o `transition-duration` a milisegundos. */
+function toMilliseconds(value: string): number {
+  const amount = Number.parseFloat(value);
+
+  return value.trim().endsWith('ms') ? amount : amount * 1000;
+}
+
 async function createWorld(page: Page) {
   await page.getByRole('button', { name: messages.home.emptyAction }).click();
   const dialog = page.getByRole('dialog');
@@ -593,6 +600,226 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
   await expect(
     page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
   ).toBeVisible();
+});
+
+test('inserta menciones con @ y [[, las guarda y navega desde la lectura', async ({
+  page,
+}) => {
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+  await backToEntities(page);
+  await createEntity(page, { name: 'Puerto Sal', type: 'Ciudad' });
+  await backToEntities(page);
+
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Mara Viento' }),
+  ).toBeVisible();
+  await enterEdit(page);
+
+  const editor = page.locator('.wc-editor__content');
+  const listbox = page.getByRole('listbox', {
+    name: messages.entities.editor.mentionListLabel,
+  });
+
+  // Escape conserva la consulta y Ctrl+Z la revierte antes de escribir el
+  // documento definitivo.
+  await editor.click();
+  await page.keyboard.type('@Puer');
+  await expect(listbox).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(editor).toHaveAttribute('aria-expanded', 'false');
+  await expect(editor).toContainText('@Puer');
+  await page.keyboard.press('Control+z');
+  await expect(editor).not.toContainText('@Puer');
+
+  await page.keyboard.press('Control+a');
+  await page.keyboard.press('Delete');
+
+  await page.keyboard.type('Nació en @Puer');
+  await expect(editor).toHaveAttribute('aria-expanded', 'true');
+  await expect(listbox).toBeVisible();
+  await expect(listbox.getByRole('option', { name: /Puerto Sal/ })).toHaveCount(
+    1,
+  );
+
+  // Teclado: la primera opción ya está activa y Enter inserta.
+  await page.keyboard.press('Enter');
+  await expect(editor).toHaveAttribute('aria-expanded', 'false');
+  await expect(editor).not.toHaveAttribute('aria-activedescendant');
+
+  const firstMention = editor
+    .locator('a')
+    .filter({ hasText: 'Puerto Sal' })
+    .first();
+
+  await expect(firstMention).toHaveAttribute(
+    'href',
+    /^wc-entity:\/\/[0-9a-f-]{36}$/,
+  );
+
+  // Segundo disparador `[[` con el ratón.
+  await editor.click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type(' y [[Puer');
+  await expect(listbox).toBeVisible();
+  await listbox.getByRole('option', { name: /Puerto Sal/ }).click();
+  await expect(
+    editor.locator('a').filter({ hasText: 'Puerto Sal' }),
+  ).toHaveCount(2);
+
+  await waitForSaved(page);
+  await doneEditing(page);
+
+  // En lectura un clic normal navega; al reabrir en frío los enlaces siguen.
+  await page
+    .locator('.wc-editor__content a')
+    .filter({ hasText: 'Puerto Sal' })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
+  ).toBeVisible();
+
+  await backToEntities(page);
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await expect(
+    page.locator('.wc-editor__content a').filter({ hasText: 'Puerto Sal' }),
+  ).toHaveCount(2);
+  await page
+    .locator('.wc-editor__content a')
+    .filter({ hasText: 'Puerto Sal' })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Puerto Sal' }),
+  ).toBeVisible();
+});
+
+test('axe sin graves con el selector y el menú abiertos en ambos temas y anchos', async ({
+  page,
+  electronApp,
+}) => {
+  // Dos temas por tres anchos con panel abierto y cerrado: tres análisis de axe
+  // por combinación, así que el margen estándar de 60 s no basta en una máquina
+  // cargada.
+  test.slow();
+  await createWorld(page);
+  await openEntities(page);
+  await createEntity(page, { name: 'Mara Viento' });
+  await backToEntities(page);
+  await createEntity(page, { name: 'Puerto Sal', type: 'Ciudad' });
+  await backToEntities(page);
+  await page
+    .getByRole('button', {
+      name: messages.entities.card.openNamed('Mara Viento'),
+    })
+    .click();
+  await enterEdit(page);
+
+  const editor = page.locator('.wc-editor__content');
+  const listbox = page.getByRole('listbox', {
+    name: messages.entities.editor.mentionListLabel,
+  });
+  const popover = page.locator('.wc-mention');
+  const chevron = page.locator('.wc-editor__format-trigger svg');
+  const format = page.getByRole('button', {
+    name: messages.entities.editor.format,
+  });
+
+  const openMention = async (): Promise<void> => {
+    await editor.click();
+    await page.keyboard.press('Control+a');
+    await page.keyboard.press('Delete');
+    await page.keyboard.type('@Puer');
+    await expect(listbox).toBeVisible();
+  };
+
+  // Movimiento: la apertura del popup anima 120 ms de opacidad y el chevron
+  // tarda lo mismo en girar.
+  await openMention();
+  expect(
+    toMilliseconds(
+      await popover.evaluate(
+        (node) => getComputedStyle(node).animationDuration,
+      ),
+    ),
+  ).toBeGreaterThanOrEqual(100);
+  expect(
+    toMilliseconds(
+      await chevron.evaluate(
+        (node) => getComputedStyle(node).transitionDuration,
+      ),
+    ),
+  ).toBeGreaterThanOrEqual(100);
+  await page.keyboard.press('Escape');
+
+  // Con `prefers-reduced-motion: reduce` la regla global de `base.css` basta:
+  // no queda transición ni animación perceptible.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openMention();
+  expect(
+    toMilliseconds(
+      await popover.evaluate(
+        (node) => getComputedStyle(node).animationDuration,
+      ),
+    ),
+  ).toBeLessThanOrEqual(0.02);
+  expect(
+    toMilliseconds(
+      await chevron.evaluate(
+        (node) => getComputedStyle(node).transitionDuration,
+      ),
+    ),
+  ).toBeLessThanOrEqual(0.02);
+  await page.keyboard.press('Escape');
+  await page.emulateMedia({ reducedMotion: null });
+
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme);
+
+    for (const width of [1024, 1280, 1600] as const) {
+      await electronApp.evaluate(
+        ({ BrowserWindow }, size) => {
+          const main = BrowserWindow.getAllWindows()[0];
+
+          if (main === undefined) {
+            throw new Error('No hay ventana principal.');
+          }
+
+          main.setContentSize(size.width, size.height);
+        },
+        { width, height: 700 },
+      );
+      await settleLayout(page);
+
+      // El popup se ancla al cursor: se abre con el panel de propiedades
+      // abierto y cerrado porque el ancho del documento cambia.
+      for (const panelOpen of [true, false] as const) {
+        await setPanelOpen(page, panelOpen);
+        await openMention();
+        await expectNoOverflow(page);
+        await expectAxeWithoutSerious(page);
+        await page.keyboard.press('Escape');
+      }
+
+      await setPanelOpen(page, true);
+      await format.click();
+      await expect(page.getByRole('menu')).toBeVisible();
+      await expectNoOverflow(page);
+      await expectAxeWithoutSerious(page);
+      await page.keyboard.press('Escape');
+    }
+  }
 });
 
 test('la creación rápida desde la barra superior abre la ficha en el mundo actual', async ({

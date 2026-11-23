@@ -448,6 +448,90 @@ describe('Menu', () => {
     expect(handlers.remove).toHaveBeenCalledOnce();
     expect(screen.queryByRole('menu')).toBeNull();
   });
+
+  it('admite disparador etiquetado, ítems marcables y separadores', async () => {
+    const user = userEvent.setup();
+    const onParagraph = vi.fn();
+
+    render(
+      <Menu
+        label="Formato del texto"
+        triggerContent={<span>Formato</span>}
+        checkable
+        items={[
+          {
+            id: 'paragraph',
+            label: 'Párrafo',
+            role: 'menuitemradio',
+            checked: true,
+            onSelect: onParagraph,
+          },
+          {
+            id: 'heading-1',
+            label: 'Título 1',
+            role: 'menuitemradio',
+            checked: false,
+            onSelect: vi.fn(),
+          },
+          { id: 'separator', separator: true },
+          {
+            id: 'bullets',
+            label: 'Lista con viñetas',
+            role: 'menuitemcheckbox',
+            checked: false,
+            onSelect: vi.fn(),
+          },
+          {
+            id: 'open-link',
+            label: 'Abrir enlace',
+            disabled: true,
+            onSelect: vi.fn(),
+          },
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Formato' });
+
+    expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(trigger);
+
+    expect(
+      screen.getByRole('menu', { name: 'Formato del texto' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Párrafo' }),
+    ).toHaveAttribute('aria-checked', 'true');
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Título 1' }),
+    ).toHaveAttribute('aria-checked', 'false');
+    expect(
+      screen.getByRole('menuitemcheckbox', { name: 'Lista con viñetas' }),
+    ).toHaveAttribute('aria-checked', 'false');
+    expect(
+      screen.getByRole('menuitem', { name: 'Abrir enlace' }),
+    ).toBeDisabled();
+    expect(screen.getByRole('separator')).toBeInTheDocument();
+
+    await user.keyboard('{ArrowDown}');
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Título 1' }),
+    ).toHaveFocus();
+
+    await user.keyboard('{End}');
+    expect(
+      screen.getByRole('menuitemcheckbox', { name: 'Lista con viñetas' }),
+    ).toHaveFocus();
+
+    await user.keyboard('{Home}');
+    await user.keyboard('{Enter}');
+
+    expect(onParagraph).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
 });
 
 describe('Checkbox', () => {

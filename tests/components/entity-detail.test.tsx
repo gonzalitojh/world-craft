@@ -413,6 +413,16 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve };
 }
 
+function saveStatus(): HTMLElement {
+  const status = document.querySelector<HTMLElement>('.wc-save-state');
+
+  if (status === null) {
+    throw new Error('No se encontró el estado de guardado.');
+  }
+
+  return status;
+}
+
 function headerNameField(): HTMLInputElement {
   const header = document.querySelector<HTMLElement>('.wc-document-header');
 
@@ -449,9 +459,7 @@ describe('ficha como documento vivo', () => {
     renderPage();
     await waitForEntity();
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      messages.entities.detail.saved,
-    );
+    expect(saveStatus()).toHaveTextContent(messages.entities.detail.saved);
     expect(
       screen.queryByRole('textbox', {
         name: messages.entities.detail.nameLabel,
@@ -489,6 +497,11 @@ describe('ficha como documento vivo', () => {
     await waitFor(() => {
       expect(editor?.getAttribute('role')).toBeNull();
       expect(editor?.getAttribute('aria-label')).toBeNull();
+      expect(editor?.getAttribute('aria-expanded')).toBeNull();
+      expect(editor?.getAttribute('aria-controls')).toBeNull();
+      expect(editor?.getAttribute('aria-activedescendant')).toBeNull();
+      expect(editor?.getAttribute('aria-autocomplete')).toBeNull();
+      expect(editor?.getAttribute('tabindex')).toBeNull();
     });
 
     // La ficha técnica se lee como `dl`, no como tabla.
@@ -504,6 +517,49 @@ describe('ficha como documento vivo', () => {
     expect(attributesSection?.querySelector('dl')).not.toBeNull();
     expect(attributesSection?.querySelector('table')).toBeNull();
     expect(screen.getByText('Origen')).toBeVisible();
+  });
+
+  it('en edición la barra tiene cinco controles y las acciones avanzadas viven en Formato', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitForEntity();
+
+    await enterEdit(user);
+
+    const toolbar = screen.getByRole('toolbar', {
+      name: messages.entities.editor.label,
+    });
+
+    expect(within(toolbar).getAllByRole('button')).toHaveLength(5);
+    expect(
+      within(toolbar).queryByRole('button', {
+        name: messages.entities.editor.bulletList,
+      }),
+    ).toBeNull();
+
+    await user.click(
+      within(toolbar).getByRole('button', {
+        name: messages.entities.editor.format,
+      }),
+    );
+
+    expect(
+      screen.getByRole('menuitemradio', {
+        name: messages.entities.editor.paragraph,
+      }),
+    ).toHaveAttribute('aria-checked', 'true');
+    expect(
+      screen.getByRole('menuitemcheckbox', {
+        name: messages.entities.editor.quote,
+      }),
+    ).toHaveAttribute('aria-checked', 'false');
+
+    const editor = document.querySelector<HTMLElement>('.wc-editor__content');
+
+    expect(editor).toHaveAttribute('role', 'combobox');
+    expect(editor).toHaveAttribute('aria-expanded', 'false');
+    expect(editor?.getAttribute('aria-controls')).toMatch(/^wc-mention-/);
+    expect(editor).not.toHaveAttribute('aria-multiline');
   });
 
   it('Editar enfoca Nombre y Listo guarda y devuelve el foco a Editar', async () => {
@@ -1023,7 +1079,7 @@ describe('ficha como documento vivo', () => {
     ).toBeVisible();
     expect(name).toHaveValue('Mara de las Nieblas');
     expect(update.mock.calls[0]?.[0].name).toBe('Mara de las Nieblas');
-    expect(screen.getByRole('status')).toHaveTextContent(
+    expect(saveStatus()).toHaveTextContent(
       messages.entities.detail.saveFailedShort,
     );
 
@@ -1044,9 +1100,7 @@ describe('ficha como documento vivo', () => {
 
     await waitFor(() => {
       expect(screen.queryByText(messages.entities.detail.saveError)).toBeNull();
-      expect(screen.getByRole('status')).toHaveTextContent(
-        messages.entities.detail.saved,
-      );
+      expect(saveStatus()).toHaveTextContent(messages.entities.detail.saved);
     });
     expect(update.mock.calls.length).toBeGreaterThan(callsBeforeRetry);
     expect(update.mock.calls.at(-1)?.[0].name).toBe('Mara de las Nieblas');
@@ -1115,9 +1169,7 @@ describe('ficha como documento vivo', () => {
     });
     expect(update).toHaveBeenCalledTimes(2);
     expect(gates[1]?.input.name).toBe('Mara uno y dos');
-    expect(screen.getByRole('status')).not.toHaveTextContent(
-      messages.entities.detail.saved,
-    );
+    expect(saveStatus()).not.toHaveTextContent(messages.entities.detail.saved);
 
     const second = gates[1];
 
@@ -1131,9 +1183,7 @@ describe('ficha como documento vivo', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(
-        messages.entities.detail.saved,
-      );
+      expect(saveStatus()).toHaveTextContent(messages.entities.detail.saved);
     });
     expect(name).toHaveValue('Mara uno y dos');
   });

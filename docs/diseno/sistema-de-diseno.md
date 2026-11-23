@@ -240,11 +240,15 @@ normal y grande; se indica el mínimo de cada caso.
 | `--fg` sobre `--bg` | Texto grande | 13,82:1 | 16,43:1 | 3:1 |
 | `--fg` sobre `--surface` | Texto normal | 14,55:1 | 15,17:1 | 4,5:1 |
 | `--fg` sobre `--surface-raised` | Texto normal | 15,19:1 | 13,82:1 | 4,5:1 |
+| `--fg` sobre `--surface-sunken` | Texto normal | 12,87:1 | 17,15:1 | 4,5:1 |
 | `--muted` sobre `--bg` | Texto normal | 5,07:1 | 7,74:1 | 4,5:1 |
 | `--muted` sobre `--surface` | Texto normal | 5,34:1 | 7,15:1 | 4,5:1 |
+| `--muted` sobre `--surface-raised` | Texto normal | 5,58:1 | 6,51:1 | 4,5:1 |
 | `--accent` sobre `--bg` | Texto normal | 7,08:1 | 8,01:1 | 4,5:1 |
+| `--accent` sobre `--surface-raised` | Texto normal | 7,78:1 | 6,74:1 | 4,5:1 |
 | `--accent-contrast` sobre `--accent` | Texto normal | 7,78:1 | 8,36:1 | 4,5:1 |
 | `--accent` sobre `--accent-surface` | Texto normal | 6,54:1 | 5,44:1 | 4,5:1 |
+| `--accent-strong` sobre `--accent-surface` | Texto normal | 8,36:1 | 6,74:1 | 4,5:1 |
 | `--success` sobre `--bg` | Texto normal | 5,73:1 | 10,37:1 | 4,5:1 |
 | `--success` sobre `--success-surface` | Texto normal | 5,35:1 | 7,74:1 | 4,5:1 |
 | `--warning` sobre `--bg` | Texto normal | 5,37:1 | 9,80:1 | 4,5:1 |
@@ -258,6 +262,7 @@ normal y grande; se indica el mínimo de cada caso.
 | `--focus` sobre `--accent-surface` | Foco | 6,54:1 | 6,74:1 | 3:1 |
 | `--fg` sobre `--selection` | Texto normal | 11,44:1 | 11,22:1 | 4,5:1 |
 | `--disabled-text` sobre `--disabled-surface` | Texto (mejora) | 4,72:1 | 7,74:1 | 4,5:1 |
+| `--disabled-text` sobre `--surface-raised` | Texto de menú deshabilitado | 5,58:1 | 6,51:1 | 4,5:1 |
 | `--disabled-border` sobre `--disabled-surface` | Componente | 3,26:1 | 4,70:1 | 3:1 |
 | `--danger-contrast` sobre `--danger` | Texto normal | 6,68:1 | 9,32:1 | 4,5:1 |
 | `--muted` sobre `--surface-sunken` | Texto normal | 4,72:1 | 8,08:1 | 4,5:1 |
@@ -444,7 +449,7 @@ como existente lo que aún no lo está.
 | Ficha técnica de campos | Lista `dl` de dos columnas, sin aspecto de tabla; números y fechas formateados, referencias como enlaces y «Sin valor» para los vacíos. | Implementada | #129 |
 | Lista de relaciones | Dirección, etiqueta efectiva y recíproca, ficha contraparte, backlinks y menú `⋯`; sin tabla. | Implementada | #130 |
 | Nodo de grafo | Avatar, nombre, tipo y selección; el grafo completo llega con #83. | Previsto | #83 |
-| Editor mínimo | Formato básico, menciones `@` y `[[ ]]`; sin barra permanente. | Previsto | #131 |
+| Editor mínimo | Barra mínima permanente de cinco acciones (Negrita, Cursiva, Formato, Enlace, Mención); acciones avanzadas en el menú Formato; menciones `@` y `[[` con combobox/listbox; sin barra extensa ni segunda fila. | Implementado | #131 |
 
 ## 10. Shell y pantallas
 
@@ -638,10 +643,46 @@ figuran como implementadas. El grafo completo sigue previsto en #83.
 
 ### 10.6 Editor
 
-- Editor mínimo con formato básico y menciones `@` / `[[ ]]` en #131.
-- Sin barra de herramientas permanente que reduzca el ancho de lectura.
-- El guardado se anuncia con `aria-live`; el autoguardado no roba el foco.
-- El contenido largo mantiene el ancho de lectura y el scroll vertical.
+Contrato completo y vinculante en
+[`editor-issue-131.md`](editor-issue-131.md), aprobado en #131. Corrige la
+formulación anterior «sin barra de herramientas permanente»: la barra mínima de
+cinco acciones **sí es permanente en edición**; lo que se retira es la barra
+extensa de once controles y cualquier segunda fila.
+
+- **Edición:** una sola fila de cinco controles en este orden: Negrita,
+  Cursiva, **Formato**, Enlace y Mención. Botones de 32×32 px, glifo o icono de
+  20 px, separación de 4 px y ≈255 px de ancho total; nunca se envuelve ni
+  provoca scroll horizontal a 1024, 1280 y 1600 px. «Formato» es texto visible
+  con chevron; Enlace y Mención son solo icono con nombre accesible y se
+  distinguen por forma, posición y nombre. El botón Mención inserta `@` y abre
+  el mismo selector que el teclado.
+- **Menú Formato:** tres bloques separados: Párrafo y Título 1–3
+  (`menuitemradio` con `aria-checked`), listas y cita (`menuitemcheckbox`) y
+  Abrir/Quitar enlace (`menuitem`, deshabilitados si el cursor no está en un
+  enlace). Reutiliza el `Menu` existente, incluidos flechas con envoltura,
+  Inicio/Fin, Escape con retorno de foco y posicionamiento con volteo; al
+  aplicar un formato el foco vuelve al editor.
+- **Menciones:** `@` (tras inicio, espacio o puntuación de apertura) y `[[`
+  (en cualquier posición) abren un combobox/listbox anclado al cursor, de 17–22
+  rem, con clamp horizontal, volteo vertical, máximo de ocho opciones visibles y
+  scroll interno. El foco permanece en el editor y `aria-activedescendant` marca
+  la opción; el nombre largo envuelve sin truncarse. `Escape` cierra sin borrar
+  el texto y `Enter`, `Tab` o clic insertan el enlace interno `wc-entity://`.
+- **Patrón accesible:** en edición el contenteditable es `role="combobox"` con
+  `aria-expanded` y `aria-controls` siempre presentes, `aria-autocomplete="list"`
+  y sin `aria-multiline`; el `listbox` existe siempre y se oculta con `hidden` y
+  `display: none`. En lectura se retiran todos los atributos de formulario y no
+  se monta el popup.
+- **Lectura:** sin barra, sin menú y sin popup; los enlaces internos van en
+  `--accent-strong` y el clic normal navega. En edición, `Ctrl/Cmd+clic` y
+  «Abrir enlace» del menú.
+- **Guardado:** se anuncia con `aria-live`; el autoguardado no roba el foco.
+- **Contenido largo:** ancho de lectura de 60–72 caracteres y scroll vertical;
+  la barra y el popup no generan scroll de página.
+- **Temas:** solo roles semánticos. Las parejas de contraste del editor
+  (`--fg` sobre `--surface-sunken`, `--accent-strong` sobre `--accent-surface`,
+  `--accent`, `--muted` y `--disabled-text` sobre `--surface-raised`) viven en
+  §4.5 y en el test de tokens.
 
 ### 10.7 Ajustes
 
@@ -693,6 +734,10 @@ Toda pantalla debe cubrir:
   explícito; el autoguardado anuncia el error sin mover el foco.
 - En lectura, la descripción no conserva `role="textbox"` ni el `aria-label` de
   Tiptap; el nombre lo aporta el encabezado de la sección.
+- En edición, el editor es un `combobox` con `aria-expanded` y `aria-controls`
+  siempre presentes y sin `aria-multiline`; el `listbox` de menciones existe
+  siempre, se oculta con `hidden` y el foco permanece en el editor mientras se
+  navega con `aria-activedescendant`.
 - `Ctrl+S` guarda en edición y evita el diálogo de guardar página de Electron.
 - `prefers-reduced-motion`: sin animaciones esenciales ni desplazamientos
   automáticos.
@@ -806,24 +851,25 @@ Reglas de migración:
 | Vista de mundo modular | Implementado | #128 |
 | Ficha como documento y panel de propiedades | Implementado | #129 |
 | Relaciones legibles y grafo contextual | Implementado (relaciones); grafo previsto en #83 | #130 |
-| Editor mínimo y menciones | Previsto | #131 |
+| Editor mínimo y menciones | Implementado | #131 |
 | Preferencias de interfaz persistentes | Previsto | #132 |
 | Auditoría visual, temas y ruido | Previsto | #133 |
 
-Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2:
-los tokens y las primitivas ya son v2 desde #125, el shell desde #126, Inicio
-desde #127, la vista de mundo desde #128, la ficha desde #129 y las relaciones
-desde #130; el editor sigue siendo el de v1 hasta que su issue lo migre. El grafo
-completo continúa previsto en #83. No se deben tomar capturas nuevas como si esas
-pantallas ya estuvieran rediseñadas.
+Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2.
+La composición v2 ya está aplicada en tokens y primitivas (#125), shell (#126),
+Inicio (#127), vista de mundo (#128), ficha (#129), relaciones (#130) y editor
+(#131). Las filas pendientes son las preferencias persistentes de #132 y la
+auditoría visual de #133. El grafo completo continúa previsto en #83. No se deben
+tomar capturas nuevas como si esas pantallas ya estuvieran rediseñadas.
 
 ### 17.2 Verificación automática
 
 - `tests/unit/design-tokens.test.ts` verifica la paleta v2, los roles de ambos
   temas, la tabla §4.5 completa (incluidas las parejas nuevas de superficie
-  hundida, foco y marcas de entidad), la disciplina de capas, la ausencia de
-  tokens indefinidos, las escalas, la elevación, los estados sin opacidad, el
-  movimiento reducido y la licencia OFL de la fuente empaquetada.
+  hundida, foco, marcas de entidad y las que añade el editor en #131), la
+  disciplina de capas, la ausencia de tokens indefinidos, las escalas, la
+  elevación, los estados sin opacidad, el movimiento reducido y la licencia OFL
+  de la fuente empaquetada.
 - `tests/components/primitives.test.tsx` cubre botón de icono, menú, casilla,
   radio, panel, sección plegable, esqueleto, tarjeta, diálogo y avisos;
   `samples.test.tsx` monta el banco completo con el catálogo real.
@@ -936,6 +982,7 @@ pantallas ya estuvieran rediseñadas.
 - [ADR 0025: dirección visual v2](../adr/0025-visual-direction-v2.md)
 - [ADR 0006: dos temas y sistema de diseño de escritorio](../adr/0006-two-themes-desktop-design-system.md)
 - [Contrato de la ficha #129](ficha-issue-129.md)
+- [Contrato del editor mínimo #131](editor-issue-131.md)
 - [Plan de desarrollo](../plan-desarrollo.md)
 - [Arquitectura](../arquitectura.md)
 - [Proceso SDD](../proceso-sdd.md)
