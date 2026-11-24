@@ -17,7 +17,9 @@ import {
 const WORLD_ID = '01900000-0000-7000-8000-000000000001';
 const ENTITY_ID = '01900000-0000-7000-8000-000000000002';
 
-function createPreferences(overrides: Partial<UiPreferences> = {}): UiPreferences {
+function createPreferences(
+  overrides: Partial<UiPreferences> = {},
+): UiPreferences {
   return { ...createDefaultUiPreferences(), ...overrides };
 }
 

@@ -28,10 +28,7 @@ import {
   createPreferencesRepository,
   type PreferencesRepository,
 } from './repository';
-import {
-  readStoredPreferences,
-  uiPreferencesPatchSchema,
-} from './validation';
+import { readStoredPreferences, uiPreferencesPatchSchema } from './validation';
 
 /** Operaciones expuestas por el servicio. */
 export interface PreferencesService {

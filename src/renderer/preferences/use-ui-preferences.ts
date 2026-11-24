@@ -37,9 +37,8 @@ export interface UseUiPreferencesResult {
 export function useUiPreferences(
   initialPreferences: UiPreferences,
 ): UseUiPreferencesResult {
-  const [preferences, setPreferences] = useState<UiPreferences>(
-    initialPreferences,
-  );
+  const [preferences, setPreferences] =
+    useState<UiPreferences>(initialPreferences);
   const sequenceRef = useRef(0);
 
   const update = useCallback((patch: UiPreferencesPatch) => {

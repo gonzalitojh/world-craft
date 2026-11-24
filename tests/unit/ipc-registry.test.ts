@@ -212,9 +212,9 @@ describe('createIpcHandlers', () => {
       error: { code: 'INTERNAL_ERROR' },
     });
 
-    await expect(route(IPC_CHANNELS.preferencesGet, { extra: true })).resolves.toEqual(
-      { ok: false, error: { code: 'INVALID_INPUT' } },
-    );
+    await expect(
+      route(IPC_CHANNELS.preferencesGet, { extra: true }),
+    ).resolves.toEqual({ ok: false, error: { code: 'INVALID_INPUT' } });
   });
 
   it('atiende las órdenes de actualizaciones con un objeto vacío estricto', async () => {

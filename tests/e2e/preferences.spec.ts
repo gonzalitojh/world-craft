@@ -350,7 +350,9 @@ test('el reset por API vuelve a los defectos sin borrar mundos ni fichas', async
   // El tema del cromo se aplica en caliente, sin esperar a recargar.
   await expect
     .poll(() =>
-      electronApp.evaluate(({ nativeTheme }) => nativeTheme.shouldUseDarkColors),
+      electronApp.evaluate(
+        ({ nativeTheme }) => nativeTheme.shouldUseDarkColors,
+      ),
     )
     .toBe(false);
 

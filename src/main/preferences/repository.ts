@@ -18,8 +18,7 @@ import { UI_PREFERENCE_GLOB_PATTERN } from './keys';
  *
  * `GLOB` evita que `LIKE` case-insensitive borre o lea una clave `UI.*`.
  */
-const uiPreferenceKeyCondition =
-  sql`${appSettings.key} GLOB ${UI_PREFERENCE_GLOB_PATTERN}`;
+const uiPreferenceKeyCondition = sql`${appSettings.key} GLOB ${UI_PREFERENCE_GLOB_PATTERN}`;
 
 /** Operaciones que necesita el servicio de preferencias. */
 export interface PreferencesRepository {
@@ -74,10 +73,7 @@ export function createPreferencesRepository(
     },
 
     deleteUiKeys() {
-      database
-        .delete(appSettings)
-        .where(uiPreferenceKeyCondition)
-        .run();
+      database.delete(appSettings).where(uiPreferenceKeyCondition).run();
     },
 
     transaction(operation) {

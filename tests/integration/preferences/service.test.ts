@@ -21,10 +21,7 @@ import {
   createDefaultUiPreferences,
   type UiPreferencesPatch,
 } from '../../../src/shared/contracts/preferences';
-import {
-  createTestDatabase,
-  type TempDatabase,
-} from '../helpers/temp-db';
+import { createTestDatabase, type TempDatabase } from '../helpers/temp-db';
 
 const NOW = 1_760_000_000_000;
 const WORLD_ID = '01900000-0000-7000-8000-000000000001';
@@ -161,7 +158,15 @@ function seedDomain(database: DatabaseClient): void {
       `insert into relations (id, world_id, source_id, target_id, type_id, strength, metadata, created_at, updated_at)
        values (?, ?, ?, ?, ?, 1, '{}', ?, ?)`,
     )
-    .run(RELATION_ID, WORLD_ID, ENTITY_ID, TARGET_ID, RELATION_TYPE_ID, NOW, NOW);
+    .run(
+      RELATION_ID,
+      WORLD_ID,
+      ENTITY_ID,
+      TARGET_ID,
+      RELATION_TYPE_ID,
+      NOW,
+      NOW,
+    );
   database.sqlite
     .prepare(
       `insert into app_settings (key, value, updated_at) values ('locale', '"es"', ?)`,
@@ -312,9 +317,7 @@ describe('servicio de preferencias', () => {
     expect(ctx.repository.readAll().size).toBe(0);
     expect(
       ctx.client.sqlite
-        .prepare(
-          "select value from app_settings where key = 'locale'",
-        )
+        .prepare("select value from app_settings where key = 'locale'")
         .get(),
     ).toEqual({ value: '"es"' });
     expect({
@@ -350,9 +353,9 @@ describe('servicio de preferencias', () => {
       now: () => NOW,
     });
 
-    expect(() =>
-      service.update({ theme: 'dark', lastView: 'world' }),
-    ).toThrow('fallo forzado');
+    expect(() => service.update({ theme: 'dark', lastView: 'world' })).toThrow(
+      'fallo forzado',
+    );
     expect(ctx.repository.readAll().size).toBe(0);
   });
 

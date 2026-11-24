@@ -35,11 +35,7 @@ const recentLocationInputSchema = z.union([
     kind: z.literal('entity'),
     worldId: entityIdSchema,
     entityId: entityIdSchema,
-    entityName: z
-      .string()
-      .min(1)
-      .max(ENTITY_NAME_MAX_LENGTH)
-      .nullable(),
+    entityName: z.string().min(1).max(ENTITY_NAME_MAX_LENGTH).nullable(),
   }),
 ]);
 
@@ -74,9 +70,7 @@ export const uiPreferencesPatchSchema = z
     message: 'El parche de preferencias no puede estar vacío.',
   });
 
-export type UiPreferencesPatchInput = z.infer<
-  typeof uiPreferencesPatchSchema
->;
+export type UiPreferencesPatchInput = z.infer<typeof uiPreferencesPatchSchema>;
 
 const DEFAULT_ENTITY_VIEW: EntityViewPreferences = Object.freeze({
   propertiesOpen: true,

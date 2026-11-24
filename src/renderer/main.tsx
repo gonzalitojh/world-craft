@@ -39,9 +39,8 @@ if (container === null) {
 function loadInitialPreferences(): Promise<UiPreferences> {
   // La API puede faltar si el preload no llegó a publicarse; el contrato la
   // declara siempre presente, así que se comprueba desde una vista parcial.
-  const api = (
-    window as { readonly worldCraft?: Partial<WorldCraftApi> }
-  ).worldCraft?.preferences;
+  const api = (window as { readonly worldCraft?: Partial<WorldCraftApi> })
+    .worldCraft?.preferences;
 
   if (api === undefined) {
     return Promise.resolve(createDefaultUiPreferences());

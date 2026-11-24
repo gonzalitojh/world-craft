@@ -44,8 +44,7 @@ export interface EntityViewPatch {
   readonly propertiesOpen?: boolean | undefined;
   readonly propertiesWidth?: number | undefined;
   readonly sections?:
-    | Partial<Record<EntitySectionId, boolean | undefined>>
-    | undefined;
+    Partial<Record<EntitySectionId, boolean | undefined>> | undefined;
 }
 
 /**
@@ -230,9 +229,7 @@ export function isThemePreference(value: unknown): value is ThemePreference {
 }
 
 /** Indica si un valor es una vista persistible. */
-export function isPersistedAppView(
-  value: unknown,
-): value is PersistedAppView {
+export function isPersistedAppView(value: unknown): value is PersistedAppView {
   return (
     typeof value === 'string' &&
     (PERSISTED_APP_VIEWS as readonly string[]).includes(value)
@@ -264,9 +261,7 @@ export function isEntityViewPreferences(
     return false;
   }
 
-  return ENTITY_SECTION_IDS.every(
-    (id) => typeof sections[id] === 'boolean',
-  );
+  return ENTITY_SECTION_IDS.every((id) => typeof sections[id] === 'boolean');
 }
 
 /** Comprueba la forma estricta del último destino. */
@@ -287,12 +282,7 @@ export function isRecentLocationPreference(
 
   if (value.kind === 'entity') {
     return (
-      hasExactKeys(value, [
-        'kind',
-        'worldId',
-        'entityId',
-        'entityName',
-      ]) &&
+      hasExactKeys(value, ['kind', 'worldId', 'entityId', 'entityName']) &&
       typeof value.worldId === 'string' &&
       UUID_V7_PATTERN.test(value.worldId) &&
       typeof value.entityId === 'string' &&

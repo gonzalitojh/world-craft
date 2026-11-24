@@ -42,11 +42,10 @@ export function createPreferencesIpcHandlers(
   service: PreferencesService,
 ): PreferencesIpcHandlers {
   return {
-    [IPC_CHANNELS.preferencesGet]:
-      defineIpcHandler<PreferencesEmptyPayload>({
-        schema: preferencesEmptyPayloadSchema,
-        handle: () => service.get(),
-      }),
+    [IPC_CHANNELS.preferencesGet]: defineIpcHandler<PreferencesEmptyPayload>({
+      schema: preferencesEmptyPayloadSchema,
+      handle: () => service.get(),
+    }),
 
     [IPC_CHANNELS.preferencesUpdate]:
       defineIpcHandler<PreferencesUpdatePayload>({
@@ -55,10 +54,9 @@ export function createPreferencesIpcHandlers(
           runPreferencesOperation(() => service.update(payload)),
       }),
 
-    [IPC_CHANNELS.preferencesReset]:
-      defineIpcHandler<PreferencesEmptyPayload>({
-        schema: preferencesEmptyPayloadSchema,
-        handle: () => runPreferencesOperation(() => service.reset()),
-      }),
+    [IPC_CHANNELS.preferencesReset]: defineIpcHandler<PreferencesEmptyPayload>({
+      schema: preferencesEmptyPayloadSchema,
+      handle: () => runPreferencesOperation(() => service.reset()),
+    }),
   };
 }

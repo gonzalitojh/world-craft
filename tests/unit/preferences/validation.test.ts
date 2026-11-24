@@ -86,7 +86,9 @@ describe('lectura tolerante', () => {
   it('devuelve los defectos sin filas y sin tocar el mapa', () => {
     const entries = new Map<string, string>();
 
-    expect(readStoredPreferences(entries)).toEqual(createDefaultUiPreferences());
+    expect(readStoredPreferences(entries)).toEqual(
+      createDefaultUiPreferences(),
+    );
     expect(entries.size).toBe(0);
   });
 

@@ -33,9 +33,7 @@ interface ApiMock {
 }
 
 function installApi(
-  updateImpl?: (
-    patch: UiPreferencesPatch,
-  ) => Promise<IpcResult<UiPreferences>>,
+  updateImpl?: (patch: UiPreferencesPatch) => Promise<IpcResult<UiPreferences>>,
   resetImpl?: () => Promise<IpcResult<UiPreferences>>,
 ): ApiMock {
   const update = vi.fn(

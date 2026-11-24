@@ -381,8 +381,7 @@ function createApi(options: ApiOptions = {}) {
   };
 }
 
-let viewState: EntityViewPreferences =
-  createDefaultUiPreferences().entityView;
+let viewState: EntityViewPreferences = createDefaultUiPreferences().entityView;
 
 function renderPage(options: ApiOptions = {}) {
   const mocks = createApi(options);

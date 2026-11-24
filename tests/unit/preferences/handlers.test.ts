@@ -16,7 +16,9 @@ const selected: UiPreferences = {
   railCollapsed: true,
 };
 
-function createService(overrides: Partial<PreferencesService> = {}): PreferencesService {
+function createService(
+  overrides: Partial<PreferencesService> = {},
+): PreferencesService {
   return {
     get: () => selected,
     update: () => selected,
@@ -71,9 +73,9 @@ describe('handlers IPC de preferencias', () => {
       }),
     );
 
-    expect(() =>
-      handlers[IPC_CHANNELS.preferencesReset].handle({}),
-    ).toThrow('db.sqlite');
+    expect(() => handlers[IPC_CHANNELS.preferencesReset].handle({})).toThrow(
+      'db.sqlite',
+    );
   });
 
   it('exige un objeto vacío estricto y un parche con al menos una clave', () => {

@@ -246,10 +246,10 @@ describe('world-craft-api', () => {
     await expect(
       api.preferences.update({ theme: 'dark', railCollapsed: true }),
     ).resolves.toEqual({ ok: true, data: preferences });
-    expect(invoke).toHaveBeenLastCalledWith(
-      IPC_CHANNELS.preferencesUpdate,
-      { theme: 'dark', railCollapsed: true },
-    );
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.preferencesUpdate, {
+      theme: 'dark',
+      railCollapsed: true,
+    });
 
     await expect(api.preferences.reset()).resolves.toEqual({
       ok: true,
