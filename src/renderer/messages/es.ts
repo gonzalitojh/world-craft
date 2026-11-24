@@ -537,7 +537,7 @@ export const es = {
         'Si el tipo ya tiene fichas, no puedes quitar campos ni cambiar su tipo; sí puedes ajustar etiquetas, opciones y añadir campos.',
       addField: 'Añadir campo',
       removeField: 'Quitar campo',
-      removeFieldNamed: (label: string): string => `Quitar el campo ${label}`,
+      removeFieldNamed: (label: string): string => `Quitar campo ${label}`,
       fieldLabel: 'Etiqueta',
       fieldKey: 'Clave',
       fieldType: 'Tipo de campo',

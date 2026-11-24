@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   ENTITY_FIELD_KEY_MAX_LENGTH,
@@ -77,12 +77,32 @@ export function EntityTypeManager({
   const [pendingDelete, setPendingDelete] = useState<EntityTypeSummary | null>(
     null,
   );
+  const [deleteError, setDeleteError] = useState<string | undefined>();
   const [error, setError] = useState<string | undefined>();
+  const deleteErrorRef = useRef<HTMLParagraphElement | null>(null);
+
+  useEffect(() => {
+    if (deleteError !== undefined) {
+      deleteErrorRef.current?.focus();
+    }
+  }, [deleteError]);
+
+  const handleClose = (): void => {
+    setPendingDelete(null);
+    setDeleteError(undefined);
+    setMode('list');
+    setSource(null);
+    setDraft(emptyDraft());
+    setError(undefined);
+    onClose();
+  };
 
   const startCreate = (): void => {
     setSource(null);
     setDraft(emptyDraft());
     setError(undefined);
+    setPendingDelete(null);
+    setDeleteError(undefined);
     setMode('create');
   };
 
@@ -90,6 +110,8 @@ export function EntityTypeManager({
     setSource(type);
     setDraft(fromType(type));
     setError(undefined);
+    setPendingDelete(null);
+    setDeleteError(undefined);
     setMode('edit');
   };
 
@@ -101,6 +123,8 @@ export function EntityTypeManager({
       key: '',
     });
     setError(undefined);
+    setPendingDelete(null);
+    setDeleteError(undefined);
     setMode('duplicate');
   };
 
@@ -307,6 +331,7 @@ export function EntityTypeManager({
 
   const remove = async (type: EntityTypeSummary): Promise<void> => {
     setPending(true);
+    setDeleteError(undefined);
 
     try {
       const result = await window.worldCraft.entityTypes.remove({
@@ -315,13 +340,15 @@ export function EntityTypeManager({
       });
 
       if (!result.ok || !result.data.deleted) {
-        onNotify('error', messages.entities.types.removeBlocked);
-        setPendingDelete(null);
+        // El toast queda bajo la top layer del diálogo modal: el aviso de
+        // borrado bloqueado se muestra dentro de la propia confirmación.
+        setDeleteError(messages.entities.types.removeBlocked);
         return;
       }
 
       onNotify('success', messages.entities.types.removed(type.name));
       setPendingDelete(null);
+      setDeleteError(undefined);
       await onChanged();
     } finally {
       setPending(false);
@@ -340,11 +367,11 @@ export function EntityTypeManager({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={title}
       className="wc-dialog--wide"
       actions={
-        <Button variant="ghost" onClick={onClose} disabled={pending}>
+        <Button variant="ghost" onClick={handleClose} disabled={pending}>
           {messages.entities.types.close}
         </Button>
       }
@@ -409,6 +436,7 @@ export function EntityTypeManager({
                         size="sm"
                         onClick={() => {
                           setPendingDelete(type);
+                          setDeleteError(undefined);
                         }}
                         aria-label={messages.entities.types.removeNamed(
                           type.name,
@@ -422,22 +450,30 @@ export function EntityTypeManager({
                 {pendingDelete?.id === type.id ? (
                   <div className="wc-inline-confirm" role="group">
                     <p>{messages.entities.types.removeBody}</p>
+                    {deleteError === undefined ? null : (
+                      <p role="alert" tabIndex={-1} ref={deleteErrorRef}>
+                        {deleteError}
+                      </p>
+                    )}
                     <div className="wc-inline-confirm__actions">
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        loading={pending}
-                        onClick={() => {
-                          void remove(type);
-                        }}
-                      >
-                        {messages.entities.types.removeSubmit}
-                      </Button>
+                      {deleteError === undefined ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          loading={pending}
+                          onClick={() => {
+                            void remove(type);
+                          }}
+                        >
+                          {messages.entities.types.removeSubmit}
+                        </Button>
+                      ) : null}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
                           setPendingDelete(null);
+                          setDeleteError(undefined);
                         }}
                       >
                         {messages.entities.types.cancel}
@@ -546,7 +582,7 @@ export function EntityTypeManager({
             ) : (
               <ol className="wc-field-list">
                 {draft.fields.map((field, index) => (
-                  <li className="wc-field-card" key={field.id}>
+                  <li className="wc-field-group" key={field.id}>
                     <div className="wc-form-grid">
                       <TextField
                         label={messages.entities.types.fieldLabel}
@@ -690,7 +726,7 @@ export function EntityTypeManager({
                       />
                     ) : null}
 
-                    <div className="wc-field-card__actions">
+                    <div className="wc-field-group__actions">
                       <Button
                         variant="ghost"
                         size="sm"

@@ -155,18 +155,36 @@ componente, página o el shell introduce un texto visible hardcodeado. Los
 componentes leen el catálogo mediante `I18nProvider`, cubierto en
 `tests/components/i18n-provider.test.tsx`.
 
-Lo siguiente **sigue pendiente** y pertenece a #93, #94 y a la revisión local:
+Desde #133, la matriz visual de M1.5 está automatizada:
+`tests/e2e/visual-audit.spec.ts` recorre 1024, 1280 y 1600 px × Claro/Oscuro las
+seis pantallas de producto, sus estados vacíos o sin resultados, los siete
+overlays y el banco de Muestras, con 98 registros (88 celdas de la matriz más 10
+capturas extra). `pnpm test:audit` ejecuta solo esta matriz;
+`tests/e2e/fixtures/audit.ts` siembra 12 mundos, 60 fichas (200 para rendimiento),
+una ficha de 50.000 caracteres y un tipo personalizado en uso; y
+`scripts/audit-report.mjs` regenera la parte B de
+[`docs/diseno/auditoria-visual-issue-133.md`](../diseno/auditoria-visual-issue-133.md)
+desde `test-results/e2e/audit/records.json`. Las capturas PNG no se versionan.
+Por celda se comprueban el desbordamiento de `html`, `body`, `main` y del
+contenedor, el contraste computado con WCAG 2.2 (64 pares de la lista cerrada del
+contrato), axe, el recorrido de foco con orden DOM y objetivos de 28/32 px, el
+movimiento reducido y el ruido de cajas; por vista se miden nodos DOM, tiempo de
+montaje, long tasks y bloqueo. `tests/unit/design-noise.test.ts` bloquea cajas
+heredadas, selectores muertos y residuos v1.
 
-- Componentes con estados de reposo, hover, foco, error, deshabilitado y carga
-  en una matriz visual real a 1024, 1280 y 1600 px.
-- Navegación por teclado y foco visible revisados en todas las pantallas de
-  dominio.
-- `aria-live` en los flujos de guardado y error de las pantallas de dominio (los
-  avisos del shell ya lo usan).
-- axe sin errores críticos en todas las pantallas principales, no solo el shell.
-- Capturas de los dos temas y revisión de `prefers-reduced-motion` en ejecución.
-- Textos largos, nombres sin espacios y rutas sin romper el layout, comprobados
-  visualmente (el test solo impide el parche de `overflow-x: hidden`).
+**Limitación declarada:** `loading` y `error` de las seis pantallas, la actividad
+en carga y error, el error de tipos, los errores de relaciones y de guardado y el
+error de sugerencias no se pueden provocar desde el renderer, porque
+`window.worldCraft` está congelada por `contextBridge`. Su evidencia son las
+pruebas de componentes (`home-page.test.tsx`, `worlds.test.tsx`,
+`entities.test.tsx`, `entity-detail.test.tsx`, `search.test.tsx` y
+`primitives.test.tsx`), y así queda registrado en la parte B del informe.
+
+Sigue **pendiente** para #93 y #94: la auditoría final de accesibilidad con
+revisión manual y lector de pantalla, los estados de sistema (modo seguro,
+actualizaciones) fuera de la matriz de producto y la optimización fina de
+rendimiento con 10.000 fichas. La revisión local conserva las capturas de la
+parte B.
 
 ### 3.5 Rendimiento
 
@@ -183,6 +201,14 @@ lo cubre cuando aplica.
   antes de abrir la ventana y la restauración ocurre en el diálogo de modo
   seguro; las copias manuales y la exportación de M1 no deben bloquear la UI.
 - Sin fugas evidentes al abrir y cerrar editor, mapa y grafo varias veces.
+- Umbrales medidos por el arnés de #133 en la ventana real: Inicio ≤ 1.500 nodos
+  y ≤ 1.000 ms de montaje; Mundos (12) y Mundo ≤ 3.000 nodos; Fichas con 200
+  tarjetas ≤ 12.000 nodos y ≤ 2.000 ms; Ficha con 50.000 caracteres ≤ 10.000
+  nodos y ≤ 2.000 ms; Búsqueda con 30 resultados ≤ 6.000 nodos. Solo bloquean un
+  long task superior a 1 s o una congelación superior a 2 s; una métrica por
+  encima del umbral sin congelación se registra como issue hija. El resultado de
+  M1.5 queda en la parte B de
+  [`docs/diseno/auditoria-visual-issue-133.md`](../diseno/auditoria-visual-issue-133.md).
 
 ### 3.6 Distribución (implementado, #68)
 
@@ -203,7 +229,7 @@ lo cubre cuando aplica.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **518 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **531 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
@@ -215,14 +241,17 @@ lo cubre cuando aplica.
   handlers y tarjetas), relaciones (validación, esquemas, guardas y catálogo),
   vistas internas del shell (resolución de Muestras por hash), fechas relativas
   con `Intl.RelativeTimeFormat`, marca procedural de mundo, destino de
-  «Continuar» y preferencias de interfaz (contrato, validación y handlers).
-- **171 pruebas de componentes en verde** en `tests/components/`: botón nativo,
+  «Continuar», preferencias de interfaz (contrato, validación y handlers) y
+  guardarraíl de ruido del sistema de diseño (cajas, selectores muertos y
+  residuos v1).
+- **174 pruebas de componentes en verde** en `tests/components/`: botón nativo,
   botón de icono con tooltip, menú `⋯`, casilla, radio, panel, esqueleto,
   tarjeta, diálogo, avisos, pestañas, proveedor de i18n, tarjetas y formularios
   de mundo, ficha, diálogos de creación, creación rápida, panel de relaciones y
   diálogo de relación, el shell v2 (navegación, plegado, primaria, menú y
-  paleta), la mesa de trabajo de Inicio, el hook de preferencias y el banco de
-  muestras completo. Usan Testing Library y `jsdom`.
+  paleta), la mesa de trabajo de Inicio, el hook de preferencias, el gestor de
+  tipos (incluido el aviso de borrado bloqueado dentro de la confirmación) y el
+  banco de muestras completo. Usan Testing Library y `jsdom`.
 - **146 pruebas de integración en verde (1 omitida)** en
   `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
@@ -240,8 +269,8 @@ lo cubre cuando aplica.
   instalaciones.
 - **Comandos.** `pnpm test` (unitarias, componentes e integración),
   `pnpm test:unit`, `pnpm test:components`, `pnpm test:integration`,
-  `pnpm test:e2e`, `pnpm db:check`, `pnpm verify:native`, `pnpm verify:build`,
-  `pnpm dist:dir`, `pnpm dist`, `pnpm package:checksums` y
+  `pnpm test:e2e`, `pnpm test:audit`, `pnpm db:check`, `pnpm verify:native`,
+  `pnpm verify:build`, `pnpm dist:dir`, `pnpm dist`, `pnpm package:checksums` y
   `pnpm verify:package`.
 - **Build.** `pnpm build` compila `out/main/index.cjs`, `out/preload/index.cjs` y
   `out/renderer/index.html`, y copia `drizzle/` a `out/main/drizzle`; no genera
@@ -256,12 +285,13 @@ lo cubre cuando aplica.
   2×2. Se ejecuta en el job `package` de Windows desde #68.
 - **Manual del scaffold.** DevTools sin `require` ni `process`, navegación
   externa bloqueada y arranque sin red. La comprobación visual de la ventana a
-  1024, 1280 y 1600 px y de los dos temas con el shell v2 (#126) la cubren los
-  E2E de #70 y #126; las capturas y la matriz visual completa siguen en #93.
-- **Pendiente.** Auditoría de accesibilidad, temas y ventana de todas las
-  pantallas (#93). Los E2E de arranque, ventana, temas y axe del shell están
-  implementados en 3.11. El instalador, el asar y el actualizador ya están
-  cubiertos en 3.6 y 3.10.
+  1024, 1280 y 1600 px y de los dos temas la cubren los E2E de #70, #126 y la
+  matriz de #133 (3.4); la revisión manual y la auditoría final de accesibilidad
+  siguen en #93.
+- **Pendiente.** Auditoría final de accesibilidad y revisión manual de todas las
+  pantallas (#93). Los E2E de arranque, ventana, temas, axe del shell y la matriz
+  visual de M1.5 están implementados en 3.4 y 3.11. El instalador, el asar y el
+  actualizador ya están cubiertos en 3.6 y 3.10.
 
 ### 3.8 Assets locales (implementado, #66)
 
@@ -439,7 +469,7 @@ comprobación no aborta el socket; la auditoría completa de axe, temas y ventan
 sigue en #93; el paso de `package` a required y la build de release de Windows
 se abordan en M5.
 
-### 3.11 Componentes y E2E (implementado, #70 y #126)
+### 3.11 Componentes y E2E (implementado, #70, #126 y #133)
 
 **Componentes.** `pnpm test:components` ejecuta Vitest con `jsdom`, Testing
 Library y `@testing-library/jest-dom` sobre `tests/components/`. El setup
@@ -481,12 +511,22 @@ leen ni escriben `%APPDATA%`, la base, los assets ni las copias del usuario.
   no es vacía. No se usa `@axe-core/playwright` porque necesita
   `browserContext.newPage()`, que el contexto de Electron no admite
   (`Target.createTarget: Not supported`).
+- **Matriz visual y ruido (#133):** `tests/e2e/visual-audit.spec.ts` recorre seis
+  pantallas, sus vacíos o filtros sin resultados, siete overlays y Muestras en
+  1024/1280/1600 px × Claro/Oscuro; cada celda deja una entrada en
+  `records.json` con captura local (no versionada), overflow, contraste, axe y
+  foco, y cada vista mide rendimiento. `pnpm test:audit` ejecuta solo esta
+  matriz y `scripts/audit-report.mjs` regenera la parte B del informe. Los
+  estados `loading` y `error`, no inyectables con la API del preload, se cubren
+  en componentes (3.4). `tests/unit/design-noise.test.ts` es el guardarraíl
+  estático de cajas heredadas, selectores muertos y residuos v1.
 - **Sin red:** los E2E no descargan navegadores ni hacen peticiones externas.
 
 **Fixtures y helpers.** Las pruebas de integración reutilizan
 `tests/integration/helpers/temp-db.ts` y `temp-assets.ts`; la ventana y el
 `userData` temporal viven en `tests/e2e/fixtures/electron-app.ts`, la auditoría
-en `fixtures/axe.ts` y la apertura de Muestras por hash interno en
+en `fixtures/axe.ts`, la semilla y las mediciones de la matriz visual en
+`fixtures/audit.ts` y la apertura de Muestras por hash interno en
 `fixtures/internal-view.ts`. Todo usa `os.tmpdir()` y se borra al terminar.
 
 ### 3.12 Mundos: CRUD, dashboard y aislamiento (implementado, #72)
@@ -739,7 +779,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 518 unitarias (4 omitidas), 171 de componentes y 146 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 531 unitarias (4 omitidas), 174 de componentes y 146 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |
@@ -751,8 +791,10 @@ Desde #69, `lint`, `typecheck`, `test` y `build` son required en los rulesets
 sigue sin ser required: empaquetar NSIS en Windows es lento y la build de release
 completa llega con M5. Desde #70, `test` incluye las pruebas de componentes y no
 hay job `e2e` en las PRs: los E2E se ejecutan en local antes de `review` y en el
-workflow de release de M5 porque abren la aplicación real en Windows. La
-auditoría de accesibilidad, temas y ventana de todas las pantallas sigue en #93.
+workflow de release de M5 porque abren la aplicación real en Windows. La matriz
+visual de M1.5 se ejecuta en local con `pnpm test:audit` (#133) y tampoco va en
+CI por PR; la auditoría final de accesibilidad y la revisión manual siguen en
+#93.
 `verify:native` se ejecuta en el job `package` de Windows desde #68. La CI no
 tiene credenciales ni datos de usuario; el job `package` no recibe `GH_TOKEN`.
 `gitleaks` y `audit` se revisan en la puerta de seguridad y no bloquean una PR
@@ -827,6 +869,9 @@ que no toca secretos ni dependencias.
 | Antes de `review` | Sí | Sí | Flujo afectado | Si es visual |
 | Antes de publicar | Sí | Sí | Sí | Si hay UI |
 | Antes de un release | Sí | Sí | Sí | Completo |
+
+La matriz visual (`pnpm test:audit`) se ejecuta antes de `review` cuando la tarea
+toca pantallas, estilos o textos visibles, y antes de una release.
 
 ## 10. Documentos relacionados
 

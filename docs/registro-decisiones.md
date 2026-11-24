@@ -262,3 +262,27 @@ Las dudas eran dónde guardarlos, cómo leerlos antes del primer pintado y si la
   #123, #129, #132, #79, #133, `docs/diseno/sistema-de-diseno.md`,
   `docs/persistencia.md`, `docs/base-de-datos/esquema.md` y
   `docs/manual-de-usuario.md`.
+
+## 2026-11-24 — Cierre de M1.5: auditoría visual (#133, M1.5-10)
+
+**Contexto.** La issue #133 cierra la etapa de diseño con una auditoría
+transversal de las pantallas existentes: ruido de cajas heredadas, revisión en
+Claro y Oscuro a 1024, 1280 y 1600 px, accesibilidad, textos, navegación y
+rendimiento. No introduce ninguna decisión nueva de producto ni de arquitectura:
+la dirección v2 ya está en D-048/ADR 0025, y el criterio de ruido, la
+clasificación de superficies y los tokens exactos viven en el contrato
+[`auditoria-visual-issue-133.md`](diseno/auditoria-visual-issue-133.md) (parte A)
+y en la sección 17 de [`sistema-de-diseno.md`](diseno/sistema-de-diseno.md).
+
+- El contrato separa defecto v2, ruido objetivo y mejora estética diferible, con
+  la tabla de selectores y sus tokens; no añade tokens, dependencias ni servicios.
+- Correcciones C1–C8 y C10 sin cambios de datos, IPC ni migraciones; C9 quedó sin
+  aplicar porque la medición no mostró desbordamiento en `.wc-filters`.
+- Evidencia: 88 celdas de matriz y 10 capturas extra, axe 0/0/0, 64 pares de
+  contraste dentro de mínimo, 129 paradas de foco por tema con orden DOM, 0
+  desbordamientos y 0 ruido.
+- Hallazgos diferidos: F1 se corrigió dentro de la confirmación del gestor de
+  tipos y su solución sistémica (avisos en la top layer de los diálogos modales)
+  queda en #144; F2 (módulo actual no interactivo) queda en #93.
+- Referencias: #133, #144, #93, ADR 0025, `docs/diseno/sistema-de-diseno.md` y
+  `docs/diseno/auditoria-visual-issue-133.md`.
