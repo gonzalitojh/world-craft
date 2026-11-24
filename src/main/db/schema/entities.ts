@@ -60,6 +60,7 @@ export const entities = sqliteTable(
   },
   (table) => [
     uniqueIndex('entities_world_slug_uq').on(table.worldId, table.slug),
+    index('entities_deleted_idx').on(table.deletedAt, table.worldId),
     index('entities_world_type_idx').on(
       table.worldId,
       table.typeId,

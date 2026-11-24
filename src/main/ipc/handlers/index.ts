@@ -11,7 +11,9 @@ import type { EntityTypesService } from '../../entity-types/service';
 import type { PreferencesService } from '../../preferences/service';
 import type { RelationsService } from '../../relations/service';
 import type { SearchService } from '../../search/service';
+import type { TrashService } from '../../trash/service';
 import type { UpdatesService } from '../../updates/service';
+import type { VersionsService } from '../../versions/service';
 import type { WorldsService } from '../../worlds/service';
 import type { IpcHandlers } from '../registry';
 import { createAssetIpcHandlers } from './assets';
@@ -21,7 +23,9 @@ import { createPreferencesIpcHandlers } from './preferences';
 import { createRelationIpcHandlers } from './relations';
 import { createSearchIpcHandlers } from './search';
 import { createShellOpenExternalHandler } from './shell';
+import { createTrashIpcHandlers } from './trash';
 import { createUpdateIpcHandlers } from './updates';
+import { createVersionsIpcHandlers } from './versions';
 import { createWorldIpcHandlers } from './worlds';
 
 /** Dependencias externas que los handlers necesitan del proceso principal. */
@@ -35,6 +39,8 @@ export interface IpcDependencies {
   readonly relations: RelationsService;
   readonly search: SearchService;
   readonly assets: AssetsService;
+  readonly trash: TrashService;
+  readonly versions: VersionsService;
   readonly pickImages: () => Promise<readonly string[]>;
 }
 
@@ -50,6 +56,8 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
     ...createEntityIpcHandlers(dependencies.entities),
     ...createRelationIpcHandlers(dependencies.relations),
     ...createSearchIpcHandlers(dependencies.search),
+    ...createTrashIpcHandlers(dependencies.trash),
+    ...createVersionsIpcHandlers(dependencies.versions),
     ...createAssetIpcHandlers({
       service: dependencies.assets,
       pickImages: dependencies.pickImages,

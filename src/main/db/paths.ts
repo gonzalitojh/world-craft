@@ -46,6 +46,7 @@ export interface DataPaths {
   readonly monthlyBackupsDir: string;
   readonly preMigrationBackupsDir: string;
   readonly preRestoreBackupsDir: string;
+  readonly prePurgeBackupsDir: string;
   readonly assetsDir: string;
   readonly assetsWorldsDir: string;
   readonly assetsTempDir: string;
@@ -73,6 +74,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const monthlyBackupsDir = resolve(backupsDir, 'monthly');
   const preMigrationBackupsDir = resolve(backupsDir, 'pre-migration');
   const preRestoreBackupsDir = resolve(backupsDir, 'pre-restore');
+  const prePurgeBackupsDir = resolve(backupsDir, 'pre-purge');
   const assetsDir = resolve(root, ASSETS_DIR_NAME);
   const assetsWorldsDir = resolve(assetsDir, ASSETS_WORLDS_DIR_NAME);
   const assetsTempDir = resolve(assetsDir, ASSETS_TEMP_DIR_NAME);
@@ -90,6 +92,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     monthlyBackupsDir,
     preMigrationBackupsDir,
     preRestoreBackupsDir,
+    prePurgeBackupsDir,
     assetsDir,
     assetsWorldsDir,
     assetsTempDir,
@@ -113,6 +116,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     monthlyBackupsDir,
     preMigrationBackupsDir,
     preRestoreBackupsDir,
+    prePurgeBackupsDir,
     assetsDir,
     assetsWorldsDir,
     assetsTempDir,
@@ -147,6 +151,7 @@ export function ensureDataDirectories(paths: DataPaths): void {
     paths.monthlyBackupsDir,
     paths.preMigrationBackupsDir,
     paths.preRestoreBackupsDir,
+    paths.prePurgeBackupsDir,
     paths.orphanBackupsDir,
   ]) {
     try {

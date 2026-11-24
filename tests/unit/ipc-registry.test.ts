@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { createUnavailableAssetsService } from '@/main/assets/service';
+import { createUnavailableTrashService } from '@/main/trash/service';
+import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
@@ -32,6 +34,8 @@ const createHandlers = () =>
     relations: createUnavailableRelationsService(),
     search: createUnavailableSearchService(),
     assets: createUnavailableAssetsService(),
+    trash: createUnavailableTrashService(),
+    versions: createUnavailableVersionsService(),
     pickImages: async () => [],
   });
 
@@ -272,6 +276,8 @@ describe('registerIpcHandlers', () => {
         relations: createUnavailableRelationsService(),
         search: createUnavailableSearchService(),
         assets: createUnavailableAssetsService(),
+        trash: createUnavailableTrashService(),
+        versions: createUnavailableVersionsService(),
         pickImages: async () => [],
       }),
     );

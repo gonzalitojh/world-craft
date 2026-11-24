@@ -40,7 +40,7 @@ Las secciones distinguen lo implementado de lo previsto.
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
 │ Proceso principal de Electron                                     │
-│  ventana · SQLite · assets · backups · export/import · updates    │
+│  ventana · SQLite · assets · backups · papelera · updates    │
 │  IPC allowlisted + Zod · protocolo wc-asset:// · logs locales     │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │ contextBridge (API tipada)
@@ -58,7 +58,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | Instalador NSIS, actualizaciones y preservación de datos | Implementado (M0-08, #68): instalador local 0.1.0 y actualizador manual; release pública y actualización real en M5 | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
-| Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125), shell v2 con navegación Inicio/Mundos y barra superior contextual (#126) y preferencias de interfaz persistidas desde #132 | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md), [ADR 0027](adr/0027-ui-preferences-persistence.md) |
+| Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125), shell v2 con navegación Inicio/Mundos/Papelera y barra superior contextual (#126, #77) y preferencias de interfaz persistidas desde #132 | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md), [ADR 0027](adr/0027-ui-preferences-persistence.md) |
 | Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74) y convertido en editor reutilizable con barra mínima y menciones `@` / `[[ ]]` (#131); manuscrito y exportadores en M3 | [ADR 0007](adr/0007-tiptap-editor-exporters.md), [ADR 0026](adr/0026-minimal-editor-mentions.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
@@ -66,9 +66,10 @@ Las secciones distinguen lo implementado de lo previsto.
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
 | Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
 | Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
-| Pruebas y calidad | Implementado: 518 unitarias (4 omitidas), 171 de componentes y 146 de integración (1 omitida) (#62-#76, #125-#132); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor y preferencias (#70, #72, #74, #75, #76, #125, #126, #127, #131, #132) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Papelera y versiones de contenido | Implementado (M1-06, #77): vista global de papelera, restauración, purga con copia `pre-purge`, vaciado y historial de la descripción de las fichas | [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
+| Pruebas y calidad | Implementado: 557 unitarias (4 omitidas), 188 de componentes y 158 de integración (1 omitida) (#62-#77, #125-#132); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias y papelera (#70, #72, #74, #75, #76, #77, #125, #126, #127, #131, #132) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
-| Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md) |
+| Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, pre-purga 10 (#77), verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
 | Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
@@ -79,8 +80,8 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, servicio de fichas, etiquetas y galería, servicio de assets para el IPC, copias de seguridad con restauración, servicio de preferencias de interfaz y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
-| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos, tipos de entidad, fichas, etiquetas, preferencias y assets; nunca un `invoke` genérico. | API de Electron limitada. |
+| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, servicio de fichas, etiquetas y galería, servicio de assets para el IPC, copias de seguridad con restauración, servicio de preferencias de interfaz, papelera con restauración y purga, historial de versiones y actualizador manual; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos, tipos de entidad, fichas, etiquetas, preferencias, assets, papelera y versiones; nunca un `invoke` genérico. | API de Electron limitada. |
 | **Renderer** | Interfaz React, estado de UI, editor enriquecido reutilizable, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
@@ -93,25 +94,27 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
 | `src/main/worlds/` | Dominio de mundos puro: normalización y slugs, repositorio Drizzle con filtros por `world_id` y `deleted_at`, servicio de CRUD y actividad, y errores de entrada. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/entity-types/` | Dominio de tipos de entidad puro: claves, validación con Zod, repositorio con aislamiento por mundo, servicio con protección de los tipos del sistema, duplicación y transferencia JSON versionada. No importa Electron. | Drizzle, Zod, `src/shared/` |
+| `src/main/trash/` | Papelera pura: listado por cursor de los tres grupos, restauración con motivos de dominio, purga física ordenada con copia previa obligatoria y vaciado serializado. No borra assets. No importa Electron. | Drizzle, `src/shared/` |
+| `src/main/versions/` | Historial de la descripción: repositorio Drizzle sobre `entity_versions`, servicio de listar, guardar manual y restaurar, y política pura de agrupación, retención y poda. Se engancha a la transacción de `entities.update`. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
 | `src/main/updates/` | Máquina de estados del actualizador sin Electron, adaptador de electron-updater, allowlist de red y saneado de cabeceras, log JSONL y composición. | Node, electron-updater, `builder-util-runtime` |
 | `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search`, `preferences` y `assets`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74) y el editor reutilizable con menciones (#131) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127 y el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search`, `preferences`, `assets`, `trash` y `versions`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
+| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74), el editor reutilizable con menciones (#131), la papelera (#77) y el historial de versiones (#77) están implementados. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace) y los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
 | `src/renderer/preferences/` | `use-ui-preferences.ts`: snapshot inicial desde el bootstrap de `main.tsx`, actualización optimista con secuencia, adopción de la respuesta canónica y descarte de respuestas tardías; sin `localStorage`. | `src/shared/`, tema, API tipada |
-| `src/renderer/shell/` | Shell v2 (`app-shell.tsx`): rail plegable con navegación Inicio/Mundos, barra superior con título contextual, disparador de la paleta, una acción primaria, menú `⋯` y utilidades de actualizaciones y tema, y `main` enfocable. `views.ts` declara las vistas de producto y la acción primaria; `internal-views.ts` resuelve la vista interna de Muestras por hash. | Componentes, mensajes, tema |
-| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (mesa de trabajo con Continuar, mundos recientes y actividad, y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería y etiquetas), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (banco interno de desarrollo, solo por `#/internal/samples`). | Componentes, mensajes |
+| `src/renderer/shell/` | Shell v2 (`app-shell.tsx`): rail plegable con navegación Inicio/Mundos/Papelera, barra superior con título contextual, disparador de la paleta, una acción primaria, menú `⋯` y utilidades de actualizaciones y tema, y `main` enfocable. `views.ts` declara las vistas de producto y la acción primaria; `internal-views.ts` resuelve la vista interna de Muestras por hash. | Componentes, mensajes, tema |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (mesa de trabajo con Continuar, mundos recientes y actividad, y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería, etiquetas e historial), `trash-page.tsx` (papelera global con tres grupos y diálogos destructivos), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (banco interno de desarrollo, solo por `#/internal/samples`). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; el tema inicial llega del bootstrap de preferencias (#132). | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
 | `src/renderer/i18n/` | Composición del idioma: `create.ts` (`createI18n`), `provider.tsx` (`I18nProvider`, `useI18n`, `useMessages`) y `formats.ts` (fechas, números, listas y plurales con `Intl`). | Mensajes, `src/shared/` |
 | `src/renderer/styles/` | `fonts.css` (único `@font-face` local), `base.css` y `components.css` sobre los tokens de `styles/tokens/` (`palette.css`, `semantic.css` y `scales.css`). | — |
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
-| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`), contrato de tipos de entidad (`entity-types.ts`), contrato de fichas y etiquetas (`entities.ts`), contrato de preferencias de interfaz (`preferences.ts`) y contrato de assets (`assets.ts`) con guardas estructurales. | - |
+| `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`), contrato de tipos de entidad (`entity-types.ts`), contrato de fichas y etiquetas (`entities.ts`), contrato de preferencias de interfaz (`preferences.ts`), contrato de assets (`assets.ts`), contrato de papelera (`trash.ts`) y contrato de versiones (`versions.ts`), todos con guardas estructurales. | - |
 | `src/shared/entity-types/` | Catálogo del sistema en código y validación compartida con Zod de plantillas y valores de campos, reutilizable por main y por la UI de fichas. | Zod |
 | `src/shared/entities/` | Validación cerrada de la descripción de ProseMirror, extracción de texto plano y patrón UUIDv7 compartido. | Zod |
 | `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación), de los tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC), de las fichas (descripción, esquemas IPC, handlers y tarjetas), de las vistas del shell y de instancia única. | `src/` |
@@ -445,9 +448,9 @@ Reglas de dependencia:
   de crear/editar, duplicar, archivar/restaurar y eliminar validan antes de enviar
   y piden confirmación.
 - **Decisiones pendientes.** La portada se guarda y se muestra si existe, pero su
-  selector llega con #115; la descripción es texto plano hasta #114; la papelera
-  visible y la purga llegan con #77; la FK `assets.world_id` se completará con
-  #116.
+  selector llega con #115; la descripción es texto plano hasta #114. La papelera
+  y la purga con copia llegaron con #77 y la FK `assets.world_id` se completará
+  con #116.
 
 ### 2.9 Estado implementado de los tipos de entidad (#73)
 
@@ -475,8 +478,8 @@ Reglas de dependencia:
   visual de tipos y las fichas llegan con #74, y la exportación completa del
   mundo compondrá el bloque en #78.
 - **Mundos.** Duplicar un mundo copia sus tipos personalizados dentro de la
-  misma transacción; el borrado lógico los conserva y la purga los eliminará en
-  cascada cuando llegue #77.
+  misma transacción; el borrado lógico los conserva y la purga del mundo los
+  elimina desde #77, salvo que se purguen individualmente antes.
 - **Transferencia sin canal propio.** `exportTypes` e `importTypes` viven en el
   dominio y todavía no tienen canal IPC ni UI; #78 los integrará en la
   exportación e importación del mundo.
@@ -518,9 +521,10 @@ Reglas de dependencia:
   imagen principal, galería, etiquetas, favorito y borrado lógico. El diálogo de
   tipos permite crear, duplicar, editar y borrar tipos personalizados con un
   constructor de campos.
-- **Pendiente.** La papelera visible y la restauración llegan con #77; la
-  exportación completa con #78. El tipo de una ficha no cambia después de
-  crearla.
+- **Papelera y versiones.** Desde #77 la ficha se restaura desde la vista
+  Papelera y su descripción guarda historial en `entity_versions` (sección 2.16).
+- **Pendiente.** La exportación completa con #78. El tipo de una ficha no cambia
+  después de crearla.
 
 ### 2.11 Estado implementado de las relaciones (#75)
 
@@ -585,7 +589,8 @@ Reglas de dependencia:
   navegación de producto se reduce a **Inicio** y **Mundos**; desaparecen el
   lema permanente, la versión y la búsqueda duplicada, y no se añaden entradas
   de Manuscritos, Mapas ni Grafo hasta que esas pantallas existan. Mundos queda
-  como `aria-current` también en mundo, fichas y ficha.
+  como `aria-current` también en mundo, fichas y ficha. Desde #77 se añade
+  **Papelera** como tercera entrada (sección 2.16).
 - **Plegado.** Iconos con `aria-label` y tooltip accesible, `aria-expanded` y
   `aria-controls` en el botón. El estado se persiste desde #132. Se sustituyó el
   `title` nativo previsto por el tooltip accesible para no duplicar bocadillos.
@@ -666,8 +671,9 @@ Reglas de dependencia:
   copias ni dependencias.
 - **Contrato puro.** Define los dos temas, las cuatro secciones de ficha, el ancho
   280–360 px con 320 por defecto, las vistas persistibles —`home`, `worlds`,
-  `search`, `world`, `entities` y `entity`, sin `samples`— y el último destino
-  (mundo o ficha con nombre opcional). Incluye valores por defecto congelados,
+  `search`, `world`, `entities`, `entity` y `trash`, sin `samples`— y el último
+  destino (mundo o ficha con nombre opcional). Incluye valores por defecto
+  congelados,
   fusión de parches sin mutación, recorte del ancho y guardas estrictas de forma.
 - **Servicio y repositorio.** Una fila de `app_settings` por clave con prefijo
   `ui.` y valor JSON: `ui.theme`, `ui.rail-collapsed`, `ui.entity-view`,
@@ -711,6 +717,60 @@ Reglas de dependencia:
   1024/1280/1600 px con ambos temas y axe. El cierre deja 518 unitarias (4
   omitidas), 171 de componentes, 146 de integración (1 omitida) y 53 E2E en verde.
 
+### 2.16 Estado implementado de la papelera y las versiones (#77)
+
+- **Alcance.** Migración `0007_trash_versions`; dominios puros en
+  `src/main/trash/` (repositorio, servicio y normalización de cursor) y
+  `src/main/versions/` (repositorio, servicio y política); copia previa en
+  `src/main/backup/`; contratos `trash.ts` y `versions.ts`; siete canales IPC;
+  vista Papelera, historial en la ficha, textos y estilos; y pruebas. Sin
+  dependencias nuevas.
+- **Datos.** `entity_versions` guarda `id`, `entity_id` con FK `ON DELETE
+  CASCADE`, `description` JSON nullable, `description_text`, `label`, `origin`
+  (`auto`, `manual`, `restore`) y `created_at`, con `CHECK` de origen, etiqueta
+  1–120, JSON de objeto y texto ≤ 50 000. Índices
+  `entity_versions_entity_created_idx`, `entities_deleted_idx` y
+  `entity_types_deleted_idx`. `user_version` pasa a 8; el rollback de referencia
+  solo elimina esos objetos (ADR 0028).
+- **Papelera.** `trash:list` pagina por cursor `${deletedAt}:${id}` con orden
+  `deleted_at DESC, id DESC` (50 por defecto, 200 máximo) y devuelve mundos,
+  fichas y tipos personalizados con su origen y si el mundo está en papelera.
+  Restaurar devuelve `not-found`, `already-restored`, `world-in-trash` o
+  `type-unavailable` como resultado, en transacción y sin cascada. Purgar exige
+  el literal `delete-forever`, crea y verifica `backups/pre-purge`, y luego borra
+  en una transacción: ficha → relaciones, versiones, etiquetas y galería; mundo →
+  `activity_log`, relaciones, galería, etiquetas, versiones, fichas, tipos,
+  etiquetas del mundo y mundo. Vaciado: una copia, una transacción, contadores y
+  tipos en uso omitidos. Una cola serializa purgas y vaciado. Los assets no se
+  tocan (D8; #116).
+- **Versiones.** `entities.update` llama al registrador dentro de su misma
+  transacción y guarda el estado saliente solo si la descripción cambia y la
+  última automática está fuera de 5 minutos. Se conservan 20 automáticas por
+  ficha durante 90 días, 50 manuales con etiqueta y sin caducidad, y las de
+  origen `restore` no se podan. Restaurar inserta antes una copia del estado
+  actual, aplica la versión y poda automáticas. La lista solo devuelve metadatos
+  y vista previa de 2 000 caracteres; una ficha en papelera no lista ni crea
+  versiones y la purga las borra en cascada.
+- **IPC.** `trash:list`, `restore`, `purge` y `empty`, y `versions:list`,
+  `create` y `restore`, con Zod estricto, UUIDv7, límites 1–200, cursores y
+  literales de confirmación; guardas en el preload y servicios `unavailable` en
+  modo seguro. Los fallos de negocio viajan como resultado, no como excepción.
+- **Interfaz.** Papelera como vista del rail (Inicio · Mundos · Papelera) con tres
+  secciones, estados de carga, error, vacío y **Cargar más**; restauración y
+  purga con diálogos destructivos, casilla obligatoria en el vaciado y foco
+  devuelto. Historial como sección no persistida bajo Descripción, con origen,
+  fecha, etiqueta, vista previa, **Guardar versión** y **Restaurar**.
+- **Búsqueda y exportación.** Las vistas FTS5 y los canales existentes ya
+  excluyen `deleted_at` y los triggers reindexan al restaurar; no se duplica la
+  condición en el renderer. #78 exportará solo contenido vivo en mundos vivos e
+  incluirá las versiones de las fichas exportadas.
+- **Pruebas.** Unitarias de contratos, validación, handlers, política y manifiesto;
+  integración de migración y preservación desde `0006`, papelera, versiones,
+  copia previa, búsqueda y assets; componentes de papelera e historial; E2E del
+  flujo crítico. Typecheck, lint, `db:check`, build y `verify:build` en verde; la
+  suite queda en 557 unitarias (4 omitidas), 188 de componentes, 158 de
+  integración (1 omitida) y los E2E de papelera y auditoría visual en verde.
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -728,7 +788,7 @@ requestSingleInstanceLock()               (antes de whenReady; si falla, salir)
     → WAL + synchronous = NORMAL
     → migraciones en una transacción
     → integrity_check posterior
-    → copias automáticas del periodo en curso y rotación 7/4/12/5
+    → copias automáticas del periodo en curso y rotación 7/4/12/5 más 10 pre-purga
     → ready: registrar protocolo de assets, componer actualizador, registrar IPC
       (incluidas las preferencias), leer el tema con preferences.get()
       (fallo → Claro), aplicar nativeTheme y el fondo --bg y crear la ventana
@@ -870,6 +930,30 @@ renderer → window.worldCraft.assets.import({ worldId })
   → renderer: añade el id a la galería y muestra wc-asset://thumb/<id>
 ```
 
+Purga de la papelera (implementado, #77):
+
+```text
+renderer → window.worldCraft.trash.purge({ kind, id, confirm: 'delete-forever' })
+  → main: remitente → allowlist → Zod → servicio (cola serializada)
+  → precheck (vivo → already-purged) → copia pre-purge verificable
+  → si la copia falla: { purged: false, reason: 'backup-failed' } y no se borra
+  → transacción: recheck → borrado ordenado (activity_log primero si es mundo)
+  → { purged: true } o motivo de dominio
+```
+
+Versiones de una ficha (implementado, #77):
+
+```text
+entities.update({ description })
+  → transacción de fichas: aplica el cambio y llama a versions.recordBeforeChange
+  → guards: descripción saliente no vacía + última auto fuera de 5 min
+  → INSERT en entity_versions (estado saliente) → poda 20/90 días
+
+versions.restore({ versionId })
+  → transacción: valida ficha viva y pertenencia → INSERT origin 'restore' del
+    estado actual → aplica la versión → poda → { restored: true }
+```
+
 Los flujos de relaciones, mapas, manuscrito y juego son el **objetivo** una vez
 existan sus tablas e issues; todavía no tienen canales ni consultas.
 
@@ -898,19 +982,27 @@ las copias manuales siguen previstas para M1.
   del sistema; `0004_entities` crea `entities`, `tags`, `entity_tags` y
   `entity_gallery`; `0005_relations` crea `relation_types` y `relations` y
   siembra los tipos de relación del sistema; `0006_search` crea el índice FTS5,
-  sus vistas y triggers. `PRAGMA user_version` guarda el número de migraciones
-  aplicadas (hoy 7).
+  sus vistas y triggers; `0007_trash_versions` crea `entity_versions` y los
+  índices de papelera. `PRAGMA user_version` guarda el número de migraciones
+  aplicadas (hoy 8).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
-  `monthly` (12), `pre-migration` (5) y `pre-restore` (sin poda). Cada copia
-  lleva `manifest.json` v2, SHA-256 e integridad; solo contiene SQLite, no
-  assets. La restauración se ofrece desde el diálogo de modo seguro de M0-07.
+  `monthly` (12), `pre-migration` (5), `pre-purge` (10) y `pre-restore` (sin
+  poda). Cada copia lleva `manifest.json` v2, SHA-256 e integridad; solo contiene
+  SQLite, no assets. La restauración se ofrece desde el diálogo de modo seguro de
+  M0-07; la purga de la papelera exige una copia `pre-purge` verificable.
 - **FTS5** está disponible en el binario; `search_fts` indexa mundos, fichas y
   relaciones y se mantiene con triggers desde #76. Los tipos de mapa,
   manuscrito y escena se añadirán a las vistas y triggers con sus migraciones de
   M2 (mapas) y M3 (manuscritos y escenas).
 - **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\<assetId>.webp`
   con miniatura `.thumb.webp`, `.tmp/` para escrituras y `backups/orphans/` para
-  la purga recuperable (implementado, #66).
+  la purga recuperable (implementado, #66). La purga de la papelera **no borra
+  assets**: las filas de un mundo purgado quedan huérfanas hasta que #116 añada
+  la FK `assets.world_id` y su cuarentena.
+- **Papelera y versiones** viven en la base: `deleted_at` en mundos, fichas y
+  tipos, y `entity_versions` con el estado saliente de la descripción. Entran en
+  las copias y una restauración las recupera; lo purgado solo se recupera desde
+  la copia `pre-purge`.
 - **Preferencias de interfaz** en `app_settings` con claves `ui.*` y valor JSON
   (`ui.theme`, `ui.rail-collapsed`, `ui.entity-view`, `ui.last-view` y
   `ui.recent-location`), sin migración nueva desde #132. La lectura es tolerante
@@ -1119,6 +1211,7 @@ decisiones está en [`docs/registro-decisiones.md`](registro-decisiones.md).
 - [ADR 0019: Mundos del MVP](adr/0019-worlds-crud-mvp.md)
 - [ADR 0020: Tipos de entidad y campos personalizados](adr/0020-entity-types-custom-fields.md)
 - [ADR 0027: Preferencias de interfaz persistentes](adr/0027-ui-preferences-persistence.md)
+- [ADR 0028: Papelera, versiones y copia previa a la purga](adr/0028-trash-versions-and-pre-purge-backup.md)
 - [Continuidad y copias](continuidad.md)
 - [Plan de pruebas](calidad/plan-de-pruebas.md)
 - [Sistema de diseño](diseno/sistema-de-diseno.md)

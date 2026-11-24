@@ -60,6 +60,7 @@ import {
   slugifyEntityName,
   uniqueEntitySlug,
 } from './validation';
+import type { VersionRecorder } from '../versions/service';
 
 /** Servicio de fichas. */
 export interface EntitiesService {
@@ -79,6 +80,11 @@ export interface EntitiesServiceOptions {
   readonly sqlite: SqliteDatabase;
   readonly now?: () => number;
   readonly generateId?: () => string;
+  /**
+   * Registrador opcional del historial de versiones. Se ejecuta dentro de la
+   * misma transacción que la actualización de la ficha.
+   */
+  readonly versions?: VersionRecorder;
 }
 
 interface NormalizedEditable {
@@ -414,6 +420,20 @@ export function createEntitiesService(
       const applied = write(() => {
         if (!repository.update(updated)) {
           return false;
+        }
+
+        // La versión automática guarda el estado saliente dentro de la misma
+        // transacción: no puede quedar una descripción nueva sin la anterior.
+        if (
+          existing.description !== updated.description ||
+          existing.descriptionText !== updated.descriptionText
+        ) {
+          options.versions?.recordBeforeChange({
+            entityId: updated.id,
+            description: existing.description,
+            descriptionText: existing.descriptionText,
+            at: updated.updatedAt,
+          });
         }
 
         repository.replaceTags(updated.id, editable.tagIds);

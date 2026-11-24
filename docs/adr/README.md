@@ -42,6 +42,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0025](0025-visual-direction-v2.md) | Dirección visual v2 y sistema «estudio moderno» (#124) | Aceptado | D-048; nota de D-050/0027 |
 | [0026](0026-minimal-editor-mentions.md) | Editor mínimo, menú Formato y menciones `@` / `[[ ]]` (#131) | Aceptado | D-049 |
 | [0027](0027-ui-preferences-persistence.md) | Preferencias de interfaz persistentes: claves `ui.*`, tres canales y arranque sin parpadeo (#132) | Aceptado | D-050 |
+| [0028](0028-trash-versions-and-pre-purge-backup.md) | Papelera, versiones de contenido y copia previa a la purga (#77) | Aceptado | D-051 |
 
 ## 3. Relación con otros documentos
 
@@ -92,3 +93,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-21 | Se añade el ADR 0025 (dirección visual v2, #124) y se anota que revisa la estética del ADR 0006 sin supersederlo. |
 | 2026-11-23 | Se añade el ADR 0026 (editor mínimo, menú Formato y menciones `@` / `[[ ]]`, #131). |
 | 2026-11-24 | Se añade el ADR 0027 (preferencias de interfaz persistentes, #132) y se anota que revisa el arranque del tema en los ADR 0006 y 0025 sin supersederlos. |
+| 2026-11-24 | Se añade el ADR 0028 (papelera, versiones de contenido y copia previa a la purga, #77), con la decisión D-051, y se anota la convivencia de `pre-purge` con el manifiesto v2 del ADR 0012. |

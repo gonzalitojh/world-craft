@@ -111,7 +111,7 @@ describe('repositorio de assets', () => {
       const repository = createAssetRepository(reopened.client.orm);
 
       expect(repository.findById(record.id)).toEqual(record);
-      expect(reopened.schemaVersion).toBe(7);
+      expect(reopened.schemaVersion).toBe(8);
     } finally {
       closeDatabase(reopened.client.sqlite);
     }

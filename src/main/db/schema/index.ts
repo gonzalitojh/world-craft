@@ -14,6 +14,7 @@ import { entities, entityGallery, entityTags, tags } from './entities';
 import { entityTypes } from './entity-types';
 import { relationTypes, relations } from './relations';
 import { searchDocuments } from './search';
+import { entityVersions } from './versions';
 import { activityLog, worlds } from './worlds';
 
 export {
@@ -23,6 +24,7 @@ export {
   entityGallery,
   entityTags,
   entityTypes,
+  entityVersions,
   relationTypes,
   relations,
   searchDocuments,
@@ -59,4 +61,5 @@ export const schema = {
   relationTypes,
   relations,
   searchDocuments,
+  entityVersions,
 } as const;

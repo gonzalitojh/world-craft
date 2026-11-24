@@ -52,6 +52,13 @@ export const IPC_CHANNELS = {
   searchQuery: 'search:query',
   searchSuggestions: 'search:suggestions',
   searchRebuild: 'search:rebuild',
+  trashList: 'trash:list',
+  trashRestore: 'trash:restore',
+  trashPurge: 'trash:purge',
+  trashEmpty: 'trash:empty',
+  versionsList: 'versions:list',
+  versionsCreate: 'versions:create',
+  versionsRestore: 'versions:restore',
   assetsList: 'assets:list',
   assetsImport: 'assets:import',
 } as const;

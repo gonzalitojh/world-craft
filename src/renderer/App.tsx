@@ -30,6 +30,7 @@ import { EntityDetailPage } from './pages/entity-detail-page';
 import { HomePage, type WorldLibraryState } from './pages/home-page';
 import { SamplesPage } from './pages/samples-page';
 import { SearchPage } from './pages/search-page';
+import { TrashPage } from './pages/trash-page';
 import { WorldPage } from './pages/world-page';
 import { WorldsPage } from './pages/worlds-page';
 import {
@@ -242,7 +243,9 @@ export function App({ initialPreferences }: AppProps) {
     };
   }, [paletteOpen, openPalette]);
 
-  const refreshLibrary = useCallback(async () => {
+  const refreshLibrary = useCallback(async (): Promise<
+    readonly WorldSummary[] | null
+  > => {
     const [worldList, activityList] = await Promise.all([
       api.list(),
       api.listActivity({ limit: 12 }),
@@ -250,12 +253,13 @@ export function App({ initialPreferences }: AppProps) {
 
     if (!worldList.ok || !activityList.ok) {
       setLibraryState('error');
-      return;
+      return null;
     }
 
     setWorlds(worldList.data);
     setActivity(activityList.data);
     setLibraryState('ready');
+    return worldList.data;
   }, [api]);
 
   useEffect(() => {
@@ -287,6 +291,59 @@ export function App({ initialPreferences }: AppProps) {
     setLibraryState('loading');
     void refreshLibrary();
   }, [refreshLibrary]);
+
+  /**
+   * Revalida la biblioteca y el destino recordado tras una purga o restauración.
+   *
+   * Nunca navega ni rompe la vista activa: si el mundo seleccionado desaparece,
+   * se limpia; si la ficha recordada ya no existe, el destino baja al mundo.
+   */
+  const handleLibraryChanged = useCallback(async () => {
+    const list = await refreshLibrary();
+
+    if (list === null) {
+      return;
+    }
+
+    const location = preferences.recentLocation;
+
+    if (
+      location !== null &&
+      !list.some((world) => world.id === location.worldId)
+    ) {
+      updatePreferences({ recentLocation: null });
+    } else if (location?.kind === 'entity') {
+      const detail = await entitiesApi.get({
+        worldId: location.worldId,
+        id: location.entityId,
+      });
+
+      if (detail.ok && detail.data === null) {
+        updatePreferences({
+          recentLocation: { kind: 'world', worldId: location.worldId },
+        });
+      }
+    }
+
+    if (
+      selectedWorldId !== null &&
+      !list.some((world) => world.id === selectedWorldId)
+    ) {
+      selectedWorldIdRef.current = null;
+      setSelectedWorldId(null);
+      setSelectedWorld(null);
+      setSelectedState('ready');
+      setSelectedActivity([]);
+      setSelectedActivityState('ready');
+      setEntityId(null);
+    }
+  }, [
+    entitiesApi,
+    preferences.recentLocation,
+    refreshLibrary,
+    selectedWorldId,
+    updatePreferences,
+  ]);
 
   useEffect(() => {
     if (!quickOpen) {
@@ -1133,6 +1190,11 @@ export function App({ initialPreferences }: AppProps) {
             actions={cardActions}
             onCreate={openCreateWorldDialog}
             onRetry={retryLibrary}
+          />
+        ) : view === 'trash' ? (
+          <TrashPage
+            onNotify={notify}
+            onLibraryChanged={handleLibraryChanged}
           />
         ) : view === 'world' ? (
           <WorldPage

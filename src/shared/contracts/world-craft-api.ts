@@ -86,6 +86,26 @@ import {
   type WorldCraftSearchApi,
 } from './search';
 import {
+  isTrashEmptyResult,
+  isTrashPage,
+  isTrashPurgeResult,
+  isTrashRestoreResult,
+  type TrashEmptyInput,
+  type TrashListInput,
+  type TrashPurgeInput,
+  type TrashRestoreInput,
+  type WorldCraftTrashApi,
+} from './trash';
+import {
+  isEntityVersionList,
+  isVersionCreateResult,
+  isVersionRestoreResult,
+  type VersionCreateInput,
+  type VersionListInput,
+  type VersionRestoreInput,
+  type WorldCraftVersionsApi,
+} from './versions';
+import {
   isWorldActivityList,
   isWorldDeleteResult,
   isWorldDetail,
@@ -181,6 +201,8 @@ export interface WorldCraftApi {
   readonly relations: WorldCraftRelationsApi;
   readonly search: WorldCraftSearchApi;
   readonly assets: WorldCraftAssetsApi;
+  readonly trash: WorldCraftTrashApi;
+  readonly versions: WorldCraftVersionsApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -294,8 +316,8 @@ function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
  *
  * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `preferences`,
  * `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`,
- * `search` y `assets` para que el renderer no pueda sustituirlos en tiempo de
- * ejecución.
+ * `search`, `assets`, `trash` y `versions` para que el renderer no pueda
+ * sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -566,6 +588,38 @@ export function createWorldCraftApi(
       invokeWorldCommand(IPC_CHANNELS.searchRebuild, {}, isSearchRebuildResult),
   });
 
+  const trash: WorldCraftTrashApi = Object.freeze({
+    list: (input: TrashListInput) =>
+      invokeWorldCommand(IPC_CHANNELS.trashList, input, isTrashPage),
+    restore: (input: TrashRestoreInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.trashRestore,
+        input,
+        isTrashRestoreResult,
+      ),
+    purge: (input: TrashPurgeInput) =>
+      invokeWorldCommand(IPC_CHANNELS.trashPurge, input, isTrashPurgeResult),
+    empty: (input: TrashEmptyInput) =>
+      invokeWorldCommand(IPC_CHANNELS.trashEmpty, input, isTrashEmptyResult),
+  });
+
+  const versions: WorldCraftVersionsApi = Object.freeze({
+    list: (input: VersionListInput) =>
+      invokeWorldCommand(IPC_CHANNELS.versionsList, input, isEntityVersionList),
+    create: (input: VersionCreateInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.versionsCreate,
+        input,
+        isVersionCreateResult,
+      ),
+    restore: (input: VersionRestoreInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.versionsRestore,
+        input,
+        isVersionRestoreResult,
+      ),
+  });
+
   return Object.freeze({
     appInfo,
     shell,
@@ -579,5 +633,7 @@ export function createWorldCraftApi(
     relations,
     search,
     assets,
+    trash,
+    versions,
   });
 }

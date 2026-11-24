@@ -102,6 +102,8 @@ describe('world-craft-api', () => {
       'relations',
       'search',
       'assets',
+      'trash',
+      'versions',
     ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
     expect(Object.keys(api.updates)).toEqual([
@@ -112,6 +114,13 @@ describe('world-craft-api', () => {
       'install',
       'onStateChanged',
     ]);
+    expect(Object.keys(api.trash)).toEqual([
+      'list',
+      'restore',
+      'purge',
+      'empty',
+    ]);
+    expect(Object.keys(api.versions)).toEqual(['list', 'create', 'restore']);
     expect(Object.keys(api.worlds)).toEqual([
       'list',
       'get',
@@ -600,6 +609,42 @@ describe('world-craft-api', () => {
     });
 
     await expect(fieldsApi.entityTypes.list(world.id)).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
+  });
+
+  it('expone papelera y versiones con guardas y objetos congelados', async () => {
+    const invoke = vi.fn(async () => ({
+      ok: true,
+      data: { items: [], nextCursor: null },
+    }));
+    const api = createWorldCraftApi({ invoke });
+
+    expect(Object.isFrozen(api.trash)).toBe(true);
+    expect(Object.isFrozen(api.versions)).toBe(true);
+
+    await expect(api.trash.list({ group: 'worlds' })).resolves.toEqual({
+      ok: true,
+      data: { items: [], nextCursor: null },
+    });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.trashList, {
+      group: 'worlds',
+    });
+
+    await expect(
+      api.trash.restore({ kind: 'world', id: world.id }),
+    ).resolves.toEqual({ ok: false, error: { code: 'INTERNAL_ERROR' } });
+
+    await expect(
+      api.versions.list({ worldId: world.id, entityId: entityType.id }),
+    ).resolves.toEqual({ ok: false, error: { code: 'INTERNAL_ERROR' } });
+
+    const malformed = createWorldCraftApi({
+      invoke: async () => ({ ok: true, data: { items: [{}] } }),
+    });
+
+    await expect(malformed.trash.list({ group: 'worlds' })).resolves.toEqual({
       ok: false,
       error: { code: 'INTERNAL_ERROR' },
     });

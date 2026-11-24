@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createUnavailableAssetsService } from '@/main/assets/service';
+import { createUnavailableTrashService } from '@/main/trash/service';
+import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { EntityTypeProtectedError } from '@/main/entity-types/errors';
 import type { EntityTypesService } from '@/main/entity-types/service';
@@ -61,6 +63,10 @@ function createRoute(service: EntityTypesService) {
       relations: createUnavailableRelationsService(),
       search: createUnavailableSearchService(),
       assets: createUnavailableAssetsService(),
+
+      trash: createUnavailableTrashService(),
+
+      versions: createUnavailableVersionsService(),
       pickImages: async () => [],
     }),
   );

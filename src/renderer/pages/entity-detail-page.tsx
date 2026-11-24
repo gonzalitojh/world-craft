@@ -55,6 +55,7 @@ import {
   type DocumentMode,
   type SaveState,
 } from '../components/entities/entity-document-header';
+import { EntityHistorySection } from '../components/entities/entity-history-section';
 import { EntityPropertiesPanel } from '../components/entities/entity-properties-panel';
 import { EntityRelationDialog } from '../components/entities/entity-relation-dialog';
 import {
@@ -764,6 +765,13 @@ export function EntityDetailPage({
     }
   };
 
+  /** El historial guarda una versión manual solo con la ficha ya persistida. */
+  const ensureSavedBeforeHistory = useCallback(async (): Promise<boolean> => {
+    const outcome = await flush({ showState: true, explicit: true });
+
+    return outcome.status === 'saved';
+  }, [flush]);
+
   const toggleFavorite = async (): Promise<void> => {
     if (entity === null || favoritePending) {
       return;
@@ -1428,6 +1436,18 @@ export function EntityDetailPage({
               </>
             )}
           </DisclosureSection>
+
+          <EntityHistorySection
+            worldId={world.id}
+            entityId={entityId}
+            descriptionEmpty={descriptionEmpty}
+            refreshToken={reloadToken}
+            onBeforeAction={ensureSavedBeforeHistory}
+            onEntityChanged={() => {
+              setReloadToken((current) => current + 1);
+            }}
+            onNotify={onNotify}
+          />
 
           <DisclosureSection
             id="wc-entity-section-attributes"

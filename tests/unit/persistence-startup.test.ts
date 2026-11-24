@@ -173,6 +173,7 @@ describe('composición del arranque de persistencia', () => {
           weekly: paths.weeklyBackupsDir,
           monthly: paths.monthlyBackupsDir,
           preMigration: paths.preMigrationBackupsDir,
+          prePurge: paths.prePurgeBackupsDir,
         },
         timestamp: expect.any(Number),
         targetSchemaVersion: expect.any(Number),

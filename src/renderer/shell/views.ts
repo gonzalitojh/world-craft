@@ -5,10 +5,17 @@
  * puedan importarlos sin arrastrar el renderer de React.
  */
 export type AppView =
-  'home' | 'search' | 'worlds' | 'world' | 'entities' | 'entity' | 'samples';
+  | 'home'
+  | 'search'
+  | 'worlds'
+  | 'world'
+  | 'entities'
+  | 'entity'
+  | 'trash'
+  | 'samples';
 
 /** Vistas con entrada propia en la navegación del rail. */
-export type AppNavView = 'home' | 'worlds';
+export type AppNavView = 'home' | 'worlds' | 'trash';
 
 /** Acción primaria contextual de la barra superior. */
 export interface ShellPrimaryAction {

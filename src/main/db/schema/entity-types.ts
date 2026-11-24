@@ -58,6 +58,7 @@ export const entityTypes = sqliteTable(
       table.deletedAt,
       table.name,
     ),
+    index('entity_types_deleted_idx').on(table.deletedAt, table.worldId),
     check('entity_types_is_system_check', sql`${table.isSystem} in (0, 1)`),
     check(
       'entity_types_world_check',

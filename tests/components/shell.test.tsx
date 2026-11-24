@@ -58,7 +58,7 @@ function nav(): HTMLElement {
 }
 
 describe('AppShell', () => {
-  it('muestra solo Inicio y Mundos, sin Muestras, lema ni versión', () => {
+  it('muestra Inicio, Mundos y Papelera, sin Muestras, lema ni versión', () => {
     renderShell();
 
     const items = within(nav()).getAllByRole('button');
@@ -66,6 +66,7 @@ describe('AppShell', () => {
     expect(items.map((item) => item.textContent)).toEqual([
       messages.shell.views.home,
       messages.shell.views.worlds,
+      messages.shell.views.trash,
     ]);
     expect(
       screen.queryByRole('button', { name: messages.shell.views.samples }),

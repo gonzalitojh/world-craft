@@ -56,6 +56,9 @@ describe('rutas de datos', () => {
     expect(paths.preRestoreBackupsDir).toBe(
       join(resolve(userDataDir), 'backups', 'pre-restore'),
     );
+    expect(paths.prePurgeBackupsDir).toBe(
+      join(resolve(userDataDir), 'backups', 'pre-purge'),
+    );
   });
 
   it('deriva las rutas de assets y del log de assets dentro de userData', () => {

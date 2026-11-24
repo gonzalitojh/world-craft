@@ -1,0 +1,116 @@
+/* Historial de versiones de la descripción. */
+.wc-history__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-history__note,
+.wc-history__empty,
+.wc-history__retention {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.wc-history__note {
+  margin-block-end: var(--space-3);
+}
+
+.wc-history__retention {
+  margin-block-start: var(--space-3);
+}
+
+.wc-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.wc-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-block: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.wc-history-item + .wc-history-item {
+  border-block-start: 1px solid var(--border);
+}
+
+.wc-history-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-history-item__label {
+  min-width: 0;
+  color: var(--fg);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.wc-history-item__date {
+  margin-inline-start: auto;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.wc-history-item__preview {
+  display: -webkit-box;
+  max-inline-size: 68ch;
+  margin: 0;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.wc-history-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wc-history-preview {
+  max-block-size: 20rem;
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+#wc-entity-section-history .wc-disclosure__header {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1180px) {
+  .wc-history-item__actions {
+    justify-content: flex-start;
+  }
+}

@@ -1,16 +1,18 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con las issues M1-03 (#74), M1-04 (#75) y M1-05 (#76). La migración
+> 24/11/2026 con M1-06 (#77). La migración
 > `0000_init` y las tablas `schema_migrations` y `app_settings` están
 > implementadas en M0-04 (#64); la tabla `assets` en `0001_assets` (M0-06, #66);
 > `worlds` y `activity_log` en `0002_worlds` (M1-01, #72); `entity_types` en
 > `0003_entity_types` (M1-02, #73); `entities`, `tags`, `entity_tags` y
 > `entity_gallery` en `0004_entities` (M1-03, #74); `relation_types` y
-> `relations` en `0005_relations` (M1-04, #75); y el índice de búsqueda
+> `relations` en `0005_relations` (M1-04, #75); el índice de búsqueda
 > `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
-> (M1-05, #76). El resto de tablas de contenido llega en M2, M3 y M4 con sus
-> propias migraciones; hasta entonces figuran como previstas.
+> (M1-05, #76); y `entity_versions` con los índices de papelera en
+> `0007_trash_versions` (M1-06, #77). El resto de tablas de contenido llega en
+> M2, M3 y M4 con sus propias migraciones; hasta entonces figuran como
+> previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -24,8 +26,11 @@
 - Booleanos como `INTEGER` 0/1 con `CHECK (col IN (0,1))`.
 - JSON como `TEXT` validado con Zod en la aplicación; SQLite no impone el
   esquema interno.
-- Borrado lógico con `deleted_at INTEGER NULL` en contenido; la papelera
-  conserva el registro y los assets hasta la purga.
+- Borrado lógico con `deleted_at INTEGER NULL` en contenido; la papelera visible
+  conserva el registro y sus assets, y la purga definitiva exige copia previa y
+  borra en orden sin tocar los archivos de assets. Las versiones de la
+  descripción se conservan mientras la fila exista y caen en cascada al purgar
+  la ficha.
 - `world_id` obligatorio en todo el contenido de un mundo, directo o derivado
   mediante claves foráneas.
 - `ON DELETE CASCADE` en hijas de contenido; `RESTRICT` en referencias que no
@@ -36,13 +41,15 @@
 
 Modelo objetivo (implementadas hoy `schema_migrations`, `app_settings`,
 `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`,
-`entity_tags` y `entity_gallery`):
+`entity_tags`, `entity_gallery`, `relation_types`, `relations`,
+`search_documents` y `entity_versions`):
 
 ```text
 worlds
   ├─< entity_types
   ├─< tags >─< entity_tags >─< entities >─< relations >─ relation_types
   │                                ├─< entity_gallery >─ assets
+  │                                ├─< entity_versions      (historial, desde #77)
   │                                └─ image_asset_id ──> assets
   │      └─< assets                 (imagen principal y galería desde #74)
   ├─< maps >─< map_entity_links
@@ -78,9 +85,11 @@ CREATE TABLE `schema_migrations` (
 
 La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
 guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
-`0001_assets` vale 2, con `0002_worlds` vale 3 y con `0003_entity_types` vale
-4; no es el prefijo de la etiqueta. El runner contrasta ese valor con
-`schema_migrations` y entra en modo seguro si no coinciden.
+`0001_assets` vale 2, con `0002_worlds` vale 3, con `0003_entity_types` vale 4,
+con `0004_entities` vale 5, con `0005_relations` vale 6, con `0006_search` vale 7
+y con `0007_trash_versions` vale **8**; no es el prefijo de la etiqueta. El
+runner contrasta ese valor con `schema_migrations` y entra en modo seguro si no
+coinciden.
 
 ### 3.1 `schema_migrations`
 
@@ -124,9 +133,9 @@ Las claves no-UI y las tablas de dominio no se tocan. El detalle está en
 `entity_tags` y `entity_gallery` en `0004_entities` (M1-03, #74),
 `relation_types` y `relations` en `0005_relations` (M1-04, #75), el índice
 `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
-(M1-05, #76) y `assets` en `0001_assets` (M0-06, #66). Las demás tablas de esta
-sección describen el modelo objetivo y todavía no existen; llegarán con sus
-issues de M2, M3 y M4.
+(M1-05, #76), `entity_versions` en `0007_trash_versions` (M1-06, #77) y `assets`
+en `0001_assets` (M0-06, #66). Las demás tablas de esta sección describen el
+modelo objetivo y todavía no existen; llegarán con sus issues de M2, M3 y M4.
 
 ### 4.1 `worlds`
 
@@ -184,8 +193,12 @@ Reglas de la issue M1-01:
   identificador.
 - La portada es una referencia opcional a un asset; la copia de un mundo no
   comparte portada. La galería y su selector llegan con #115.
-- El borrado es lógico (`deleted_at`) y la papelera visible con restauración y
-  purga llega con M1-06 (#77).
+- El borrado es lógico (`deleted_at`); la papelera visible con restauración y
+  purga está implementada en M1-06 (#77). Restaurar un mundo lo devuelve a Inicio
+  y Mundos y no restaura en cascada sus fichas o tipos que ya estuvieran en
+  papelera. La purga definitiva borra la actividad, las relaciones, la galería,
+  las etiquetas, las versiones, las fichas, los tipos y las etiquetas del mundo,
+  en ese orden, y nunca los assets (ADR 0028).
 - Los géneros y el nombre se validan en el proceso principal además de en la
   interfaz; el `CHECK` de SQLite es la última barrera.
 
@@ -230,8 +243,9 @@ CREATE TABLE `entity_types` (
 | `deleted_at` | INTEGER | NULL | Borrado lógico; la clave queda reservada. |
 
 Índices: `entity_types_world_key_uq (world_id, key)`,
-`entity_types_system_key_uq (key) WHERE world_id IS NULL` y
-`entity_types_world_idx (world_id, deleted_at, name)`.
+`entity_types_system_key_uq (key) WHERE world_id IS NULL`,
+`entity_types_world_idx (world_id, deleted_at, name)` y
+`entity_types_deleted_idx (deleted_at, world_id)` (M1-06, #77).
 
 Reglas de la issue M1-02:
 
@@ -245,8 +259,10 @@ Reglas de la issue M1-02:
   por `world_id`. La clave es única dentro de su mundo y no puede coincidir con
   una del sistema, aunque la misma clave puede repetirse en mundos distintos.
 - Borrar un tipo personalizado es un borrado lógico (`deleted_at`). La fila se
-  conserva, la clave sigue reservada y la purga definitiva llegará con la
-  papelera de #77. Los tipos del sistema no se borran.
+  conserva, la clave sigue reservada y la papelera lo muestra con su mundo de
+  origen. Restaurarlo exige que el mundo esté vivo (`world-in-trash`) y la purga
+  se rechaza con `type-in-use` mientras quede cualquier ficha, viva o en
+  papelera. Los tipos del sistema no se borran ni se purgan (ADR 0028).
 - La plantilla de campos se guarda como JSON y se valida con Zod. Los valores de
   cada ficha se guardarán en `entities.attributes` con la misma plantilla, sin
   migrar el esquema por cada campo.
@@ -283,7 +299,8 @@ Reglas de la issue M1-02:
 Índices: `entities_world_slug_uq (world_id, slug)`,
 `entities_world_type_idx (world_id, type_id, deleted_at)`,
 `entities_name_idx (world_id, name)`,
-`entities_favorite_idx (world_id, is_favorite)`.
+`entities_favorite_idx (world_id, is_favorite)` y
+`entities_deleted_idx (deleted_at, world_id)` (M1-06, #77).
 
 Reglas:
 
@@ -293,8 +310,13 @@ Reglas:
   tipo de destino.
 - El slug es único por mundo y no se reutiliza mientras la fila exista, incluidas
   las fichas en papelera.
-- Borrar es lógico: la fila, sus etiquetas y sus assets se conservan hasta la
-  papelera y la purga de #77.
+- Borrar es lógico: la fila, sus etiquetas, sus versiones y sus assets se
+  conservan hasta la purga. La papelera la muestra con su mundo y tipo de origen;
+  restaurarla exige el mundo vivo (`world-in-trash`) y un tipo disponible
+  (`type-unavailable`). Al purgarla se borran sus relaciones, versiones,
+  etiquetas y galería, y después la ficha; los assets y sus archivos no se tocan
+  (#116 los pondrá en cuarentena). Una ficha en papelera no muestra ni genera
+  versiones (ADR 0028).
 - La descripción sigue la lista cerrada de nodos y marcas de
   `src/shared/entities/description.ts`; el `CHECK` solo comprueba que es un JSON
   de objeto, la garantía de forma es de la aplicación.
@@ -653,12 +675,68 @@ FTS5, elimina los documentos que ya no existen en las vistas, los repuebla desde
 ellas y vuelve a reconstruir el índice; se ofrece desde la paleta `Ctrl+K` y más
 adelante desde Ajustes → Datos.
 
+### 4.14 `entity_versions`
+
+**Implementada en `0007_trash_versions` (M1-06, #77).** Historial de la
+descripción de las fichas. SQL real:
+
+```sql
+CREATE TABLE `entity_versions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`entity_id` text NOT NULL,
+	`description` text,
+	`description_text` text,
+	`label` text,
+	`origin` text DEFAULT 'auto' NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`entity_id`) REFERENCES `entities`(`id`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "entity_versions_origin_check" CHECK("entity_versions"."origin" in ('auto', 'manual', 'restore')),
+	CONSTRAINT "entity_versions_label_check" CHECK("entity_versions"."label" is null or length("entity_versions"."label") between 1 and 120),
+	CONSTRAINT "entity_versions_description_check" CHECK("entity_versions"."description" is null or (json_valid("entity_versions"."description") AND json_type("entity_versions"."description") = 'object')),
+	CONSTRAINT "entity_versions_text_check" CHECK("entity_versions"."description_text" is null or length("entity_versions"."description_text") <= 50000)
+);
+CREATE INDEX `entity_versions_entity_created_idx` ON `entity_versions` (`entity_id`,`created_at` desc,`id` desc);
+```
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | TEXT | PK | UUIDv7. |
+| `entity_id` | TEXT | NOT NULL, FK `entities(id)` **ON DELETE CASCADE** | Ficha dueña de la versión. |
+| `description` | TEXT | NULL, CHECK JSON objeto | Documento ProseMirror íntegro; `NULL` = descripción vacía. |
+| `description_text` | TEXT | NULL, CHECK ≤ 50 000 | Texto plano para vista previa, búsqueda y exportación. |
+| `label` | TEXT | NULL, CHECK 1–120 | Etiqueta obligatoria solo en las manuales. |
+| `origin` | TEXT | NOT NULL DEFAULT `'auto'`, CHECK | `auto`, `manual` o `restore`; la interfaz traduce el valor, la base nunca guarda texto localizado. |
+| `created_at` | INTEGER | NOT NULL | Inicio de la ráfaga, momento de la manual o de la restauración. |
+
+Índice: `entity_versions_entity_created_idx (entity_id, created_at DESC, id
+DESC)` para el historial y la poda.
+
+Reglas (ADR 0028):
+
+- Una **automática** guarda el **estado saliente** solo si la descripción cambia
+  de verdad y la última automática está fuera de la ventana de 5 minutos. Una
+  descripción saliente vacía no se versiona.
+- Se conservan **20 automáticas por ficha** con **retención de 90 días**; la más
+  reciente nunca se poda.
+- Las **manuales** llevan etiqueta obligatoria y su tope es **50 por ficha**, sin
+  caducidad. Al alcanzarlo, no se crea otra (`manual-limit`).
+- **Restaurar** una versión inserta antes una copia `origin: 'restore'` del estado
+  actual y esta no se poda nunca; después aplica la versión elegida y poda
+  automáticas.
+- El historial se lista solo para fichas vivas y nunca devuelve el JSON
+  histórico completo, solo metadatos y una vista previa de 2 000 caracteres.
+- El borrado lógico de la ficha no toca las versiones; la purga las elimina en
+  cascada. En modo seguro el servicio está `unavailable`.
+
 ## 5. Reglas de integridad
 
-1. Un mundo no se borra físicamente si tiene contenido activo; primero se
-   archiva o se mueve a papelera.
+1. Borrar contenido es lógico (`deleted_at`) y la purga es una acción separada,
+   confirmada y precedida de una copia verificable. La purga nunca acepta una
+   fila viva y un mundo se elimina en orden explícito, empezando por
+   `activity_log`.
 2. Un asset referenciado por una entidad, mapa o escena no se purga hasta que
-   la referencia desaparece.
+   la referencia desaparece. #77 no borra filas ni archivos de `assets` al
+   purgar; los huérfanos y la FK `assets.world_id` llegan con #116.
 3. `entity_types` y `relation_types` del sistema (`world_id IS NULL`) no se
    editan ni se borran desde la app; se pueden duplicar por mundo.
 4. Las relaciones no admiten origen igual a destino.
@@ -667,6 +745,8 @@ adelante desde Ajustes → Datos.
 6. Los textos ricos se guardan como JSON de ProseMirror; `content_text` y
    `description_text` son la versión plana para búsqueda y exportación.
 7. Los borrados lógicos no eliminan assets ni versiones; la purga es explícita.
+   Purgar una ficha borra sus versiones en cascada y purgar un mundo borra el
+   historial de sus fichas, mientras los archivos de assets permanecen.
 8. Los triggers de `updated_at` se aplican en la aplicación y en SQLite para
    evitar filas con fecha vieja.
 
@@ -704,3 +784,4 @@ Cualquier cambio de tabla, columna, índice o trigger requiere:
 - [ADR 0005](../adr/0005-local-assets-custom-protocol.md)
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
+- [ADR 0028](../adr/0028-trash-versions-and-pre-purge-backup.md)

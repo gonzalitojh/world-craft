@@ -286,3 +286,24 @@ y en la sección 17 de [`sistema-de-diseno.md`](diseno/sistema-de-diseno.md).
   queda en #144; F2 (módulo actual no interactivo) queda en #93.
 - Referencias: #133, #144, #93, ADR 0025, `docs/diseno/sistema-de-diseno.md` y
   `docs/diseno/auditoria-visual-issue-133.md`.
+
+## 2026-11-24 — Papelera y versiones de contenido (#77, M1-06)
+
+**Contexto.** Desde #72 a #76 el contenido se borraba de forma lógica
+(`deleted_at`) y las vistas y la búsqueda ya excluían lo borrado, pero no había
+una forma visible de recuperarlo: los textos prometían una papelera futura y las
+copias eran la única red documentada. La descripción de las fichas, con
+autoguardado de 700 ms, podía destruir un texto largo sin vuelta atrás. Además,
+`activity_log` no tiene `ON DELETE CASCADE`, `assets` aún no tiene clave foránea a
+`worlds` (#116) y el manifiesto de copia v2 es un contrato cerrado. La issue #77
+pedía ver, restaurar, purgar con copia y versionar la descripción sin duplicar
+reglas ni tocar assets. El usuario aprobó las ocho recomendaciones del plan
+(D1–D8).
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-051 | Papelera, versiones de contenido y copia previa a la purga | **Papelera global** de mundos, fichas y tipos personalizados con listado por cursor, restauración a su mundo y tipo originales y motivos de dominio (`not-found`, `already-restored`, `world-in-trash`, `type-unavailable`). **Purga individual y vaciado** con confirmación explícita, copia `pre-purge` verificable (tamaño, SHA-256, `integrity_check`, `user_version`) en el manifiesto v2 sin subir `formatVersion`, y transacción con orden explícito —`activity_log` primero al purgar un mundo—; si la copia falla, no se borra nada. **Assets intactos:** ni filas ni archivos de `assets` se borran en #77; su cuarentena y la FK `assets.world_id` llegan con #116. **Versiones de la descripción** con ráfagas de 5 minutos que guardan el estado saliente, 20 automáticas por ficha con retención de 90 días, 50 manuales con etiqueta obligatoria y sin caducidad, y origen `restore` protegido que conserva el estado actual antes de aplicar una versión. **Migración `0007_trash_versions` aditiva** con `entity_versions`, índices `entities_deleted_idx` y `entity_types_deleted_idx`, `user_version` 8 y rollback de referencia. **Siete canales IPC** (`trash:list`, `restore`, `purge` y `empty`, y `versions:list`, `create` y `restore`) con Zod estricto, literales de confirmación, guardas en el preload y servicios `unavailable` en modo seguro. **Vista Papelera** en el rail e **historial local no persistido** dentro de la ficha. | Lo borrado se recupera y lo purgado deja una copia recuperable; la purga es segura por construcción y respeta `activity_log`; los assets compartidos no se destruyen y quedan huérfanos a propósito hasta #116; el autoguardado no genera una versión por pulsación y restaurar nunca destruye el texto actual; la papelera no caduca sola y restaurar un mundo no restaura en cascada sus fichas o tipos ya borrados; #78 exporta solo contenido vivo en mundos vivos e incluye las versiones de las fichas exportadas; M2 y M3 reutilizan el patrón. Sin dependencias nuevas ni coste. ADR 0028. |
+
+- Referencias: ADR 0028, ADR 0012, ADR 0016, ADR 0019, ADR 0021, #77, #78, #116,
+  `docs/base-de-datos/esquema.md`, `docs/persistencia.md` y
+  `docs/manual-de-usuario.md`.

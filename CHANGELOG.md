@@ -385,9 +385,48 @@ primera versión estable.
   reset por API sin pérdida de datos, y matriz 1024/1280/1600 px en ambos temas
   con axe. La suite queda en 518 unitarias (4 omitidas), 171 de componentes, 146
   de integración (1 omitida) y 53 E2E.
+- Papelera global (#77): vista **Papelera** en el rail —Inicio · Mundos ·
+  Papelera— con tres grupos (mundos, fichas y tipos personalizados), paginación
+  por cursor, origen, fecha de borrado, restauración a su mundo y tipo originales
+  y motivos claros cuando el mundo está en papelera o el tipo no está disponible.
+- Eliminación definitiva y vaciado de la papelera (#77): confirmación explícita,
+  casilla obligatoria en el vaciado, copia de la base `pre-purge` verificable
+  antes de borrar, transacción con orden explícito —`activity_log` primero en un
+  mundo— y resumen con contadores. Si la copia falla, no se borra nada; las
+  imágenes y los archivos nunca se borran.
+- Historial de versiones de la descripción de una ficha (#77): sección
+  **Historial** bajo la descripción, con versiones automáticas agrupadas por
+  ráfagas de 5 minutos que guardan el estado saliente, retención de 20
+  automáticas/90 días, 50 manuales con etiqueta obligatoria y sin caducidad, y
+  restauración que conserva antes el estado actual como **Antes de restaurar**.
+- Migración `0007_trash_versions` (#77): tabla `entity_versions` con FK en
+  cascada a `entities` y `CHECK` de origen, etiqueta, JSON y longitud, índices
+  `entity_versions_entity_created_idx`, `entities_deleted_idx` y
+  `entity_types_deleted_idx`, rollback de referencia y `user_version` 8. Conserva
+  mundos, tipos, fichas, etiquetas, galería, relaciones, búsqueda y assets.
+- Copia previa a la purga (#77): motivo `pre-purge` dentro del manifiesto v2,
+  carpeta `backups/pre-purge`, verificación de tamaño, SHA-256,
+  `integrity_check` y `user_version`, y rotación a las 10 copias válidas más
+  recientes sin borrar la última ni las corruptas.
+- IPC de papelera y versiones (#77): siete canales `trash:list`, `restore`,
+  `purge` y `empty`, y `versions:list`, `create` y `restore`, con Zod estricto,
+  literales de confirmación, guardas en el preload y servicios no disponibles en
+  modo seguro.
+- Pruebas de la papelera y las versiones (#77): unitarias de contratos,
+  validación, handlers y política de versiones; integración de migración y
+  preservación desde `0006`, listado por cursor, restauración, purga ordenada,
+  vaciado, copia previa, assets intactos, agrupación, poda y cascade; componentes
+  de papelera e historial; E2E del flujo borrar → papelera → restaurar →
+  versiones → purgar con copia y del orden mundo → ficha. Typecheck, lint,
+  `db:check`, unitarias (557, 4 omitidas), componentes (188), integración (158, 1
+  omitida), build, `verify:build`, E2E de papelera y auditoría visual en verde.
 
 ### Cambiado
 
+- Los avisos de borrado de un mundo y de una ficha dejan de prometer una
+  papelera futura (#77): explican que se mueven a la **Papelera** y que se pueden
+  recuperar desde allí. La muestra interna de diálogo ya no habla de treinta
+  días.
 - La base visual pasa a v2 (#125): tokens en tres capas con paleta neutra,
   bosque, arena, estados y pizarra, roles `--surface-sunken`, `--border-strong`,
   `--disabled-*`, `--skeleton*` y marcas `--entity-*`, radios 4/6/8, iconos

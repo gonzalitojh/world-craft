@@ -45,6 +45,14 @@ describe('manifiesto de copia', () => {
     expect(normalizeBackupManifest(v2Manifest)).toEqual(v2Manifest);
   });
 
+  it('acepta el motivo pre-purge sin cambiar el formato v2', () => {
+    const manifest = { ...v2Manifest, reason: 'pre-purge' };
+
+    expect(normalizeBackupManifest(manifest)).toEqual(manifest);
+    // Un manifiesto anterior con otro motivo del enum sigue siendo válido.
+    expect(normalizeBackupManifest(v2Manifest)).toEqual(v2Manifest);
+  });
+
   it('normaliza un manifiesto v1 como copia íntegra y sin assets', () => {
     const manifest = normalizeBackupManifest({
       formatVersion: 1,

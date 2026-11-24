@@ -150,6 +150,58 @@ async function seedAndOpenHome(page: Page): Promise<AuditSeed> {
   return seed;
 }
 
+async function openAuditHistory(page: Page): Promise<void> {
+  await page.locator('[data-section="history"] .wc-disclosure__toggle').click();
+  await expect(page.locator('#wc-entity-section-history')).toHaveAttribute(
+    'data-open',
+    'true',
+  );
+  await expect(page.locator('.wc-history__retention')).toBeVisible();
+}
+
+async function moveAuditEntityToTrash(
+  page: Page,
+  worldId: string,
+  entityId: string,
+): Promise<void> {
+  const removed = await page.evaluate(
+    async ({ worldId: targetWorldId, entityId: targetEntityId }) => {
+      const result = await window.worldCraft.entities.remove({
+        worldId: targetWorldId,
+        id: targetEntityId,
+      });
+
+      return result.ok && result.data.deleted;
+    },
+    { worldId, entityId },
+  );
+
+  expect(removed, 'la ficha de auditoría se mueve a la papelera').toBe(true);
+}
+
+async function openAuditTrash(page: Page): Promise<void> {
+  await page
+    .getByRole('navigation', { name: messages.shell.navigationLabel })
+    .getByRole('button', { name: messages.shell.views.trash })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.shell.views.trash }),
+  ).toBeVisible();
+}
+
+async function restoreAuditEntity(page: Page, name: string): Promise<void> {
+  await page
+    .getByRole('button', { name: messages.trash.row.restoreNamed(name) })
+    .click();
+  await expect(page.getByText(messages.trash.row.restored(name))).toBeVisible();
+
+  const closeButtons = page.getByRole('button', { name: /^Cerrar aviso/ });
+
+  while ((await closeButtons.count()) > 0) {
+    await closeButtons.first().click();
+  }
+}
+
 const formatters = createFormatters('es');
 const MINUTE = 60_000;
 
@@ -314,6 +366,15 @@ for (const theme of THEMES) {
         width,
       });
 
+      await openAuditHistory(page);
+      await capture({
+        page,
+        view: 'entity',
+        state: 'history',
+        theme: theme.mode,
+        width,
+      });
+
       await openAuditSearch(page, AUDIT_DATA.searchQuery);
       await expect(page.locator('.wc-search-hit').first()).toBeVisible();
       await capture({
@@ -332,6 +393,26 @@ for (const theme of THEMES) {
         theme: theme.mode,
         width,
       });
+
+      await moveAuditEntityToTrash(
+        page,
+        seed.primaryWorldId,
+        seed.longEntityId,
+      );
+      await openAuditTrash(page);
+      await expect(
+        page
+          .locator('[data-trash-kind="entity"]')
+          .filter({ hasText: seed.longEntityName }),
+      ).toBeVisible();
+      await capture({
+        page,
+        view: 'trash',
+        state: 'list',
+        theme: theme.mode,
+        width,
+      });
+      await restoreAuditEntity(page, seed.longEntityName);
 
       await openAuditHome(page);
     }
@@ -796,6 +877,7 @@ test('movimiento reducido y navegación de producto', async ({
   expect(navigation.navItems).toEqual([
     messages.shell.views.home,
     messages.shell.views.worlds,
+    messages.shell.views.trash,
   ]);
   expect(navigation.hasSamples, 'Muestras fuera de producto').toBe(false);
   expect(navigation.hasVersion, 'sin lema ni versión en el rail').toBe(false);

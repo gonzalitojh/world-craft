@@ -1,24 +1,25 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 20/11/2026 con M0-08 y M1-01 a M1-05. La base local, las migraciones, el modo
+> 24/11/2026 con M1-06 (#77). La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
 > (#66), M0-07 (#67) y M0-08 (#68). Los mundos y su actividad, en M1-01 (#72);
 > los tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
 > imágenes, etiquetas y galería, en M1-03 (#74); las relaciones tipadas con
-> backlinks, en M1-04 (#75); y la búsqueda global con FTS5 y la paleta de
-> comandos, en M1-05 (#76). La interfaz de copias
-> de Ajustes y la papelera visible llegan en M1 y la release pública con
-> actualización real, en M5. Las secciones distinguen lo implementado de lo
-> previsto.
+> backlinks, en M1-04 (#75); la búsqueda global con FTS5 y la paleta de
+> comandos, en M1-05 (#76); y la papelera, el historial de versiones y la copia
+> `pre-purge`, en M1-06 (#77). La interfaz de copias de Ajustes llega con #79 y
+> la release pública con actualización real, en M5. Las secciones distinguen lo
+> implementado de lo previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
 > ADR 0012 (copias y recuperación), ADR 0016 (migraciones y modo seguro),
 > ADR 0019 (mundos del MVP), ADR 0020 (tipos de entidad y campos
-> personalizados) y ADR 0023 (búsqueda global FTS5).
+> personalizados), ADR 0023 (búsqueda global FTS5) y ADR 0028 (papelera,
+> versiones y copia previa a la purga).
 
 ## 1. Principio
 
@@ -70,6 +71,10 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │   │   └─ <timestamp>\
   │   │       ├─ world-craft.sqlite
   │   │       └─ manifest.json
+  │   ├─ pre-purge\              (implementado, M1-06; copia previa a purgar)
+  │   │   └─ <timestamp>\
+  │   │       ├─ world-craft.sqlite
+  │   │       └─ manifest.json
   │   └─ pre-restore\           (implementado, M0-07; recuperación manual)
   │       └─ <timestamp>[-rollback|-restore-tmp]\
   │           ├─ world-craft.sqlite
@@ -103,6 +108,7 @@ arranque los detecta y **no crea una base vacía** (sección 7).
 | `assets/.tmp/` | Restos de importaciones en curso (se limpian) | Sí, con la app cerrada; la purga los clasifica |
 | `backups/orphans/<timestamp>/` | Copia verificable de huérfanos purgados | Solo tras comprobar que no hace falta recuperar |
 | `backups/pre-migration/` | Copia y manifiesto previos a una migración; se conservan 5 (implementado) | Solo si no hay una actualización pendiente |
+| `backups/pre-purge/` | Copia y manifiesto previos a una purga definitiva; se conservan 10 válidas (implementado, M1-06) | Solo tras comprobar que no hace falta recuperar lo purgado |
 | `backups/daily`, `weekly`, `monthly` | Copias automáticas con manifiesto (implementado, M0-07) | Las antiguas, desde la app; no borrar las recientes |
 | `backups/pre-restore/` | Base anterior y sus auxiliares antes de restaurar (implementado, M0-07) | Solo tras comprobar que la restauración fue correcta; no se poda sola |
 | `exports/` | Exportaciones ZIP/JSON generadas por el usuario (previsto) | Sí |
@@ -134,16 +140,16 @@ no se crea `config.json`.
   migrar; si falla, modo seguro sin escritura.
 - `PRAGMA user_version` es el **número de migraciones aplicadas** (con
   `0000_init`, `0001_assets`, `0002_worlds`, `0003_entity_types`,
-  `0004_entities`, `0005_relations` y `0006_search`, vale 7), no el prefijo de la
-  etiqueta. La tabla `schema_migrations` conserva el detalle y se contrasta con
-  él.
+  `0004_entities`, `0005_relations`, `0006_search` y `0007_trash_versions`, vale
+  8), no el prefijo de la etiqueta. La tabla `schema_migrations` conserva el
+  detalle y se contrasta con él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
 - IDs UUIDv7 generados en el proceso principal (`src/main/db/ids.ts`) con
-  contador para mantener el orden dentro del mismo milisegundo. En M1-05 existen
-  las tablas del sistema, `assets`, `worlds`, `activity_log`, `entity_types`,
-  `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`,
-  `relations` y `search_documents`; el resto de tablas de contenido llega en M2,
-  M3 y M4 con sus issues.
+  contador para mantener el orden dentro del mismo milisegundo. Tras M1-06
+  existen las tablas del sistema, `assets`, `worlds`, `activity_log`,
+  `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`,
+  `relation_types`, `relations`, `search_documents` y `entity_versions`; el resto
+  de tablas de contenido llega en M2, M3 y M4 con sus issues.
 
 ### 3.2 Acceso
 
@@ -295,6 +301,14 @@ de huérfanos sigue sin canal ni interfaz.
 - Nunca borra archivos referenciados, entradas inesperadas ni enlaces. Un fallo
   de borrado se normaliza a `ASSET_STORAGE_FAILED` y queda registrado; lo ya
   copiado se restaura desde la carpeta de la copia.
+- **La purga de la papelera no borra assets (M1-06, #77).** Al purgar una ficha o
+  un mundo, las filas de `assets` y sus archivos permanecen: los assets son del
+  mundo y pueden estar compartidos por contenido vivo. Las filas de un mundo
+  purgado quedan **huérfanas a propósito** hasta que #116 añada
+  `assets.world_id → worlds(id) ON DELETE RESTRICT` y la cuarentena de huérfanos.
+  Hasta entonces no hay limpieza guiada de esos archivos y no se deben borrar a
+  mano sin una copia. La purga sí deja una copia de la base en
+  `backups/pre-purge/`.
 
 ### 4.5 Dependencia de imagen y residuales
 
@@ -333,8 +347,8 @@ de huérfanos sigue sin canal ni interfaz.
 - La versión del esquema se guarda en `PRAGMA user_version` como **número de
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
   SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds`,
-  `0003_entity_types`, `0004_entities`, `0005_relations` y `0006_search`, vale
-  7.
+  `0003_entity_types`, `0004_entities`, `0005_relations`, `0006_search` y
+  `0007_trash_versions`, vale 8.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -368,6 +382,15 @@ de huérfanos sigue sin canal ni interfaz.
   de los de `0005`, `0004` y `0003`. El índice es reconstruible y no se exporta:
   la prueba de preservación migra una base en `0005` con mundos, fichas,
   etiquetas y relaciones y comprueba que el contenido sigue intacto y buscable.
+- `0007_trash_versions` es aditiva: crea `entity_versions` con FK en cascada a
+  `entities(id)`, añade los índices `entity_versions_entity_created_idx`,
+  `entities_deleted_idx` y `entity_types_deleted_idx`, conserva todos los datos y
+  los assets, y deja `user_version` 8. Su rollback está en
+  `drizzle/rollback/0007_trash_versions.down.sql` y solo elimina la tabla, los
+  dos índices de papelera y la fila de `schema_migrations`; el historial de
+  versiones se pierde y la copia previa lo conserva. La prueba de preservación
+  migra una base en `0006` con mundo, tipo personalizado, fichas, etiquetas,
+  galería, relaciones y búsqueda.
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o
@@ -386,8 +409,9 @@ de huérfanos sigue sin canal ni interfaz.
 ## 6. Copias de seguridad
 
 **Implementado en M0-07 (#67)** para las copias automáticas, pre-migración y
-pre-restauración. Las copias **contienen solo la base SQLite y su manifiesto**:
-los assets no se incluyen ni se sustituyen al restaurar.
+pre-restauración, y ampliado en M1-06 (#77) con la copia previa a la purga. Las
+copias **contienen solo la base SQLite y su manifiesto**: los assets no se
+incluyen ni se sustituyen al restaurar.
 
 | Tipo | Cuándo se crea | Retención | Contenido | Estado |
 |---|---|---|---|---|
@@ -395,8 +419,9 @@ los assets no se incluyen ni se sustituyen al restaurar.
 | Semanal | Primera copia de la semana ISO local | 4 | SQLite + manifiesto | Implementada (M0-07) |
 | Mensual | Primera copia del mes local | 12 | SQLite + manifiesto | Implementada (M0-07) |
 | Pre-migración | Antes de migrar una base existente | 5 | SQLite + manifiesto | Implementada (M0-04; poda M0-07) |
+| Pre-purga | Antes de cada purga individual o vaciado confirmado | 10 | SQLite + manifiesto | Implementada (M1-06) |
 | Pre-restauración | Antes de reemplazar la base | Sin poda | SQLite + WAL/SHM/journal + manifiesto | Implementada (M0-07); recuperación manual |
-| Huérfanos purgados | Antes de cada purga confirmada | La decide el usuario | Archivos + manifiesto con SHA-256 | Implementada (M0-06) |
+| Huérfanos purgados | Antes de cada purga confirmada de assets | La decide el usuario | Archivos + manifiesto con SHA-256 | Implementada (M0-06) |
 | Manual | Cuando el usuario lo pide | La decide el usuario | SQLite + assets opcionales | Prevista (M1, Ajustes) |
 
 ### 6.1 Programación y buckets
@@ -441,7 +466,7 @@ actual es la **versión 2** y se valida con Zod en modo estricto:
 | Campo | Significado |
 |---|---|
 | `formatVersion` | `2` en las copias nuevas; el lector acepta también `1`. |
-| `reason` | `daily`, `weekly`, `monthly`, `pre-migration` o `pre-restore`. |
+| `reason` | `daily`, `weekly`, `monthly`, `pre-migration`, `pre-restore` o `pre-purge`. |
 | `createdAt` | Fecha ISO 8601 en UTC. |
 | `databaseFile` | Nombre fijo `world-craft.sqlite`. |
 | `schemaVersion` | Valor de `PRAGMA user_version`; `null` solo si la base copiada no se pudo leer. |
@@ -451,7 +476,10 @@ actual es la **versión 2** y se valida con Zod en modo estricto:
 | `assetsIncluded` | Siempre `false`: los assets no viajan en la copia. |
 
 Las copias creadas en M0-04 con la versión 1 (solo pre-migración) se siguen
-leyendo y se normalizan como íntegras y sin assets; no se reescriben.
+leyendo y se normalizan como íntegras y sin assets; no se reescriben. La copia
+`pre-purge` de #77 añade un valor al enum de `reason` pero mantiene
+`formatVersion: 2`: los manifiestos anteriores no contienen ese valor y el lector
+actual sigue aceptándolos sin migración ni reescritura (ADR 0028).
 
 ### 6.3 Verificación
 
@@ -479,6 +507,7 @@ antes de abrir su contenido.
 | Semanal | 4 |
 | Mensual | 12 |
 | Pre-migración | 5 |
+| Pre-purga | 10 |
 | Pre-restauración | No se poda |
 
 - Las copias corruptas no cuentan y no se borran.
@@ -489,6 +518,9 @@ antes de abrir su contenido.
 - Un fallo de borrado se contabiliza y no interrumpe la rotación.
 - Si una carpeta de motivo no se puede listar, ese motivo no se poda en esa
   pasada.
+- Las copias `pre-purge` creadas durante una sesión se podan en la **siguiente
+  rotación de arranque**, no en el momento de la purga: la más reciente siempre
+  se conserva.
 
 ### 6.5 Ubicación y copias manuales
 
@@ -498,6 +530,11 @@ antes de abrir su contenido.
   externa desde Ajustes → Datos (sección Copias) siguen **previstas para M1**.
 - Las copias **pre-restauración** no se ofrecen para restaurar desde la app y no
   se podan. Se conservan para recuperación manual (sección 7.4).
+- Las copias **`pre-purge`** se crean antes de eliminar contenido de la papelera,
+  se verifican con el mismo criterio que el resto y se conservan las 10 válidas
+  más recientes. Son la red de recuperación de una purga: no hay un botón
+  «deshacer», pero la copia se puede elegir en el diálogo de modo seguro o
+  copiar a mano con la app cerrada (sección 7.4).
 - La copia de huérfanos de una purga vive en `backups/orphans/<timestamp>/` y
   tampoco se poda automáticamente: contiene los archivos y un `manifest.json`
   con `formatVersion`, `reason`, `createdAt`, `recovery` y la lista de archivos
@@ -596,7 +633,8 @@ confirmación.
   comprobación de contención; la carpeta elegida en el diálogo sí se valida.
   Endurecerlos y añadir una prueba de junction queda para antes de M1.
 - Los assets existentes **no se sustituyen** al restaurar solo la base; las
-  referencias huérfanas se gestionarán en M1.
+  referencias huérfanas y la cuarentena de assets se abordan en #116, igual que
+  los assets que quedan tras purgar un mundo en la papelera.
 
 ## 8. Exportación e importación
 
@@ -609,12 +647,15 @@ Un ZIP con:
 - `world.json`: mundo, tipos (los personalizados viajan en el bloque
   `entity-types.v1`; los del sistema son implícitos), entidades, relaciones,
   etiquetas, mapas, grafo, manuscritos, escenas, tablas de juego y ajustes del
-  mundo.
+  mundo. Incluye el **historial de versiones de las fichas exportadas**; las
+  versiones de fichas en papelera se omiten.
 - `assets/`: archivos referenciados con rutas relativas.
 - `manifest.json`: versión del formato, versión de esquema, fecha y checksums.
 
 El formato es abierto y legible. La exportación se puede hacer completa o sin
-assets.
+assets. **La papelera nunca se exporta:** solo viaja el contenido con
+`deleted_at IS NULL` cuyo mundo esté vivo, y lo purgado ya no existe en la base.
+Esta es la regla única que aplicará #78; no se duplica en la interfaz (ADR 0028).
 
 ### 8.2 Importación
 
@@ -715,7 +756,14 @@ en la carpeta de datos del usuario.
   lectura.
 - La copia pre-restauración no se poda y las copias corruptas no se borran
   automáticamente; el espacio en disco puede crecer si se repiten restauraciones
-  o hay copias dañadas.
+  o hay copias dañadas. Las `pre-purge` sí rotan, a 10 válidas.
+- Una purga con contenido grande crea una copia completa de la base antes de
+  borrar: necesita espacio libre equivalente al tamaño de la base y no es
+  instantánea. La interfaz deshabilita las acciones y muestra un estado de espera
+  mientras se crea la copia.
+- Tras purgar un mundo, sus filas de `assets` y sus archivos quedan huérfanos
+  hasta #116 (sección 4.4). `VACUUM` tras una purga grande no forma parte de #77:
+  llegará como acción confirmada de Ajustes.
 - `VACUUM` solo tras borrados grandes y con confirmación; nunca en cada
   arranque.
 
@@ -741,3 +789,4 @@ en la carpeta de datos del usuario.
 - [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md)
 - [ADR 0027](adr/0027-ui-preferences-persistence.md)
+- [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)

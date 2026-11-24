@@ -60,6 +60,7 @@ export const PERSISTED_APP_VIEWS = [
   'world',
   'entities',
   'entity',
+  'trash',
 ] as const;
 
 export type PersistedAppView = (typeof PERSISTED_APP_VIEWS)[number];

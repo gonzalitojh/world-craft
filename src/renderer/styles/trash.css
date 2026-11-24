@@ -1,0 +1,215 @@
+/* Papelera: tres grupos por cursor, filas con acciones y diálogos destructivos. */
+.wc-page--trash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.wc-trash__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.wc-trash__toolbar .wc-page__lead {
+  flex: 1 1 26rem;
+  min-width: 0;
+}
+
+.wc-trash-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-trash-group__title {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-group__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-group__more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-trash-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.wc-trash-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  min-width: 0;
+  padding-block: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-row + .wc-trash-row {
+  border-block-start: 1px solid var(--border);
+}
+
+.wc-trash-row--skeleton {
+  align-items: center;
+}
+
+.wc-trash-row__icon {
+  display: grid;
+  place-items: center;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  color: var(--muted);
+}
+
+.wc-trash-row__icon svg {
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+}
+
+.wc-trash-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wc-trash-row__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-trash-row__name {
+  min-width: 0;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-row__origin {
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-row__notice {
+  max-inline-size: 68ch;
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-row__notice--error {
+  color: var(--danger);
+}
+
+.wc-trash-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wc-trash-row__purge {
+  color: var(--danger);
+}
+
+.wc-trash-row__purge:hover:not(:disabled) {
+  background-color: var(--danger-surface);
+  color: var(--danger);
+}
+
+.wc-trash__empty {
+  min-width: 0;
+}
+
+/* A 1024 px las acciones pasan a una segunda línea, alineadas con el texto. */
+@media (max-width: 1180px) {
+  .wc-trash-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .wc-trash-row__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-inline-start: calc(var(--icon-md) + var(--space-3));
+  }
+}
+
+/* Notas comunes de los diálogos de papelera e historial. */
+.wc-dialog__lead {
+  margin: 0 0 var(--space-3);
+  color: var(--fg);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.wc-dialog__note {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+
+.wc-dialog__status {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-trash-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

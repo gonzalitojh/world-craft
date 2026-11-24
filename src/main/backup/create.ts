@@ -123,6 +123,29 @@ export async function createPreMigrationBackup(options: {
   });
 }
 
+/**
+ * Crea `backups/pre-purge/<timestamp>/` antes de una purga definitiva.
+ *
+ * Usa la API online de SQLite y la misma verificación que el resto de copias:
+ * tamaño, SHA-256, `integrity_check`, `user_version` y manifiesto v2 con
+ * `reason: 'pre-purge'`. Si algo falla, la carpeta parcial se elimina y el
+ * servicio de papelera no borra nada.
+ */
+export async function createPrePurgeBackup(options: {
+  readonly database: SqliteDatabase;
+  readonly backupRootDir: string;
+  readonly timestamp: number;
+  readonly schemaVersion: number;
+}): Promise<BackupResult> {
+  return createBackup({
+    database: options.database,
+    parentDir: options.backupRootDir,
+    reason: 'pre-purge',
+    timestamp: options.timestamp,
+    schemaVersion: options.schemaVersion,
+  });
+}
+
 export interface CreatePreservationCopyOptions {
   /** Base actual, que puede estar corrupta. */
   readonly databaseFile: string;

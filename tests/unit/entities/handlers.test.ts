@@ -10,7 +10,9 @@ import { createIpcRouter } from '@/main/ipc/registry';
 import { createUnavailablePreferencesService } from '@/main/preferences/service';
 import { createUnavailableRelationsService } from '@/main/relations/service';
 import { createUnavailableSearchService } from '@/main/search/service';
+import { createUnavailableTrashService } from '@/main/trash/service';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
+import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableWorldsService } from '@/main/worlds/service';
 import { IPC_CHANNELS } from '@/shared/contracts/channels';
 import type { EntityDetail, EntityTag } from '@/shared/contracts/entities';
@@ -97,6 +99,8 @@ function createRoute(options?: {
       relations: createUnavailableRelationsService(),
       search: createUnavailableSearchService(),
       assets: options?.assets ?? createAssetsService(),
+      trash: createUnavailableTrashService(),
+      versions: createUnavailableVersionsService(),
       pickImages: options?.pickImages ?? (async () => []),
     }),
   );
