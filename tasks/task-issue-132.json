@@ -1,7 +1,7 @@
 {
   "title": "Preferencias de interfaz persistentes",
   "description": "Persistir en `app_settings` las preferencias de interfaz que hoy viven solo en memoria (tema, rail plegado, panel de propiedades, último destino para «Continuar» y última vista), exponerlas por la allowlist IPC con Zod y guardas en el preload, aplicarlas antes del primer pintado sin parpadeo y ofrecer un restablecimiento que no borra datos de dominio. Es la capa de almacenamiento que consumirá Ajustes (#79).",
-  "status": "review",
+  "status": "published",
   "model_variant": "high",
   "issue": {
     "number": 132,
@@ -97,5 +97,12 @@
     "manual": "docs/manual-de-usuario.md (§3.1, §3.3, §3.5, §4.2, §5.2, §11, §12.1-12.2 y §17)",
     "changelog": "CHANGELOG.md [Sin publicar]",
     "agents": null
+  },
+  "pr": {
+    "number": 143,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/143",
+    "title": "feat(preferences): persistir preferencias de interfaz (#132)",
+    "branch": "feat/issue-132-persistent-ui-preferences",
+    "commit": "59b2689"
   }
 }
