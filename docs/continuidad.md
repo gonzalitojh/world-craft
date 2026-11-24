@@ -1,7 +1,7 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 21/11/2026 con M0-08, M1-01 a M1-04 y M1.5-01 a M1.5-04. El modo seguro, la
+> 24/11/2026 con el cierre de M1.5. El modo seguro, la
 > comprobación de integridad y la copia pre-migración se implementaron en M0-04
 > (#64); las copias automáticas con retención y la restauración desde el diálogo
 > de modo seguro, en M0-07 (#67); el instalador por usuario, la actualización
@@ -10,10 +10,13 @@
 > tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
 > autoguardado, imágenes, etiquetas y favoritos, en M1-03 (#74); y las relaciones
 > tipadas con backlinks, en M1-04 (#75). La dirección visual v2 llegó con
-> M1.5-01 a M1.5-03 (#124–#126) y M1.5-04 (#127) rediseñó Inicio sin tocar datos;
-> el siguiente rediseño es la vista de mundo (#128). La interfaz de copias de
-> Ajustes, la papelera visible y la purga llegan en M1; la release pública con
-> actualización real contra GitHub Releases, en M5.
+> M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con la auditoría
+> visual de todas las pantallas en ambos temas y tres anchos, sin cambios de
+> datos ni de copias. Quedan previstos los mapas y el grafo (M2, #83), la
+> escritura (M3), los ajustes y la papelera visible (#79, #77), los avisos en la
+> top layer de los diálogos modales (#144), el módulo actual no
+> interactivo de la página de mundo (#93) y la release pública con actualización
+> real contra GitHub Releases (M5).
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
 > **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020 y ADR 0021.
@@ -345,6 +348,7 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Relaciones y backlinks | M1-04 | CRUD, etiquetas inversas, duplicados, simetría, aislamiento, papelera y preservación de la migración `0005` (integración y E2E) |
 | Inicio y tarjetas de mundo | M1.5-04 | Solo renderer en esa entrega: sin cambios de datos ni copias; «Continuar» no se persistía y se perdía al recargar (componentes y E2E) |
 | Preferencias de interfaz | #132 | Claves `ui.*` en `app_settings`; entran en las copias y una restauración las recupera; el reset no borra datos de dominio (unitarias, integración y E2E de reinicio) |
+| Cierre visual de M1.5 | M1.5-10 (#133) | Solo renderer: sin cambios de datos, copias ni preferencias más allá de las existentes; el arnés usa un `userData` temporal (unitarias, componentes y E2E de auditoría) |
 | Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
 | Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
 | Copia automática y manifiesto v2 | M0-07 | Creación verificable, lectura de v1 y rechazo de bytes alterados (integración) |

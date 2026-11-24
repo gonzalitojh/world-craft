@@ -37,6 +37,7 @@
     "test:components": "vitest run --config vitest.components.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "pnpm build && playwright test",
+    "test:audit": "pnpm build && playwright test tests/e2e/visual-audit.spec.ts",
     "test": "pnpm test:unit && pnpm test:components && pnpm test:integration",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

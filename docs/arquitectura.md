@@ -287,7 +287,8 @@ Reglas de dependencia:
 - **Dirección visual v2.** ADR 0025 revisa la lectura estética del ADR 0006:
   superficies neutras, verde bosque, tipografía del sistema para interfaz y
   jerarquía por espacio y contraste. #125 implementó tokens, tipografía y
-  primitivas; #126, el shell; #127–#133 migran las pantallas.
+  primitivas; #126, el shell; #127–#133 migraron las pantallas y #133 cerró M1.5
+  con la auditoría visual.
 - **Verificación.** `tests/unit/design-tokens.test.ts` resuelve los tokens de
   cada tema, calcula la tabla de contraste §4.5, comprueba la disciplina de
   capas, escalas, elevación, estados, movimiento reducido y la licencia de la
@@ -295,8 +296,12 @@ Reglas de dependencia:
   única, menú `⋯`, paleta y título truncado. `tests/e2e/accessibility.spec.ts`
   ejecuta axe sobre el shell en los dos temas con el rail expandido y plegado, y
   sobre Muestras por su hash; `tests/e2e/shell.spec.ts` comprueba la ventana a
-  1024, 1280 y 1600 px, el rail a 64 px y la barra a 56 px. La matriz visual
-  completa y la auditoría de todas las pantallas siguen en #133.
+  1024, 1280 y 1600 px, el rail a 64 px y la barra a 56 px.
+  `tests/e2e/visual-audit.spec.ts` ejecuta la matriz de 3 anchos × 2 temas con
+  `pnpm test:audit` y `tests/unit/design-noise.test.ts` bloquea cajas heredadas y
+  selectores muertos; el informe está en
+  [`diseno/auditoria-visual-issue-133.md`](diseno/auditoria-visual-issue-133.md).
+  La auditoría final de accesibilidad sigue en #93.
 
 ### 2.5 Estado implementado de los assets (#66)
 

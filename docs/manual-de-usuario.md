@@ -113,6 +113,12 @@ llegarán en actualizaciones posteriores. **No hay una release pública**: el
 instalador se genera y se prueba en local, y la publicación oficial llegará con
 M5.
 
+El **rediseño visual** está terminado: todas las pantallas que ya existen se han
+revisado en los modos **Claro** y **Oscuro** y con ventanas de 1024, 1280 y
+1600 px de ancho, con contenido largo, sin que nada quede ilegible ni se salga de
+la ventana. Esa revisión cierra la etapa de diseño (M1.5) y no añade funciones
+nuevas: corrige detalles de aspecto y la forma de mostrar algunos avisos.
+
 ## 3. La ventana
 
 ### 3.1 Partes de la pantalla
@@ -572,7 +578,10 @@ lista de tipos del sistema y de los personalizados de ese mundo.
   con fichas no se puede borrar ni puede perder campos o cambiar el tipo de un
   campo existente hasta cambiar o mover esas fichas; se incluyen las fichas en
   papelera para que una restauración futura encuentre su plantilla. Sí puedes
-  ajustar etiquetas, opciones, icono, color y añadir campos.
+  ajustar etiquetas, opciones, icono, color y añadir campos. Si intentas borrar
+  un tipo que está en uso, la explicación aparece **dentro de la propia
+  confirmación** y el botón **Cancelar** sigue disponible: no se pierde nada y
+  puedes cerrar el aviso sin salir de la ventana.
 - Los iconos y colores usan la paleta de la aplicación; el color nunca es el
   único indicador: siempre acompaña al icono y al nombre.
 
@@ -1026,11 +1035,12 @@ Ya funciona en el shell de desarrollo:
   el menú **Formato** y el selector de menciones abiertos—, en los dos temas y con
   la barra lateral expandida y plegada; el contraste se comprueba con la tabla del
   sistema de diseño.
+- Revisión visual de todas las pantallas existentes y de los diálogos, en Claro y
+  Oscuro y en ventanas de 1024, 1280 y 1600 px de ancho, sin contenido cortado ni
+  desplazamiento horizontal de página.
 
 Sigue **previsto**:
 
-- Contraste y apariencia comprobados visualmente en todas las pantallas, hasta
-  completar la auditoría visual que llega con #133.
 - Los atajos de teclado generales, que se documentarán en la ayuda de la app.
 
 ## 15. Problemas frecuentes

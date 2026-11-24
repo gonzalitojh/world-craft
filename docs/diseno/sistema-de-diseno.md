@@ -4,10 +4,13 @@
 > ADR 0025 y la decisión D-048. #125 implementó los tokens, la tipografía y las
 > primitivas; #126 migró el shell, la navegación y la barra superior; #127 migró
 > Inicio y las tarjetas de mundo; #128 migró la vista de mundo modular; #129
-> migró la ficha como documento y su panel de propiedades. Las pantallas
-> restantes se migran en #130–#133. Este documento describe el contrato completo
-> y distingue lo implementado de lo previsto, sin presentar como existente nada
-> que aún no lo esté. El estado real se mantiene en la sección 17.
+> migró la ficha como documento y su panel de propiedades; #130, las relaciones;
+> #131, el editor mínimo y las menciones; #132, las preferencias persistentes; y
+> #133 cerró **M1.5** con la auditoría visual de todas las pantallas. La auditoría
+> final de accesibilidad sigue en #93 y el grafo completo, en #83. Este documento
+> describe el contrato completo y distingue lo implementado de lo previsto, sin
+> presentar como existente nada que aún no lo esté. El estado real se mantiene en
+> la sección 17.
 > **Ámbito:** identidad, superficies, color, tipografía, iconos, espaciado,
 > radios, elevación, bordes, componentes, shell, estados, accesibilidad,
 > movimiento, patrones de escritorio, migración y verificación.
@@ -505,7 +508,7 @@ dashboard de contadores.
 - **Mundos recientes** muestra como máximo cinco filas. «Ver todos los mundos»
   solo aparece con más de cinco y es una acción fantasma, no una primaria.
 - **Actividad reciente** muestra cinco entradas, con tipografía y peso
-  secundarios, separada por un divisor `--border`.
+  secundarios, sin caja por fila y separada por un divisor `--border`.
 - **Una sola primaria.** Con al menos un mundo, «Crear mundo» vive en la barra
   superior y el contenido no declara ninguna primaria. Con cero mundos manda el
   estado vacío, que conserva el único botón primario.
@@ -569,7 +572,8 @@ documento apilado.
   **Pendiente**. La pista usa `--border-strong` para alcanzar 3:1 sobre la
   superficie.
 - **Actividad:** al final, con tipografía y peso secundarios, solo del mundo
-  abierto. No se pinta durante la carga.
+  abierto. Las entradas se separan con un divisor `--border` y no llevan caja. No
+  se pinta durante la carga.
 - **Estados:** carga con un aviso de estado; error con explicación, **Volver a
   intentar** y **Volver a Inicio**, sin perder los datos.
 - **Espacio y texto largo:** `min-width: 0` y `overflow-wrap` en cabecera,
@@ -843,6 +847,9 @@ Toda pantalla debe cubrir:
 - Tono cercano, directo y sin jerga técnica.
 - Los errores explican la causa y la acción, no solo un código.
 - Los botones usan verbos: «Crear mundo», «Guardar copia», «Restaurar».
+- Cuando un botón repite el nombre visible de su objeto, la acción va primero y
+  el objeto después («Quitar campo Etiqueta»), de modo que el texto visible quede
+  contenido en la etiqueta accesible.
 - Las acciones destructivas nombran el objeto y la consecuencia.
 - No se usan cadenas de interfaz dispersas en componentes.
 
@@ -913,14 +920,17 @@ Reglas de migración:
 | Relaciones legibles y grafo contextual | Implementado (relaciones); grafo previsto en #83 | #130 |
 | Editor mínimo y menciones | Implementado | #131 |
 | Preferencias de interfaz persistentes | Implementado | #132 |
-| Auditoría visual, temas y ruido | Previsto | #133 |
+| Auditoría visual, temas y ruido | Implementado | #133 |
 
-Mientras una fila diga «Previsto», esa pantalla aún no aplica la composición v2.
-La composición v2 ya está aplicada en tokens y primitivas (#125), shell (#126),
-Inicio (#127), vista de mundo (#128), ficha (#129), relaciones (#130), editor
-(#131) y preferencias persistentes (#132). La fila pendiente es la auditoría
-visual de #133. El grafo completo continúa previsto en #83. No se deben tomar
-capturas nuevas de esa auditoría como si ya estuviera hecha.
+**M1.5 está cerrado.** La composición v2 está aplicada y auditada en tokens y
+primitivas (#125), shell (#126), Inicio (#127), vista de mundo (#128), ficha
+(#129), relaciones (#130), editor (#131), preferencias persistentes (#132) y
+auditoría visual (#133). La auditoría transversal cubrió las seis pantallas, sus
+estados alcanzables, los overlays y el banco de Muestras en 3 anchos × 2 temas;
+el resultado y las capturas locales están en
+[`auditoria-visual-issue-133.md`](auditoria-visual-issue-133.md). Siguen
+previstos el grafo completo (#83) y la auditoría final de accesibilidad de M5
+(#93), que este trabajo no sustituye.
 
 ### 17.2 Verificación automática
 
@@ -1026,19 +1036,47 @@ capturas nuevas de esa auditoría como si ya estuviera hecha.
   cubre el hook y la adopción optimista. `tests/e2e/preferences.spec.ts` reinicia
   la aplicación con tema, rail, panel y secciones persistidos, comprueba el reset
   por API sin pérdida de mundos ni fichas y recorre 1024/1280/1600 px en ambos
-  temas con axe. La matriz visual completa sigue en #133.
+  temas con axe.
+- La auditoría visual se cubre desde #133 con un arnés propio:
+  `tests/e2e/visual-audit.spec.ts` recorre 1024, 1280 y 1600 px × Claro/Oscuro
+  las seis pantallas, sus estados vacíos o sin resultados, los siete overlays y
+  el banco interno de Muestras, y deja 98 registros (88 celdas de la matriz más
+  10 capturas extra). La semilla de `tests/e2e/fixtures/audit.ts` son 12 mundos,
+  60 fichas (200 para rendimiento), una ficha de 50.000 caracteres y un tipo
+  personalizado en uso. `scripts/audit-report.mjs` regenera la Parte B de
+  [`auditoria-visual-issue-133.md`](auditoria-visual-issue-133.md) desde
+  `test-results/e2e/audit/records.json`. El arnés mide `scrollWidth` frente a
+  `clientWidth`, contraste computado con WCAG 2.2, axe, recorrido de foco con
+  orden DOM y objetivos mínimos, movimiento reducido, ruido de cajas y
+  rendimiento (nodos, montaje, long tasks y bloqueo). Las capturas PNG quedan en
+  `test-results/` y no se versionan; `pnpm test:audit` ejecuta solo esta matriz.
+  `tests/unit/design-noise.test.ts` impide reintroducir cajas heredadas,
+  selectores muertos y residuos v1. Los estados `loading` y `error` no son
+  inyectables con la API del preload congelada por `contextBridge` y se cubren
+  en las pruebas de componentes citadas arriba. El informe generado registra 0
+  violaciones de axe, 64 pares de contraste dentro de mínimo, 129 paradas de foco
+  por tema con orden 0..n-1, 0 desbordamientos y 0 ruido.
 - Al cerrar #127 la suite queda en 447 unitarias en verde (4 omitidas), 87 de
   componentes, 134 de integración en verde (1 omitida) y 42 E2E en verde. Al
   cerrar #128 queda en 453 unitarias (4 omitidas), 96 de componentes, 134 de
   integración (1 omitida) y 43 E2E. Al cerrar #129 queda en 459 unitarias (4
   omitidas), 119 de componentes, 134 de integración (1 omitida) y 9 E2E de
-  entidades en verde; la suite E2E completa no se ejecutó en esta tarea. Al cerrar
+  entidades en verde; la suite E2E completa no se ejecutó en esa tarea. Al cerrar
   #132 queda en 518 unitarias (4 omitidas), 171 de componentes, 146 de integración
-  (1 omitida) y 53 E2E en verde.
-- La matriz visual completa, las capturas y la auditoría de todas las pantallas
-  se completan en #133.
+  (1 omitida) y 53 E2E en verde. Al cerrar #133 queda en 531 unitarias (4
+  omitidas), 174 de componentes, 146 de integración (1 omitida) y 60 E2E en
+  verde, con `pnpm test:audit` en 7/7.
 
 ### 17.3 Checklist antes de cerrar una issue de UI
+
+Este checklist se mantiene como plantilla para las issues de UI de M2–M5. En el
+cierre de M1.5 se cumplió entero y con evidencia en
+[`auditoria-visual-issue-133.md`](auditoria-visual-issue-133.md): seis pantallas
+en Claro y Oscuro, 1024/1280/1600 px sin scroll horizontal de página, 64 pares de
+contraste medidos, 129 paradas de foco por tema, axe en 0/0/0, movimiento
+reducido verificado, textos del catálogo, estados de carga, vacío y error
+cubiertos (los no inyectables, en componentes), cero cajas de tarjeta por defecto
+y manual actualizado.
 
 - [ ] Revisión en Claro y Oscuro.
 - [ ] Ventana a 1024, 1280 y 1600 px sin scroll horizontal de página.
@@ -1058,6 +1096,7 @@ capturas nuevas de esa auditoría como si ya estuviera hecha.
 - [ADR 0027: preferencias de interfaz persistentes](../adr/0027-ui-preferences-persistence.md)
 - [Contrato de la ficha #129](ficha-issue-129.md)
 - [Contrato del editor mínimo #131](editor-issue-131.md)
+- [Contrato y auditoría visual #133](auditoria-visual-issue-133.md)
 - [Plan de desarrollo](../plan-desarrollo.md)
 - [Arquitectura](../arquitectura.md)
 - [Proceso SDD](../proceso-sdd.md)

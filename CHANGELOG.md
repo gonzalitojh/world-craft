@@ -430,6 +430,16 @@ primera versión estable.
   dejan de ser memoria de sesión (#132): se persisten en `app_settings` y se
   aplican al arrancar. El tema inicial ya no es siempre Claro. La aplicación sigue
   abriendo en Inicio y la reanudación explícita sigue en «Continuar».
+- La revisión visual de todas las pantallas pasa a ser un arnés repetible
+  (#133): `pnpm test:audit` recorre 1024, 1280 y 1600 px × Claro/Oscuro las seis
+  pantallas, sus estados vacíos o sin resultados y los overlays, con informe
+  generado, capturas locales no versionadas y un guardarraíl estático contra
+  cajas heredadas y selectores muertos. La suite queda en 60 E2E.
+- Cierra la etapa de diseño visual (M1.5): las tarjetas de ficha, la actividad,
+  la barra de herramientas de Mundos, los filtros de Fichas y Búsqueda, las filas
+  del gestor de tipos y sus grupos de campos dejan de dibujar caja y se separan
+  con divisores (#133). El contraste, el foco, el movimiento reducido y la
+  ventana a 1024/1280/1600 px quedan medidos y registrados.
 - La sección Relaciones deja de ser dos listas planas con botones sueltos
   (#130): las entradas se leen dentro de su dirección y su tipo, cada una abre
   su contraparte desde el nombre y las acciones secundarias pasan al menú `⋯`.
@@ -475,6 +485,10 @@ primera versión estable.
 
 ### Eliminado
 
+- Las cajas heredadas de la tarjeta de ficha, la actividad, la barra de
+  herramientas de Mundos, los filtros de Fichas y Búsqueda, las filas del gestor
+  de tipos y los grupos de campos (#133), y los selectores muertos
+  `.wc-button__icon` y `.wc-swatch__meta`.
 - Los contadores de Inicio, la rejilla de accesos rápidos, el párrafo de
   presentación y los cinco botones por tarjeta de mundo (#127). La inicial
   gigante desaparece en favor de la portada o la marca procedural.
@@ -482,6 +496,14 @@ primera versión estable.
   PostgreSQL, migraciones, pruebas, scripts y configuración.
 - Los ADRs de la etapa web, las capturas de referencia y los task files de las
   issues antiguas.
+
+### Corregido
+
+- El aviso al intentar borrar un tipo de ficha en uso ya se ve **dentro** de la
+  confirmación del gestor de tipos, con la opción de cancelar, en lugar de quedar
+  oculto detrás del diálogo modal (#133).
+- El botón de quitar un campo incluye su nombre visible («Quitar campo Etiqueta»),
+  de modo que el texto coincide con la etiqueta accesible (#133).
 
 ### Seguridad
 
