@@ -94,9 +94,28 @@ guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
-| `key` | TEXT | PK | Clave de ajuste (`theme`, `locale`, `window`, `backup`). |
+| `key` | TEXT | PK | Clave de ajuste. Hoy solo se usan las claves `ui.*` de las preferencias de interfaz (#132). |
 | `value` | TEXT | NOT NULL | JSON validado por la app. |
 | `updated_at` | INTEGER | NOT NULL | Última actualización en milisegundos UTC. |
+
+**Claves `ui.*` implementadas (#132).** No hay migración nueva: la tabla existe
+desde `0000_init`. Cada preferencia ocupa una fila y el valor es JSON; la lectura
+es tolerante por clave y el reset solo borra el prefijo `ui.` con `GLOB` sensible
+a mayúsculas.
+
+| Clave | Formato JSON | Defecto |
+|---|---|---|
+| `ui.theme` | `"light"` o `"dark"` | `"light"` |
+| `ui.rail-collapsed` | booleano | `false` |
+| `ui.entity-view` | objeto `{ propertiesOpen: boolean, propertiesWidth: entero 280–360, sections: { description, attributes, relations, resources: boolean } }` | `propertiesOpen: true`, `propertiesWidth: 320`, solo `description` abierta |
+| `ui.last-view` | `"home"`, `"worlds"`, `"search"`, `"world"`, `"entities"` o `"entity"` | `"home"` |
+| `ui.recent-location` | `{ kind: "world", worldId }` o `{ kind: "entity", worldId, entityId, entityName }`, con UUIDv7; ausente si no hay destino | Ausente |
+
+`recentLocation: null` borra la fila `ui.recent-location`; `ui.entity-view` se
+escribe con `updated_at` en cada commit explícito del panel o de las secciones.
+Las claves no-UI y las tablas de dominio no se tocan. El detalle está en
+[`docs/persistencia.md`](../persistencia.md) §3.4 y en el
+[ADR 0027](../adr/0027-ui-preferences-persistence.md).
 
 ## 4. Mundos y contenido
 

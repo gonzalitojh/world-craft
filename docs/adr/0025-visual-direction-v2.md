@@ -207,3 +207,12 @@ una marca procedural determinista derivada del `id` (4 tramas × 4 tonos con
 persistencia es #132. No se crea un ADR nuevo: es la aplicación concreta de una
 dirección ya aceptada, sin cambios en datos, IPC, CSP, preload, dependencias ni
 persistencia.
+
+## Nota de revisión (2026-11-24, issue #132)
+
+Las preferencias de interfaz ya **se persisten** en `app_settings` con claves
+`ui.*`: tema, rail plegado, panel y ancho, secciones y último destino de
+«Continuar» (#132, ADR 0027, D-050). La aplicación sigue abriendo en Inicio y
+«Continuar» es la única reanudación. Las notas de implementación anteriores se
+conservan como histórico; la dirección visual v2, los tokens y la composición no
+cambian.

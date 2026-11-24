@@ -1,23 +1,15 @@
 /**
- * Memoria de sesión del último destino abierto.
+ * Resolución pura del destino «Continuar».
  *
- * No se persiste nada: al recargar la ventana el bloque «Continuar» desaparece.
- * La persistencia de preferencias llega con #132. La resolución es pura para
- * poder probarla sin React y para descartar destinos cuyo mundo ya no está en
- * la biblioteca.
+ * El destino se persiste como `recentLocation` en `app_settings`; este módulo
+ * solo lo valida contra la biblioteca de mundos y lo convierte en el objetivo
+ * que pinta Inicio. Nunca navega por sí mismo ni muta el destino recordado.
  */
+import type { RecentLocationPreference } from '../../shared/contracts/preferences';
 import type { WorldSummary } from '../../shared/contracts/worlds';
 
-/** Destino recordado mientras la aplicación está abierta. */
-export type RecentLocation =
-  | { readonly kind: 'world'; readonly worldId: string }
-  | {
-      readonly kind: 'entity';
-      readonly worldId: string;
-      readonly entityId: string;
-      /** Se completa cuando la ficha termina de cargar; `null` si aún no se sabe. */
-      readonly entityName: string | null;
-    };
+/** Destino recordado; alias del tipo compartido para el renderer. */
+export type RecentLocation = RecentLocationPreference;
 
 /** Destino resuelto que la interfaz puede pintar y reabrir. */
 export interface ContinueTarget {

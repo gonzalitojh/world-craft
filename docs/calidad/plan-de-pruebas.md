@@ -8,7 +8,8 @@
 > ADR 0020 (tipos de entidad y campos personalizados), ADR 0021 (fichas,
 > galería, etiquetas y editor enriquecido), ADR 0022 (relaciones tipadas,
 > etiquetas inversas y API del grafo), ADR 0023 (búsqueda global y paleta de
-> comandos) y ADR 0025 (dirección visual v2).
+> comandos), ADR 0025 (dirección visual v2), ADR 0026 (editor mínimo y menciones)
+> y ADR 0027 (preferencias de interfaz persistentes).
 
 ## 1. Principios
 
@@ -202,7 +203,7 @@ lo cubre cuando aplica.
 
 ### 3.7 Scaffold, persistencia y artefactos (implementado)
 
-- **447 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
+- **518 pruebas unitarias en verde (4 omitidas)** en `tests/unit/`: identidad y
   ventana mínima, opciones de seguridad de `BrowserWindow`, CSP de producción y
   desarrollo, resolución del renderer, guards de navegación/sesión/red, contrato
   y router IPC, API congelada del preload, validación de enlaces externos,
@@ -213,16 +214,16 @@ lo cubre cuando aplica.
   licencias, mundos, tipos de entidad, fichas (descripción, esquemas IPC,
   handlers y tarjetas), relaciones (validación, esquemas, guardas y catálogo),
   vistas internas del shell (resolución de Muestras por hash), fechas relativas
-  con `Intl.RelativeTimeFormat`, marca procedural de mundo y destino de
-  «Continuar».
-- **87 pruebas de componentes en verde** en `tests/components/`: botón nativo,
+  con `Intl.RelativeTimeFormat`, marca procedural de mundo, destino de
+  «Continuar» y preferencias de interfaz (contrato, validación y handlers).
+- **171 pruebas de componentes en verde** en `tests/components/`: botón nativo,
   botón de icono con tooltip, menú `⋯`, casilla, radio, panel, esqueleto,
   tarjeta, diálogo, avisos, pestañas, proveedor de i18n, tarjetas y formularios
   de mundo, ficha, diálogos de creación, creación rápida, panel de relaciones y
   diálogo de relación, el shell v2 (navegación, plegado, primaria, menú y
-  paleta), la mesa de trabajo de Inicio y el banco de muestras completo. Usan
-  Testing Library y `jsdom`.
-- **134 pruebas de integración en verde (1 omitida)** en
+  paleta), la mesa de trabajo de Inicio, el hook de preferencias y el banco de
+  muestras completo. Usan Testing Library y `jsdom`.
+- **146 pruebas de integración en verde (1 omitida)** en
   `tests/integration/`:
   creación e idempotencia de la base, pragmas, migración inicial, versión
   adelantada, estado incoherente, archivo no SQLite, corrupción, log sin rutas,
@@ -234,8 +235,9 @@ lo cubre cuando aplica.
   galería, filtros y aislamiento de fichas, CRUD, etiquetas inversas,
   duplicados, simetría, aislamiento y papelera de relaciones, importación,
   protocolo, repositorio y purga con SQLite real, creación, verificación,
-  restauración, rotación y restauración interrumpida de copias, y preservación
-  de datos entre instalaciones.
+  restauración, rotación y restauración interrumpida de copias, preferencias de
+  interfaz (persistencia, reset y preservación) y preservación de datos entre
+  instalaciones.
 - **Comandos.** `pnpm test` (unitarias, componentes e integración),
   `pnpm test:unit`, `pnpm test:components`, `pnpm test:integration`,
   `pnpm test:e2e`, `pnpm db:check`, `pnpm verify:native`, `pnpm verify:build`,
@@ -656,19 +658,59 @@ en `fixtures/axe.ts` y la apertura de Muestras por hash interno en
   miniatura de portada, el `<time>` relativo con `dateTime` y `title`, y el menú
   con Archivar/Restaurar.
 - **E2E:** `tests/e2e/worlds.spec.ts` comprueba «Continuar» con el último mundo,
-  su desaparición al recargar, la reanudación de una ficha, la limpieza al
-  eliminar el mundo recordado y el menú de la tarjeta con flechas, `Fin`,
-  `Escape` y retorno de foco. Recorre Inicio con un nombre de 90 caracteres, un
-  resumen de 279 y 8 géneros a 1024, 1280 y 1600 px × rail expandido/plegado ×
-  Claro/Oscuro (12 combinaciones) sin scroll horizontal, y ejecuta axe WCAG 2.1
-  A/AA en Inicio en ambos temas sin violaciones `critical` ni `serious`.
-- **Sin datos nuevos:** la memoria de «Continuar» vive en React, no se persiste
-  y no hay migraciones, IPC, CSP ni dependencias nuevas.
+  su conservación al recargar (persistida desde #132), la reanudación de una
+  ficha, la limpieza al eliminar el mundo recordado y el menú de la tarjeta con
+  flechas, `Fin`, `Escape` y retorno de foco. Recorre Inicio con un nombre de 90
+  caracteres, un resumen de 279 y 8 géneros a 1024, 1280 y 1600 px × rail
+  expandido/plegado × Claro/Oscuro (12 combinaciones) sin scroll horizontal, y
+  ejecuta axe WCAG 2.1 A/AA en Inicio en ambos temas sin violaciones `critical`
+  ni `serious`.
+- **Sin datos nuevos en #127:** la memoria de «Continuar» vivía en React y no se
+  persistía. Desde #132 el destino se guarda en `app_settings`; la cobertura de
+  esa persistencia está en §3.18.
 
 **Comandos y recuento (equipo de referencia, 2026-11-21).** `pnpm test` ejecuta
 447 unitarias (4 omitidas), 87 de componentes y 134 de integración en verde (1
 omitida); `pnpm test:e2e` compila y ejecuta 42 pruebas. Los E2E son Windows-only,
-igual que la aplicación.
+igual que la aplicación. El recuento vigente tras #132 está en §3.18.
+
+### 3.18 Preferencias de interfaz persistentes (implementado, #132)
+
+- **Unitarias.** `tests/unit/preferences/contracts.test.ts` fija los valores por
+  defecto, los límites 280–360 con redondeo, la fusión de parches sin mutación y
+  las guardas estrictas de forma. `validation.test.ts` cubre la lectura tolerante
+  por clave —JSON roto, tipo erróneo, ancho fuera de rango y clave desconocida—
+  sin reparar ni reescribir, y el rechazo del parche vacío o con claves extra.
+  `handlers.test.ts` y `tests/unit/ipc-registry.test.ts` comprueban los tres
+  canales y los errores estables.
+- **Integración.** `tests/integration/preferences/service.test.ts` prueba sobre
+  SQLite real: escritura de solo lo que cambia, `updated_at`, transacción,
+  `recentLocation: null` que borra la fila, reset por prefijo `ui.*` sensible a
+  mayúsculas, claves no-UI, `UI.foo`, `uix` y `locale` intactas, y preservación de
+  mundos, fichas, assets, relaciones, copias y `schema_migrations`.
+- **Componentes.** `tests/components/preferences.test.tsx` cubre el hook: snapshot
+  inicial, actualización optimista, tema aplicado en el mismo evento, adopción de
+  la respuesta canónica, descarte de respuestas viejas y estado de sesión intacto
+  ante un fallo.
+- **E2E de reinicio.** `tests/e2e/preferences.spec.ts` cierra y vuelve a abrir la
+  aplicación con tema Oscuro, rail plegado, panel oculto o a 360 px y solo una
+  sección abierta: comprueba `data-theme` en el primer documento, el fondo de
+  ventana, el rail de 64 px sin animación, la ausencia de destello, el panel y las
+  secciones persistidos y «Continuar» con el último mundo o ficha. La caída a
+  defectos con un valor inválido se cubre en las unitarias y la integración.
+- **Reset seguro.** El mismo E2E invoca `window.worldCraft.preferences.reset` y
+  verifica que se adopta en caliente, que vuelve a los defectos y que el mundo y
+  la ficha siguen intactos, sin control visible ni texto nuevo. La integración
+  añade la preservación de copias, claves ajenas y `schema_migrations`.
+- **Modo seguro.** La cobertura de integración confirma que la lectura devuelve
+  defectos, la escritura falla y el tema validado se aplica al cromo sin simular
+  una persistencia inexistente.
+- **Ventana y temas.** La matriz 1024/1280/1600 px × Claro/Oscuro con rail
+  expandido y plegado, panel a 360 y cerrado, no produce scroll horizontal; a
+  1024 px el panel se apila sin aplicar el ancho guardado y al volver a 1280 px
+  recupera 360. axe no reporta violaciones `critical` ni `serious`.
+- **Recuento verificado al cerrar #132:** 518 unitarias (4 omitidas), 171 de
+  componentes, 146 de integración (1 omitida) y 53 E2E en verde.
 
 ## 4. Cobertura
 
@@ -697,7 +739,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 447 unitarias (4 omitidas), 87 de componentes y 134 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 518 unitarias (4 omitidas), 171 de componentes y 146 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

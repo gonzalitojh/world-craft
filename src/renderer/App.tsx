@@ -9,6 +9,7 @@ import type {
   WorldUpdateInput,
 } from '../shared/contracts/worlds';
 import type { EntityTypeSummary } from '../shared/contracts/entity-types';
+import type { UiPreferences } from '../shared/contracts/preferences';
 import type { SearchHit } from '../shared/contracts/search';
 import { ToastRegion, type Toast, type ToastTone } from './components';
 import { CommandPalette } from './components/command-palette';
@@ -23,7 +24,6 @@ import { useMessages } from './i18n/provider';
 import {
   resolveContinueTarget,
   type ContinueTarget,
-  type RecentLocation,
 } from './lib/recent-location';
 import { EntitiesPage } from './pages/entities-page';
 import { EntityDetailPage } from './pages/entity-detail-page';
@@ -38,8 +38,8 @@ import {
   type AppView,
   type ShellPrimaryAction,
 } from './shell/app-shell';
+import { useUiPreferences } from './preferences/use-ui-preferences';
 import { resolveInternalView } from './shell/internal-views';
-import { applyTheme, DEFAULT_THEME, type ThemeMode } from './theme';
 
 type DialogState =
   | { readonly kind: 'create' }
@@ -50,21 +50,31 @@ type DialogState =
   | { readonly kind: 'delete'; readonly world: WorldSummary }
   | null;
 
+export interface AppProps {
+  /** Snapshot leído antes del primer render (Claro si falló el bootstrap). */
+  readonly initialPreferences: UiPreferences;
+}
+
 /**
  * Raíz del renderer.
  *
- * Mantiene la vista, el tema, la biblioteca de mundos y los diálogos. La API de
- * mundos vive en el preload y devuelve `IpcResult`; aquí se traduce a estado de
- * interfaz, avisos y recargas. Todas las consultas de actividad llegan ya
- * filtradas por mundo desde el proceso principal.
+ * Mantiene la vista, la biblioteca de mundos y los diálogos. El tema, el rail,
+ * la vista de ficha y el destino «Continuar» viven en el hook de preferencias
+ * persistidas. La API de mundos vive en el preload y devuelve `IpcResult`; aquí
+ * se traduce a estado de interfaz, avisos y recargas. Todas las consultas de
+ * actividad llegan ya filtradas por mundo desde el proceso principal.
  */
-export function App() {
+export function App({ initialPreferences }: AppProps) {
   const messages = useMessages();
   const { worlds: api, entities: entitiesApi } = window.worldCraft;
+  const {
+    preferences,
+    update: updatePreferences,
+    toggleTheme,
+  } = useUiPreferences(initialPreferences);
   const [view, setView] = useState<AppView>(
     () => resolveInternalView(window.location.hash) ?? 'home',
   );
-  const [theme, setTheme] = useState<ThemeMode>(DEFAULT_THEME);
   const [toasts, setToasts] = useState<readonly Toast[]>([]);
   const nextToastId = useRef(0);
 
@@ -75,7 +85,6 @@ export function App() {
 
   const [selectedWorldId, setSelectedWorldId] = useState<string | null>(null);
   const selectedWorldIdRef = useRef<string | null>(null);
-  const [lastLocation, setLastLocation] = useState<RecentLocation | null>(null);
   const [selectedWorld, setSelectedWorld] = useState<WorldDetail | null>(null);
   const [selectedState, setSelectedState] =
     useState<WorldLibraryState>('ready');
@@ -103,10 +112,6 @@ export function App() {
   const [pending, setPending] = useState(false);
   const dialogTrigger = useRef<HTMLElement | null>(null);
   const openRequest = useRef(0);
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
 
   const firstRender = useRef(true);
 
@@ -140,10 +145,6 @@ export function App() {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    setTheme((current) => (current === 'light' ? 'dark' : 'light'));
-  }, []);
-
   /**
    * Cambia de vista y retira el hash interno de Muestras al salir.
    *
@@ -151,17 +152,26 @@ export function App() {
    * cargar la ventana no devuelva al banco interno. Si el hash no existe, no
    * se toca la URL.
    */
-  const goToView = useCallback((next: AppView) => {
-    setView(next);
+  const goToView = useCallback(
+    (next: AppView) => {
+      setView(next);
 
-    if (next !== 'samples' && window.location.hash.length > 0) {
-      window.history.replaceState(
-        window.history.state,
-        '',
-        `${window.location.pathname}${window.location.search}`,
-      );
-    }
-  }, []);
+      // `samples` nunca se persiste; el resto alimenta Ajustes (#79) y una
+      // futura opción explícita. `lastView` no se usa para navegar.
+      if (next !== 'samples') {
+        updatePreferences({ lastView: next });
+      }
+
+      if (next !== 'samples' && window.location.hash.length > 0) {
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${window.location.pathname}${window.location.search}`,
+        );
+      }
+    },
+    [updatePreferences],
+  );
 
   useEffect(() => {
     const handleHashChange = (): void => {
@@ -312,7 +322,7 @@ export function App() {
       const request = openRequest.current;
       selectedWorldIdRef.current = id;
       setSelectedWorldId(id);
-      setLastLocation({ kind: 'world', worldId: id });
+      updatePreferences({ recentLocation: { kind: 'world', worldId: id } });
       setSelectedWorld(null);
       setSelectedState('loading');
       setSelectedActivity([]);
@@ -344,7 +354,7 @@ export function App() {
         setSelectedActivityState('error');
       }
     },
-    [api, goToView],
+    [api, goToView, updatePreferences],
   );
 
   const refreshSelected = useCallback(async () => {
@@ -412,35 +422,118 @@ export function App() {
       const worldId = selectedWorldIdRef.current;
 
       if (worldId !== null) {
-        setLastLocation({
-          kind: 'entity',
-          worldId,
-          entityId: id,
-          entityName: null,
+        updatePreferences({
+          recentLocation: {
+            kind: 'entity',
+            worldId,
+            entityId: id,
+            entityName: null,
+          },
         });
       }
 
       goToView('entity');
     },
-    [goToView],
+    [goToView, updatePreferences],
   );
 
   /** Completa el nombre de la ficha recordada cuando su página termina de cargarla. */
   const handleEntityLoaded = useCallback(
     (entity: { readonly id: string; readonly name: string }) => {
-      setLastLocation((current) =>
-        current?.kind === 'entity' && current.entityId === entity.id
-          ? { ...current, entityName: entity.name }
-          : current,
-      );
+      const location = preferences.recentLocation;
+
+      if (
+        location?.kind === 'entity' &&
+        location.entityId === entity.id &&
+        location.entityName !== entity.name
+      ) {
+        updatePreferences({
+          recentLocation: { ...location, entityName: entity.name },
+        });
+      }
     },
-    [],
+    [preferences.recentLocation, updatePreferences],
+  );
+
+  /** Limpia o degrada el destino al borrar una ficha desde su página. */
+  const handleEntityRemoved = useCallback(
+    (removedId: string) => {
+      const location = preferences.recentLocation;
+
+      if (location?.kind === 'entity' && location.entityId === removedId) {
+        updatePreferences({ recentLocation: null });
+      }
+    },
+    [preferences.recentLocation, updatePreferences],
   );
 
   const continueTarget = useMemo(
-    () => resolveContinueTarget(lastLocation, worlds),
-    [lastLocation, worlds],
+    () => resolveContinueTarget(preferences.recentLocation, worlds),
+    [preferences.recentLocation, worlds],
   );
+
+  // Con la biblioteca lista se valida el destino persistido: se refresca el
+  // nombre de la ficha y se limpia o degrada si ya no existe. Mientras carga no
+  // se toca nada y `lastView` nunca dispara navegación.
+  useEffect(() => {
+    if (libraryState !== 'ready') {
+      return;
+    }
+
+    const location = preferences.recentLocation;
+
+    if (location === null) {
+      return;
+    }
+
+    if (!worlds.some((world) => world.id === location.worldId)) {
+      updatePreferences({ recentLocation: null });
+      return;
+    }
+
+    if (location.kind !== 'entity') {
+      return;
+    }
+
+    let active = true;
+
+    void entitiesApi
+      .get({ worldId: location.worldId, id: location.entityId })
+      .then((result) => {
+        if (!active) {
+          return;
+        }
+
+        // Un error de transporte no demuestra que la ficha haya desaparecido:
+        // solo se degrada cuando el proceso principal confirma que no existe.
+        if (!result.ok) {
+          return;
+        }
+
+        if (result.data === null) {
+          updatePreferences({
+            recentLocation: { kind: 'world', worldId: location.worldId },
+          });
+          return;
+        }
+
+        if (result.data.name !== location.entityName) {
+          updatePreferences({
+            recentLocation: { ...location, entityName: result.data.name },
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    entitiesApi,
+    libraryState,
+    preferences.recentLocation,
+    updatePreferences,
+    worlds,
+  ]);
 
   /**
    * Reanuda el destino recordado. Primero se abre el mundo (mantiene su
@@ -451,11 +544,31 @@ export function App() {
     async (target: ContinueTarget) => {
       await openWorld(target.worldId);
 
-      if (target.kind === 'entity' && target.entityId !== null) {
-        openEntity(target.entityId);
+      if (target.kind !== 'entity' || target.entityId === null) {
+        return;
       }
+
+      // La ficha pudo borrarse en otra sesión: se valida antes de abrirla. Si
+      // ya no existe, se permanece en el mundo y se avisa con el texto
+      // existente; `openWorld` ya dejó el destino degradado a mundo.
+      const detail = await entitiesApi.get({
+        worldId: target.worldId,
+        id: target.entityId,
+      });
+
+      if (!detail.ok) {
+        notify('error', messages.entities.notices.failed);
+        return;
+      }
+
+      if (detail.data === null) {
+        notify('error', messages.entities.notices.notFound);
+        return;
+      }
+
+      openEntity(target.entityId);
     },
-    [openEntity, openWorld],
+    [entitiesApi, messages, notify, openEntity, openWorld],
   );
 
   const openSearchPage = useCallback(
@@ -761,9 +874,22 @@ export function App() {
 
     closeDialogAfterSuccess('main');
     notify('success', messages.worlds.notices.deleted(world.name));
-    setLastLocation((current) =>
-      current?.worldId === world.id ? null : current,
-    );
+
+    if (preferences.recentLocation?.worldId === world.id) {
+      const clearsLastView =
+        preferences.lastView === 'world' ||
+        preferences.lastView === 'entities' ||
+        preferences.lastView === 'entity';
+
+      // Borrar el mundo recordado limpia el destino y, si la última vista era
+      // suya, vuelve a Inicio como metadato. `lastView` nunca navega.
+      updatePreferences(
+        clearsLastView
+          ? { recentLocation: null, lastView: 'home' }
+          : { recentLocation: null },
+      );
+    }
+
     await refreshLibrary();
     document.getElementById('wc-main')?.focus();
 
@@ -787,6 +913,9 @@ export function App() {
     selectedWorldId,
     closeDialogAfterSuccess,
     goToView,
+    preferences.lastView,
+    preferences.recentLocation,
+    updatePreferences,
   ]);
 
   const submitQuickCreate = useCallback(
@@ -979,8 +1108,12 @@ export function App() {
         primaryAction={primaryAction}
         secondaryActions={secondaryActions}
         onOpenPalette={openPalette}
-        theme={theme}
+        theme={preferences.theme}
         onToggleTheme={toggleTheme}
+        collapsed={preferences.railCollapsed}
+        onCollapsedChange={(collapsed) => {
+          updatePreferences({ railCollapsed: collapsed });
+        }}
       >
         {view === 'home' ? (
           homePage
@@ -1039,6 +1172,11 @@ export function App() {
             }}
             onOpenEntity={openEntity}
             onEntityLoaded={handleEntityLoaded}
+            onEntityRemoved={handleEntityRemoved}
+            entityView={preferences.entityView}
+            onEntityViewChange={(patch) => {
+              updatePreferences({ entityView: patch });
+            }}
             onNotify={notify}
           />
         ) : view === 'samples' ? (

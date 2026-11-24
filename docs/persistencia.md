@@ -179,6 +179,42 @@ dependencia del binario, no un servicio externo; si un binario futuro no lo
 incluyera, la aplicación lo detectaría en las pruebas nativas y no se publicaría
 esa versión. El detalle está en el [ADR 0023](adr/0023-global-search-fts5-command-palette.md).
 
+### 3.4 Preferencias de interfaz (implementado, #132)
+
+Las preferencias de interfaz viven en `app_settings`, la tabla creada en
+`0000_init`, con **una fila por clave** y el prefijo reservado `ui.`. **No hay
+migración nueva** ni se toca ninguna tabla de dominio. El detalle de la decisión
+está en el [ADR 0027](adr/0027-ui-preferences-persistence.md).
+
+| Clave | Valor JSON | Defecto |
+|---|---|---|
+| `ui.theme` | `"light"` o `"dark"` | `"light"` |
+| `ui.rail-collapsed` | `true` o `false` | `false` (expandido) |
+| `ui.entity-view` | `{ propertiesOpen, propertiesWidth, sections: { description, attributes, relations, resources } }`; ancho entero de 280 a 360 | `propertiesOpen: true`, ancho `320`, solo `description` abierta |
+| `ui.last-view` | `"home"`, `"worlds"`, `"search"`, `"world"`, `"entities"` o `"entity"` | `"home"` |
+| `ui.recent-location` | `{ kind: "world", worldId }` o `{ kind: "entity", worldId, entityId, entityName }` con UUIDv7 y nombre de 1 a 120 caracteres o `null` | Ausente |
+
+- **Lectura tolerante.** Se leen las filas `ui.*` y cada clave se parsea por
+  separado; un JSON roto o un valor fuera de rango cae a su defecto sin contagiar
+  al resto. Leer **no crea filas, no repara y no reescribe**. Las claves `ui.*`
+  desconocidas se ignoran para permitir evolución futura.
+- **Escritura transaccional.** El servicio fusiona el parche, compara con lo
+  almacenado y escribe solo las claves cuyo JSON cambia, actualizando
+  `updated_at`; todas las escrituras y borrados se agrupan en una transacción de
+  better-sqlite3. La primera escritura de una clave crea su fila.
+- **Borrado explícito.** `recentLocation: null` **borra la fila**
+  `ui.recent-location`; nunca se guarda el literal `null`.
+- **Reset por prefijo.** `reset` ejecuta un `DELETE` con `GLOB 'ui.*'`, sensible a
+  mayúsculas, y devuelve los valores por defecto. Solo afecta al espacio `ui.*`:
+  no borra claves no-UI de `app_settings`, mundos, fichas, imágenes, relaciones,
+  copias ni `schema_migrations`.
+- **Modo seguro.** Sin base, la lectura devuelve los defectos, la escritura falla
+  de forma estable y el tema validado se sigue aplicando al cromo de la ventana
+  durante la sesión.
+- **Copias y exportación.** Al vivir en la misma base, las copias automáticas
+  incluyen las preferencias y una restauración las recupera. La exportación de un
+  mundo **no** las incluye: son preferencias de aplicación, no del mundo.
+
 ## 4. Assets
 
 **Implementado en M0-06 (#66).** El servicio es puro en `src/main/assets/`; la
@@ -704,3 +740,4 @@ en la carpeta de datos del usuario.
 - [ADR 0012](adr/0012-backup-restore-recovery.md)
 - [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md)
+- [ADR 0027](adr/0027-ui-preferences-persistence.md)

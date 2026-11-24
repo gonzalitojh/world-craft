@@ -5,6 +5,7 @@ import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
 import { createIpcRouter } from '@/main/ipc/registry';
+import { createUnavailablePreferencesService } from '@/main/preferences/service';
 import {
   RelationInputError,
   RelationTypeProtectedError,
@@ -92,6 +93,7 @@ function createRoute(service: RelationsService) {
         reason: 'not-packaged',
         currentVersion: '0.1.0',
       }),
+      preferences: createUnavailablePreferencesService(),
       worlds: createUnavailableWorldsService(),
       entityTypes: createUnavailableEntityTypesService(),
       entities: createUnavailableEntitiesService(),

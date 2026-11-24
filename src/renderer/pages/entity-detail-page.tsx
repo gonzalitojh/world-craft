@@ -71,9 +71,9 @@ import {
   PROPERTIES_WIDTH_MAX,
   PROPERTIES_WIDTH_MIN,
   clampPropertiesWidth,
-  readEntityViewMemory,
-  updateEntityViewMemory,
   type EntitySectionId,
+  type EntityViewPatch,
+  type EntityViewPreferences,
 } from '../lib/entity-view-memory';
 
 interface Draft {
@@ -131,11 +131,17 @@ export interface EntityDetailPageProps {
   readonly entityId: string;
   readonly onBack: () => void;
   readonly onOpenEntity: (entityId: string) => void;
-  /** Avisa del nombre cargado para completar la memoria de sesión de Inicio. */
+  /** Avisa del nombre cargado para completar el destino de Inicio. */
   readonly onEntityLoaded?: (entity: {
     readonly id: string;
     readonly name: string;
   }) => void;
+  /** Avisa del borrado para limpiar un destino «Continuar» obsoleto. */
+  readonly onEntityRemoved?: (entityId: string) => void;
+  /** Estado persistido del panel y las secciones, controlado desde `App`. */
+  readonly entityView: EntityViewPreferences;
+  /** Consumidores del estado; solo se emiten commits explícitos. */
+  readonly onEntityViewChange: (patch: EntityViewPatch) => void;
   readonly onNotify: (tone: 'success' | 'error', message: string) => void;
 }
 
@@ -172,6 +178,9 @@ export function EntityDetailPage({
   onBack,
   onOpenEntity,
   onEntityLoaded,
+  onEntityRemoved,
+  entityView,
+  onEntityViewChange,
   onNotify,
 }: EntityDetailPageProps) {
   const { messages, formats } = useI18n();
@@ -213,7 +222,6 @@ export function EntityDetailPage({
   } | null>(null);
   const [relationTypesOpen, setRelationTypesOpen] = useState(false);
   const [relationReloadToken, setRelationReloadToken] = useState(0);
-  const [viewMemory, setViewMemory] = useState(readEntityViewMemory);
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
   const [dragWidth, setDragWidth] = useState<number | null>(null);
 
@@ -237,8 +245,8 @@ export function EntityDetailPage({
   } | null>(null);
 
   const type = types.find((entry) => entry.id === entity?.typeId) ?? null;
-  const propertiesOpen = viewMemory.propertiesOpen;
-  const propertiesWidth = dragWidth ?? viewMemory.propertiesWidth;
+  const propertiesOpen = entityView.propertiesOpen;
+  const propertiesWidth = dragWidth ?? entityView.propertiesWidth;
 
   useEffect(() => {
     typeRef.current = type;
@@ -255,15 +263,10 @@ export function EntityDetailPage({
   }, [entity, onEntityLoaded]);
 
   const commitMemory = useCallback(
-    (patch: {
-      propertiesOpen?: boolean;
-      propertiesWidth?: number;
-      sections?: Partial<Record<EntitySectionId, boolean>>;
-    }) => {
-      updateEntityViewMemory(patch);
-      setViewMemory(readEntityViewMemory());
+    (patch: EntityViewPatch) => {
+      onEntityViewChange(patch);
     },
-    [],
+    [onEntityViewChange],
   );
 
   const ensureSectionOpen = useCallback(
@@ -1062,6 +1065,7 @@ export function EntityDetailPage({
     }
 
     setDeleteOpen(false);
+    onEntityRemoved?.(entityId);
     onNotify('success', messages.entities.notices.removed(entity?.name ?? ''));
     onBack();
   };
@@ -1356,7 +1360,7 @@ export function EntityDetailPage({
           <DisclosureSection
             id="wc-entity-section-description"
             title={messages.entities.detail.descriptionLabel}
-            open={viewMemory.sections.description}
+            open={entityView.sections.description}
             onToggle={(open) => {
               commitMemory({ sections: { description: open } });
             }}
@@ -1428,7 +1432,7 @@ export function EntityDetailPage({
           <DisclosureSection
             id="wc-entity-section-attributes"
             title={messages.entities.detail.attributesTitle}
-            open={viewMemory.sections.attributes}
+            open={entityView.sections.attributes}
             onToggle={(open) => {
               commitMemory({ sections: { attributes: open } });
             }}
@@ -1493,7 +1497,7 @@ export function EntityDetailPage({
           <DisclosureSection
             id="wc-entity-section-relations"
             title={messages.entities.relations.title}
-            open={viewMemory.sections.relations}
+            open={entityView.sections.relations}
             onToggle={(open) => {
               commitMemory({ sections: { relations: open } });
             }}
@@ -1538,7 +1542,7 @@ export function EntityDetailPage({
           <DisclosureSection
             id="wc-entity-section-resources"
             title={messages.entities.detail.resourcesTitle}
-            open={viewMemory.sections.resources}
+            open={entityView.sections.resources}
             onToggle={(open) => {
               commitMemory({ sections: { resources: open } });
             }}

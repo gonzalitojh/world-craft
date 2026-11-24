@@ -5,6 +5,7 @@ import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
 import { createIpcRouter } from '@/main/ipc/registry';
+import { createUnavailablePreferencesService } from '@/main/preferences/service';
 import { createUnavailableRelationsService } from '@/main/relations/service';
 import type { SearchService } from '@/main/search/service';
 import { createUnavailableUpdatesService } from '@/main/updates/service';
@@ -63,6 +64,7 @@ function createRoute(service: SearchService) {
         reason: 'not-packaged',
         currentVersion: '0.1.0',
       }),
+      preferences: createUnavailablePreferencesService(),
       worlds: createUnavailableWorldsService(),
       entityTypes: createUnavailableEntityTypesService(),
       entities: createUnavailableEntitiesService(),

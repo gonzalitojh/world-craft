@@ -2,25 +2,28 @@
  * Creación de la ventana principal de World Craft.
  *
  * La ventana nace oculta, aplica las opciones seguras y solo se muestra cuando
- * el renderer está listo. El destino de carga se valida: en producción siempre
- * es el HTML empaquetado y en desarrollo solo se acepta el servidor de Vite si
- * escucha en loopback.
+ * el renderer ha cargado y hay un primer frame, de modo que el tema persistido
+ * ya está aplicado. Un temporizador acotado evita dejar la aplicación invisible
+ * si alguna de esas señales no llega. El destino de carga se valida: en
+ * producción siempre es el HTML empaquetado y en desarrollo solo se acepta el
+ * servidor de Vite si escucha en loopback.
  */
 import { app, BrowserWindow, nativeTheme } from 'electron';
 import { join } from 'node:path';
 
+import {
+  DEFAULT_UI_PREFERENCES,
+  type ThemePreference,
+} from '../shared/contracts/preferences';
 import { resolveRendererTarget } from './security/guards';
+import { resolveWindowBackground } from './window-background';
 import { createWindowOptions } from './window-options';
 
-/**
- * Colores de fondo de la ventana antes de que pinte el renderer. Deben
- * coincidir con `--wc-paper` de `src/renderer/styles/base.css` en cada tema;
- * no se pueden leer del CSS desde el proceso principal.
- */
-const LIGHT_WINDOW_BACKGROUND = '#f7f3ea';
-const DARK_WINDOW_BACKGROUND = '#1b1917';
+/** Margen máximo para mostrar la ventana si falla alguna señal de carga. */
+export const WINDOW_SHOW_FALLBACK_MS = 2500;
 
 let mainWindow: BrowserWindow | null = null;
+let currentTheme: ThemePreference = DEFAULT_UI_PREFERENCES.theme;
 
 /** Devuelve la ventana principal si sigue viva; si no, `null`. */
 export function getMainWindow(): BrowserWindow | null {
@@ -32,10 +35,33 @@ export function getMainWindow(): BrowserWindow | null {
 }
 
 /**
- * Restaura, muestra y enfoca la ventana principal.
+ * Aplica el tema validado al cromo nativo y a la ventana viva.
  *
- * La usa el evento `second-instance`: al abrir la aplicación una segunda vez,
- * la instancia existente trae su ventana al frente en lugar de crear otra.
+ * Se usa en el arranque, antes de crear la ventana, y en cada cambio de tema o
+ * reset. Un fallo al repintar la ventana no revierte la preferencia.
+ */
+export function applyAppTheme(theme: ThemePreference): void {
+  currentTheme = theme;
+  nativeTheme.themeSource = theme;
+
+  const window = getMainWindow();
+
+  if (window !== null) {
+    window.setBackgroundColor(resolveWindowBackground(theme));
+  }
+}
+
+/** Tema que debe usar una ventana recreada (por ejemplo, tras `activate`). */
+export function getCurrentTheme(): ThemePreference {
+  return currentTheme;
+}
+
+/**
+ * Restaura y enfoca la ventana principal si ya está visible.
+ *
+ * Durante el arranque la ventana sigue oculta a propósito: la compuerta de
+ * visualización decide cuándo mostrarla. `focusMainWindow` nunca adelanta ese
+ * `show()`.
  */
 export function focusMainWindow(): void {
   const window = getMainWindow();
@@ -48,27 +74,73 @@ export function focusMainWindow(): void {
     window.restore();
   }
 
-  window.show();
+  if (!window.isVisible()) {
+    return;
+  }
+
   window.focus();
 }
 
 /** Crea (o recrea) la ventana principal y carga el renderer. */
-export function createMainWindow(): BrowserWindow {
+export function createMainWindow(
+  theme: ThemePreference = DEFAULT_UI_PREFERENCES.theme,
+): BrowserWindow {
+  // El tema se fija antes de crear la ventana: `show: false` evita cualquier
+  // destello y el fondo coincide exactamente con `--bg`.
+  applyAppTheme(theme);
+
   const window = new BrowserWindow(
     createWindowOptions({
       preloadPath: join(__dirname, '../preload/index.cjs'),
       isPackaged: app.isPackaged,
-      backgroundColor: nativeTheme.shouldUseDarkColors
-        ? DARK_WINDOW_BACKGROUND
-        : LIGHT_WINDOW_BACKGROUND,
+      backgroundColor: resolveWindowBackground(theme),
     }),
   );
 
   mainWindow = window;
 
-  window.once('ready-to-show', () => {
+  let readyToShow = false;
+  let finishedLoad = false;
+  let shown = false;
+  let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const clearFallback = (): void => {
+    if (fallbackTimer !== null) {
+      clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
+  };
+
+  const showWindow = (): void => {
+    if (shown || window.isDestroyed()) {
+      return;
+    }
+
+    shown = true;
+    clearFallback();
     window.show();
+  };
+
+  const showWhenReady = (): void => {
+    if (readyToShow && finishedLoad) {
+      showWindow();
+    }
+  };
+
+  // La compuerta exige primer frame y carga terminada (el bootstrap de
+  // preferencias se resuelve antes del render). El fallback cubre un renderer
+  // atascado sin dejar la app invisible.
+  window.once('ready-to-show', () => {
+    readyToShow = true;
+    showWhenReady();
   });
+
+  window.webContents.once('did-finish-load', () => {
+    finishedLoad = true;
+    showWhenReady();
+  });
+
+  fallbackTimer = setTimeout(showWindow, WINDOW_SHOW_FALLBACK_MS);
 
   window.webContents.on(
     'did-fail-load',
@@ -87,6 +159,8 @@ export function createMainWindow(): BrowserWindow {
   );
 
   window.on('closed', () => {
+    clearFallback();
+
     if (mainWindow === window) {
       mainWindow = null;
     }

@@ -8,6 +8,7 @@ import { IPC_CHANNELS } from '../../../shared/contracts/channels';
 import type { AssetsService } from '../../assets/service';
 import type { EntitiesService } from '../../entities/service';
 import type { EntityTypesService } from '../../entity-types/service';
+import type { PreferencesService } from '../../preferences/service';
 import type { RelationsService } from '../../relations/service';
 import type { SearchService } from '../../search/service';
 import type { UpdatesService } from '../../updates/service';
@@ -16,6 +17,7 @@ import type { IpcHandlers } from '../registry';
 import { createAssetIpcHandlers } from './assets';
 import { createEntityIpcHandlers } from './entities';
 import { createEntityTypeIpcHandlers } from './entity-types';
+import { createPreferencesIpcHandlers } from './preferences';
 import { createRelationIpcHandlers } from './relations';
 import { createSearchIpcHandlers } from './search';
 import { createShellOpenExternalHandler } from './shell';
@@ -26,6 +28,7 @@ import { createWorldIpcHandlers } from './worlds';
 export interface IpcDependencies {
   readonly openExternal: (url: string) => Promise<void>;
   readonly updates: UpdatesService;
+  readonly preferences: PreferencesService;
   readonly worlds: WorldsService;
   readonly entityTypes: EntityTypesService;
   readonly entities: EntitiesService;
@@ -41,6 +44,7 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
     [IPC_CHANNELS.shellOpenExternal]:
       createShellOpenExternalHandler(dependencies),
     ...createUpdateIpcHandlers(dependencies.updates),
+    ...createPreferencesIpcHandlers(dependencies.preferences),
     ...createWorldIpcHandlers(dependencies.worlds),
     ...createEntityTypeIpcHandlers(dependencies.entityTypes),
     ...createEntityIpcHandlers(dependencies.entities),

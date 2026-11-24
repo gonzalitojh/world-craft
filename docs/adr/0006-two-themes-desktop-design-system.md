@@ -122,6 +122,14 @@ los dos temas, los tokens en tres capas, la ventana mínima y las garantías de
 accesibilidad, y cambian la paleta, las pilas tipográficas, la elevación y las
 reglas de borde. Este ADR no se supersede; su histórico se conserva.
 
+## Nota de revisión (2026-11-24, issue #132)
+
+La preferencia de tema ya **se persiste**: se guarda en `app_settings` con la
+clave `ui.theme` y se aplica antes del primer pintado, también en `nativeTheme` y
+en el fondo nativo de la ventana (#132, ADR 0027, D-050). El párrafo «Tema en
+memoria» describe el estado de #65 y se conserva como histórico; la decisión de
+dos temas, los tokens y las garantías de contraste no cambian.
+
 ## Referencias
 
 - [`docs/adr/0025-visual-direction-v2.md`](0025-visual-direction-v2.md)

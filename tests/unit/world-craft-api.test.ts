@@ -11,6 +11,7 @@ import {
   UPDATE_STATE_CHANGED_CHANNEL,
 } from '@/shared/contracts/updates';
 import type { EntityTypeSummary } from '@/shared/contracts/entity-types';
+import type { UiPreferences } from '@/shared/contracts/preferences';
 import type {
   WorldActivityEntry,
   WorldDetail,
@@ -64,6 +65,25 @@ const activity: WorldActivityEntry = {
   createdAt: 1_760_000_001_000,
 };
 
+function createPreferences(theme: 'light' | 'dark'): UiPreferences {
+  return {
+    theme,
+    railCollapsed: false,
+    entityView: {
+      propertiesOpen: true,
+      propertiesWidth: 320,
+      sections: {
+        description: true,
+        attributes: false,
+        relations: false,
+        resources: false,
+      },
+    },
+    lastView: 'home',
+    recentLocation: null,
+  };
+}
+
 describe('world-craft-api', () => {
   it('expone la identidad, el puente de shell, actualizaciones, mundos y tipos', () => {
     const api = createWorldCraftApi({ invoke: async () => ({ ok: true }) });
@@ -73,6 +93,7 @@ describe('world-craft-api', () => {
       'appInfo',
       'shell',
       'updates',
+      'preferences',
       'worlds',
       'entityTypes',
       'entities',
@@ -111,6 +132,7 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.appInfo)).toBe(true);
     expect(Object.isFrozen(api.shell)).toBe(true);
     expect(Object.isFrozen(api.updates)).toBe(true);
+    expect(Object.isFrozen(api.preferences)).toBe(true);
     expect(Object.isFrozen(api.worlds)).toBe(true);
     expect(Object.isFrozen(api.entityTypes)).toBe(true);
     expect(Object.isFrozen(api.entities)).toBe(true);
@@ -185,6 +207,85 @@ describe('world-craft-api', () => {
       ok: false,
       error: { code: 'INTERNAL_ERROR' },
     });
+  });
+
+  it('envía preferencias por sus canales y valida la forma', async () => {
+    const preferences = {
+      theme: 'dark',
+      railCollapsed: true,
+      entityView: {
+        propertiesOpen: false,
+        propertiesWidth: 360,
+        sections: {
+          description: false,
+          attributes: true,
+          relations: true,
+          resources: false,
+        },
+      },
+      lastView: 'entity',
+      recentLocation: {
+        kind: 'entity',
+        worldId: world.id,
+        entityId: '01900000-0000-7000-8000-000000000077',
+        entityName: 'Mara Viento',
+      },
+    } as const;
+    const invoke = vi.fn(async (): Promise<unknown> => ({
+      ok: true,
+      data: preferences,
+    }));
+    const api = createWorldCraftApi({ invoke });
+
+    await expect(api.preferences.get()).resolves.toEqual({
+      ok: true,
+      data: preferences,
+    });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.preferencesGet, {});
+
+    await expect(
+      api.preferences.update({ theme: 'dark', railCollapsed: true }),
+    ).resolves.toEqual({ ok: true, data: preferences });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.preferencesUpdate, {
+      theme: 'dark',
+      railCollapsed: true,
+    });
+
+    await expect(api.preferences.reset()).resolves.toEqual({
+      ok: true,
+      data: preferences,
+    });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.preferencesReset, {});
+  });
+
+  it('degrada a INTERNAL_ERROR un snapshot de preferencias incoherente', async () => {
+    for (const data of [
+      null,
+      { ...createPreferences('light'), theme: 'sepia' },
+      { ...createPreferences('light'), railCollapsed: 'yes' },
+      {
+        ...createPreferences('light'),
+        entityView: {
+          ...createPreferences('light').entityView,
+          propertiesWidth: 999,
+        },
+      },
+      { ...createPreferences('light'), lastView: 'samples' },
+      {
+        ...createPreferences('light'),
+        recentLocation: { kind: 'entity', worldId: world.id },
+      },
+      { ...createPreferences('light'), extra: true },
+    ]) {
+      const api = createWorldCraftApi({
+        invoke: async () => ({ ok: true, data }),
+      });
+
+      await expect(api.preferences.get()).resolves.toEqual({
+        ok: false,
+        error: { code: 'INTERNAL_ERROR' },
+      });
+    }
   });
 
   it('no expone un invoke genérico', () => {

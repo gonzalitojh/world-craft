@@ -258,10 +258,17 @@ migra una base en `0004` con un mundo, un tipo y una ficha.
 
 **Implementado en M1.5-04 (#127):** Inicio y las tarjetas de mundo son solo
 renderer y estilos; no cambian datos, migraciones, copias ni persistencia. El
-bloque «Continuar» es **memoria de sesión**: vive en React, no se escribe en
-disco, se pierde al recargar y se limpia al eliminar el mundo recordado. Su
-persistencia llegará con #132, junto con el resto de preferencias de interfaz. El
-siguiente rediseño es la vista de mundo (#128), también sin cambios de datos.
+bloque «Continuar» era **memoria de sesión** en esa entrega: vivía en React, no se
+escribía en disco, se perdía al recargar y se limpiaba al eliminar el mundo
+recordado. El párrafo se conserva como histórico. El siguiente rediseño es la
+vista de mundo (#128), también sin cambios de datos.
+
+**Nota de revisión (2026-11-24, #132):** «Continuar» ya se persiste en
+`app_settings` con la clave `ui.recent-location`, junto con el tema, el rail y el
+panel (#132, ADR 0027). Como vive en la misma base, entra en las copias
+automáticas y una restauración lo recupera; la exportación de un mundo no lo
+incluye. Se limpia al borrar el mundo o la ficha y degrada al mundo si la ficha
+desapareció.
 
 ## 7. Actualizaciones y desinstalación
 
@@ -336,7 +343,8 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Tipos al duplicar y borrar un mundo | M1-02 | Copia transaccional, aislamiento y conservación tras el borrado lógico (integración) |
 | Fichas, etiquetas y galería | M1-03 | CRUD, borrado lógico, aislamiento, referencias, filtros y preservación de la migración `0004` (integración) |
 | Relaciones y backlinks | M1-04 | CRUD, etiquetas inversas, duplicados, simetría, aislamiento, papelera y preservación de la migración `0005` (integración y E2E) |
-| Inicio y tarjetas de mundo | M1.5-04 | Solo renderer: sin cambios de datos ni copias; «Continuar» no se persiste y se pierde al recargar (componentes y E2E) |
+| Inicio y tarjetas de mundo | M1.5-04 | Solo renderer en esa entrega: sin cambios de datos ni copias; «Continuar» no se persistía y se perdía al recargar (componentes y E2E) |
+| Preferencias de interfaz | #132 | Claves `ui.*` en `app_settings`; entran en las copias y una restauración las recupera; el reset no borra datos de dominio (unitarias, integración y E2E de reinicio) |
 | Base ajena o versión superior | Cada arranque | Rechazo sin escritura (pruebas de integración) |
 | Corrupción simulada | Cada cambio de persistencia | Modo seguro sin escritura (prueba de integración) |
 | Copia automática y manifiesto v2 | M0-07 | Creación verificable, lectura de v1 y rechazo de bytes alterados (integración) |
