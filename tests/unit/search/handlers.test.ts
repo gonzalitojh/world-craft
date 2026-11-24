@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createUnavailableAssetsService } from '@/main/assets/service';
+import { createUnavailableTrashService } from '@/main/trash/service';
+import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
@@ -71,6 +73,10 @@ function createRoute(service: SearchService) {
       relations: createUnavailableRelationsService(),
       search: service,
       assets: createUnavailableAssetsService(),
+
+      trash: createUnavailableTrashService(),
+
+      versions: createUnavailableVersionsService(),
       pickImages: async () => [],
     }),
   );

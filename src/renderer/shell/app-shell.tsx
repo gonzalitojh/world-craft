@@ -93,6 +93,24 @@ function WorldsIcon() {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg
+      className="wc-nav-item__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v4M14 11v4" />
+    </svg>
+  );
+}
+
 function CollapseIcon({ collapsed }: { readonly collapsed: boolean }) {
   return (
     <svg
@@ -148,6 +166,7 @@ function SunIcon() {
 const NAV_ITEMS = [
   { id: 'home', icon: <HomeIcon /> },
   { id: 'worlds', icon: <WorldsIcon /> },
+  { id: 'trash', icon: <TrashIcon /> },
 ] as const;
 
 const WORLDS_VIEWS: readonly AppView[] = [
@@ -203,7 +222,11 @@ export function AppShell({
   };
 
   const isCurrent = (id: AppNavView): boolean =>
-    id === 'home' ? view === 'home' : WORLDS_VIEWS.includes(view);
+    id === 'home'
+      ? view === 'home'
+      : id === 'trash'
+        ? view === 'trash'
+        : WORLDS_VIEWS.includes(view);
 
   const renderNavButton = (
     id: AppNavView,

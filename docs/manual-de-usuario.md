@@ -10,22 +10,24 @@
 > Hoy el proyecto ya tiene un **instalador local para Windows** que se instala
 > por usuario, sin permisos de administrador, y una **comprobación manual de
 > actualizaciones** integrada en la barra superior. La ventana incluye una barra
-> lateral con la navegación **Inicio** y **Mundos**, una barra superior con el
-> título de lo que estás viendo, el buscador de la paleta `Ctrl+K`, una acción
-> principal, un menú `⋯` para las secundarias y los iconos de actualizaciones y
-> tema; el tema Claro/Oscuro se conmuta sin recargar. La página de inicio es una
-> **mesa de trabajo** con los mundos recientes y la actividad, o su estado vacío.
-> También existe una **base de datos
-> local** que se crea y se comprueba al arrancar, con **copias automáticas** y
-> **restauración desde modo seguro**. Ya se pueden crear, editar, duplicar,
-> archivar y eliminar mundos con su actividad, y crear **fichas** de cualquier
-> tipo con campos personalizados, descripción enriquecida, imágenes, etiquetas y
-> favoritos. Todavía no hay mapas, manuscritos, ajustes ni papelera visible. La
-> aplicación **recuerda entre sesiones** el tema, la barra lateral plegada, el
-> panel de propiedades con su ancho y las secciones de la ficha, y **Continuar**
-> retoma el último mundo o ficha aunque cierres y vuelvas a abrir. Las
-> **muestras** de componentes siguen existiendo solo como página interna de
-> desarrollo y no aparecen en la navegación ni en la búsqueda.
+> lateral con la navegación **Inicio**, **Mundos** y **Papelera**, una barra
+> superior con el título de lo que estás viendo, el buscador de la paleta
+> `Ctrl+K`, una acción principal, un menú `⋯` para las secundarias y los iconos de
+> actualizaciones y tema; el tema Claro/Oscuro se conmuta sin recargar. La página
+> de inicio es una **mesa de trabajo** con los mundos recientes y la actividad, o
+> su estado vacío. También existe una **base de datos local** que se crea y se
+> comprueba al arrancar, con **copias automáticas** y **restauración desde modo
+> seguro**. Ya se pueden crear, editar, duplicar, archivar y eliminar mundos con
+> su actividad; crear **fichas** de cualquier tipo con campos personalizados,
+> descripción enriquecida, imágenes, etiquetas y favoritos; **recuperarlas desde
+> la Papelera** y eliminar de verdad lo que ya no quieras; y consultar y
+> restaurar el **historial de versiones** de la descripción de una ficha.
+> Todavía no hay mapas, manuscritos ni ajustes. La aplicación **recuerda entre
+> sesiones** el tema, la barra lateral plegada, el panel de propiedades con su
+> ancho y las secciones de la ficha, y **Continuar** retoma el último mundo o
+> ficha aunque cierres y vuelvas a abrir. Las **muestras** de componentes siguen
+> existiendo solo como página interna de desarrollo y no aparecen en la
+> navegación ni en la búsqueda.
 
 ## 1. Qué es World Craft
 
@@ -58,7 +60,7 @@ La aplicación está pensada para:
    local como `release/world-craft-0.1.0-setup.exe` y se prueba antes de
    publicarlo. La descarga oficial llegará con M5.
 2. Ejecuta el instalador. Windows puede mostrar un aviso de SmartScreen porque
-   el instalador no está firmado; se explica en la sección 13.
+   el instalador no está firmado; se explica en la sección 14.
 3. El asistente instala **solo para tu usuario**, en
    `%LOCALAPPDATA%\Programs\World Craft`. **No pide permisos de administrador ni
    muestra el control de cuentas de usuario (UAC).** Puedes cambiar la carpeta de
@@ -86,11 +88,12 @@ la opción de crear tu primer mundo o importar uno existente. Esa pantalla es
 
 El proyecto ya genera un **instalador local** y permite abrir la ventana de la
 aplicación instalada. Esa ventana tiene el aspecto definitivo en lo básico: una
-barra lateral con la navegación **Inicio** y **Mundos**, una barra superior con
-el título contextual, el buscador de la paleta `Ctrl+K`, una sola acción
-principal, un menú `⋯` para las secundarias y los iconos de actualizaciones y
-tema; dos modos de color y componentes de interfaz ya creados (botones, campos,
-insignias, tarjetas, diálogos, pestañas, avisos y ayudas emergentes).
+barra lateral con la navegación **Inicio**, **Mundos** y **Papelera**, una barra
+superior con el título contextual, el buscador de la paleta `Ctrl+K`, una sola
+acción principal, un menú `⋯` para las secundarias y los iconos de
+actualizaciones y tema; dos modos de color y componentes de interfaz ya creados
+(botones, campos, insignias, tarjetas, diálogos, pestañas, avisos y ayudas
+emergentes).
 
 La aplicación crea y comprueba su base de datos local, guarda copias automáticas,
 sabe arrancar en **modo seguro** si algo va mal y permite restaurar una copia.
@@ -107,9 +110,13 @@ funcionan, con el recuento de fichas, mientras que **Mapas**, **Manuscrito** y
 **Grafo** aparecen como **Previsto** sin pantalla todavía. También existe la
 **búsqueda global** con
 filtros, recientes y favoritos, y una **paleta de comandos** que se abre con
-`Ctrl+K`. Todavía no hay ventanas de mapas, manuscritos, grafo, ajustes ni
-papelera visible, y la portada del mundo y la descripción enriquecida del mundo
-llegarán en actualizaciones posteriores. **No hay una release pública**: el
+`Ctrl+K`. La **Papelera** muestra los mundos, las fichas y los tipos
+personalizados que has borrado, permite **restaurarlos** a su sitio y
+**eliminarlos definitivamente** con una copia previa de la base. La descripción
+de una ficha guarda un **historial de versiones** que puedes consultar y
+restaurar. Todavía no hay ventanas de mapas, manuscritos, grafo ni ajustes, y la
+portada del mundo y la descripción enriquecida del mundo llegarán en
+actualizaciones posteriores. **No hay una release pública**: el
 instalador se genera y se prueba en local, y la publicación oficial llegará con
 M5.
 
@@ -126,7 +133,8 @@ nuevas: corrige detalles de aspecto y la forma de mostrar algunos avisos.
 Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
-  navegación entre **Inicio** y **Mundos**, y un botón para plegarla. Expandida
+  navegación entre **Inicio**, **Mundos** y **Papelera**, y un botón para
+  plegarla. Expandida
   ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos, con
   su nombre accesible y una ayuda emergente. La aplicación recuerda si la
   dejaste plegada o expandida. No muestra lema permanente ni versión.
@@ -160,8 +168,11 @@ Siguen **previstas**, para cuando existan mapas y escritura:
 - **Paneles** de filtros o de detalles en otras pantallas.
 - **Barra de estado** con el guardado y los avisos.
 
+La **Papelera** no depende de un mundo: reúne todo lo borrado en la aplicación y
+se explica en la sección 6.
+
 La **búsqueda** ya no tiene entrada propia en la navegación: se llega por el
-buscador de la barra superior y por la paleta (sección 10).
+buscador de la barra superior y por la paleta (sección 11).
 
 La página de **muestras** solo sirve para revisar el aspecto de los componentes
 en los dos temas y con textos largos. Es una página interna de desarrollo: no
@@ -202,6 +213,16 @@ use la aplicación; solo se abre por su dirección interna.
   Relaciones y Recursos— son botones: `Enter` o espacio las pliegan y
   despliegan, y el estado se anuncia con `aria-expanded`. El cuerpo cerrado no
   se recorre con `Tab`.
+- En la ficha, **Historial** es otra sección plegable bajo Descripción. Cerrada
+  por defecto, no se recorre hasta abrirla; dentro, `Tab` llega a **Guardar
+  versión** y a **Restaurar** de cada versión. Los diálogos de guardar y de
+  restaurar atrapan el foco, se cierran con `Escape` y devuelven el foco al
+  botón que los abrió.
+- En la **Papelera**, cada grupo es una sección con su encabezado. `Tab` recorre
+  **Restaurar** y **Eliminar definitivamente** de cada fila. Al confirmar una
+  restauración o una purga, el foco pasa al siguiente elemento del grupo o a su
+  mensaje de grupo vacío, y el resultado se anuncia sin robar el foco. **Cargar
+  más** conserva el foco y anuncia cuántos elementos se han añadido.
 - El separador del panel de propiedades, cuando el panel está abierto y la
   ventana es ancha, se enfoca con `Tab`. Con las flechas izquierda y derecha
   cambia el ancho en pasos de 16 px; `Inicio` lo lleva a 280 px y `Fin` a 360 px.
@@ -273,7 +294,7 @@ lista se muestra un esqueleto con un aviso para lectores de pantalla; si la
 carga falla, la pantalla explica el problema y ofrece **Volver a intentar**.
 
 La base de datos local se crea y se comprueba sola al arrancar; si hubiera un
-problema, la aplicación avisa antes de abrir la ventana (sección 15).
+problema, la aplicación avisa antes de abrir la ventana (sección 16).
 
 ### 3.6 Actualizaciones
 
@@ -308,7 +329,7 @@ pantalla de Ajustes en M1.
 
 Si la comprobación o la descarga fallan, el diálogo muestra un aviso y puedes
 volver a intentarlo. Un fallo de actualización no toca tus datos: la base, los
-assets y las copias siguen en `%APPDATA%\World Craft` (sección 12).
+assets y las copias siguen en `%APPDATA%\World Craft` (sección 13).
 
 ## 4. Mundos
 
@@ -424,9 +445,10 @@ tarjetas de Inicio y de Mundos muestran **Abrir** y su propio menú `⋯` con
 - **Archivar:** oculta el mundo de la lista de activos sin borrar nada. Puedes
   verlo con el filtro **Archivados** y restaurarlo cuando quieras.
 - **Eliminar:** pide confirmación y mueve el mundo a la papelera. Deja de
-  aparecer en Inicio y Mundos; la pantalla de papelera para restaurarlo llegará
-  en una actualización posterior. Hasta entonces, las copias de seguridad siguen
-  siendo la red de seguridad (sección 12).
+  aparecer en Inicio y Mundos, pero **puedes recuperarlo** desde la **Papelera**
+  (sección 6). Si eliges eliminarlo definitivamente allí, la aplicación crea antes
+  una copia de seguridad de la base. Archivar no es lo mismo: archivar lo oculta
+  de los activos sin pasar por la papelera.
 
 Todas las acciones destructivas piden confirmación y ninguna borra archivos del
 disco sin avisar. Al cerrar el diálogo, el foco vuelve al control que lo abrió
@@ -438,7 +460,6 @@ o, si ese control ya no existe, al contenido principal.
 - **Descripción enriquecida del mundo:** formato básico, enlaces internos y texto
   listo para buscar.
 - **Exportar e importar** un mundo completo en un archivo abierto.
-- **Papelera visible** para restaurar o vaciar definitivamente.
 
 ## 5. Fichas y entidades
 
@@ -577,11 +598,12 @@ lista de tipos del sistema y de los personalizados de ese mundo.
 - Los tipos personalizados se pueden **crear**, **editar** y **borrar**. Un tipo
   con fichas no se puede borrar ni puede perder campos o cambiar el tipo de un
   campo existente hasta cambiar o mover esas fichas; se incluyen las fichas en
-  papelera para que una restauración futura encuentre su plantilla. Sí puedes
+  papelera para que, al restaurarlas, encuentren su plantilla. Sí puedes
   ajustar etiquetas, opciones, icono, color y añadir campos. Si intentas borrar
   un tipo que está en uso, la explicación aparece **dentro de la propia
   confirmación** y el botón **Cancelar** sigue disponible: no se pierde nada y
-  puedes cerrar el aviso sin salir de la ventana.
+  puedes cerrar el aviso sin salir de la ventana. Un tipo borrado se recupera
+  desde la **Papelera** (sección 6).
 - Los iconos y colores usan la paleta de la aplicación; el color nunca es el
   único indicador: siempre acompaña al icono y al nombre.
 
@@ -623,13 +645,151 @@ lista de tipos del sistema y de los personalizados de ese mundo.
   cambia en el panel de propiedades y la insignia de la cabecera se actualiza al
   momento; funciona también en lectura.
 - **Mover a la papelera** está en el menú `⋯` de la ficha y pide confirmación. La
-  ficha deja de aparecer en la lista; la pantalla de papelera para restaurarla
-  llegará con la siguiente entrega. Hasta entonces, las copias de seguridad siguen
-  siendo la red de seguridad (sección 12).
+  ficha deja de aparecer en la lista y en la búsqueda, pero **puedes recuperarla**
+  desde la **Papelera** (sección 6). Sus etiquetas, imágenes, relaciones e
+  historial de versiones se conservan.
+- Una ficha en la papelera no muestra ni genera versiones; mientras esté allí, no
+  se puede consultar su historial. Al restaurarla vuelve con el historial que
+  tenía.
+- Si eliminas la ficha definitivamente desde la Papelera, se borran también sus
+  relaciones, etiquetas, galería e historial, y queda una copia recuperable de la
+  base. Las imágenes y los archivos del equipo **no se borran**.
 
-## 6. Relaciones y grafo
+### 5.9 Historial de versiones de la descripción
 
-### 6.1 Relacionar fichas
+La descripción de una ficha guarda un historial para que puedas volver atrás sin
+perder lo escrito. Está en la sección **Historial**, dentro de la ficha y debajo
+de la descripción. Empieza cerrada y se abre al pulsarla; no es una preferencia
+que se recuerde entre sesiones.
+
+- **Automática:** cuando cambias la descripción, la aplicación guarda el estado
+  **anterior** como una versión automática. Los cambios seguidos se agrupan
+  durante **5 minutos**, de modo que el autoguardado no crea decenas de versiones.
+  Se conservan **20 automáticas por ficha** durante **90 días**; las más antiguas
+  se van retirando y la más reciente nunca se borra.
+- **Manual:** pulsa **Guardar versión** y escribe una **etiqueta** de 1 a 120
+  caracteres. Sirve para marcar un punto al que quieras volver; las manuales
+  **no caducan** y puedes guardar hasta **50** por ficha. Al llegar al límite, la
+  aplicación te pide conservar el historial antes de guardar otra.
+- **Restaurar:** elige una versión y pulsa **Restaurar**. Antes de aplicarla, la
+  descripción actual se guarda como versión **Antes de restaurar**, que no
+  caduca: **restaurar nunca destruye el texto que tenías**. El diálogo muestra
+  una vista previa de la versión y, si la descripción ya coincide, avisa de que no
+  hay cambios.
+- **Qué se ve:** cada versión muestra su origen (**Automática**, **Manual** o
+  **Antes de restaurar**), la fecha, la etiqueta si la tiene y un fragmento del
+  texto. La lista no carga los documentos completos antiguos, solo la vista
+  previa.
+- Si una ficha está en la papelera, su historial no se muestra. Si la purgas, sus
+  versiones se eliminan con ella y solo quedan en la copia previa a la purga.
+
+### 5.10 Lo que llegará después (fichas)
+
+- **Comparar versiones** lado a lado y restaurar un fragmento concreto.
+- **Exportar el historial** con el mundo cuando llegue la exportación.
+
+## 6. Papelera y recuperación
+
+La **Papelera** reúne todo lo que has borrado en la aplicación: **mundos**,
+**fichas** y **tipos personalizados**. Está en la barra lateral, no dentro de un
+mundo, porque lo borrado puede venir de cualquiera. **Nada se borra del todo al
+moverlo a la papelera** y la papelera **no caduca sola**: lo que está dentro sigue
+ahí hasta que lo restaures o lo elimines definitivamente.
+
+### 6.1 Qué aparece y cómo se lee
+
+Al abrir **Papelera** ves tres grupos, cada uno con su encabezado:
+
+- **Mundos:** el nombre y la fecha en que lo eliminaste.
+- **Fichas:** el nombre, su mundo y su tipo de origen (`Mundo · Tipo`) y la fecha.
+- **Tipos personalizados:** el nombre, su mundo (`Mundo: …`) y la fecha.
+
+Los tipos del sistema no aparecen: no se pueden borrar. Cada fila ofrece
+**Restaurar** y **Eliminar definitivamente**. Si un grupo está vacío, lo dice con
+su propio mensaje; si los tres lo están, la pantalla explica que la papelera está
+vacía. Con muchos elementos, **Cargar más** añade la siguiente tanda sin perder
+el foco. Mientras se carga se muestra un aviso para lectores de pantalla; si la
+lectura falla, la pantalla lo explica y ofrece **Volver a intentar**, sin tocar
+tus datos.
+
+Lo que está en la papelera **no aparece** en Inicio, en Mundos, en las listas, en
+las relaciones ni en la búsqueda. Al restaurarlo, vuelve a aparecer.
+
+### 6.2 Restaurar
+
+1. Abre **Papelera** y busca el elemento en su grupo.
+2. Pulsa **Restaurar**.
+3. El elemento vuelve a su sitio: un mundo a **Inicio** y **Mundos**; una ficha a
+   su mundo y su tipo originales; un tipo personalizado a su mundo.
+4. La lista se actualiza, el resultado se anuncia y el foco pasa al siguiente
+   elemento o al mensaje del grupo.
+
+Hay dos casos en los que la restauración no se aplica y la aplicación lo explica
+con un mensaje claro:
+
+- **El mundo está en la papelera.** Una ficha o un tipo no pueden volver a un
+  mundo que sigue borrado. La fila lo avisa y la solución es **restaurar primero
+  el mundo** y después la ficha o el tipo.
+- **El tipo ya no está disponible.** Si el tipo personalizado de una ficha se
+  borró y purgó, la ficha no puede volver tal cual; restaura antes el tipo o
+  cambia la ficha de tipo.
+
+**Restaurar un mundo no restaura en cascada** las fichas o tipos que ya estaban
+en la papelera antes. Primero vuelve el mundo y después cada elemento que quieras
+recuperar. Nada se pierde por hacerlo en ese orden.
+
+### 6.3 Eliminar definitivamente y vaciar
+
+**Eliminar definitivamente** borra un elemento para siempre. Antes de borrar, la
+aplicación:
+
+1. Crea una **copia de seguridad de la base** y la comprueba. Si la copia falla
+   —por ejemplo, por falta de espacio—, **no se borra nada**.
+2. Borra el elemento y su contenido dependiente: una ficha se lleva sus
+   relaciones, etiquetas, galería e historial; un mundo se lleva sus fichas,
+   tipos, etiquetas, relaciones, actividad e historial; un tipo solo se elimina
+   si ya no le quedan fichas.
+3. Actualiza la lista y anuncia el resultado.
+
+El diálogo explica qué se va a borrar, avisa de que **la acción no se puede
+deshacer desde la papelera** y deja **Cancelar** como opción inicial. Si el
+elemento ya no estaba o el tipo sigue en uso, el diálogo lo dice y la lista se
+actualiza. Las **imágenes y los archivos del equipo no se borran**.
+
+**Vaciar la papelera** está en la parte superior de la pantalla y elimina todo de
+una vez. Exige marcar una casilla —**Entiendo que se eliminará definitivamente
+todo el contenido de la papelera**— antes de habilitar el botón. Crea **una sola
+copia previa** y muestra un resumen con cuántos mundos, fichas y tipos se han
+eliminado. Los tipos que todavía tengan fichas se conservan y se cuentan en el
+resumen.
+
+### 6.4 La copia previa y cómo recuperar una purga
+
+Las copias previas a una eliminación definitiva se guardan en la carpeta de
+copias, dentro de `backups/pre-purge`. Se conservan las **10 más recientes** que
+sean válidas; las dañadas no se borran solas y no cuentan para ese límite.
+
+- La copia **no** es un botón de «deshacer» dentro de la papelera: la acción
+  definitiva sigue siendo definitiva desde la interfaz.
+- Es la **red de recuperación**. Si necesitas volver atrás, esa copia se puede
+  elegir en el aviso de modo seguro o restaurar a mano con la aplicación cerrada
+  (secciones 13.3 y 13.4). La pantalla de Ajustes → Datos facilitará la
+  restauración guiada más adelante.
+- La copia contiene la base de datos, no las imágenes ni los archivos. Como la
+  purga tampoco borra assets, los archivos siguen en el equipo; las filas que
+  quedan sin mundo se pondrán en cuarentena en una actualización posterior.
+
+### 6.5 Lo que llegará después
+
+- **Restaurar una copia desde Ajustes** sin pasar por el aviso de modo seguro.
+- **Cuarentena de imágenes y archivos huérfanos** tras purgar un mundo, con su
+  propia copia recuperable.
+- **Papelera de mapas y escenas** cuando existan esos módulos, reutilizando esta
+  misma pantalla.
+
+## 7. Relaciones y grafo
+
+### 7.1 Relacionar fichas
 
 Una relación une dos fichas del mismo mundo y se lee desde las dos. Por ejemplo,
 «Mara Viento» puede ser **aliada de** «Puerto Sal», y en la ficha de Puerto Sal
@@ -671,7 +831,7 @@ con su tipo de entidad, la fuerza en cinco marcas y las notas. El nombre es la
 acción visible: al pulsarlo se abre esa ficha. Los nombres largos y las notas se
 muestran completos y envuelven en varias líneas.
 
-### 6.2 Editar y eliminar relaciones
+### 7.2 Editar y eliminar relaciones
 
 - **Abrir la ficha contraparte** es la acción visible de cada entrada.
 - **Editar relación** y **Eliminar relación** están en el menú `⋯` de la
@@ -693,7 +853,7 @@ muestran completos y envuelven en varias líneas.
 - Solo se pueden relacionar fichas del mismo mundo. Las fichas que están en la
   papelera no se ofrecen como origen ni como destino.
 
-### 6.3 Tipos de relación
+### 7.3 Tipos de relación
 
 El botón **Tipos de relación** abre el gestor:
 
@@ -707,7 +867,7 @@ El botón **Tipos de relación** abre el gestor:
   relaciones. Si está en uso, elimina antes esas relaciones.
 - El color nunca es el único indicador: siempre acompaña a la etiqueta.
 
-### 6.4 Grafo (previsto)
+### 7.4 Grafo (previsto)
 
 La vista de grafo llegará en una etapa posterior. Mostrará las relaciones como
 un mapa de nodos, con zoom, filtros por tipo o etiqueta, encuadre y apertura de
@@ -718,7 +878,7 @@ Mientras el grafo esté previsto, la ficha **no incluye ningún botón, enlace n
 acción** para abrirlo: la sección Relaciones solo ofrece lo descrito en 6.1 y
 6.2. Cuando la vista llegue, se añadirá su acceso en la misma tarea.
 
-## 7. Mapas (previsto)
+## 8. Mapas (previsto)
 
 - **Crear un mapa:** elige un nombre y un estilo de fondo.
 - **Dibujar:** punto, línea, polígono, rectángulo, círculo y trazo libre.
@@ -728,7 +888,7 @@ acción** para abrirlo: la sección Relaciones solo ofrece lo descrito en 6.1 y
 - **Imagen de fondo:** usa una imagen propia como referencia.
 - **Exportar:** guarda el mapa como SVG o PNG.
 
-## 8. Escritura (previsto)
+## 9. Escritura (previsto)
 
 - **Manuscritos:** agrupa libros, capítulos y escenas.
 - **Editor:** escribe con formato, diálogos y separadores de escena.
@@ -740,7 +900,7 @@ acción** para abrirlo: la sección Relaciones solo ofrece lo descrito en 6.1 y
 - **Modo concentración:** oculta paneles para escribir sin distracciones.
 - **Exportar:** genera Markdown, HTML, EPUB o PDF.
 
-## 9. Juego de inspiración (previsto)
+## 10. Juego de inspiración (previsto)
 
 El juego todavía no tiene un módulo propio en la navegación de un mundo: cuando
 exista su pantalla se incorporará a ella junto a **Mapas**, **Manuscrito** y
@@ -753,9 +913,9 @@ planeadas:
 - **Packs:** importa y exporta contenido de juego.
 - **Sesiones:** guarda el resultado de una sesión y añade notas.
 
-## 10. Búsqueda y paleta de comandos
+## 11. Búsqueda y paleta de comandos
 
-### 10.1 Buscar en toda la biblioteca
+### 11.1 Buscar en toda la biblioteca
 
 La pantalla de **Búsqueda** no tiene entrada en la barra lateral. Se entra por el
 buscador de la barra superior o con `Ctrl+K`; en la paleta puedes elegir **Abrir
@@ -779,7 +939,7 @@ conexión a Internet.
 - Se muestran hasta 50 resultados por consulta; el recuento indica el total
   encontrado y el tiempo que tardó la búsqueda.
 
-### 10.2 Filtros
+### 11.2 Filtros
 
 Los filtros se pueden combinar:
 
@@ -794,13 +954,13 @@ Los filtros se pueden combinar:
 **Quitar filtros** los borra todos. Si una búsqueda no devuelve nada, prueba otra
 palabra o quita algún filtro.
 
-### 10.3 Recientes y favoritos
+### 11.3 Recientes y favoritos
 
 Cuando el campo está vacío, la pantalla muestra **Recientes** (lo último que se
 ha actualizado) y **Favoritos** (las fichas marcadas como favoritas). Sirven para
 volver rápido a lo que estabas usando.
 
-### 10.4 Paleta de comandos
+### 11.4 Paleta de comandos
 
 Pulsa `Ctrl+K`, o el disparador de la barra superior, para abrir la paleta:
 
@@ -812,7 +972,7 @@ Pulsa `Ctrl+K`, o el disparador de la barra superior, para abrir la paleta:
 - El atajo no se activa mientras escribes en un campo ni con otro diálogo
   abierto, para no interferir con el texto.
 
-### 10.5 Si los resultados no cuadran
+### 11.5 Si los resultados no cuadran
 
 El índice de búsqueda es una copia local que se actualiza sola al crear, editar,
 borrar o restaurar contenido. Si sospechas que está desincronizado, abre el menú
@@ -822,13 +982,13 @@ mismo comando. No borra ningún dato: solo vuelve a leer los mundos, las fichas 
 las relaciones. La pantalla Ajustes → Datos añadirá este mismo botón más
 adelante.
 
-### 10.6 Lo que llegará después
+### 11.6 Lo que llegará después
 
 La búsqueda de mapas, manuscritos y escenas llegará con esas secciones. El grafo
 interactivo tendrá su propia búsqueda y navegación. La búsqueda es siempre local y
 no se envía a ningún servicio externo.
 
-## 11. Ajustes (previsto)
+## 12. Ajustes (previsto)
 
 - **Apariencia:** tema Claro u Oscuro; se aplica a toda la aplicación y **se
   recuerda** entre sesiones desde el icono de la barra superior o la paleta
@@ -841,9 +1001,9 @@ no se envía a ningún servicio externo.
 - **Ventana:** recordar tamaño y posición.
 - **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda (hoy se
   hace desde el menú `⋯` de la pantalla de Búsqueda o desde la paleta `Ctrl+K`,
-  sección 10.5), compactar y eliminar todos los datos.
+  sección 11.5), compactar y eliminar todos los datos.
 - **Copias:** dentro de Ajustes → Datos, crear, verificar y restaurar copias. La
-  restauración desde el aviso de modo seguro ya existe (sección 12.3); esta
+  restauración desde el aviso de modo seguro ya existe (sección 13.3); esta
   pantalla, con la copia manual y la elección de carpeta, es prevista.
 - **Actualizaciones:** hoy se buscan, descargan e instalan desde el icono de
   actualizaciones de la barra superior (sección 3.6). Ajustes añadirá el
@@ -852,14 +1012,16 @@ no se envía a ningún servicio externo.
   desactivar.
 - **Ayuda:** abrir este manual y exportar un diagnóstico.
 
-## 12. Tus datos y las copias
+## 13. Tus datos y las copias
 
-### 12.1 Dónde están tus datos
+### 13.1 Dónde están tus datos
 
 - Todo se guarda en tu equipo, en la carpeta de datos de World Craft
   (`%APPDATA%\World Craft`). La base de datos está en la subcarpeta `data` y se
   crea sola al arrancar. Las imágenes y los archivos están en `assets`; las
-  copias, en `backups`; y los registros técnicos, en `logs`.
+  copias, en `backups`; y los registros técnicos, en `logs`. La **papelera** y el
+  **historial de versiones** viven en la misma base: entran en las copias y una
+  restauración los recupera.
 - Los binarios se instalan aparte, en `%LOCALAPPDATA%\Programs\World Craft`.
   **Actualizar, reinstalar o desinstalar no borra** la carpeta de datos.
 - La aplicación puede guardar en su carpeta de datos un identificador técnico de
@@ -876,7 +1038,7 @@ no se envía a ningún servicio externo.
   imágenes, relaciones ni copias.
 - No hay sincronización automática entre equipos ni subida de datos a Internet.
 
-### 12.2 Copias automáticas
+### 13.2 Copias automáticas
 
 Mientras la aplicación está en desarrollo, las copias ya funcionan pero no
 tienen una pantalla propia: se crean solas al arrancar con normalidad y solo se
@@ -891,9 +1053,11 @@ Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
 - **Antes de actualizar la estructura de la base:** se guarda una copia
   **pre-migración**; si esa copia no se puede crear o comprobar, no se cambia
   nada.
-- **Cuántas se conservan:** 7 diarias, 4 semanales, 12 mensuales y 5
-  pre-migración. Las más antiguas se van borrando automáticamente. Las copias
-  **pre-restauración** no se borran solas.
+- **Antes de eliminar algo de la papelera para siempre:** se guarda una copia
+  **pre-purga** y se comprueba; si falla, no se borra nada (sección 6.4).
+- **Cuántas se conservan:** 7 diarias, 4 semanales, 12 mensuales, 5
+  pre-migración y 10 pre-purga. Las más antiguas se van borrando
+  automáticamente. Las copias **pre-restauración** no se borran solas.
 - **Qué contienen:** solo la base de datos, incluidas tus preferencias de
   interfaz. **Las imágenes y los archivos (assets) no van dentro de la copia** y
   no se sustituyen al restaurar.
@@ -902,7 +1066,7 @@ Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
   está por si sirve para un diagnóstico.
 - Las copias son locales. La aplicación no las sube a ningún servicio.
 
-### 12.3 Restaurar una copia
+### 13.3 Restaurar una copia
 
 Hoy la restauración se ofrece desde el **aviso de modo seguro**, que aparece
 cuando la aplicación no puede usar la base de datos con seguridad. La pantalla
@@ -930,21 +1094,25 @@ dejar los datos como estaban. No se pierde la copia que acabas de elegir ni la
 copia de los datos anteriores. La restauración **nunca se hace sola ni en
 segundo plano**.
 
-### 12.4 Copias pre-restauración y recuperación manual
+### 13.4 Copias pre-restauración, pre-purga y recuperación manual
 
 Antes de reemplazar la base, la aplicación guarda la base anterior en la
 subcarpeta `backups/pre-restore`. Esa copia **no se ofrece desde la aplicación**
 y no se borra automáticamente: sirve para una recuperación manual si algo sale
 mal.
 
+Las copias **pre-purga** de la papelera viven en `backups/pre-purge`, sí se
+ofrecen como cualquier copia válida en el aviso de modo seguro y también se
+pueden recuperar a mano:
+
 - La recuperación manual requiere **cerrar la aplicación** y copiar el archivo
-  `world-craft.sqlite` de la carpeta `pre-restore` sobre
+  `world-craft.sqlite` de la carpeta `pre-purge` (o `pre-restore`) sobre
   `data/world-craft.sqlite`. Si hay archivos `-wal`, `-shm` o `-journal` junto a
   la copia, se copian también.
 - Si no te sientes cómodo moviendo archivos, **no borres nada**: conserva la
   carpeta de datos y la de copias y pide ayuda antes de tocar los archivos.
 
-### 12.5 Si la aplicación no arranca o no ofrece una copia
+### 13.5 Si la aplicación no arranca o no ofrece una copia
 
 - **No borres la carpeta de datos ni la de copias.** Son la vía para recuperar
   tu información.
@@ -953,7 +1121,7 @@ mal.
   desde el propio aviso y revisa que existan `backups/daily`, `weekly`,
   `monthly` o `pre-migration` con su `manifest.json`.
 - Si la aplicación se cierra sin mostrar el aviso, comprueba los requisitos
-  (sección 2.1) y el aviso de Windows (sección 13). Si el problema continúa,
+  (sección 2.1) y el aviso de Windows (sección 14). Si el problema continúa,
   conserva las carpetas y pide ayuda.
 - Si la aplicación se queda en modo seguro después de una restauración, puede
   haber quedado un archivo de bloqueo o un resto de la operación anterior. Cierra
@@ -963,7 +1131,7 @@ mal.
   marcador que impide crear una base vacía; si está presente, prueba otra copia
   o pide ayuda.
 
-### 12.6 Desinstalar World Craft
+### 13.6 Desinstalar World Craft
 
 1. Abre **Configuración → Aplicaciones** de Windows (en Windows 11,
    **Aplicaciones instaladas**; en Windows 10, **Aplicaciones y
@@ -978,7 +1146,7 @@ mal.
    carpeta. Antes de hacerlo, guarda una copia o exporta lo que necesites: esa
    acción **no se puede deshacer** desde la aplicación.
 
-## 13. Aviso de SmartScreen
+## 14. Aviso de SmartScreen
 
 El instalador del MVP **no está firmado** con un certificado de código. Windows
 puede mostrar un aviso azul de SmartScreen la primera vez que lo ejecutes. Para
@@ -997,7 +1165,7 @@ sitio no oficial y ejecutarlo sí es un riesgo: sin firma, el aviso de Windows n
 puede distinguir un archivo manipulado. Descárgalo siempre del origen oficial y
 verifica el checksum cuando esté disponible.
 
-## 14. Accesibilidad
+## 15. Accesibilidad
 
 Ya funciona en el shell de desarrollo:
 
@@ -1025,14 +1193,21 @@ Ya funciona en el shell de desarrollo:
   mantiene el foco en el texto y se recorre con flechas, `Inicio`, `Fin`, `Enter`,
   `Tab` y `Escape`; cerrar con `Escape` no borra lo escrito.
 - `Ctrl+S` guarda en edición y no abre el diálogo de guardar página.
+- En la **Papelera** y en el **Historial**, las listas son semánticas, los
+  botones tienen nombre accesible («Restaurar “Nombre”»), los resultados y los
+  recuentos se anuncian con `aria-live` y el foco pasa al siguiente elemento o al
+  mensaje del grupo tras una acción. Los diálogos destructivos dejan **Cancelar**
+  como opción inicial, atrapan el foco y lo devuelven al cerrarse; el vaciado no
+  habilita su botón hasta marcar la casilla.
 - Etiquetas, ayudas y errores asociados en los campos de texto.
 - Avisos con `aria-live` (se anuncian sin robar el foco) y cierre manual. La
   disponibilidad de una actualización también se anuncia así.
 - Respeto de `prefers-reduced-motion`: las animaciones se reducen o se
   desactivan.
 - Revisión automática de accesibilidad (axe) sin errores críticos en el shell,
-  Inicio, la vista de mundo, la lista de fichas y la ficha —incluido el editor con
-  el menú **Formato** y el selector de menciones abiertos—, en los dos temas y con
+  Inicio, la vista de mundo, la lista de fichas, la ficha —incluido el editor con
+  el menú **Formato** y el selector de menciones abiertos—, la Papelera y el
+  Historial, en los dos temas y con
   la barra lateral expandida y plegada; el contraste se comprueba con la tabla del
   sistema de diseño.
 - Revisión visual de todas las pantallas existentes y de los diálogos, en Claro y
@@ -1043,20 +1218,20 @@ Sigue **previsto**:
 
 - Los atajos de teclado generales, que se documentarán en la ayuda de la app.
 
-## 15. Problemas frecuentes
+## 16. Problemas frecuentes
 
 Algunos avisos ya existen en el estado actual del desarrollo; otros llegarán con
 las funciones correspondientes.
 
 | Problema | Qué hacer |
 |---|---|
-| La app avisa de que ha arrancado en modo seguro | El aviso explica el motivo y ofrece **Restaurar copia**, **Abrir carpeta de copias**, **Continuar en modo seguro** (sin escribir en tus datos) o **Salir**. Para recuperar una versión anterior, pulsa «Restaurar copia» y sigue la sección 12.3. |
+| La app avisa de que ha arrancado en modo seguro | El aviso explica el motivo y ofrece **Restaurar copia**, **Abrir carpeta de copias**, **Continuar en modo seguro** (sin escribir en tus datos) o **Salir**. Para recuperar una versión anterior, pulsa «Restaurar copia» y sigue la sección 13.3. |
 | La base no abre | La app arranca en modo seguro sin modificar el archivo. Restaura una copia desde el propio aviso. Si no hay copias válidas, conserva la carpeta de datos y la de copias y pide ayuda. |
 | No aparece la copia que busco | La app no ofrece copias dañadas, con manifiesto inválido, de una versión más reciente ni las de `pre-restore`. Abre la carpeta de copias y comprueba que la carpeta elegida contiene `world-craft.sqlite` y `manifest.json`. |
 | La restauración falla | La app vuelve al aviso de modo seguro e intenta dejar los datos como estaban. Prueba otra copia; la base anterior queda en `backups/pre-restore`. No borres esas carpetas. |
 | La app sigue en modo seguro después de restaurar | Cierra la aplicación y vuelve a abrirla. Si persiste, prueba otra copia; como último recurso, con la app cerrada, borra `data/.restore.lock` (no contiene tus datos), pero **no borres `data/.restore.pending`**. |
-| La app no arranca | Comprueba los requisitos (sección 2.1) y revisa el aviso de Windows (sección 13). No borres la carpeta de datos ni la de copias; conserva ambas y pide ayuda. |
-| Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 13. Comprueba el SHA-256 si tienes el valor publicado. |
+| La app no arranca | Comprueba los requisitos (sección 2.1) y revisa el aviso de Windows (sección 14). No borres la carpeta de datos ni la de copias; conserva ambas y pide ayuda. |
+| Windows avisa al instalar | Es SmartScreen por falta de firma; sigue la sección 14. Comprueba el SHA-256 si tienes el valor publicado. |
 | El instalador pide administrador o no encuentra la carpeta | No debería: la instalación es por usuario en `%LOCALAPPDATA%\Programs\World Craft` y no usa UAC. Cierra el instalador y vuelve a ejecutarlo; si persiste, no continúes y pide ayuda. |
 | La instalación o la actualización falla | Comprueba el espacio libre (el instalador ocupa unos 133 MB) y que la carpeta de instalación sea accesible. Vuelve a ejecutar el instalador; tus datos de `%APPDATA%\World Craft` no se tocan. |
 | No aparece ninguna actualización | La comprobación es manual: pulsa el icono de **Actualizaciones** y luego **Buscar actualizaciones**. Si no hay una versión publicada más reciente, el diálogo indica que ya tienes la última. La comprobación real contra GitHub Releases se probará con la primera release pública (M5). |
@@ -1064,12 +1239,15 @@ las funciones correspondientes.
 | La descarga de la actualización falla | Comprueba el espacio libre y la conexión, y vuelve a intentarlo. Puedes cancelar la descarga sin instalar nada. |
 | La actualización está descargada pero no se instala | Pulsa **Reiniciar e instalar** en el diálogo. La instalación no ocurre sola: necesita tu confirmación. Si falla, cierra la aplicación y vuelve a intentarlo. |
 | Las actualizaciones están desactivadas | El diálogo explica el motivo: estás en desarrollo, en modo seguro o falta la configuración de la instalación. No es un fallo de tus datos. |
-| He desinstalado y no sé dónde están mis datos | Se conservan en `%APPDATA%\World Craft` (sección 12.6). La desinstalación no los borra; solo desaparecen si borras esa carpeta manualmente. |
-| No encuentro una ficha | Previsto: revisa la papelera y reconstruye la búsqueda. |
-| Una imagen no se ve | Previsto: comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. |
-| He borrado un mundo | Previsto: restáuralo desde la papelera o desde una copia. |
+| He desinstalado y no sé dónde están mis datos | Se conservan en `%APPDATA%\World Craft` (sección 13.6). La desinstalación no los borra; solo desaparecen si borras esa carpeta manualmente. |
+| No encuentro una ficha | Abre **Papelera** y busca en el grupo **Fichas**; también puedes revisar los filtros de la lista y reconstruir la búsqueda. Si estaba en un mundo que borraste, restaura primero el mundo (sección 6.2). |
+| Una imagen no se ve | Comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. Si purgaste un mundo, sus imágenes siguen en el equipo hasta la cuarentena de una actualización posterior. |
+| He borrado un mundo | Abre **Papelera**, grupo **Mundos**, y pulsa **Restaurar**; vuelve a Inicio y Mundos con su contenido. Si ya lo eliminaste definitivamente, usa la copia `pre-purge` (sección 6.4). |
+| No puedo restaurar una ficha o un tipo | Si su mundo está en la papelera, restaura primero el mundo. Si el tipo personalizado ya no existe, restaura el tipo o cambia la ficha de tipo (sección 6.2). |
+| La eliminación definitiva no se realiza | La aplicación no habrá podido crear o verificar la copia previa, normalmente por falta de espacio; no se ha borrado nada. Libera espacio e inténtalo de nuevo. |
+| Quiero deshacer una eliminación definitiva | No hay un botón de deshacer en la papelera. La copia de `backups/pre-purge` es la red de recuperación: se restaura desde el aviso de modo seguro o a mano (secciones 13.3 y 13.4). |
 
-## 16. Glosario
+## 17. Glosario
 
 - **Mundo:** contenedor de todo el contenido de una ambientación.
 - **Ficha o entidad:** personaje, lugar, objeto o concepto del mundo.
@@ -1081,14 +1259,23 @@ las funciones correspondientes.
   incluyen las imágenes ni los archivos.
 - **Copia pre-restauración:** copia de la base anterior que se guarda antes de
   restaurar; no se ofrece desde la aplicación y se recupera a mano.
+- **Copia previa a la purga (pre-purga):** copia verificable de la base que se
+  crea antes de eliminar definitivamente algo de la papelera. Se conservan las 10
+  más recientes.
+- **Papelera:** lista de lo borrado que se puede restaurar a su mundo y tipo de
+  origen. No caduca sola; eliminar de la papelera es una acción aparte.
+- **Purga o eliminación definitiva:** borrado real de un elemento de la papelera
+  y de su contenido dependiente, siempre con copia previa y confirmación.
+- **Versión:** copia del estado anterior de la descripción de una ficha.
+  Automática, manual con etiqueta o de seguridad antes de restaurar.
 - **Modo seguro:** arranque sin escritura para diagnosticar el problema, abrir la
   carpeta de copias y restaurar una copia sin modificar tus datos.
 
-## 17. Estado de las funciones
+## 18. Estado de las funciones
 
 | Función | Estado |
 |---|---|
-| Barra lateral con navegación Inicio/Mundos y plegado | Implementada (en desarrollo); sin lema ni versión |
+| Barra lateral con navegación Inicio/Mundos/Papelera y plegado | Implementada (en desarrollo); sin lema ni versión |
 | Barra superior con título contextual, buscador `Ctrl+K`, acción primaria, menú `⋯` e iconos de actualizaciones y tema | Implementada (en desarrollo) |
 | Tema Claro/Oscuro conmutable | Implementado (en desarrollo); se recuerda al reiniciar y se aplica sin destello |
 | Instalador por usuario, sin administrador, en `%LOCALAPPDATA%` | Implementado (local); la release pública llega con M5 |
@@ -1104,21 +1291,24 @@ las funciones correspondientes.
 | Página de muestras | Interna de desarrollo; solo por su dirección interna, fuera de la navegación y la paleta |
 | Lista de mundos con búsqueda y filtro por estado | Implementada (en desarrollo) |
 | CRUD de mundos: crear, editar, duplicar y archivar/restaurar | Implementado (en desarrollo); con validación y confirmación |
-| Borrado lógico de mundos con confirmación | Implementado (en desarrollo); la papelera visible llega con #77 |
+| Borrado lógico de mundos con confirmación | Implementado (en desarrollo); se recupera desde la Papelera |
 | Página de mundo modular con identidad, navegación, preparación y actividad | Implementada (en desarrollo); Fichas navegable con recuento y Mapas, Manuscrito y Grafo como previstos sin enlace |
 | Elegir la portada del mundo | Prevista (#115); si el mundo ya tiene una portada, Inicio y Mundos la muestran |
 | Descripción enriquecida de mundos | Prevista (#114) |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
 | Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
-| Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12 |
+| Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12, 5 pre-migración y 10 pre-purga |
 | Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
 | Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
-| Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y la papelera visible llega con #77 |
+| Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y se recupera desde la Papelera |
 | Ficha como documento y panel de propiedades | Implementada (en desarrollo); lectura por defecto, edición en contexto, secciones plegables y panel de 280–360 px |
 | Editor de la descripción con barra mínima y menciones `@` / `[[` | Implementado (en desarrollo); barra de cinco acciones, menú Formato, selector de fichas con teclado y enlaces internos; el manuscrito sigue previsto |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
+| Papelera global de mundos, fichas y tipos personalizados, con restauración | Implementada (en desarrollo); tres grupos, paginación por cursor y motivos claros si el mundo o el tipo no están disponibles |
+| Eliminación definitiva y vaciado de la papelera con copia previa | Implementados (en desarrollo); confirmación explícita, copia `pre-purge` verificable y los assets no se borran |
+| Historial de versiones de la descripción de una ficha | Implementado (en desarrollo); automáticas 5 min/20/90 días, manuales con etiqueta hasta 50 y restauración que conserva el estado actual |
 | Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); lectura por dirección y tipo, etiqueta recíproca, menú `⋯` con edición y borrado confirmado; los metadatos quedan en la API |
 | Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |
 | Filtros de búsqueda por mundo, tipo, etiqueta y estado | Implementados (en desarrollo) |

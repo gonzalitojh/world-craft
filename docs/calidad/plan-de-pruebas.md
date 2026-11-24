@@ -8,8 +8,9 @@
 > ADR 0020 (tipos de entidad y campos personalizados), ADR 0021 (fichas,
 > galería, etiquetas y editor enriquecido), ADR 0022 (relaciones tipadas,
 > etiquetas inversas y API del grafo), ADR 0023 (búsqueda global y paleta de
-> comandos), ADR 0025 (dirección visual v2), ADR 0026 (editor mínimo y menciones)
-> y ADR 0027 (preferencias de interfaz persistentes).
+> comandos), ADR 0025 (dirección visual v2), ADR 0026 (editor mínimo y menciones),
+> ADR 0027 (preferencias de interfaz persistentes) y ADR 0028 (papelera,
+> versiones y copia previa a la purga).
 
 ## 1. Principios
 
@@ -752,6 +753,38 @@ igual que la aplicación. El recuento vigente tras #132 está en §3.18.
 - **Recuento verificado al cerrar #132:** 518 unitarias (4 omitidas), 171 de
   componentes, 146 de integración (1 omitida) y 53 E2E en verde.
 
+### 3.19 Papelera y versiones de contenido (implementado, #77)
+
+- **Migración.** `0007_trash_versions` se aplica sobre una base `0006` con mundo,
+  tipo personalizado, fichas, etiquetas, galería, relaciones y búsqueda: conserva
+  las filas, los assets y el índice, crea `entity_versions` y los índices de
+  papelera, deja `user_version` 8 y ejecuta el rollback de referencia.
+- **Papelera.** Listado por cursor de los tres grupos con mundo y tipo de origen;
+  restauración de mundo, ficha y tipo con `world-in-trash`, `type-unavailable`,
+  `already-restored` y `not-found`; purga de ficha, tipo y mundo en orden, con
+  `activity_log` primero, y vaciado con contadores y tipos en uso omitidos. La
+  copia `pre-purge` se verifica; un fallo de copia no borra nada. Las filas y los
+  archivos de `assets` siguen intactos y no se purga contenido vivo.
+- **Versiones.** Ráfaga de 5 minutos que guarda el estado saliente; sin cambios o
+  con saliente vacío no se crea versión; poda por número (20) y antigüedad (90
+  días) sin tocar la más reciente, las manuales ni las de restauración; 50
+  manuales con etiqueta; restaurar conserva el estado actual como `restore`;
+  cascade al purgar y ficha en papelera sin historial.
+- **Seguridad e IPC.** Los 7 canales nuevos están en la allowlist, con Zod
+  estricto, literales de confirmación, guardas en el preload y servicios
+  `unavailable` en modo seguro.
+- **UI y accesibilidad.** Papelera con tres secciones, estados de carga, error y
+  vacío, **Cargar más**, diálogos destructivos con casilla obligatoria en el
+  vaciado y foco devuelto; historial con origen, fecha, etiqueta y vista previa.
+  axe sin errores críticos y matriz 1024/1280/1600 px en ambos temas.
+- **E2E.** Borrar una ficha, verla en la papelera, restaurarla, editar la
+  descripción, guardar y restaurar una versión, volver a borrarla, purgarla con
+  confirmación y comprobar la copia `pre-purge`; segundo recorrido con el orden
+  mundo → ficha.
+- **Recuento verificado al cerrar #77:** 557 unitarias (4 omitidas), 188 de
+  componentes, 158 de integración (1 omitida), build y `verify:build` en verde;
+  E2E de papelera y auditoría visual 9/9.
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -779,7 +812,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 531 unitarias (4 omitidas), 174 de componentes y 146 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 557 unitarias (4 omitidas), 188 de componentes y 158 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

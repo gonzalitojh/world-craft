@@ -77,6 +77,7 @@ async function startPersistence(
           weekly: result.paths.weeklyBackupsDir,
           monthly: result.paths.monthlyBackupsDir,
           preMigration: result.paths.preMigrationBackupsDir,
+          prePurge: result.paths.prePurgeBackupsDir,
         },
         timestamp: now(),
         targetSchemaVersion: readTargetSchemaVersion(migrationsDir),

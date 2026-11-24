@@ -26,6 +26,9 @@ import {
   createUnavailableAssetsService,
 } from './assets/service';
 import { createAssetRepository } from './assets/store';
+import { createPrePurgeBackup } from './backup/create';
+import { readUserVersion } from './db/connection';
+import { resolveDataPaths } from './db/paths';
 import {
   createEntitiesService,
   createUnavailableEntitiesService,
@@ -48,6 +51,15 @@ import {
   createSearchService,
   createUnavailableSearchService,
 } from './search/service';
+import {
+  createTrashService,
+  createUnavailableTrashService,
+} from './trash/service';
+import {
+  createUnavailableVersionsService,
+  createVersionRecorder,
+  createVersionsService,
+} from './versions/service';
 import {
   closePersistence,
   getDatabase,
@@ -174,12 +186,52 @@ if (!hasSingleInstanceLock) {
               database: database.orm,
               sqlite: database.sqlite,
             });
+      const versions =
+        database === null
+          ? createUnavailableVersionsService()
+          : createVersionsService({
+              database: database.orm,
+              sqlite: database.sqlite,
+            });
+      const versionRecorder =
+        database === null
+          ? null
+          : createVersionRecorder({
+              database: database.orm,
+              sqlite: database.sqlite,
+            });
       const entities =
         database === null
           ? createUnavailableEntitiesService()
           : createEntitiesService({
               database: database.orm,
               sqlite: database.sqlite,
+              ...(versionRecorder === null
+                ? {}
+                : { versions: versionRecorder }),
+            });
+      const trash =
+        database === null
+          ? createUnavailableTrashService()
+          : createTrashService({
+              database: database.orm,
+              sqlite: database.sqlite,
+              createSafetyCopy: async (timestamp) => {
+                try {
+                  const paths = resolveDataPaths(app.getPath('userData'));
+
+                  await createPrePurgeBackup({
+                    database: database.sqlite,
+                    backupRootDir: paths.prePurgeBackupsDir,
+                    timestamp,
+                    schemaVersion: readUserVersion(database.sqlite),
+                  });
+
+                  return true;
+                } catch {
+                  return false;
+                }
+              },
             });
       const assets =
         database === null
@@ -232,6 +284,8 @@ if (!hasSingleInstanceLock) {
           relations,
           search,
           assets,
+          trash,
+          versions,
           pickImages: pickImageFiles,
         }),
       );

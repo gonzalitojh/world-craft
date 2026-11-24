@@ -20,6 +20,8 @@ export interface TextFieldProps {
   readonly placeholder?: string;
   readonly autoComplete?: string;
   readonly autoFocus?: boolean;
+  /** Recibe el foco cuando se abre un diálogo, sin depender del orden del DOM. */
+  readonly autoFocusOnOpen?: boolean;
   readonly maxLength?: number;
   readonly value?: string;
   readonly defaultValue?: string;
@@ -48,6 +50,7 @@ export function TextField({
   placeholder,
   autoComplete,
   autoFocus = false,
+  autoFocusOnOpen = false,
   maxLength,
   value,
   defaultValue,
@@ -94,7 +97,7 @@ export function TextField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         autoFocus={autoFocus}
-        data-autofocus={autoFocus ? 'true' : undefined}
+        data-autofocus={autoFocus || autoFocusOnOpen ? 'true' : undefined}
         maxLength={maxLength}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy.length > 0 ? describedBy : undefined}

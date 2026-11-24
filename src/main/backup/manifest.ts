@@ -1,10 +1,12 @@
 /**
  * Manifiesto de una copia de seguridad.
  *
- * El formato v2 cubre todas las copias (automáticas, pre-migración y
- * pre-restauración) e incluye el motivo, el estado de integridad conocido y la
- * marca de que los assets no van dentro. El lector acepta también el v1 creado
- * por M0-04 para no invalidar copias pre-migración ya existentes.
+ * El formato v2 cubre todas las copias (automáticas, pre-migración,
+ * pre-restauración y pre-purga) e incluye el motivo, el estado de integridad
+ * conocido y la marca de que los assets no van dentro. El lector acepta también
+ * el v1 creado por M0-04 para no invalidar copias pre-migración ya existentes.
+ * Añadir `pre-purge` al enum mantiene el formato v2: los manifiestos anteriores
+ * no contienen ese valor y el lector actual sigue aceptándolos.
  *
  * Los errores nunca incluyen rutas ni el contenido del manifiesto.
  */
@@ -30,6 +32,7 @@ export const BACKUP_REASONS = [
   'monthly',
   'pre-migration',
   'pre-restore',
+  'pre-purge',
 ] as const;
 
 export type BackupReason = (typeof BACKUP_REASONS)[number];

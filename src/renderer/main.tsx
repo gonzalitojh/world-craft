@@ -18,6 +18,8 @@ import './styles/tokens/scales.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/relations.css';
+import './styles/trash.css';
+import './styles/versions.css';
 
 /** Margen máximo para leer las preferencias antes del primer render. */
 const BOOTSTRAP_TIMEOUT_MS = 1500;

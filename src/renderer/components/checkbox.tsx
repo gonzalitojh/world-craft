@@ -14,6 +14,8 @@ export interface CheckboxProps {
   readonly value?: string;
   readonly id?: string;
   readonly className?: string;
+  /** Recibe el foco cuando se abre un diálogo. */
+  readonly autoFocusOnOpen?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export function Checkbox({
   value,
   id,
   className,
+  autoFocusOnOpen = false,
 }: CheckboxProps) {
   const generatedId = useId();
   const fieldId = id ?? `wc-checkbox-${generatedId}`;
@@ -64,6 +67,7 @@ export function Checkbox({
           value={value}
           type="checkbox"
           className="wc-checkbox__input"
+          data-autofocus={autoFocusOnOpen ? true : undefined}
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy.length > 0 ? describedBy : undefined}

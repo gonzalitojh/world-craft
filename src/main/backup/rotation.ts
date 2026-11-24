@@ -2,7 +2,8 @@
  * Rotación de copias automáticas y pre-migración.
  *
  * Reglas aprobadas en M0-07: 7 diarias, 4 semanales, 12 mensuales y 5
- * pre-migración. Las copias pre-restauración no se podan nunca.
+ * pre-migración. La issue #77 añade 10 copias `pre-purge` válidas (D3). Las
+ * copias pre-restauración no se podan nunca.
  *
  * Guardas de seguridad:
  * - las copias corruptas no cuentan ni se borran;
@@ -26,6 +27,8 @@ export interface BackupRetention {
   readonly weekly: number;
   readonly monthly: number;
   readonly preMigration: number;
+  /** Copias válidas de `pre-purge` conservadas (D3); por defecto 10. */
+  readonly prePurge?: number;
 }
 
 export const DEFAULT_BACKUP_RETENTION: BackupRetention = {
@@ -33,6 +36,7 @@ export const DEFAULT_BACKUP_RETENTION: BackupRetention = {
   weekly: 4,
   monthly: 12,
   preMigration: 5,
+  prePurge: 10,
 };
 
 /** Carpetas de los motivos que se podan. */
@@ -41,6 +45,8 @@ export interface RotationDirectories {
   readonly weekly: string;
   readonly monthly: string;
   readonly preMigration: string;
+  /** Si se indica, se podan también las copias previas a una purga. */
+  readonly prePurge?: string;
 }
 
 export interface RotationResult {
@@ -131,13 +137,27 @@ export async function rotateBackups(
     },
   ] as const;
 
+  const allBuckets: Array<{
+    readonly key: (typeof buckets)[number]['key'] | 'prePurge';
+    readonly directory: string;
+    readonly keep: number;
+  }> = [...buckets];
+
+  if (options.directories.prePurge !== undefined) {
+    allBuckets.push({
+      key: 'prePurge',
+      directory: options.directories.prePurge,
+      keep: retention.prePurge ?? 10,
+    });
+  }
+
   const validByBucket = new Map<
-    (typeof buckets)[number]['key'],
+    (typeof allBuckets)[number]['key'],
     ValidBackupEntry[]
   >();
   let corrupt = 0;
 
-  for (const bucket of buckets) {
+  for (const bucket of allBuckets) {
     let entries;
 
     try {
@@ -166,7 +186,7 @@ export async function rotateBackups(
   let skipped = 0;
   let failed = 0;
 
-  for (const bucket of buckets) {
+  for (const bucket of allBuckets) {
     const valid = validByBucket.get(bucket.key) ?? [];
     const newestInBucket = valid[0];
 

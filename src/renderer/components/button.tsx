@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 
 import { cx } from '../lib/class-names';
 
@@ -10,6 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly size?: ButtonSize;
   /** Muestra el indicador de progreso y bloquea el botón. */
   readonly loading?: boolean;
+  readonly ref?: Ref<HTMLButtonElement>;
 }
 
 /**
@@ -27,11 +28,13 @@ export function Button({
   disabled = false,
   className,
   children,
+  ref,
   ...rest
 }: ButtonProps) {
   return (
     <button
       {...rest}
+      ref={ref}
       type={type}
       className={cx(
         'wc-button',

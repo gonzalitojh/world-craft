@@ -1,25 +1,27 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 24/11/2026 con el cierre de M1.5. El modo seguro, la
+> 24/11/2026 con M1-06 (#77). El modo seguro, la
 > comprobación de integridad y la copia pre-migración se implementaron en M0-04
 > (#64); las copias automáticas con retención y la restauración desde el diálogo
 > de modo seguro, en M0-07 (#67); el instalador por usuario, la actualización
 > manual y la preservación en instalación, actualización y desinstalación, en
 > M0-08 (#68); el borrado lógico de mundos con su actividad, en M1-01 (#72); los
 > tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
-> autoguardado, imágenes, etiquetas y favoritos, en M1-03 (#74); y las relaciones
-> tipadas con backlinks, en M1-04 (#75). La dirección visual v2 llegó con
-> M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con la auditoría
-> visual de todas las pantallas en ambos temas y tres anchos, sin cambios de
-> datos ni de copias. Quedan previstos los mapas y el grafo (M2, #83), la
-> escritura (M3), los ajustes y la papelera visible (#79, #77), los avisos en la
-> top layer de los diálogos modales (#144), el módulo actual no
-> interactivo de la página de mundo (#93) y la release pública con actualización
-> real contra GitHub Releases (M5).
+> autoguardado, imágenes, etiquetas y favoritos, en M1-03 (#74); las relaciones
+> tipadas con backlinks, en M1-04 (#75); y la papelera, la purga con copia
+> `pre-purge` y el historial de versiones, en M1-06 (#77). La dirección visual v2
+> llegó con M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con la
+> auditoría visual de todas las pantallas en ambos temas y tres anchos, sin
+> cambios de datos ni de copias. Quedan previstos los mapas y el grafo (M2, #83),
+> la escritura (M3), los ajustes (#79), la FK de assets y la cuarentena de
+> huérfanos (#116), los avisos en la top layer de los diálogos modales (#144), el
+> módulo actual no interactivo de la página de mundo (#93) y la release pública
+> con actualización real contra GitHub Releases (M5).
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
-> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020 y ADR 0021.
+> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020, ADR 0021 y
+> ADR 0028.
 > La
 > estructura de datos está en [`persistencia.md`](persistencia.md).
 
@@ -45,8 +47,8 @@ quiere, en una unidad externa.
 | Desinstalación | Desinstalador | Conserva `userData` y avisa en modo interactivo (M0-08) | Todos |
 | Segunda instancia | Lock de instancia única | El proceso nuevo sale y la instancia existente enfoca su ventana (M0-08) | Todos |
 | Sin conexión al actualizar | Comprobación manual | Error controlado; la app sigue funcionando con la versión instalada (M0-08) | Todos |
-| Borrado accidental de un mundo | Borrado lógico con confirmación | La fila conserva `deleted_at` y desaparece de las vistas; la restauración visible llega con la papelera (M1-01, #72; M1-06, #77) | Mundo y assets |
-| Borrado definitivo | Confirmación | Copia recuperable previa (previsto) | Copia |
+| Borrado accidental de un mundo | Borrado lógico con confirmación | La fila conserva `deleted_at` y desaparece de las vistas; se restaura desde la Papelera (M1-01, #72; M1-06, #77) | Mundo y assets |
+| Borrado definitivo | Confirmación en la Papelera | Copia `pre-purge` verificable antes de borrar; si falla, no se borra (M1-06, #77) | Copia previa; los assets no se borran |
 | Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
 | Archivo de asset perdido | Al abrir | El protocolo devuelve 404 y lo registra; aviso y placeholder en M1 (M0-06) | Metadatos |
 | Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar (M0-04) | Todos |
@@ -216,23 +218,37 @@ cerrar la app y borrar ese archivo a mano; no es un archivo con datos.
 
 - Borrar una entidad, mapa, manuscrito o escena la mueve a papelera
   (`deleted_at`).
-- Restaurar la devuelve a su sitio; si su padre ya no existe, se ofrece
-  reubicarla.
-- Vaciar la papelera exige confirmación, crea una copia y purga los registros y
-  assets no referenciados.
-- Borrar un mundo mueve su carpeta de assets a cuarentena y conserva una copia
-  de la base; la purga definitiva es una acción separada.
+- Restaurar la devuelve a su sitio; si su mundo está en papelera, hay que
+  restaurar el mundo primero, y si su tipo personalizado ya no existe, se avisa
+  con `type-unavailable`.
+- Vaciar la papelera exige confirmación, crea una copia verificable de la base y
+  purga los registros en orden. Los assets y sus archivos no se borran.
+- La cuarentena de la carpeta de assets de un mundo borrado y la clave foránea
+  `assets.world_id` llegan con #116; hasta entonces, purgar un mundo deja sus
+  filas y archivos huérfanos a propósito.
+
+**Implementado en M1-06 (#77):** la **Papelera** es una vista global del rail con
+tres grupos (mundos, fichas y tipos personalizados), listado por cursor,
+restauración a su mundo y tipo originales y motivos de dominio explícitos
+(`not-found`, `already-restored`, `world-in-trash`, `type-unavailable`). Eliminar
+definitivamente exige confirmación y crea antes una copia verificable en
+`backups/pre-purge` (manifiesto v2, motivo `pre-purge`, retención de 10 válidas);
+si la copia falla, no se borra nada. El borrado es una transacción en orden
+explícito —`activity_log` primero al purgar un mundo— y el vaciado usa una sola
+copia y devuelve contadores. Las versiones de la descripción de una ficha se
+conservan al moverla a papelera y se borran en cascada al purgarla; la copia
+previa es la única red para recuperar lo purgado (ADR 0028).
 
 **Implementado en M1-01 (#72):** borrar un mundo es un borrado lógico con
 `deleted_at`; deja de aparecer en Inicio, Mundos y la actividad, y la fila se
-conserva. La pantalla de papelera, la restauración y la purga con copia llegan
-con M1-06 (#77); hasta entonces, las copias de seguridad son la vía de
+conserva. La pantalla de papelera, la restauración y la purga con copia llegaron
+con M1-06 (#77); antes de esa entrega, las copias de seguridad eran la vía de
 recuperación documentada. Archivar es reversible desde la propia lista y no
 borra nada.
 
 **Implementado en M1-02 (#73):** los tipos personalizados pertenecen al mundo y
 se copian al duplicarlo. Borrar un tipo es un borrado lógico con `deleted_at`:
-la fila se conserva, la clave queda reservada y la papelera visible llegará con
+la fila se conserva, la clave queda reservada y la papelera visible llegó con
 #77. El borrado lógico de un mundo no toca sus tipos; la purga definitiva los
 eliminará en cascada con el mundo. Los 18 tipos del sistema no se borran ni se
 editan: para ajustar una plantilla se duplica el tipo en el mundo. El formato de
@@ -241,7 +257,7 @@ exportación completa del mundo en #78.
 
 **Implementado en M1-03 (#74):** las fichas se guardan en `entities` y usan
 borrado lógico con `deleted_at`; sus etiquetas y su galería se conservan al
-mover la ficha a la papelera y la restauración visible llega con #77. La imagen
+mover la ficha a la papelera y la restauración visible llegó con #77. La imagen
 principal y la galería referencian filas de `assets` del mismo mundo y nunca
 copian archivos. El autoguardado envía una actualización completa tras 700 ms
 sin cambios y también se puede forzar; al desmontar la vista se intenta un
@@ -254,10 +270,18 @@ prueba de preservación migra una base en `0003` con un tipo personalizado.
 origen, destino y tipo resueltos por ID y sin duplicar filas. Las aristas que
 apuntan a una ficha en la papelera se ocultan de las listas, pero no se borran,
 para que una restauración futura las recupere; la decisión de limpiarlas o
-avisar llega con #77. Los tipos de relación personalizados se aíslan por mundo y
+avisar se resolvió en #77. Los tipos de relación personalizados se aíslan por mundo y
 no se pueden borrar mientras tengan aristas. La migración `0005_relations` es
 aditiva, conserva mundos, tipos, fichas y assets, y su prueba de preservación
 migra una base en `0004` con un mundo, un tipo y una ficha.
+
+**Nota de revisión (2026-11-24, #77):** las esperas de M1-01 a M1-04 quedan
+cerradas. La papelera visible, la restauración, la purga con copia y el historial
+de versiones están implementados (párrafo anterior). Restaurar una ficha exige el
+mundo vivo y un tipo disponible; las aristas hacia fichas en papelera se ocultan
+y solo desaparecen al purgar la ficha. Los tipos personalizados en uso no se
+purgan. Los assets no se borran en ninguna purga: su cuarentena y la FK
+`assets.world_id` son de #116.
 
 **Implementado en M1.5-04 (#127):** Inicio y las tarjetas de mundo son solo
 renderer y estilos; no cambian datos, migraciones, copias ni persistencia. El
@@ -401,3 +425,4 @@ del desarrollador. Las de integración usan `os.tmpdir()`.
 - [ADR 0012](adr/0012-backup-restore-recovery.md)
 - [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0018](adr/0018-nsis-packaging-and-update-service.md)
+- [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)

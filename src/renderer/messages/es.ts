@@ -26,6 +26,7 @@ export const es = {
       world: 'Mundo',
       entities: 'Fichas',
       entity: 'Ficha',
+      trash: 'Papelera',
       samples: 'Muestras',
     },
     collapse: 'Plegar menú lateral',
@@ -223,7 +224,7 @@ export const es = {
       restoreSubmit: 'Restaurar',
       deleteTitle: (name: string): string => `Eliminar «${name}»`,
       deleteBody:
-        'El mundo se moverá a la papelera y dejará de aparecer en Inicio y Mundos. Podrás recuperarlo desde la papelera cuando esté disponible.',
+        'El mundo se moverá a la papelera y dejará de aparecer en Inicio y Mundos. Podrás recuperarlo desde la Papelera.',
       deleteSubmit: 'Mover a la papelera',
       cancel: 'Cancelar',
     },
@@ -253,6 +254,116 @@ export const es = {
         duplicated: 'Mundo duplicado',
         deleted: 'Mundo movido a la papelera',
       },
+    },
+  },
+  trash: {
+    lead: 'Aquí aparecen los mundos, las fichas y los tipos personalizados que has borrado. Puedes restaurarlos a su mundo y tipo originales o eliminarlos definitivamente con una copia de seguridad previa.',
+    loading: 'Cargando la papelera…',
+    errorTitle: 'No se pudo cargar la papelera',
+    errorDescription:
+      'La aplicación no pudo leer los elementos borrados. Vuelve a intentarlo; tus datos siguen guardados en este equipo.',
+    retry: 'Volver a intentar',
+    emptyAction: 'Vaciar la papelera',
+    loadMore: 'Cargar más',
+    loadedMore: {
+      one: 'Se ha añadido {count} elemento.',
+      other: 'Se han añadido {count} elementos.',
+    },
+    groups: {
+      worlds: {
+        title: 'Mundos',
+        empty: 'No hay mundos en la papelera.',
+        loadError: 'No se pudieron cargar los mundos de la papelera.',
+      },
+      entities: {
+        title: 'Fichas',
+        empty: 'No hay fichas en la papelera.',
+        loadError: 'No se pudieron cargar las fichas de la papelera.',
+      },
+      entityTypes: {
+        title: 'Tipos personalizados',
+        empty: 'No hay tipos personalizados en la papelera.',
+        loadError:
+          'No se pudieron cargar los tipos personalizados de la papelera.',
+      },
+    },
+    empty: {
+      title: 'La papelera está vacía',
+      description:
+        'Los mundos, las fichas y los tipos personalizados que borres aparecerán aquí para poder recuperarlos.',
+    },
+    row: {
+      restore: 'Restaurar',
+      restoreNamed: (name: string): string => `Restaurar «${name}»`,
+      purge: 'Eliminar definitivamente',
+      purgeNamed: (name: string): string =>
+        `Eliminar definitivamente «${name}»`,
+      entityOrigin: (world: string, type: string): string =>
+        `${world} · ${type}`,
+      typeOrigin: (world: string): string => `Mundo: ${world}`,
+      deletedAt: (date: string): string => `Eliminado el ${date}`,
+      worldInTrash: 'Mundo en la papelera',
+      worldInTrashNotice: (world: string): string =>
+        `Restaura primero el mundo «${world}» para poder recuperar este elemento.`,
+      restored: (name: string): string => `Se ha restaurado «${name}».`,
+      restoreTypeUnavailable:
+        'No se puede restaurar la ficha porque su tipo ya no está disponible. Restaura primero el tipo personalizado o cambia la ficha de tipo.',
+      purged: (name: string): string =>
+        `Se ha eliminado definitivamente «${name}».`,
+      listUpdated: 'La lista se ha actualizado.',
+      restoreError: 'No se pudo restaurar el elemento. Inténtalo de nuevo.',
+      purgeError: 'No se pudo eliminar el elemento. Inténtalo de nuevo.',
+    },
+    purgeDialog: {
+      title: (name: string): string => `Eliminar «${name}» definitivamente`,
+      bodyWorld:
+        'Se eliminará este mundo y todo su contenido: fichas, tipos, etiquetas, relaciones e historial.',
+      bodyEntity:
+        'Se eliminará esta ficha junto con sus relaciones e historial de versiones.',
+      bodyEntityType:
+        'Se eliminará este tipo personalizado si ya no tiene fichas asociadas.',
+      copyNote:
+        'Antes de borrar, World Craft creará una copia de seguridad recuperable de la base de datos. Si la copia falla, no se borrará nada.',
+      assetsNote: 'Las imágenes y los archivos del equipo no se borran.',
+      irreversible: 'Esta acción no se puede deshacer desde la papelera.',
+      pending: 'Creando la copia de seguridad y eliminando…',
+      cancel: 'Cancelar',
+      submit: 'Eliminar definitivamente',
+      backupFailed:
+        'No se ha borrado nada porque no se pudo crear la copia de seguridad. Revisa el espacio libre del disco e inténtalo de nuevo.',
+      typeInUse:
+        'Todavía quedan fichas asociadas a este tipo. Elimina o cambia esas fichas antes de purgarlo.',
+      missing:
+        'El elemento ya no está en la papelera. La lista se actualizará.',
+      error: 'No se pudo eliminar el elemento. La lista se actualizará.',
+    },
+    emptyDialog: {
+      title: 'Vaciar la papelera',
+      lead: 'Se eliminará definitivamente todo el contenido de la papelera.',
+      checkbox:
+        'Entiendo que se eliminará definitivamente todo el contenido de la papelera',
+      copyNote:
+        'Antes de borrar, World Craft creará una copia de seguridad recuperable de la base de datos. Si la copia falla, no se borrará nada.',
+      assetsNote: 'Las imágenes y los archivos del equipo no se borran.',
+      irreversible: 'Esta acción no se puede deshacer desde la papelera.',
+      cancel: 'Cancelar',
+      submit: 'Vaciar la papelera',
+      pending: 'Creando la copia de seguridad y vaciando…',
+      backupFailed:
+        'No se ha borrado nada porque no se pudo crear la copia de seguridad. Revisa el espacio libre del disco e inténtalo de nuevo.',
+      alreadyEmpty: 'La papelera ya estaba vacía.',
+      summaryTitle: 'Papelera vaciada',
+      summaryLead:
+        'Se ha eliminado definitivamente el contenido de la papelera.',
+      worlds: { one: '{count} mundo', other: '{count} mundos' },
+      entities: { one: '{count} ficha', other: '{count} fichas' },
+      entityTypes: { one: '{count} tipo', other: '{count} tipos' },
+      skipped: {
+        one: 'Se conservó {count} tipo porque todavía tiene fichas.',
+        other: 'Se conservaron {count} tipos porque todavía tienen fichas.',
+      },
+      close: 'Cerrar',
+      error: 'No se pudo vaciar la papelera. La lista se actualizará.',
     },
   },
   entities: {
@@ -418,7 +529,7 @@ export const es = {
       delete: 'Mover a la papelera',
       deleteTitle: (name: string): string => `¿Mover «${name}» a la papelera?`,
       deleteBody:
-        'La ficha dejará de aparecer en la lista. La papelera visible y la restauración llegan con la siguiente entrega.',
+        'La ficha dejará de aparecer en la lista y se moverá a la papelera. Podrás recuperarla desde la Papelera.',
       deleteSubmit: 'Mover a la papelera',
       deleted: (name: string): string => `Ficha ${name} movida a la papelera.`,
       save: 'Guardar ahora',
@@ -431,6 +542,59 @@ export const es = {
       imageError: 'No se pudieron importar las imágenes.',
       noImages:
         'Todavía no hay imágenes en este mundo. Añade una para empezar.',
+    },
+    history: {
+      title: 'Historial',
+      count: {
+        one: '{count} versión',
+        other: '{count} versiones',
+      },
+      save: 'Guardar versión',
+      loading: 'Cargando el historial…',
+      loadError: 'No se pudo cargar el historial de la descripción.',
+      retry: 'Volver a intentar',
+      empty: 'Todavía no hay versiones guardadas.',
+      emptyDescription: 'Escribe una descripción para poder guardar versiones.',
+      manualLimit:
+        'Has alcanzado el límite de 50 versiones manuales. Conserva este historial antes de guardar otra.',
+      origins: {
+        auto: 'Automática',
+        manual: 'Manual',
+        restore: 'Antes de restaurar',
+      },
+      previewEmpty: 'Descripción vacía.',
+      restore: 'Restaurar',
+      restoreNamed: (label: string | null, date: string): string =>
+        label === null
+          ? `Restaurar la versión del ${date}`
+          : `Restaurar la versión «${label}» del ${date}`,
+      retention:
+        'Las versiones automáticas se conservan 90 días y hasta 20 por ficha. Las manuales y las de «Antes de restaurar» no caducan; puedes guardar hasta 50 manuales.',
+      saveDialog: {
+        title: 'Guardar versión',
+        lead: 'Ponle un nombre a este punto del historial para reconocerlo después.',
+        label: 'Etiqueta de la versión',
+        hint: 'Entre 1 y 120 caracteres.',
+        required: 'Escribe una etiqueta para la versión.',
+        submit: 'Guardar versión',
+        cancel: 'Cancelar',
+        error: 'No se pudo guardar la versión. Inténtalo de nuevo.',
+        limit:
+          'Has alcanzado el límite de 50 versiones manuales. No se ha guardado ninguna versión nueva.',
+        success: 'Versión guardada.',
+      },
+      restoreDialog: {
+        title: (date: string): string => `Restaurar la versión del ${date}`,
+        lead: 'La descripción actual se guardará como una versión «Antes de restaurar», de modo que la restauración no destruya nada.',
+        previewLabel: 'Vista previa de la versión',
+        submit: 'Restaurar versión',
+        cancel: 'Cancelar',
+        success: 'Se ha restaurado la versión de la descripción.',
+        unchanged: 'La descripción ya coincide con esta versión.',
+        missing:
+          'La versión o la ficha ya no están disponibles. Se actualizará el historial.',
+        error: 'No se pudo restaurar la versión. Inténtalo de nuevo.',
+      },
     },
     attributes: {
       required: 'Obligatorio',
@@ -912,7 +1076,7 @@ export const es = {
       sectionTitle: 'Diálogo',
       open: 'Abrir diálogo de ejemplo',
       title: 'Mover la ficha Aldo Varela a la papelera',
-      body: 'La ficha se moverá a la papelera y podrás restaurarla durante treinta días. Las relaciones con otras fichas se conservarán.',
+      body: 'La ficha se moverá a la papelera y podrás recuperarla desde allí. Las relaciones con otras fichas se conservarán.',
       iconLabel: 'Copiar el identificador de la ficha',
       iconTooltip:
         'Copia el identificador interno completo de la ficha para pegarlo en otro lugar.',
