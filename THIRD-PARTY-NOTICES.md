@@ -40,7 +40,7 @@ indicados arriba.
 ### Textos incluidos en el instalador
 
 `pnpm licenses:sync` copia a `resources/licenses/` y el empaquetado publica en
-`licenses/` junto al ejecutable estos **7 textos completos**:
+`licenses/` junto al ejecutable estos **11 textos completos**:
 
 - `sharp-LICENSE.txt` — Apache-2.0 de sharp.
 - `img-sharp-win32-LICENSE.txt` — Apache-2.0 del paquete de plataforma de sharp;
@@ -50,8 +50,26 @@ indicados arriba.
 - `electron-updater-LICENSE.txt` — MIT de electron-updater.
 - `tiptap-LICENSE.txt` — MIT de Tiptap y ProseMirror.
 - `source-serif-4-OFL.txt` — SIL Open Font License 1.1 de Source Serif 4.
+- `yauzl-LICENSE.txt` — MIT de yauzl.
+- `yazl-LICENSE.txt` — MIT de yazl.
+- `pend-LICENSE.txt` — MIT de pend (dependencia de yauzl).
+- `buffer-crc32-LICENSE.txt` — MIT de buffer-crc32 (dependencia de yazl).
 
 `pnpm verify:package` comprueba que los textos existen en el paquete.
+
+## Transferencia: yauzl y yazl
+
+| Componente | Versión | Licencia | Origen |
+|---|---|---|---|
+| `yauzl` | 3.4.0 | MIT | https://github.com/thejoshwolfe/yauzl |
+| `pend` | 1.2.0 | MIT | https://github.com/andrewrk/node-pend |
+| `yazl` | 3.3.1 | MIT | https://github.com/thejoshwolfe/yazl |
+| `buffer-crc32` | 1.0.0 | MIT | https://github.com/brianloveswords/buffer-crc32 |
+
+yauzl y yazl se usan para leer y escribir el ZIP de exportación de mundos.
+Se cargan desde `node_modules` (externalizados del bundle) y sus textos
+completos viajan en `licenses/`. No se usan servicios de compresión externos ni
+dependencias de pago.
 
 ## Fuente: Source Serif 4
 
@@ -110,5 +128,5 @@ desarrollo no se distribuyen con la aplicación.
 Este archivo se actualiza cuando cambia una dependencia de ejecución, cuando se
 actualiza sharp o libvips, cuando cambia la fuente empaquetada o cuando se
 incorpora un binario nuevo al instalador. El empaquetado incluye este archivo y
-los 7 textos de `resources/licenses/` junto a la aplicación; los cambios de
+los 11 textos de `resources/licenses/` junto a la aplicación; los cambios de
 versión deben reflejarse en ambos sitios en la misma tarea.

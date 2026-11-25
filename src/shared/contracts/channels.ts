@@ -61,6 +61,9 @@ export const IPC_CHANNELS = {
   versionsRestore: 'versions:restore',
   assetsList: 'assets:list',
   assetsImport: 'assets:import',
+  transferExportWorld: 'transfer:exportWorld',
+  transferImportWorld: 'transfer:importWorld',
+  transferCancel: 'transfer:cancel',
 } as const;
 
 /** Unión de todos los canales admitidos. */

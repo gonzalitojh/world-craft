@@ -18,13 +18,17 @@ describe('licencias empaquetadas', () => {
     const files = (await readdir(LICENSES_DIR)).sort();
 
     expect(files).toEqual([
+      'buffer-crc32-LICENSE.txt',
       'electron-updater-LICENSE.txt',
       'gpl-3.0.txt',
       'img-sharp-win32-LICENSE.txt',
       'libvips-LICENSE.txt',
+      'pend-LICENSE.txt',
       'sharp-LICENSE.txt',
       'source-serif-4-OFL.txt',
       'tiptap-LICENSE.txt',
+      'yauzl-LICENSE.txt',
+      'yazl-LICENSE.txt',
     ]);
 
     for (const file of files) {
@@ -55,6 +59,15 @@ describe('licencias empaquetadas', () => {
     expect(
       await readFile(join(LICENSES_DIR, 'tiptap-LICENSE.txt'), 'utf8'),
     ).toContain('MIT License');
+
+    for (const file of [
+      'yauzl-LICENSE.txt',
+      'yazl-LICENSE.txt',
+      'pend-LICENSE.txt',
+      'buffer-crc32-LICENSE.txt',
+    ]) {
+      expect(await readFile(join(LICENSES_DIR, file), 'utf8')).toContain('MIT');
+    }
   });
 
   it('incluye el texto OFL de Source Serif 4 idéntico al activo', async () => {

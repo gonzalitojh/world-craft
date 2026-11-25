@@ -25,7 +25,8 @@ import { entityFieldTemplateSchema } from '../../shared/entity-types/fields';
 /** Límite de tipos en una transferencia para no aceptar archivos abusivos. */
 export const ENTITY_TYPE_TRANSFER_MAX = 500;
 
-const transferEntrySchema = z
+/** Entrada de un tipo personalizado; se reutiliza en el formato del mundo. */
+export const entityTypeTransferEntrySchema = z
   .strictObject({
     key: z
       .string()
@@ -47,7 +48,7 @@ export const entityTypeTransferSchema = z
   .strictObject({
     version: z.literal(ENTITY_TYPE_TRANSFER_VERSION),
     types: z
-      .array(transferEntrySchema)
+      .array(entityTypeTransferEntrySchema)
       .max(ENTITY_TYPE_TRANSFER_MAX)
       .refine(
         (types) => new Set(types.map((type) => type.key)).size === types.length,

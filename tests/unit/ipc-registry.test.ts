@@ -8,6 +8,7 @@ import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
+import { createUnavailableTransferCoordinator } from '@/main/transfer/unavailable-coordinator';
 import {
   createIpcRouter,
   defineIpcHandler,
@@ -36,6 +37,7 @@ const createHandlers = () =>
     assets: createUnavailableAssetsService(),
     trash: createUnavailableTrashService(),
     versions: createUnavailableVersionsService(),
+    transfer: createUnavailableTransferCoordinator(),
     pickImages: async () => [],
   });
 
@@ -121,7 +123,7 @@ describe('createIpcRouter', () => {
         schema: z.strictObject({ url: z.string() }),
         handle: () => {
           throw new Error(
-            'fallo en C:\\Users\\usuario\\datos.db con clave abc1234',
+            'fallo en C:\\datos\\usuario\\datos.db con clave abc1234',
           );
         },
       }),
@@ -221,6 +223,29 @@ describe('createIpcHandlers', () => {
     ).resolves.toEqual({ ok: false, error: { code: 'INVALID_INPUT' } });
   });
 
+  it('atiende transferencia y devuelve dominio en modo seguro', async () => {
+    const route = createIpcRouter(createHandlers());
+    const worldId = '018f1000-0000-7000-8000-000000000001';
+
+    await expect(
+      route(IPC_CHANNELS.transferExportWorld, { worldId }),
+    ).resolves.toEqual({
+      ok: true,
+      data: { status: 'failed', code: 'TRANSFER_UNAVAILABLE' },
+    });
+    await expect(route(IPC_CHANNELS.transferImportWorld, {})).resolves.toEqual({
+      ok: true,
+      data: { status: 'failed', code: 'TRANSFER_UNAVAILABLE' },
+    });
+    await expect(route(IPC_CHANNELS.transferCancel, {})).resolves.toEqual({
+      ok: true,
+      data: { cancelled: false },
+    });
+    await expect(
+      route(IPC_CHANNELS.transferExportWorld, { worldId: 'no-uuid' }),
+    ).resolves.toEqual({ ok: false, error: { code: 'INVALID_INPUT' } });
+  });
+
   it('atiende las órdenes de actualizaciones con un objeto vacío estricto', async () => {
     const route = createIpcRouter(createHandlers());
 
@@ -278,6 +303,7 @@ describe('registerIpcHandlers', () => {
         assets: createUnavailableAssetsService(),
         trash: createUnavailableTrashService(),
         versions: createUnavailableVersionsService(),
+        transfer: createUnavailableTransferCoordinator(),
         pickImages: async () => [],
       }),
     );

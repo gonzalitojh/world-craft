@@ -21,6 +21,18 @@ export const STARTUP_LOG_FILE_NAME = 'startup.log';
 /** Nombre del log JSONL del servicio de assets. */
 export const ASSETS_LOG_FILE_NAME = 'assets.log';
 
+/** Nombre del log JSONL de exportación e importación. */
+export const TRANSFER_LOG_FILE_NAME = 'transfer.log';
+
+/** Carpeta de preparación de importaciones. */
+export const IMPORTS_DIR_NAME = 'imports';
+
+/** Carpeta de escrituras temporales de exportación e importación. */
+export const TRANSFER_TEMP_DIR_NAME = '.tmp';
+
+/** Carpeta de escrituras temporales de exportación. */
+export const EXPORTS_DIR_NAME = 'exports';
+
 /** Carpeta de assets con rutas relativas a ella. */
 export const ASSETS_DIR_NAME = 'assets';
 
@@ -52,6 +64,11 @@ export interface DataPaths {
   readonly assetsTempDir: string;
   readonly assetsLogFile: string;
   readonly orphanBackupsDir: string;
+  readonly importsDir: string;
+  readonly importsTempDir: string;
+  readonly exportsDir: string;
+  readonly exportsTempDir: string;
+  readonly transferLogFile: string;
 }
 
 /** Calcula y valida todas las rutas de datos a partir de `userData`. */
@@ -79,9 +96,14 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const assetsWorldsDir = resolve(assetsDir, ASSETS_WORLDS_DIR_NAME);
   const assetsTempDir = resolve(assetsDir, ASSETS_TEMP_DIR_NAME);
   const orphanBackupsDir = resolve(backupsDir, ORPHAN_BACKUPS_DIR_NAME);
+  const importsDir = resolve(root, IMPORTS_DIR_NAME);
+  const importsTempDir = resolve(importsDir, TRANSFER_TEMP_DIR_NAME);
+  const exportsDir = resolve(root, EXPORTS_DIR_NAME);
+  const exportsTempDir = resolve(exportsDir, TRANSFER_TEMP_DIR_NAME);
   const databaseFile = resolve(dataDir, DATABASE_FILE_NAME);
   const startupLogFile = resolve(logsDir, STARTUP_LOG_FILE_NAME);
   const assetsLogFile = resolve(logsDir, ASSETS_LOG_FILE_NAME);
+  const transferLogFile = resolve(logsDir, TRANSFER_LOG_FILE_NAME);
 
   for (const candidate of [
     dataDir,
@@ -97,9 +119,14 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     assetsWorldsDir,
     assetsTempDir,
     orphanBackupsDir,
+    importsDir,
+    importsTempDir,
+    exportsDir,
+    exportsTempDir,
     databaseFile,
     startupLogFile,
     assetsLogFile,
+    transferLogFile,
   ]) {
     assertInside(root, candidate);
   }
@@ -122,6 +149,11 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     assetsTempDir,
     assetsLogFile,
     orphanBackupsDir,
+    importsDir,
+    importsTempDir,
+    exportsDir,
+    exportsTempDir,
+    transferLogFile,
   };
 }
 
@@ -153,11 +185,16 @@ export function ensureDataDirectories(paths: DataPaths): void {
     paths.preRestoreBackupsDir,
     paths.prePurgeBackupsDir,
     paths.orphanBackupsDir,
+    paths.importsDir,
+    paths.importsTempDir,
+    paths.exportsDir,
+    paths.exportsTempDir,
   ]) {
     try {
       mkdirSync(directory, { recursive: true });
     } catch {
-      // Best-effort: la copia o la purga crearán su carpeta cuando puedan.
+      // Best-effort: la copia, la purga o la transferencia crearán su carpeta
+      // cuando puedan; una carpeta ocupada no impide arrancar.
     }
   }
 }

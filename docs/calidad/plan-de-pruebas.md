@@ -10,7 +10,8 @@
 > etiquetas inversas y API del grafo), ADR 0023 (búsqueda global y paleta de
 > comandos), ADR 0025 (dirección visual v2), ADR 0026 (editor mínimo y menciones),
 > ADR 0027 (preferencias de interfaz persistentes) y ADR 0028 (papelera,
-> versiones y copia previa a la purga).
+> versiones y copia previa a la purga), y ADR 0029 (exportación e importación
+> de mundos).
 
 ## 1. Principios
 
@@ -99,7 +100,8 @@ renderer, la CSP, la navegación, los permisos y la red.
 - El renderer no accede a `require`, `process`, `fs` ni `ipcRenderer`.
 - El protocolo de assets rechaza rutas fuera de `assets/` (implementado, #66;
   detalle en 3.8).
-- La importación rechaza ZIP con `..`, rutas absolutas y enlaces (previsto).
+- La importación rechaza ZIP con `..`, rutas absolutas y enlaces (implementado,
+  #78; detalle en 3.20).
 - CSP y navegación externa bloqueada.
 - No hay secretos ni rutas absolutas en logs; el log de arranque es JSONL
   tipado y no incluye SQL, filas ni contenido.
@@ -785,6 +787,61 @@ igual que la aplicación. El recuento vigente tras #132 está en §3.18.
   componentes, 158 de integración (1 omitida), build y `verify:build` en verde;
   E2E de papelera y auditoría visual 9/9.
 
+### 3.20 Exportación e importación de mundos (implementado, #78)
+
+- **Unitarias (15 archivos en `tests/unit/transfer/`).** Contratos y guardas;
+  política cerrada de rutas (mayúsculas, `..`, absolutas, UNC, ADS, nombres
+  reservados y UUIDv7); esquema del manifiesto y de `world.json`; recuentos,
+  avisos y `verifyManifestFileSet`; remapeo de enlaces, referencias, galería,
+  portada e imagen principal; plan de importación, IDs y slug; lector y escritor
+  ZIP con límites y cancelación; protocolo principal-worker; coordinador con
+  `utilityProcess` simulado; diálogos nativos y saneado del nombre; esquemas y
+  handlers IPC; API del preload; y reducer del diálogo.
+- **Integración (3 archivos en `tests/integration/transfer/`).**
+  - **Exportación:** solo contenido vivo con assets; determinismo con el mismo
+    reloj; lectura desde una conexión de solo lectura; verificación de checksum
+    de `world.json`; aborto y limpieza del `.partial` si falta un asset o el hash
+    no coincide; rechazo de un mundo en papelera; cancelación previa sin
+    archivos; preflight de espacio con destino existente; ZIP muy comprimible
+    aceptado al verificar la exportación propia.
+  - **Importación:** round-trip de fichas, tipos, etiquetas, relaciones, versiones
+    e imágenes; IDs regenerados y referencias remapeadas; mundo existente
+    intacto; sufijos de slug; etiquetas que solo difieren en mayúsculas;
+    cancelación en lectura, extracción y preparación; `saving` no cancelable;
+    rollback antes del commit; límites inyectados; traversal; enlaces
+    simbólicos y junctions; nombres reservados; entradas cifradas; rutas
+    absolutas y separadores `\`; duplicados; ZIP truncado; asset que no es WebP;
+    checksum incorrecto; `world.json` alterado con el mismo tamaño; manifiesto
+    con `schemaVersion` 9 rechazado y 7/8 aceptados; `plan.json`
+    con ruta, tamaño y validación antes de leer; rutas preparadas fuera de los
+    temporales sin leer ni borrar fuera; falta de espacio antes de extraer; modo
+    seguro; slug declarado ya ocupado sin mundo parcial.
+  - **Limpieza:** vaciado de `imports/.tmp`, `exports/.tmp` y `assets/.tmp` sin
+    tocar `assets/worlds`; staging interrumpido; carpetas inexistentes o vacías.
+- **Componentes (`tests/components/transfer.test.tsx` y
+  `transfer-hook.test.tsx`).** Estados `running`, `cancelling`, `exported`,
+  `imported` y `failed`; fase, progreso determinado e indeterminado, avisos,
+  recuentos, `slugAdjusted`, reintento, cancelación rechazada, foco inicial y
+  retorno al disparador, `Escape` bloqueado durante la operación, contenido
+  largo, ambos temas y axe sin errores críticos.
+- **E2E (`tests/e2e/transfer.spec.ts`).** Exportación real desde el menú del
+  mundo con imágenes y contenido variado; inspección del ZIP (manifiesto,
+  `world.json`, assets y checksums); importación en una instalación/perfil con
+  datos previos; comprobación de fichas, tipos, etiquetas, relación, versión e
+  imágenes; preservación del mundo previo; avisos; error de formato; ZIP con
+  traversal; matriz de 1024/1280/1600 px × Claro/Oscuro; contenido largo; axe con
+  contraste en ambos temas; y `prefers-reduced-motion` con la barra
+  indeterminada detenida. **E2E de transferencia: 1/1.**
+- **Build y paquete.** `pnpm build` genera `out/main/transfer-worker.cjs`;
+  `verify:build` exige el worker, comprueba que no importa Electron y que
+  `yauzl`/`yazl` están externalizados; `verify:worker` carga SQLite y libvips en
+  el utility process; `verify:package` y `pnpm test:unit` comprueban las
+  licencias de `yauzl`, `yazl`, `pend` y `buffer-crc32`; `db:check` confirma que
+  no hay migración nueva.
+- **Recuentos finales al cerrar #78:** 671 unitarias (4 omitidas), 213 de
+  componentes, 204 de integración (1 omitida) y E2E de transferencia 1/1;
+  typecheck, lint, `db:check`, build, `verify:build` y `verify:worker` en verde.
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -812,7 +869,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 557 unitarias (4 omitidas), 188 de componentes y 158 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 671 unitarias (4 omitidas), 213 de componentes y 204 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

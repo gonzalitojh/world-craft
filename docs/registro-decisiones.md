@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0026.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0029.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -306,4 +306,26 @@ reglas ni tocar assets. El usuario aprobó las ocho recomendaciones del plan
 
 - Referencias: ADR 0028, ADR 0012, ADR 0016, ADR 0019, ADR 0021, #77, #78, #116,
   `docs/base-de-datos/esquema.md`, `docs/persistencia.md` y
+  `docs/manual-de-usuario.md`.
+
+## 2026-11-25 — Exportación e importación de mundos (#78, M1-07)
+
+**Contexto.** Las copias automáticas solo guardan la base SQLite y no incluyen
+los assets, así que no bastaban para llevar un mundo a otra instalación ni para
+recuperar las imágenes si se perdía la carpeta de datos. La issue #78 pedía un
+formato abierto, versionado e inspeccionable sin la aplicación, y una
+importación capaz de aceptar archivos no confiables sin tocar los datos
+existentes. El usuario aprobó el plan de `task-architect` con las decisiones
+D1–D11; D4 se aprobó con el doble de los límites propuestos. No hay migración:
+`user_version` sigue en 8.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-052 | Exportación e importación de mundos | **ZIP abierto `world-craft-world` v1** con `manifest.json`, `world.json` y `assets/<uuidv7>.webp`; `formatVersion: 1`, `schemaVersion` = `user_version`, `assetsIncluded: true`, recuentos, avisos y `files` con `path`, `size` y `sha256`; `world.json` con `world`, `entityTypes` (`entity-types.v1`), `relationTypes` (`relation-types.v1`), `tags`, `assets`, `entities` con `versions`, `gallery`, `imageAssetId`, `attributes` y `tagNames`, `relations` y `coverAssetId`. **Solo contenido vivo de mundos vivos**, siempre con assets y con las versiones de las fichas exportadas; sin papelera, `activity_log`, FTS5, preferencias, miniaturas, assets no referenciados, IDs internos de tipos del sistema, `description_text`, `relative_path`, fechas de borrado/archivo, rutas del sistema ni bloques futuros. **Importación siempre como mundo nuevo:** todos los IDs internos se regeneran, las referencias se remapean y el slug global se resuelve con `-2`, `-3`… sin fusionar ni sobrescribir. **`yauzl@^3.4.0`** para leer y **`yazl@^3.3.1`** para escribir (MIT; `pend` y `buffer-crc32` MIT), externalizadas y con licencias; se descartan `fflate`, `jszip` y `adm-zip`. **`utilityProcess`** (`out/main/transfer-worker.cjs`) para ZIP/JSON/assets y proceso principal para SQLite; una operación a la vez, progreso por `transfer:event` y `saving` no cancelable. **Staging** en `imports/.tmp/<operationId>` y `assets/.tmp/<operationId>/<worldId>`; **transacción única**, `rename` del directorio de assets antes del commit, rollback y limpieza al arrancar; sin copia previa porque la importación solo añade. **Límites D4:** 8 GiB de ZIP, 16 GiB descomprimidos, 10.000 entradas, 256 MiB de `world.json`, 16 MiB de manifiesto, 50.000 fichas, 500.000 versiones, 300.000 relaciones, 5.000 etiquetas, 1.000 tipos de entidad, 1.000 tipos de relación, 8.000 assets y 140 caracteres de ruta; se mantienen los límites por registro y el ratio de compresión 100:1 solo en importación. **Saneo con avisos** de enlaces, referencias, galería, portada, tipos, etiquetas, relaciones y versiones. Tres canales nuevos (`transfer:exportWorld`, `transfer:importWorld` y `transfer:cancel`) y la acción «Exportar mundo…» en el mundo e «Importar mundo…» en Inicio y Mundos. Sin migración: `user_version` sigue en 8. | Las copias automáticas siguen conteniendo solo SQLite; la exportación incluye los assets y sirve como recuperación manual en otra instalación. La importación es aditiva y transaccional: un fallo o una cancelación antes de `saving` no deja mundo ni filas parciales. Los assets se re-codifican y se les regenera la miniatura; los checksums y el Zod estricto detectan paquetes manipulados. Un crash entre el `rename` de assets y el commit deja assets huérfanos sin mundo parcial hasta #116; los ZIP grandes pueden tardar y `saving` no se cancela; el worker no tiene sandbox adicional; el `.partial` de exportación queda junto al destino si el proceso muere; `writeImportPlan` serializa antes de comprobar el tamaño; un manifiesto con `schemaVersion` superior al `user_version` instalado se rechaza con `TRANSFER_FORMAT_UNSUPPORTED` antes de leer `world.json` o extraer assets, y los esquemas 7/8 se aceptan. El detalle está en el ADR 0029 y en `docs/formato-de-exportacion.md`. |
+
+- Referencias: ADR 0029, ADR 0012, ADR 0016, ADR 0017, ADR 0019, ADR 0020,
+  ADR 0021, ADR 0022, ADR 0023, ADR 0028, #66, #72–#78, #116,
+  `docs/formato-de-exportacion.md`, `docs/persistencia.md`,
+  `docs/arquitectura.md`, `docs/base-de-datos/esquema.md`,
+  `docs/continuidad.md`, `docs/calidad/plan-de-pruebas.md` y
   `docs/manual-de-usuario.md`.

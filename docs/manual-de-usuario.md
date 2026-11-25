@@ -20,14 +20,15 @@
 > seguro**. Ya se pueden crear, editar, duplicar, archivar y eliminar mundos con
 > su actividad; crear **fichas** de cualquier tipo con campos personalizados,
 > descripción enriquecida, imágenes, etiquetas y favoritos; **recuperarlas desde
-> la Papelera** y eliminar de verdad lo que ya no quieras; y consultar y
-> restaurar el **historial de versiones** de la descripción de una ficha.
-> Todavía no hay mapas, manuscritos ni ajustes. La aplicación **recuerda entre
-> sesiones** el tema, la barra lateral plegada, el panel de propiedades con su
-> ancho y las secciones de la ficha, y **Continuar** retoma el último mundo o
-> ficha aunque cierres y vuelvas a abrir. Las **muestras** de componentes siguen
-> existiendo solo como página interna de desarrollo y no aparecen en la
-> navegación ni en la búsqueda.
+> la Papelera** y eliminar de verdad lo que ya no quieras; consultar y
+> restaurar el **historial de versiones** de la descripción de una ficha; y
+> **exportar e importar un mundo completo** en un archivo abierto que incluye
+> sus imágenes. Todavía no hay mapas, manuscritos ni ajustes. La aplicación
+> **recuerda entre sesiones** el tema, la barra lateral plegada, el panel de
+> propiedades con su ancho y las secciones de la ficha, y **Continuar** retoma el
+> último mundo o ficha aunque cierres y vuelvas a abrir. Las **muestras** de
+> componentes siguen existiendo solo como página interna de desarrollo y no
+> aparecen en la navegación ni en la búsqueda.
 
 ## 1. Qué es World Craft
 
@@ -82,7 +83,8 @@ una copia de seguridad.
 
 Más adelante, el primer arranque mostrará además una pantalla de bienvenida con
 la opción de crear tu primer mundo o importar uno existente. Esa pantalla es
-**prevista**: todavía no existe.
+**prevista**: todavía no existe. Mientras tanto, puedes importar un mundo desde
+**Inicio** o **Mundos** con **Importar mundo…** (sección 4.6).
 
 ### 2.4 Estado actual del desarrollo
 
@@ -114,9 +116,12 @@ filtros, recientes y favoritos, y una **paleta de comandos** que se abre con
 personalizados que has borrado, permite **restaurarlos** a su sitio y
 **eliminarlos definitivamente** con una copia previa de la base. La descripción
 de una ficha guarda un **historial de versiones** que puedes consultar y
-restaurar. Todavía no hay ventanas de mapas, manuscritos, grafo ni ajustes, y la
-portada del mundo y la descripción enriquecida del mundo llegarán en
-actualizaciones posteriores. **No hay una release pública**: el
+restaurar. También puedes **exportar un mundo completo** a un archivo y
+**volver a importarlo** en esta u otra instalación: el archivo incluye las
+fichas, los tipos personalizados, las etiquetas, las relaciones, las versiones y
+las imágenes (sección 4.6). Todavía no hay ventanas de mapas, manuscritos, grafo
+ni ajustes, y la portada del mundo y la descripción enriquecida del mundo
+llegarán en actualizaciones posteriores. **No hay una release pública**: el
 instalador se genera y se prueba en local, y la publicación oficial llegará con
 M5.
 
@@ -429,9 +434,9 @@ Mientras el mundo se está leyendo se muestra un aviso de carga. Si la lectura
 falla, la página lo explica y ofrece **Volver a intentar** y **Volver a Inicio**;
 tus datos siguen guardados.
 
-### 4.5 Editar, duplicar, archivar y eliminar
+### 4.5 Editar, duplicar, exportar, archivar y eliminar
 
-Dentro de un mundo, las cuatro acciones están en el menú `⋯` de la barra
+Dentro de un mundo, las cinco acciones están en el menú `⋯` de la barra
 superior, junto a la acción principal **Nueva ficha**. La página del mundo no
 repite esos botones: solo muestra la identidad, los módulos y el contenido. Las
 tarjetas de Inicio y de Mundos muestran **Abrir** y su propio menú `⋯` con
@@ -442,6 +447,8 @@ tarjetas de Inicio y de Mundos muestran **Abrir** y su propio menú `⋯` con
   actividad.
 - **Duplicar:** crea un mundo nuevo con el contenido editable del original y un
   nombre propuesto. La portada no se copia porque pertenece al mundo original.
+- **Exportar mundo…:** guarda el mundo completo en un archivo ZIP que incluye sus
+  imágenes. Se explica en la sección 4.6.
 - **Archivar:** oculta el mundo de la lista de activos sin borrar nada. Puedes
   verlo con el filtro **Archivados** y restaurarlo cuando quieras.
 - **Eliminar:** pide confirmación y mueve el mundo a la papelera. Deja de
@@ -454,12 +461,103 @@ Todas las acciones destructivas piden confirmación y ninguna borra archivos del
 disco sin avisar. Al cerrar el diálogo, el foco vuelve al control que lo abrió
 o, si ese control ya no existe, al contenido principal.
 
-### 4.6 Lo que llegará después
+### 4.6 Exportar e importar un mundo
+
+Puedes llevarte un mundo completo a un archivo y volver a abrirlo en esta u otra
+instalación de World Craft. El archivo es un **ZIP abierto** que se puede
+inspeccionar con herramientas normales; no hace falta la aplicación para leer su
+contenido. El formato completo está en
+[`docs/formato-de-exportacion.md`](formato-de-exportacion.md) y la decisión en
+el [ADR 0029](adr/0029-world-export-import.md).
+
+#### Exportar un mundo
+
+1. Abre el mundo que quieras guardar.
+2. En el menú `⋯` de la barra superior, elige **Exportar mundo…**.
+3. Elige dónde guardar el archivo. La aplicación propone un nombre terminado en
+   `.zip` a partir del nombre del mundo y lo ajusta a las reglas de Windows.
+4. Espera a que termine. El diálogo muestra la fase, el progreso y los avisos.
+5. Al terminar, verás el nombre del archivo, su tamaño y un resumen del
+   contenido exportado.
+
+**Qué incluye:** el nombre, el resumen, la descripción, los géneros y el idioma
+del mundo; sus fichas con los campos, la descripción, el estado, el favorito y
+las etiquetas; los tipos de ficha y de relación personalizados; las etiquetas;
+las relaciones; el historial de versiones de cada ficha exportada; la portada,
+las imágenes principales y las galerías; y los archivos de esas imágenes.
+
+**Qué no incluye:** la papelera ni lo eliminado definitivamente, la actividad
+del mundo, el índice de búsqueda, las preferencias de la aplicación, las
+miniaturas (se regeneran al importar) ni las imágenes que no usa ninguna ficha o
+el mundo. Tampoco hay mapas, manuscritos ni escenas: esas funciones todavía no
+existen. **La papelera nunca se exporta** y solo viaja contenido vivo de mundos
+vivos.
+
+La exportación se hace en segundo plano para que la ventana siga respondiendo.
+Puedes cancelarla mientras se prepara, se empaqueta o se comprueba; si cancelas,
+**el archivo de destino no se modifica**. En la fase final, **Guardando el
+resultado**, ya no se puede cancelar: el archivo se está publicando de forma
+atómica.
+
+#### Importar un mundo
+
+1. En **Inicio** o **Mundos**, abre el menú `⋯` de la barra superior y elige
+   **Importar mundo…**.
+2. Selecciona el archivo `.zip`. También puedes elegir cualquier archivo con
+   «Todos los archivos»; la aplicación comprobará si es un mundo válido.
+3. Espera a que termine. Verás el progreso, la fase y, al final, el resumen con
+   los recuentos y los avisos.
+4. Pulsa **Abrir mundo** para ir al mundo importado o **Cerrar** para quedarte
+   donde estabas.
+
+**La importación siempre crea un mundo nuevo.** No fusiona, no actualiza y no
+sobrescribe ningún mundo existente: tus mundos, fichas, imágenes, relaciones,
+copias y preferencias se quedan como estaban. El mundo importado queda
+**activo**, con la fecha de importación, y sus fichas conservan sus fechas
+originales.
+
+- **Identificador:** si ya existe un mundo con el mismo identificador, la
+  aplicación añade un sufijo: `-2`, `-3` y así sucesivamente. El resumen te dice
+  el identificador final y avisa de que se ha ajustado.
+- **Avisos:** si el archivo trae un enlace a una ficha que no existe, una
+  referencia rota, una imagen que falta, una etiqueta o un tipo ausente, una
+  relación duplicada o un valor de campo que ya no encaja, la aplicación lo
+  quita o lo normaliza y te lo cuenta en el resumen. **No se inventa contenido**
+  ni se completan campos obligatorios vacíos.
+- **Cancelación:** puedes cancelar mientras se lee, se comprueba, se extrae o se
+  prepara el contenido. Si cancelas, **no se añade ningún mundo** y no se toca
+  nada de lo existente. En **Guardando el resultado** ya no se puede cancelar.
+- **Sin copia previa:** la importación solo añade y se hace de una vez; si algo
+  falla, se deshace por completo y no queda un mundo a medias. Por eso no se crea
+  una copia de seguridad antes de importar, a diferencia de una migración o de
+  una eliminación definitiva.
+- **Sin conexión:** exportar e importar funcionan sin Internet. No se sube nada
+  a ningún servicio.
+
+#### Si algo falla
+
+| Mensaje o situación | Qué hacer |
+|---|---|
+| «El archivo no es compatible con esta versión de World Craft» | Se creó con un formato más reciente. Actualiza la aplicación o pide el archivo en un formato compatible. |
+| «El archivo no tiene la estructura de un mundo de World Craft o está dañado» | Comprueba que elegiste el `.zip` correcto y que no se ha truncado al copiarlo. Vuelve a exportarlo desde el origen. |
+| «El archivo está dañado o se modificó después de crearse» | El checksum no coincide. No fuerces la importación: vuelve a copiar el archivo desde el origen. |
+| «El mundo o el archivo supera los límites de tamaño o de contenido» | El ZIP supera 8 GiB, el contenido descomprimido 16 GiB o alguno de los límites por número de fichas, versiones, relaciones, etiquetas, tipos o imágenes. Divide el mundo o revisa el archivo. |
+| «El archivo contiene una parte que no está permitida y se ha rechazado» | Trae una ruta peligrosa, un enlace, un nombre reservado o una entrada que no es un mundo. No lo abras a mano ni lo importes en otra herramienta. |
+| «No hay espacio suficiente en el equipo» | Libera espacio en la unidad de datos y vuelve a intentarlo. La importación no deja un mundo parcial. |
+| «No se pudo preparar el destino de la operación» | Comprueba permisos y espacio en la carpeta de datos. Cierra otras instancias y vuelve a intentarlo. |
+| «Ya hay otra exportación o importación en curso» | Espera a que termine la operación anterior. |
+| «Esta función no está disponible en este momento» | La aplicación está en modo seguro, sin base de datos. Restaura una copia (sección 13.3) y vuelve a abrirla. |
+| «No se pudo leer el mundo o el archivo» | El archivo o el mundo de origen ya no existe o no es accesible. Comprueba la ruta y los permisos. |
+
+Si el fallo ocurre al exportar, **el archivo de destino anterior queda
+intacto**. Si ocurre al importar, **no se añade ningún mundo** y los existentes
+no cambian.
+
+### 4.7 Lo que llegará después
 
 - **Portada del mundo:** elegir una imagen local y verla en la cabecera del mundo.
 - **Descripción enriquecida del mundo:** formato básico, enlaces internos y texto
   listo para buscar.
-- **Exportar e importar** un mundo completo en un archivo abierto.
 
 ## 5. Fichas y entidades
 
@@ -686,7 +784,7 @@ que se recuerde entre sesiones.
 ### 5.10 Lo que llegará después (fichas)
 
 - **Comparar versiones** lado a lado y restaurar un fragmento concreto.
-- **Exportar el historial** con el mundo cuando llegue la exportación.
+- **Filtrar y buscar dentro del historial** de una ficha muy longeva.
 
 ## 6. Papelera y recuperación
 
@@ -1019,9 +1117,12 @@ no se envía a ningún servicio externo.
 - Todo se guarda en tu equipo, en la carpeta de datos de World Craft
   (`%APPDATA%\World Craft`). La base de datos está en la subcarpeta `data` y se
   crea sola al arrancar. Las imágenes y los archivos están en `assets`; las
-  copias, en `backups`; y los registros técnicos, en `logs`. La **papelera** y el
+  copias, en `backups`; los registros técnicos, en `logs`; y las carpetas
+  `imports` y `exports` solo guardan temporales de una transferencia en curso o
+  interrumpida, que se limpian al arrancar. La **papelera** y el
   **historial de versiones** viven en la misma base: entran en las copias y una
-  restauración los recupera.
+  restauración los recupera. El ZIP que exportas **no** se queda en esa carpeta:
+  se guarda donde tú elijas.
 - Los binarios se instalan aparte, en `%LOCALAPPDATA%\Programs\World Craft`.
   **Actualizar, reinstalar o desinstalar no borra** la carpeta de datos.
 - La aplicación puede guardar en su carpeta de datos un identificador técnico de
@@ -1060,7 +1161,8 @@ Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
   automáticamente. Las copias **pre-restauración** no se borran solas.
 - **Qué contienen:** solo la base de datos, incluidas tus preferencias de
   interfaz. **Las imágenes y los archivos (assets) no van dentro de la copia** y
-  no se sustituyen al restaurar.
+  no se sustituyen al restaurar. Si necesitas las imágenes, exporta el mundo
+  (sección 4.6): el ZIP sí las incluye y se puede importar en otra instalación.
 - **Copias dañadas:** si una copia no supera la comprobación, no se te ofrece,
   no cuenta para el límite y **no se borra automáticamente**. Se queda donde
   está por si sirve para un diagnóstico.
@@ -1100,6 +1202,13 @@ Antes de reemplazar la base, la aplicación guarda la base anterior en la
 subcarpeta `backups/pre-restore`. Esa copia **no se ofrece desde la aplicación**
 y no se borra automáticamente: sirve para una recuperación manual si algo sale
 mal.
+
+La **exportación de un mundo** (sección 4.6) es otra vía de recuperación manual:
+a diferencia de las copias automáticas, el ZIP incluye las imágenes y se puede
+importar en una instalación nueva. Solo contiene contenido vivo del mundo
+exportado, no la papelera, la actividad ni las preferencias. Si pierdes la
+carpeta de datos, el ZIP te permite recuperar ese mundo, pero no la biblioteca
+completa ni las copias.
 
 Las copias **pre-purga** de la papelera viven en `backups/pre-purge`, sí se
 ofrecen como cualquier copia válida en el aviso de modo seguro y también se
@@ -1199,6 +1308,11 @@ Ya funciona en el shell de desarrollo:
   mensaje del grupo tras una acción. Los diálogos destructivos dejan **Cancelar**
   como opción inicial, atrapan el foco y lo devuelven al cerrarse; el vaciado no
   habilita su botón hasta marcar la casilla.
+- El **diálogo de exportación e importación** anuncia la fase con `aria-live`, el
+  error con `role="alert"` y la barra con `role="progressbar"`; el foco inicial va
+  a **Cancelar** o a la fase cuando ya no se puede cancelar, `Escape` no cierra
+  mientras la operación está en curso y al terminar el foco vuelve al control que
+  abrió el diálogo. La barra indeterminada se detiene con movimiento reducido.
 - Etiquetas, ayudas y errores asociados en los campos de texto.
 - Avisos con `aria-live` (se anuncian sin robar el foco) y cierre manual. La
   disponibilidad de una actualización también se anuncia así.
@@ -1206,8 +1320,8 @@ Ya funciona en el shell de desarrollo:
   desactivan.
 - Revisión automática de accesibilidad (axe) sin errores críticos en el shell,
   Inicio, la vista de mundo, la lista de fichas, la ficha —incluido el editor con
-  el menú **Formato** y el selector de menciones abiertos—, la Papelera y el
-  Historial, en los dos temas y con
+  el menú **Formato** y el selector de menciones abiertos—, la Papelera, el
+  Historial y el diálogo de exportación e importación, en los dos temas y con
   la barra lateral expandida y plegada; el contraste se comprueba con la tabla del
   sistema de diseño.
 - Revisión visual de todas las pantallas existentes y de los diálogos, en Claro y
@@ -1243,6 +1357,10 @@ las funciones correspondientes.
 | No encuentro una ficha | Abre **Papelera** y busca en el grupo **Fichas**; también puedes revisar los filtros de la lista y reconstruir la búsqueda. Si estaba en un mundo que borraste, restaura primero el mundo (sección 6.2). |
 | Una imagen no se ve | Comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. Si purgaste un mundo, sus imágenes siguen en el equipo hasta la cuarentena de una actualización posterior. |
 | He borrado un mundo | Abre **Papelera**, grupo **Mundos**, y pulsa **Restaurar**; vuelve a Inicio y Mundos con su contenido. Si ya lo eliminaste definitivamente, usa la copia `pre-purge` (sección 6.4). |
+| La exportación falla | Comprueba que el destino existe, que tienes permisos y espacio libre, y que el mundo sigue vivo (no está en la papelera). Si cancelaste, el archivo de destino no se ha modificado. Vuelve a intentarlo. |
+| El archivo de mundo no se importa | Comprueba que es el `.zip` correcto y que no está truncado. Si se creó con una versión más reciente, actualiza World Craft. Si supera los límites, reduce el mundo. No edites el ZIP a mano. |
+| La importación termina con avisos | Es normal si el archivo traía enlaces, referencias, imágenes, etiquetas o tipos ausentes. El resumen indica cuántos elementos se han quitado o normalizado; el mundo se ha importado con el resto. |
+| El mundo importado tiene otro identificador | Ya existía un mundo con ese identificador y la aplicación añadió `-2`, `-3`… No se ha sobrescrito nada; puedes cambiar el identificador en **Editar**. |
 | No puedo restaurar una ficha o un tipo | Si su mundo está en la papelera, restaura primero el mundo. Si el tipo personalizado ya no existe, restaura el tipo o cambia la ficha de tipo (sección 6.2). |
 | La eliminación definitiva no se realiza | La aplicación no habrá podido crear o verificar la copia previa, normalmente por falta de espacio; no se ha borrado nada. Libera espacio e inténtalo de nuevo. |
 | Quiero deshacer una eliminación definitiva | No hay un botón de deshacer en la papelera. La copia de `backups/pre-purge` es la red de recuperación: se restaura desde el aviso de modo seguro o a mano (secciones 13.3 y 13.4). |
@@ -1270,6 +1388,14 @@ las funciones correspondientes.
   Automática, manual con etiqueta o de seguridad antes de restaurar.
 - **Modo seguro:** arranque sin escritura para diagnosticar el problema, abrir la
   carpeta de copias y restaurar una copia sin modificar tus datos.
+- **Exportación de mundo:** archivo ZIP abierto con el contenido vivo de un mundo
+  y sus imágenes. Se puede inspeccionar sin la aplicación e importar en otra
+  instalación.
+- **Importación de mundo:** creación de un mundo nuevo a partir de un ZIP de
+  exportación. Nunca fusiona ni sobrescribe mundos existentes.
+- **Aviso de importación:** elemento que se ha quitado o normalizado porque el
+  archivo traía una referencia rota, un tipo o una etiqueta ausente, una relación
+  duplicada o un valor inválido.
 
 ## 18. Estado de las funciones
 
@@ -1309,6 +1435,8 @@ las funciones correspondientes.
 | Papelera global de mundos, fichas y tipos personalizados, con restauración | Implementada (en desarrollo); tres grupos, paginación por cursor y motivos claros si el mundo o el tipo no están disponibles |
 | Eliminación definitiva y vaciado de la papelera con copia previa | Implementados (en desarrollo); confirmación explícita, copia `pre-purge` verificable y los assets no se borran |
 | Historial de versiones de la descripción de una ficha | Implementado (en desarrollo); automáticas 5 min/20/90 días, manuales con etiqueta hasta 50 y restauración que conserva el estado actual |
+| Exportación de un mundo a un ZIP abierto con imágenes | Implementada (en desarrollo); desde el menú del mundo, con progreso y cancelación |
+| Importación de un mundo como mundo nuevo | Implementada (en desarrollo); validación, avisos, progreso y cancelación; nunca sobrescribe |
 | Relaciones entre fichas, etiquetas inversas y backlinks | Implementada (en desarrollo); lectura por dirección y tipo, etiqueta recíproca, menú `⋯` con edición y borrado confirmado; los metadatos quedan en la API |
 | Búsqueda global con prefijos, acentos y errores tipográficos | Implementada (en desarrollo); índice local reconstruible |
 | Filtros de búsqueda por mundo, tipo, etiqueta y estado | Implementados (en desarrollo) |

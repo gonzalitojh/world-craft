@@ -15,8 +15,8 @@ comprobación de integridad y modo seguro, el sistema de diseño con su shell de
 escritorio y un instalador NSIS por usuario con actualizaciones manuales.
 `pnpm dev` abre una ventana segura con la barra lateral, el tema Claro/Oscuro
 conmutable, el dashboard de mundos, el CRUD de mundos con actividad, las fichas
-con imágenes y relaciones, y la búsqueda global con paleta de comandos;
-`pnpm build`
+con imágenes y relaciones, la búsqueda global con paleta de comandos y la
+exportación e importación de mundos con sus imágenes; `pnpm build`
 compila los tres procesos en `out/` y `pnpm dist` genera
 `release/world-craft-0.1.0-setup.exe`. **Todavía no hay una release pública**:
 el instalador se genera y se prueba en local, y la publicación oficial, la
@@ -42,6 +42,7 @@ en [`docs/plan-desarrollo.md`](docs/plan-desarrollo.md).
 | Relaciones | Aristas tipadas, etiquetas directa e inversa y backlinks | Implementado (#75) |
 | Búsqueda | FTS5 con prefijos, tolerancia tipográfica, filtros, recientes, favoritos y paleta `Ctrl+K` | Implementado (#76) |
 | Archivos | Sistema de archivos local bajo `app.getPath('userData')` con protocolo `wc-asset://` | Implementado (#66); lista e importación de imágenes con #74 |
+| Transferencia | ZIP abierto `world-craft-world` v1 con manifiesto, `world.json` y assets; `yauzl`/`yazl`; worker `utilityProcess` | Implementado (#78); importación siempre como mundo nuevo |
 | Editor | Tiptap 3 con formato básico y enlaces internos | Implementado (#74); manuscrito en M3 |
 | Mapas y grafo | MapLibre GL JS + Terra Draw; React Flow + ELK.js | Previsto (M2) |
 | Instalador | electron-builder 26.18.0 + NSIS por usuario | Implementado (#68); release pública en M5 |
@@ -116,7 +117,9 @@ release pública llega con M5.
 
 - El renderer no accede a Node, al sistema de archivos ni a Electron. El preload
   congela y expone solo `window.worldCraft` (`appInfo`, `shell.openExternal`,
-  `updates`, `worlds`, `entityTypes`, `entities`, `tags` y `assets`); todo canal
+  `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`,
+  `relations`, `search`, `preferences`, `assets`, `trash`, `versions` y
+  `transfer`); todo canal
   IPC está en una allowlist y valida la entrada con Zod.
 - Una única instancia: abrir la aplicación de nuevo enfoca la ventana existente y
   no toca la base, el IPC ni el actualizador.
@@ -147,8 +150,10 @@ release pública llega con M5.
 - Antes de una migración se crea una copia local verificable. Las copias
   automáticas diarias, semanales y mensuales, la retención y la restauración
   desde el aviso de modo seguro ya funcionan; la interfaz de Ajustes llega en M1.
-- Los datos se podrán exportar e importar en formatos abiertos (JSON y assets) en
-  las fases siguientes.
+- Los datos se pueden exportar e importar en un formato abierto: un mundo
+  completo, incluidas sus imágenes, se guarda en un ZIP `world-craft-world` v1 y
+  se importa como mundo nuevo. El formato está documentado en
+  [`docs/formato-de-exportacion.md`](docs/formato-de-exportacion.md).
 
 El detalle está en [`docs/persistencia.md`](docs/persistencia.md) y
 [`docs/continuidad.md`](docs/continuidad.md).
@@ -164,10 +169,12 @@ src/
     ipc/          Router tipado con allowlist y Zod
     messages/     Textos de los diálogos nativos
     security/     CSP, navegación, sesión y guards de red
+    transfer/     ZIP, exportación, importación, worker utilityProcess y limpieza
     updates/      Máquina de estados, adaptador de electron-updater y red
     single-instance.ts  Lock de instancia única y foco de la ventana
   preload/        Puente congelado que solo expone window.worldCraft
   renderer/       React, mensajes, tema, shell, páginas y tokens de estilo
+    transfer/     Hook, reducer y formatos del diálogo de transferencia
     updates/      Textos de estado y formatos del panel de actualizaciones
   shared/         Identidad y contratos sin Node, Electron ni React
 drizzle/          Migraciones versionadas, journal y rollback de referencia
@@ -210,6 +217,8 @@ servicios de assets y de copias ya viven en `src/main/assets/` y
   datos y empaquetado.
 - [`docs/persistencia.md`](docs/persistencia.md): SQLite, `userData`, assets,
   copias y restauración.
+- [`docs/formato-de-exportacion.md`](docs/formato-de-exportacion.md): estructura
+  del ZIP de un mundo, manifiesto, `world.json`, checksums y límites.
 - [`docs/base-de-datos/esquema.md`](docs/base-de-datos/esquema.md) y
   [`docs/base-de-datos/migraciones.md`](docs/base-de-datos/migraciones.md):
   modelo y migraciones.

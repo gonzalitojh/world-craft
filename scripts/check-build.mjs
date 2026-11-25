@@ -16,6 +16,7 @@ const DRIZZLE_DIR = 'out/main/drizzle';
 
 const REQUIRED_ARTIFACTS = [
   'out/main/index.cjs',
+  'out/main/transfer-worker.cjs',
   'out/preload/index.cjs',
   'out/renderer/index.html',
 ];
@@ -222,18 +223,57 @@ async function checkDrizzleMigrations() {
   }
 }
 
-/** Comprueba que los módulos nativos y Drizzle no se han empaquetado. */
-function checkExternalizedDependencies(mainBundle) {
-  if (mainBundle === null) {
+/**
+ * Comprueba que los módulos nativos y Drizzle no se han empaquetado.
+ *
+ * electron-vite puede compartir un chunk entre `index` y el worker, así que la
+ * comprobación se hace sobre todos los `.cjs` de `out/main`.
+ */
+function checkExternalizedDependencies(mainBundles) {
+  const bundleText = mainBundles.join('\n');
+
+  for (const dependency of ['better-sqlite3', 'drizzle-orm/better-sqlite3']) {
+    if (!new RegExp(`require\\(["']${dependency}["']\\)`).test(bundleText)) {
+      fail(`${dependency} no está externalizado en out/main.`);
+    }
+  }
+}
+
+/**
+ * Comprueba que el worker de transferencia existe, no importa Electron y
+ * externaliza las librerías de ZIP.
+ */
+async function checkTransferWorker(workerBundle, mainBundles) {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+
+  for (const dependency of ['yauzl', 'yazl']) {
+    if (typeof packageJson.dependencies?.[dependency] !== 'string') {
+      fail(`${dependency} no está declarado como dependencia de ejecución.`);
+    }
+  }
+
+  if (workerBundle === null) {
     return;
   }
 
-  if (!/require\(["']better-sqlite3["']\)/.test(mainBundle)) {
-    fail('better-sqlite3 no está externalizado en out/main/index.cjs.');
+  // electron-vite puede mover las librerías de ZIP a un chunk compartido; se
+  // comprueba el conjunto de `out/main`, no solo el entry del worker.
+  const bundleText = mainBundles.join('\n');
+
+  for (const dependency of ['yauzl', 'yazl']) {
+    if (!new RegExp(`require\\(["']${dependency}["']\\)`).test(bundleText)) {
+      fail(`${dependency} no está externalizado en out/main.`);
+    }
   }
 
-  if (!/require\(["']drizzle-orm\/better-sqlite3["']\)/.test(mainBundle)) {
-    fail('drizzle-orm no está externalizado en out/main/index.cjs.');
+  if (/require\(["']electron["']\)/.test(workerBundle)) {
+    fail('El worker de transferencia importa Electron.');
+  }
+
+  for (const marker of ['node_modules/yauzl', 'node_modules/yazl']) {
+    if (bundleText.includes(marker)) {
+      fail('Una librería de ZIP está empaquetada dentro de out/main.');
+    }
   }
 }
 
@@ -288,7 +328,7 @@ async function checkUpdaterNotBundled(mainBundles) {
  * su código y sus binarios acaben dentro del bundle: eso se detecta por las
  * rutas internas del paquete y por el cargador de libvips.
  */
-async function checkSharpNotBundled(mainBundle) {
+async function checkSharpNotBundled(mainBundles) {
   const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
 
   if (
@@ -298,9 +338,7 @@ async function checkSharpNotBundled(mainBundle) {
     fail('sharp no está declarado como dependencia de ejecución.');
   }
 
-  if (mainBundle === null) {
-    return;
-  }
+  const bundleText = mainBundles.join('\n');
 
   for (const marker of [
     'node_modules/sharp',
@@ -308,8 +346,8 @@ async function checkSharpNotBundled(mainBundle) {
     'sharp/lib/constructor',
     'libvips-cpp',
   ]) {
-    if (mainBundle.includes(marker)) {
-      fail('sharp está empaquetado dentro de out/main/index.cjs.');
+    if (bundleText.includes(marker)) {
+      fail('sharp está empaquetado dentro de out/main.');
     }
   }
 }
@@ -386,7 +424,8 @@ async function checkFontAssets() {
 }
 
 const html = await checkArtifact('out/renderer/index.html');
-const mainBundle = await checkArtifact('out/main/index.cjs');
+await checkArtifact('out/main/index.cjs');
+const workerBundle = await checkArtifact('out/main/transfer-worker.cjs');
 const mainBundles = await Promise.all(
   (await collectFiles('out/main').catch(() => []))
     .filter((file) => file.endsWith('.cjs') || file.endsWith('.js'))
@@ -396,15 +435,17 @@ const mainBundles = await Promise.all(
 for (const artifact of REQUIRED_ARTIFACTS) {
   if (
     artifact !== 'out/renderer/index.html' &&
-    artifact !== 'out/main/index.cjs'
+    artifact !== 'out/main/index.cjs' &&
+    artifact !== 'out/main/transfer-worker.cjs'
   ) {
     await checkArtifact(artifact);
   }
 }
 
 await checkDrizzleMigrations();
-checkExternalizedDependencies(mainBundle);
-await checkSharpNotBundled(mainBundle);
+checkExternalizedDependencies(mainBundles);
+await checkSharpNotBundled(mainBundles);
+await checkTransferWorker(workerBundle, mainBundles);
 await checkUpdaterNotBundled(mainBundles);
 await checkFontAssets();
 

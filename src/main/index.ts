@@ -14,6 +14,7 @@ import {
   DEFAULT_UI_PREFERENCES,
   type ThemePreference,
 } from '../shared/contracts/preferences';
+import { TRANSFER_EVENT_CHANNEL } from '../shared/contracts/transfer';
 import { UPDATE_STATE_CHANGED_CHANNEL } from '../shared/contracts/updates';
 import {
   registerLocalAssetProtocol,
@@ -70,6 +71,10 @@ import { registerSessionGuards } from './security/session';
 import { acquireSingleInstance } from './single-instance';
 import { composeUpdates, type UpdatesComposition } from './updates/composition';
 import { createUnavailableUpdatesService } from './updates/service';
+import { createTransferCoordinator } from './transfer/composition';
+import type { TransferCoordinator } from './transfer/coordinator';
+import { createTransferLogger } from './transfer/logger';
+import { createUnavailableTransferCoordinator } from './transfer/unavailable-coordinator';
 import {
   createUnavailableWorldsService,
   createWorldsService,
@@ -123,6 +128,7 @@ if (!hasSingleInstanceLock) {
   });
 
   let updates: UpdatesComposition | null = null;
+  let transfer: TransferCoordinator | null = null;
 
   void app
     .whenReady()
@@ -179,6 +185,33 @@ if (!hasSingleInstanceLock) {
       });
 
       const database = startup.status === 'ready' ? getDatabase() : null;
+      const dataPaths =
+        database === null ? null : resolveDataPaths(app.getPath('userData'));
+      const transferCoordinator =
+        database === null || dataPaths === null
+          ? createUnavailableTransferCoordinator()
+          : createTransferCoordinator({
+              database: database.orm,
+              sqlite: database.sqlite,
+              databaseFile: dataPaths.databaseFile,
+              assetsDir: dataPaths.assetsDir,
+              importsDir: dataPaths.importsDir,
+              assetsTempDir: dataPaths.assetsTempDir,
+              assetsWorldsDir: dataPaths.assetsWorldsDir,
+              appVersion: app.getVersion(),
+              schemaVersion: readUserVersion(database.sqlite),
+              logger: createTransferLogger(dataPaths.transferLogFile),
+            });
+
+      transfer = transferCoordinator;
+      transferCoordinator.subscribe((event) => {
+        const window = getMainWindow();
+
+        if (window !== null) {
+          window.webContents.send(TRANSFER_EVENT_CHANNEL, event);
+        }
+      });
+
       const entityTypes =
         database === null
           ? createUnavailableEntityTypesService()
@@ -286,6 +319,7 @@ if (!hasSingleInstanceLock) {
           assets,
           trash,
           versions,
+          transfer: transferCoordinator,
           pickImages: pickImageFiles,
         }),
       );
@@ -320,6 +354,8 @@ if (!hasSingleInstanceLock) {
   app.on('before-quit', () => {
     updates?.dispose();
     updates = null;
+    transfer?.dispose();
+    transfer = null;
     closePersistence();
   });
 

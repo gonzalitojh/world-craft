@@ -161,6 +161,31 @@ async function assertCuratedLicense(license) {
   return license.name;
 }
 
+/**
+ * Resuelve una dependencia anidada de otro paquete (pnpm no la expone en la
+ * raíz). `parentDirectory` es la carpeta del paquete padre.
+ *
+ * @param {string} parentDirectory
+ * @param {string} name
+ * @returns {string}
+ */
+function resolveNestedPackageDirectory(parentDirectory, name) {
+  const candidate = join(parentDirectory, '..', name);
+  const packageFile = join(candidate, 'package.json');
+
+  if (!existsSync(packageFile)) {
+    throw new Error(`No se encontró la carpeta del paquete ${name}.`);
+  }
+
+  const manifest = JSON.parse(readFileSync(packageFile, 'utf8'));
+
+  if (manifest.name !== name) {
+    throw new Error(`La carpeta de ${name} no declara el nombre esperado.`);
+  }
+
+  return candidate;
+}
+
 async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
 
@@ -168,6 +193,13 @@ async function main() {
   const sharpPlatformDirectory = resolveSharpPlatformPackage();
   const electronUpdaterDirectory = resolvePackageDirectory('electron-updater');
   const tiptapDirectory = resolvePackageDirectory('@tiptap/react');
+  const yauzlDirectory = resolvePackageDirectory('yauzl');
+  const yazlDirectory = resolvePackageDirectory('yazl');
+  const pendDirectory = resolveNestedPackageDirectory(yauzlDirectory, 'pend');
+  const bufferCrc32Directory = resolveNestedPackageDirectory(
+    yazlDirectory,
+    'buffer-crc32',
+  );
 
   const copied = [
     await copyLicense(join(sharpDirectory, 'LICENSE'), 'sharp-LICENSE.txt'),
@@ -184,6 +216,13 @@ async function main() {
       'tiptap-LICENSE.txt',
     ),
     await copyLicense(SOURCE_SERIF_OFL, 'source-serif-4-OFL.txt'),
+    await copyLicense(join(yauzlDirectory, 'LICENSE'), 'yauzl-LICENSE.txt'),
+    await copyLicense(join(yazlDirectory, 'LICENSE'), 'yazl-LICENSE.txt'),
+    await copyLicense(join(pendDirectory, 'LICENSE'), 'pend-LICENSE.txt'),
+    await copyLicense(
+      join(bufferCrc32Directory, 'LICENSE'),
+      'buffer-crc32-LICENSE.txt',
+    ),
   ];
 
   for (const license of CURATED_LICENSES) {

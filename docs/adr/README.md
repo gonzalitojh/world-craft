@@ -43,6 +43,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0026](0026-minimal-editor-mentions.md) | Editor mínimo, menú Formato y menciones `@` / `[[ ]]` (#131) | Aceptado | D-049 |
 | [0027](0027-ui-preferences-persistence.md) | Preferencias de interfaz persistentes: claves `ui.*`, tres canales y arranque sin parpadeo (#132) | Aceptado | D-050 |
 | [0028](0028-trash-versions-and-pre-purge-backup.md) | Papelera, versiones de contenido y copia previa a la purga (#77) | Aceptado | D-051 |
+| [0029](0029-world-export-import.md) | Exportación e importación de mundos en ZIP v1 (#78) | Aceptado | D-052 |
 
 ## 3. Relación con otros documentos
 
@@ -94,3 +95,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-23 | Se añade el ADR 0026 (editor mínimo, menú Formato y menciones `@` / `[[ ]]`, #131). |
 | 2026-11-24 | Se añade el ADR 0027 (preferencias de interfaz persistentes, #132) y se anota que revisa el arranque del tema en los ADR 0006 y 0025 sin supersederlos. |
 | 2026-11-24 | Se añade el ADR 0028 (papelera, versiones de contenido y copia previa a la purga, #77), con la decisión D-051, y se anota la convivencia de `pre-purge` con el manifiesto v2 del ADR 0012. |
+| 2026-11-25 | Se añade el ADR 0029 (exportación e importación de mundos en ZIP v1, #78), con la decisión D-052, y se enlaza el formato en [`formato-de-exportacion.md`](../formato-de-exportacion.md). |

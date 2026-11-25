@@ -6,6 +6,7 @@ import { EntityInputError } from '@/main/entities/errors';
 import type { EntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
+import { createUnavailableTransferCoordinator } from '@/main/transfer/unavailable-coordinator';
 import { createIpcRouter } from '@/main/ipc/registry';
 import { createUnavailablePreferencesService } from '@/main/preferences/service';
 import { createUnavailableRelationsService } from '@/main/relations/service';
@@ -101,6 +102,7 @@ function createRoute(options?: {
       assets: options?.assets ?? createAssetsService(),
       trash: createUnavailableTrashService(),
       versions: createUnavailableVersionsService(),
+      transfer: createUnavailableTransferCoordinator(),
       pickImages: options?.pickImages ?? (async () => []),
     }),
   );

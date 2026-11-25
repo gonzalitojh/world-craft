@@ -1,7 +1,7 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 24/11/2026 con M1-06 (#77). El modo seguro, la
+> 25/11/2026 con M1-07 (#78). El modo seguro, la
 > comprobación de integridad y la copia pre-migración se implementaron en M0-04
 > (#64); las copias automáticas con retención y la restauración desde el diálogo
 > de modo seguro, en M0-07 (#67); el instalador por usuario, la actualización
@@ -9,8 +9,9 @@
 > M0-08 (#68); el borrado lógico de mundos con su actividad, en M1-01 (#72); los
 > tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
 > autoguardado, imágenes, etiquetas y favoritos, en M1-03 (#74); las relaciones
-> tipadas con backlinks, en M1-04 (#75); y la papelera, la purga con copia
-> `pre-purge` y el historial de versiones, en M1-06 (#77). La dirección visual v2
+> tipadas con backlinks, en M1-04 (#75); la papelera, la purga con copia
+> `pre-purge` y el historial de versiones, en M1-06 (#77); y la exportación e
+> importación de un mundo completo, en M1-07 (#78). La dirección visual v2
 > llegó con M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con la
 > auditoría visual de todas las pantallas en ambos temas y tres anchos, sin
 > cambios de datos ni de copias. Quedan previstos los mapas y el grafo (M2, #83),
@@ -20,8 +21,8 @@
 > con actualización real contra GitHub Releases (M5).
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
-> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020, ADR 0021 y
-> ADR 0028.
+> **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020, ADR 0021,
+> ADR 0028 y ADR 0029.
 > La
 > estructura de datos está en [`persistencia.md`](persistencia.md).
 
@@ -49,6 +50,7 @@ quiere, en una unidad externa.
 | Sin conexión al actualizar | Comprobación manual | Error controlado; la app sigue funcionando con la versión instalada (M0-08) | Todos |
 | Borrado accidental de un mundo | Borrado lógico con confirmación | La fila conserva `deleted_at` y desaparece de las vistas; se restaura desde la Papelera (M1-01, #72; M1-06, #77) | Mundo y assets |
 | Borrado definitivo | Confirmación en la Papelera | Copia `pre-purge` verificable antes de borrar; si falla, no se borra (M1-06, #77) | Copia previa; los assets no se borran |
+| Pérdida de la carpeta de datos o del equipo | Manual | La exportación de un mundo en ZIP incluye sus assets y se importa en otra instalación como mundo nuevo (M1-07, #78); las copias automáticas solo contienen SQLite | El mundo exportado; el resto depende de las copias |
 | Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
 | Archivo de asset perdido | Al abrir | El protocolo devuelve 404 y lo registra; aviso y placeholder en M1 (M0-06) | Metadatos |
 | Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar (M0-04) | Todos |
@@ -126,6 +128,30 @@ de una versión futura **no se ofrece**, no cuenta para la retención y no se
 borra automáticamente. Si la comprobación de la copia pre-migración falla, no se
 migra y la app entra en modo seguro.
 
+### 3.4 Exportación de mundo (implementado, #78)
+
+La exportación de un mundo es una vía de **recuperación manual y portabilidad**.
+A diferencia de las copias automáticas, que solo contienen SQLite, el ZIP de un
+mundo **incluye sus assets** y se puede importar en otra instalación. Se lanza
+desde el menú del mundo con **Exportar mundo…** y el usuario elige el destino;
+no se guarda automáticamente en `userData`.
+
+- Incluye el contenido vivo del mundo y las versiones de las fichas exportadas.
+  No incluye la papelera, lo purgado, la actividad, el índice de búsqueda ni las
+  preferencias.
+- Cada archivo se verifica con su tamaño y SHA-256; el ZIP se escribe en un
+  `.partial` junto al destino y se publica con `rename`. Un fallo o una
+  cancelación antes de `saving` deja intacto el archivo de destino anterior.
+- Un cierre abrupto puede dejar un `.partial` junto al destino. No se borra
+  automáticamente porque vive en una carpeta elegida por el usuario.
+- La importación **crea siempre un mundo nuevo**; no es una restauración en el
+  sitio ni recupera la biblioteca completa. Restaura el mundo exportado, no las
+  preferencias, la actividad ni otros mundos.
+
+El detalle del formato está en
+[`formato-de-exportacion.md`](formato-de-exportacion.md) y el de la operación en
+[`persistencia.md`](persistencia.md) §8.
+
 ## 4. Restauración
 
 **Implementada en M0-07 (#67).** En M0 se ofrece desde el **diálogo nativo de
@@ -186,7 +212,9 @@ En modo seguro:
 - Se puede **continuar en modo seguro** (sin escritura) o **salir**.
 - El arranque y la restauración quedan registrados en `logs/startup.log` (JSONL,
   rotación a 256 KiB, sin SQL, filas, rutas ni contenido).
-- No hay exportación ni interfaz de Ajustes: llegan en M1.
+- La exportación de mundos existe desde #78, pero en modo seguro el coordinador
+  devuelve `TRANSFER_UNAVAILABLE`: no hay base y no se puede exportar. La
+  interfaz de Ajustes sigue prevista.
 
 Los códigos nuevos de restauración son `DB_RESTORE_INVALID` (la copia no
 verifica), `DB_RESTORE_FAILED` (fallo del reemplazo con rollback correcto),
@@ -252,8 +280,8 @@ la fila se conserva, la clave queda reservada y la papelera visible llegó con
 #77. El borrado lógico de un mundo no toca sus tipos; la purga definitiva los
 eliminará en cascada con el mundo. Los 18 tipos del sistema no se borran ni se
 editan: para ajustar una plantilla se duplica el tipo en el mundo. El formato de
-transferencia solo incluye los tipos personalizados y se integra en la
-exportación completa del mundo en #78.
+transferencia solo incluye los tipos personalizados y desde #78 se integra en la
+exportación completa del mundo.
 
 **Implementado en M1-03 (#74):** las fichas se guardan en `entities` y usan
 borrado lógico con `deleted_at`; sus etiquetas y su galería se conservan al
@@ -426,3 +454,5 @@ del desarrollador. Las de integración usan `os.tmpdir()`.
 - [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0018](adr/0018-nsis-packaging-and-update-service.md)
 - [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)
+- [ADR 0029](adr/0029-world-export-import.md)
+- [Formato de exportación](formato-de-exportacion.md)
