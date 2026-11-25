@@ -35,6 +35,9 @@ export const RELATION_METADATA_JSON_MAX_LENGTH = 10_000;
 export const RELATION_LIST_LIMIT_DEFAULT = 500;
 export const RELATION_LIST_LIMIT_MAX = 2_000;
 
+/** Versión del formato de transferencia de tipos de relación de un mundo. */
+export const RELATION_TYPE_TRANSFER_VERSION = 1;
+
 /** Patrón de la clave de un tipo de relación: minúsculas, números y guiones. */
 export const RELATION_TYPE_KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -180,6 +183,20 @@ export interface RelationDeleteResult {
   readonly deleted: boolean;
 }
 
+/** Tipo de relación exportable, sin identificadores internos ni mundo. */
+export interface RelationTypeTransferEntry {
+  readonly key: string;
+  readonly name: string;
+  readonly inverseName: string;
+  readonly color: RelationColor;
+}
+
+/** Formato versionado para exportar e importar los tipos de relación. */
+export interface RelationTypeTransfer {
+  readonly version: typeof RELATION_TYPE_TRANSFER_VERSION;
+  readonly types: readonly RelationTypeTransferEntry[];
+}
+
 /** Etiqueta directa efectiva de una arista. */
 export function relationForwardLabel(edge: RelationEdge): string {
   return edge.label ?? edge.typeName;
@@ -323,6 +340,31 @@ export function isRelationEdgeList(
   value: unknown,
 ): value is readonly RelationEdge[] {
   return Array.isArray(value) && value.every(isRelationEdge);
+}
+
+/** Comprueba la forma de una entrada de transferencia de tipos de relación. */
+export function isRelationTypeTransferEntry(
+  value: unknown,
+): value is RelationTypeTransferEntry {
+  return (
+    isRecord(value) &&
+    typeof value.key === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.inverseName === 'string' &&
+    isEntityTypeColor(value.color)
+  );
+}
+
+/** Comprueba la forma del bloque de transferencia de tipos de relación. */
+export function isRelationTypeTransfer(
+  value: unknown,
+): value is RelationTypeTransfer {
+  return (
+    isRecord(value) &&
+    value.version === RELATION_TYPE_TRANSFER_VERSION &&
+    Array.isArray(value.types) &&
+    value.types.every(isRelationTypeTransferEntry)
+  );
 }
 
 /** Comprueba la forma del resultado de borrar un tipo de relación. */

@@ -78,18 +78,29 @@ export default defineConfig(({ command }) => {
       plugins: [copyDrizzleMigrationsPlugin()],
       build: {
         lib: {
-          entry: fromRoot('./src/main/index.ts'),
+          // Dos entradas: el proceso principal y el worker de transferencia.
+          // `utilityProcess.fork` carga `out/main/transfer-worker.cjs`; ambos
+          // bundles comparten la misma externalización y formato CommonJS.
+          entry: {
+            index: fromRoot('./src/main/index.ts'),
+            'transfer-worker': fromRoot('./src/main/transfer/worker-entry.ts'),
+          },
           formats: ['cjs'],
         },
         rolldownOptions: {
-          // Los módulos nativos y el ORM no se empaquetan: se cargan desde
-          // `node_modules` en desarrollo y desde el paquete en la versión
-          // instalada. #68 desempaqueta better-sqlite3 y sharp del asar.
+          // Los módulos nativos, el ORM y las librerías de ZIP no se
+          // empaquetan: se cargan desde `node_modules` en desarrollo y desde
+          // el paquete en la versión instalada. #68 desempaqueta better-sqlite3
+          // y sharp del asar.
           external: [
             'better-sqlite3',
             /^drizzle-orm(\/.*)?$/,
             'sharp',
             /^@img\/.*$/,
+            'yauzl',
+            'yazl',
+            'pend',
+            'buffer-crc32',
             // El actualizador mantiene su propio ciclo de vida y usa módulos
             // de Electron; se carga desde node_modules, nunca empaquetado.
             'electron-updater',

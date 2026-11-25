@@ -1285,6 +1285,7 @@ describe('estados y movimiento', () => {
       '.wc-button__spinner',
       '.wc-icon-button__spinner',
       '.wc-skeleton',
+      '.wc-progress--indeterminate .wc-progress__bar',
     ]);
 
     for (const block of parseBlocks(componentsSource)) {
@@ -1295,6 +1296,12 @@ describe('estados y movimiento', () => {
         ).toBe(true);
       }
     }
+  });
+
+  it('deja estática la barra indeterminada con movimiento reducido', () => {
+    expect(componentsSource).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.wc-progress--indeterminate \.wc-progress__bar\s*\{[\s\S]*?animation:\s*none/,
+    );
   });
 
   it('conserva el reset de movimiento reducido con una sola iteración', () => {
@@ -1374,7 +1381,7 @@ describe('licencia de Source Serif 4', () => {
 
     expect(notices).toContain('Source Serif 4');
     expect(notices).toContain('SIL Open Font License');
-    expect(notices).toMatch(/7 textos completos/);
+    expect(notices).toMatch(/11 textos completos/);
   });
 
   it('no añade la fuente como dependencia npm', () => {

@@ -183,6 +183,11 @@ alcance; deben revisarse al abrir la importación y la purga en M1.
 > copian a `resources/licenses/` y a `licenses/` junto al ejecutable.
 > `pnpm verify:package` lo comprueba. El detalle está en el
 > [ADR 0018](0018-nsis-packaging-and-update-service.md).
+>
+> **Implementación (M1-07, #78, 25/11/2026).** La exportación e importación de
+> un mundo con assets, rutas relativas, SHA-256 y miniaturas regeneradas se
+> completó en el [ADR 0029](0029-world-export-import.md); la fila de impacto de
+> este ADR describe el estado de #66 y no se reescribe.
 
 ## Plan de revisión
 

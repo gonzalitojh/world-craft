@@ -420,6 +420,36 @@ primera versión estable.
   versiones → purgar con copia y del orden mundo → ficha. Typecheck, lint,
   `db:check`, unitarias (557, 4 omitidas), componentes (188), integración (158, 1
   omitida), build, `verify:build`, E2E de papelera y auditoría visual en verde.
+- Exportación e importación de mundos (#78): un mundo completo —fichas, tipos
+  personalizados, etiquetas, relaciones, versiones de la descripción e
+  imágenes— se guarda en un ZIP abierto y se recupera como mundo nuevo en esta u
+  otra instalación. La exportación está en **Exportar mundo…** del menú del
+  mundo y la importación en **Importar mundo…** de Inicio y Mundos.
+- Formato `world-craft-world` v1 (#78): `manifest.json` con `formatVersion`,
+  `schemaVersion`, recuentos, avisos y archivos con tamaño y SHA-256;
+  `world.json` con el contenido vivo y `assets/<uuidv7>.webp`. Solo viaja
+  contenido vivo de mundos vivos, siempre con assets; fuera papelera,
+  actividad, búsqueda, preferencias, miniaturas y bloques futuros. Documentado
+  en [`docs/formato-de-exportacion.md`](docs/formato-de-exportacion.md).
+- Transferencia en segundo plano y transaccional (#78): un `utilityProcess`
+  dedicado lee y escribe el ZIP, valida JSON y procesa imágenes; el proceso
+  principal ejecuta la transacción de importación y renombra los assets antes
+  del commit. Una operación a la vez, progreso por `transfer:event` y
+  cancelación salvo en `saving`. La importación nunca fusiona ni sobrescribe y
+  resuelve el slug global con sufijo.
+- Canales y diálogo de transferencia (#78): `transfer:exportWorld`,
+  `transfer:importWorld` y `transfer:cancel`, API `window.worldCraft.transfer`,
+  diálogo de progreso/cancelación/éxito/error con avisos agregados, accesibilidad
+  y barra indeterminada con movimiento reducido.
+- Dependencias de compresión (#78): `yauzl` 3.4.0 y `yazl` 3.3.1 (MIT),
+  externalizadas y con los textos de `pend` y `buffer-crc32` en
+  `THIRD-PARTY-NOTICES.md` y `licenses/`.
+- Pruebas de transferencia (#78): unitarias de formato, rutas, manifiesto,
+  `world.json`, remapeo, plan, ZIP, protocolo, coordinador, IPC y reducer;
+  integración de round-trip, corrupción, traversal, límites, ratio, espacio,
+  cancelación, rollback, slugs y limpieza; componentes y E2E de transferencia
+  1/1. La suite queda en 671 unitarias (4 omitidas), 213 de componentes y 204 de
+  integración (1 omitida).
 
 ### Cambiado
 
@@ -469,6 +499,10 @@ primera versión estable.
   dejan de ser memoria de sesión (#132): se persisten en `app_settings` y se
   aplican al arrancar. El tema inicial ya no es siempre Claro. La aplicación sigue
   abriendo en Inicio y la reanudación explícita sigue en «Continuar».
+- La exportación e importación dejan de ser una función prevista (#78): usan un
+  formato v1 documentado y un worker propio. Las copias automáticas siguen
+  conteniendo solo SQLite; el ZIP de un mundo es la vía que incluye las imágenes
+  y se puede importar en otra instalación. `user_version` sigue en 8.
 - La revisión visual de todas las pantallas pasa a ser un arnés repetible
   (#133): `pnpm test:audit` recorre 1024, 1280 y 1600 px × Claro/Oscuro las seis
   pantallas, sus estados vacíos o sin resultados y los overlays, con informe
@@ -584,6 +618,14 @@ primera versión estable.
   decide en M5. La integridad se apoya en HTTPS, SHA-512 y `SHA256SUMS`.
 - Instancia única antes de abrir la base (#68): se cierra el riesgo de dos
   procesos migrando o restaurando a la vez.
+- Transferencia endurecida (#78): política cerrada de entradas del ZIP,
+  rechazo de traversal, rutas absolutas, UNC, separadores `\`, ADS, nombres
+  reservados, enlaces, cifrado y duplicados; límites antes y durante la
+  extracción, ratio de compresión 100:1 en importación, checksums SHA-256,
+  detección de imágenes por magic bytes y re-codificación con los límites del
+  servicio; contención con `lstat`/`realpath` y rechazo de junctions; worker sin
+  Electron, red, `eval` ni `child_process`; logs sin rutas, IDs, nombres ni
+  contenido.
 
 ## Cómo se escribe una entrada
 

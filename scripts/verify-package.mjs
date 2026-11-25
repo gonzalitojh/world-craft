@@ -12,8 +12,11 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const RELEASE_DIR = 'release';
 const REQUIRED_LICENSE_FILES = [
@@ -24,6 +27,10 @@ const REQUIRED_LICENSE_FILES = [
   'electron-updater-LICENSE.txt',
   'tiptap-LICENSE.txt',
   'source-serif-4-OFL.txt',
+  'yauzl-LICENSE.txt',
+  'yazl-LICENSE.txt',
+  'pend-LICENSE.txt',
+  'buffer-crc32-LICENSE.txt',
 ];
 
 const failures = [];
@@ -69,6 +76,52 @@ async function collectFiles(directory) {
   }
 
   return files;
+}
+
+/**
+ * Lista el contenido de `app.asar` con la librería que ya usa
+ * electron-builder. Se resuelve desde su carpeta para no depender de que el
+ * paquete esté hoisteado en la raíz.
+ *
+ * @param {string} asarPath
+ * @returns {readonly string[] | null}
+ */
+function listAsarContents(asarPath) {
+  try {
+    const electronBuilderDirectory = dirname(
+      require.resolve('electron-builder'),
+    );
+    const asar = require(
+      require.resolve('@electron/asar', {
+        paths: [electronBuilderDirectory],
+      }),
+    );
+    const files = asar.listPackage(asarPath);
+
+    return Array.isArray(files)
+      ? files.map((file) => file.replaceAll('\\', '/'))
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function checkWorkerInAsar(asarPath) {
+  const files = listAsarContents(asarPath);
+
+  if (files === null) {
+    fail('No se pudo leer el contenido de app.asar.');
+    return;
+  }
+
+  for (const required of [
+    '/out/main/index.cjs',
+    '/out/main/transfer-worker.cjs',
+  ]) {
+    if (!files.some((file) => file.endsWith(required))) {
+      fail(`app.asar no contiene ${required}.`);
+    }
+  }
 }
 
 async function findUnpackedDirectory() {
@@ -142,7 +195,10 @@ async function checkUnpacked(pkg) {
   const exe = join(unpacked, 'World Craft.exe');
   const appUpdate = join(resources, 'app-update.yml');
 
-  await checkFile(asar);
+  if (await checkFile(asar)) {
+    checkWorkerInAsar(asar);
+  }
+
   await checkFile(exe);
   await checkFile(join(unpacked, 'LICENSE'));
   await checkFile(join(unpacked, 'THIRD-PARTY-NOTICES.md'));

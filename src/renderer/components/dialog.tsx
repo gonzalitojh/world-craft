@@ -34,6 +34,12 @@ export interface DialogProps {
    */
   readonly dismissible?: boolean;
   readonly className?: string;
+  /**
+   * Clave que fuerza a devolver el foco a `[data-autofocus]` cuando cambia.
+   * Permite que el diálogo abierto mueva el foco al botón o mensaje de la
+   * nueva fase sin reenfocar en cada actualización de progreso.
+   */
+  readonly focusKey?: string | number;
 }
 
 /**
@@ -51,6 +57,7 @@ export function Dialog({
   actions,
   dismissible = true,
   className,
+  focusKey,
 }: DialogProps) {
   const messages = useMessages();
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -87,6 +94,20 @@ export function Dialog({
     previousFocusRef.current = null;
     previous?.focus();
   }, [open]);
+
+  useEffect(() => {
+    if (!open || focusKey === undefined) {
+      return;
+    }
+
+    const dialog = dialogRef.current;
+
+    if (dialog === null || !dialog.open) {
+      return;
+    }
+
+    dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+  }, [open, focusKey]);
 
   return (
     <dialog

@@ -39,6 +39,7 @@ export function WorldActivityList({
     'world.restored': messages.worlds.activity.actions.restored,
     'world.duplicated': messages.worlds.activity.actions.duplicated,
     'world.deleted': messages.worlds.activity.actions.deleted,
+    'world.imported': messages.worlds.activity.actions.imported,
   };
 
   if (state === 'loading') {

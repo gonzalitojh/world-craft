@@ -18,6 +18,7 @@ import type { MenuItem } from './components/menu';
 import { WorldConfirmDialog } from './components/worlds/world-confirm-dialog';
 import { WorldDuplicateDialog } from './components/worlds/world-duplicate-dialog';
 import { WorldFormDialog } from './components/worlds/world-form-dialog';
+import { WorldTransferDialog } from './components/transfer/world-transfer-dialog';
 import type { WorldActivityState } from './components/worlds/world-activity-list';
 import type { WorldCardActions } from './components/worlds/world-card';
 import { useMessages } from './i18n/provider';
@@ -41,6 +42,7 @@ import {
 } from './shell/app-shell';
 import { useUiPreferences } from './preferences/use-ui-preferences';
 import { resolveInternalView } from './shell/internal-views';
+import { useWorldTransfer } from './transfer/use-world-transfer';
 
 type DialogState =
   | { readonly kind: 'create' }
@@ -261,6 +263,13 @@ export function App({ initialPreferences }: AppProps) {
     setLibraryState('ready');
     return worldList.data;
   }, [api]);
+
+  const transfer = useWorldTransfer({
+    onNotify: notify,
+    onImported: () => {
+      void refreshLibrary();
+    },
+  });
 
   useEffect(() => {
     let active = true;
@@ -1061,15 +1070,23 @@ export function App({ initialPreferences }: AppProps) {
       };
     }
 
-    if (worlds.length > 0) {
-      secondaryActions = [
-        {
-          id: 'create-entity',
-          label: messages.shell.quickCreate,
-          onSelect: openQuickCreate,
-        },
-      ];
-    }
+    secondaryActions = [
+      ...(worlds.length > 0
+        ? [
+            {
+              id: 'create-entity',
+              label: messages.shell.quickCreate,
+              onSelect: openQuickCreate,
+            },
+          ]
+        : []),
+      {
+        id: 'import-world',
+        label: messages.transfer.actions.import,
+        separatorBefore: worlds.length > 0,
+        onSelect: transfer.startImport,
+      },
+    ];
   } else if (view === 'world' && selectedWorld !== null) {
     const archived = selectedWorld.status === 'archived';
 
@@ -1090,6 +1107,14 @@ export function App({ initialPreferences }: AppProps) {
         label: messages.worlds.card.duplicate,
         onSelect: () => {
           openDialog({ kind: 'duplicate', world: selectedWorld });
+        },
+      },
+      {
+        id: 'export-world',
+        label: messages.transfer.actions.export,
+        separatorBefore: true,
+        onSelect: () => {
+          transfer.startExport(selectedWorld);
         },
       },
       {
@@ -1356,6 +1381,17 @@ export function App({ initialPreferences }: AppProps) {
         onToggleTheme={toggleTheme}
         onRebuild={() => {
           void rebuildSearchIndex();
+        }}
+      />
+
+      <WorldTransferDialog
+        state={transfer.state}
+        onClose={transfer.close}
+        onCancel={transfer.cancel}
+        onRetry={transfer.retry}
+        onOpenWorld={(worldId) => {
+          transfer.close();
+          void openWorld(worldId);
         }}
       />
 

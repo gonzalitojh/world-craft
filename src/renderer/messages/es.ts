@@ -253,7 +253,224 @@ export const es = {
         restored: 'Mundo restaurado',
         duplicated: 'Mundo duplicado',
         deleted: 'Mundo movido a la papelera',
+        imported: 'Mundo importado',
       },
+    },
+  },
+  transfer: {
+    titles: {
+      exporting: 'Exportando mundo',
+      importing: 'Importando mundo',
+      exported: 'Mundo exportado',
+      imported: 'Mundo importado',
+      exportFailed: 'No se pudo exportar el mundo',
+      importFailed: 'No se pudo importar el mundo',
+    },
+    status: {
+      running: 'En curso',
+      cancelling: 'Cancelando',
+      success: 'Completado',
+      successWithWarnings: 'Completado con avisos',
+      error: 'No completado',
+    },
+    actions: {
+      export: 'Exportar mundo…',
+      import: 'Importar mundo…',
+      cancel: 'Cancelar',
+      cancelling: 'Cancelando…',
+      retry: 'Volver a intentar',
+      openWorld: 'Abrir mundo',
+    },
+    phases: {
+      preparing: 'Preparando el mundo…',
+      reading: 'Leyendo el archivo…',
+      validating: 'Comprobando el contenido…',
+      extracting: 'Extrayendo el contenido…',
+      importing: 'Importando el contenido…',
+      packaging: 'Empaquetando el mundo…',
+      finalizing: 'Comprobando el archivo…',
+      saving: 'Guardando el resultado…',
+    },
+    phaseDetails: {
+      preparing: 'Se reúne y comprueba el contenido que se va a transferir.',
+      reading: 'Se abre el archivo y se lee su índice.',
+      validating: 'Se comprueba que el archivo es un mundo válido y completo.',
+      extracting: 'Se extraen y comprueban las imágenes del archivo.',
+      importing: 'Se prepara el contenido para guardarlo en la biblioteca.',
+      packaging:
+        'Se escriben el índice, el contenido y las imágenes en el archivo.',
+      finalizing: 'Se verifica que el archivo se ha escrito correctamente.',
+      saving: 'Se guarda el resultado. Esta parte ya no se puede cancelar.',
+    },
+    progress: {
+      exportLabel: 'Progreso de la exportación',
+      importLabel: 'Progreso de la importación',
+      files: { one: 'archivo', other: 'archivos' },
+      filesCount: (completed: string, total: string, unit: string): string =>
+        `${completed} de ${total} ${unit}`,
+      filesOpen: (completed: string, unit: string): string =>
+        `${completed} ${unit}`,
+      step: (completed: string, total: string): string =>
+        `Paso ${completed} de ${total}`,
+      stepOpen: (completed: string): string => `Paso ${completed}`,
+      cancelling: {
+        export: 'Cancelando la exportación…',
+        import: 'Cancelando la importación…',
+      },
+      cancellingDetail:
+        'Se está deteniendo la operación. Esto puede tardar unos segundos.',
+      cancelHintExport:
+        'Puedes cancelar la exportación. El archivo de destino no se modificará.',
+      cancelHintImport:
+        'Puedes cancelar la importación. No se añadirá ningún mundo.',
+      lockedHint: 'La operación está terminando y ya no se puede cancelar.',
+      cancelFailed: 'No se pudo cancelar. Puedes intentarlo de nuevo.',
+      exportNote:
+        'Solo se exporta el contenido vivo del mundo. La papelera no se incluye.',
+      importNote:
+        'La importación siempre crea un mundo nuevo y no modifica los mundos existentes.',
+    },
+    summary: {
+      exported: (name: string): string =>
+        `«${name}» se ha exportado correctamente.`,
+      exportedWithWarnings: (name: string): string =>
+        `«${name}» se ha exportado, con algunos avisos.`,
+      imported: (name: string): string =>
+        `«${name}» ya está disponible en tu biblioteca como un mundo nuevo.`,
+      importedWithWarnings: (name: string): string =>
+        `«${name}» se ha importado como un mundo nuevo, con algunos avisos.`,
+      fileLabel: 'Archivo',
+      sizeLabel: 'Tamaño',
+      slugLabel: 'Identificador',
+      countsExport: 'Contenido incluido',
+      countsImport: 'Contenido importado',
+      counts: {
+        entities: 'Fichas',
+        entityTypes: 'Tipos de ficha',
+        relations: 'Relaciones',
+        relationTypes: 'Tipos de relación',
+        tags: 'Etiquetas',
+        versions: 'Versiones',
+        assets: 'Imágenes',
+      },
+      slugAdjusted: (slug: string): string =>
+        `Ya existía un mundo con ese identificador. El nuevo se ha guardado como «${slug}».`,
+      warningsTitle: 'Avisos',
+      warnings: {
+        'broken-entity-link': {
+          one: 'Se ha quitado {count} enlace que apuntaba a una ficha que ya no existe.',
+          other:
+            'Se han quitado {count} enlaces que apuntaban a fichas que ya no existen.',
+        },
+        'broken-reference-attribute': {
+          one: 'Se ha quitado {count} referencia a una ficha que ya no existe.',
+          other:
+            'Se han quitado {count} referencias a fichas que ya no existen.',
+        },
+        'broken-gallery-asset': {
+          one: 'Se ha quitado {count} imagen de la galería porque no estaba en el archivo.',
+          other:
+            'Se han quitado {count} imágenes de la galería porque no estaban en el archivo.',
+        },
+        'missing-entity-image': {
+          one: 'Una ficha se ha quedado sin imagen porque no estaba en el archivo.',
+          other:
+            '{count} fichas se han quedado sin imagen porque no estaban en el archivo.',
+        },
+        'missing-world-cover': {
+          one: 'No se ha podido incluir la portada del mundo porque faltaba en el archivo.',
+          other:
+            'No se han podido incluir {count} portadas de mundo porque faltaban en el archivo.',
+        },
+        'missing-entity-type': {
+          one: 'Se ha descartado {count} ficha porque su tipo no estaba en el archivo.',
+          other:
+            'Se han descartado {count} fichas porque su tipo no estaba en el archivo.',
+        },
+        'missing-relation-type': {
+          one: 'Se ha descartado {count} relación porque su tipo no estaba en el archivo.',
+          other:
+            'Se han descartado {count} relaciones porque su tipo no estaba en el archivo.',
+        },
+        'missing-tag': {
+          one: 'Se ha quitado {count} etiqueta que no estaba en el archivo.',
+          other:
+            'Se han quitado {count} etiquetas que no estaban en el archivo.',
+        },
+        'broken-relation-endpoint': {
+          one: 'Se ha quitado {count} relación porque una de sus fichas ya no existe.',
+          other:
+            'Se han quitado {count} relaciones porque una de sus fichas ya no existía.',
+        },
+        'duplicate-relation': {
+          one: 'Se ha quitado {count} relación duplicada.',
+          other: 'Se han quitado {count} relaciones duplicadas.',
+        },
+        'unknown-version-origin': {
+          one: 'Se ha normalizado el origen de {count} versión de ficha porque no se pudo identificar.',
+          other:
+            'Se ha normalizado el origen de {count} versiones de ficha porque no se pudo identificar.',
+        },
+        'invalid-attribute': {
+          one: 'Se ha quitado {count} valor de un campo porque no era válido.',
+          other:
+            'Se han quitado {count} valores de campos porque no eran válidos.',
+        },
+        'invalid-version': {
+          one: 'Se ha quitado {count} versión de ficha porque no era válida.',
+          other:
+            'Se han quitado {count} versiones de ficha porque no eran válidas.',
+        },
+      },
+    },
+    errors: {
+      codes: {
+        TRANSFER_INPUT_INVALID:
+          'No se pudo iniciar la operación porque faltaban datos necesarios. Vuelve a intentarlo.',
+        TRANSFER_SOURCE_NOT_FOUND:
+          'El mundo o el archivo de origen ya no existe. Puede que se haya movido o eliminado.',
+        TRANSFER_SOURCE_UNREADABLE:
+          'No se pudo leer el mundo o el archivo. Comprueba que sigue disponible y vuelve a intentarlo.',
+        TRANSFER_FORMAT_UNSUPPORTED:
+          'El archivo no es compatible con esta versión de World Craft. Si se creó con una versión más reciente, actualiza la aplicación.',
+        TRANSFER_MANIFEST_INVALID:
+          'El archivo no tiene la estructura de un mundo de World Craft o está dañado.',
+        TRANSFER_WORLD_INVALID:
+          'El contenido del mundo no es válido o está incompleto.',
+        TRANSFER_LIMIT_EXCEEDED:
+          'El mundo o el archivo supera los límites de tamaño o de contenido.',
+        TRANSFER_ENTRY_REJECTED:
+          'El archivo contiene una parte que no está permitida y se ha rechazado.',
+        TRANSFER_CHECKSUM_MISMATCH:
+          'El archivo está dañado o se modificó después de crearse.',
+        TRANSFER_ASSET_INVALID:
+          'Una de las imágenes no es válida o está dañada.',
+        TRANSFER_DESTINATION_UNAVAILABLE:
+          'No se pudo preparar el destino de la operación. Comprueba que hay espacio y permisos, y vuelve a intentarlo.',
+        TRANSFER_NO_SPACE:
+          'No hay espacio suficiente en el equipo para completar la operación.',
+        TRANSFER_CANCELLED: 'La operación se canceló.',
+        TRANSFER_BUSY:
+          'Ya hay otra exportación o importación en curso. Espera a que termine.',
+        TRANSFER_SAVE_FAILED:
+          'No se pudo guardar el resultado de la operación. Comprueba el espacio y los permisos, y vuelve a intentarlo.',
+        TRANSFER_UNAVAILABLE:
+          'Esta función no está disponible en este momento. Cierra la aplicación y vuelve a abrirla.',
+        TRANSFER_INTERNAL:
+          'La operación no se pudo completar. Vuelve a intentarlo.',
+        TRANSPORT:
+          'No se pudo comunicar con la aplicación. Vuelve a intentarlo.',
+        UNKNOWN: 'No se pudo completar la operación. Vuelve a intentarlo.',
+      },
+      reassuranceExport: 'No se ha guardado una exportación incompleta.',
+      reassuranceImport:
+        'No se ha añadido un mundo incompleto ni se han modificado los existentes.',
+    },
+    toasts: {
+      exportCancelled: (worldName: string): string =>
+        `Se canceló la exportación de «${worldName}». El archivo de destino no se ha modificado.`,
+      importCancelled:
+        'Se canceló la importación. No se ha añadido ningún mundo.',
     },
   },
   trash: {
@@ -1151,7 +1368,7 @@ export const es = {
       paragraph:
         'La expedición salió del puerto de Punta Sal con tres goletas y una tripulación de cuarenta y dos personas. Durante once semanas recorrió las islas del norte, levantó actas de cada desembarco y dibujó a mano las líneas de bajamar que el atlas oficial daba por definitivas. El cuaderno recoge los nombres que los clanes usan para cada bajío, las tarifas que cobran por guiar barcos y las historias que cuentan sobre las luces que aparecen en el horizonte cuando la marea cambia de golpe.',
       name: 'AldoVarelaDeLaTorreYDelAmoDelArchipielagoDeLasMareasGrisesYNieblasDelSurOccidentalYDelNorteProfundoYDeLasRutasBallenerasDelSigloDiecinueveYDeLosPactosDeSalFirmadosPorLosClanesDelArchipielagoYDeLaCostaOccidentalYDeSusBajiosYCorrientes',
-      path: 'C:\\Users\\cartografa\\Documents\\World Craft\\mundos\\mareas-grises\\mapas\\costa-norte-del-archipielago\\capa-de-rutas-balleneras-1926.geojson',
+      path: 'C:\\datos\\mundos\\mareas-grises\\mapas\\costa-norte-del-archipielago\\capa-de-rutas-balleneras-1926.geojson',
     },
   },
   search: {

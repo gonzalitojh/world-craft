@@ -97,6 +97,15 @@ import {
   type WorldCraftTrashApi,
 } from './trash';
 import {
+  isTransferCancelResult,
+  isTransferExportRunResult,
+  isTransferImportRunResult,
+  isTransferProgressEvent,
+  TRANSFER_EVENT_CHANNEL,
+  type TransferProgressEvent,
+  type WorldCraftTransferApi,
+} from './transfer';
+import {
   isEntityVersionList,
   isVersionCreateResult,
   isVersionRestoreResult,
@@ -203,6 +212,7 @@ export interface WorldCraftApi {
   readonly assets: WorldCraftAssetsApi;
   readonly trash: WorldCraftTrashApi;
   readonly versions: WorldCraftVersionsApi;
+  readonly transfer: WorldCraftTransferApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -316,8 +326,8 @@ function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
  *
  * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `preferences`,
  * `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`,
- * `search`, `assets`, `trash` y `versions` para que el renderer no pueda
- * sustituirlos en tiempo de ejecución.
+ * `search`, `assets`, `trash`, `versions` y `transfer` para que el renderer no
+ * pueda sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -620,6 +630,45 @@ export function createWorldCraftApi(
       ),
   });
 
+  const transfer: WorldCraftTransferApi = Object.freeze({
+    exportWorld: (worldId: string) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.transferExportWorld,
+        { worldId },
+        isTransferExportRunResult,
+      ),
+    importWorld: () =>
+      invokeWorldCommand(
+        IPC_CHANNELS.transferImportWorld,
+        {},
+        isTransferImportRunResult,
+      ),
+    cancel: () =>
+      invokeWorldCommand(
+        IPC_CHANNELS.transferCancel,
+        {},
+        isTransferCancelResult,
+      ),
+    onEvent: (
+      listener: (event: TransferProgressEvent) => void,
+    ): (() => void) => {
+      if (typeof listener !== 'function' || options.subscribe === undefined) {
+        return () => {};
+      }
+
+      const unsubscribe = options.subscribe(
+        TRANSFER_EVENT_CHANNEL,
+        (payload) => {
+          if (isTransferProgressEvent(payload)) {
+            listener(payload);
+          }
+        },
+      );
+
+      return typeof unsubscribe === 'function' ? unsubscribe : () => {};
+    },
+  });
+
   return Object.freeze({
     appInfo,
     shell,
@@ -635,5 +684,6 @@ export function createWorldCraftApi(
     assets,
     trash,
     versions,
+    transfer,
   });
 }

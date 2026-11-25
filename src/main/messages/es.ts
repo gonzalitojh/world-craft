@@ -13,6 +13,13 @@ export interface MainMessages {
     readonly title: string;
     readonly filterName: string;
   };
+  readonly transfer: {
+    readonly exportDialogTitle: string;
+    readonly exportFilterName: string;
+    readonly importDialogTitle: string;
+    readonly importFilterName: string;
+    readonly importAllFilesFilterName: string;
+  };
   readonly safeMode: {
     readonly buttons: {
       readonly openBackups: string;
@@ -91,6 +98,13 @@ export const messages: MainMessages = {
   assetsPicker: {
     title: 'Elegir imágenes',
     filterName: 'Imágenes',
+  },
+  transfer: {
+    exportDialogTitle: 'Exportar mundo',
+    exportFilterName: 'Mundo de World Craft',
+    importDialogTitle: 'Importar mundo',
+    importFilterName: 'Mundo de World Craft',
+    importAllFilesFilterName: 'Todos los archivos',
   },
   safeMode: {
     buttons: {

@@ -11,6 +11,7 @@ import type { EntityTypesService } from '../../entity-types/service';
 import type { PreferencesService } from '../../preferences/service';
 import type { RelationsService } from '../../relations/service';
 import type { SearchService } from '../../search/service';
+import type { TransferCoordinator } from '../../transfer/coordinator';
 import type { TrashService } from '../../trash/service';
 import type { UpdatesService } from '../../updates/service';
 import type { VersionsService } from '../../versions/service';
@@ -23,6 +24,7 @@ import { createPreferencesIpcHandlers } from './preferences';
 import { createRelationIpcHandlers } from './relations';
 import { createSearchIpcHandlers } from './search';
 import { createShellOpenExternalHandler } from './shell';
+import { createTransferIpcHandlers } from './transfer';
 import { createTrashIpcHandlers } from './trash';
 import { createUpdateIpcHandlers } from './updates';
 import { createVersionsIpcHandlers } from './versions';
@@ -41,6 +43,7 @@ export interface IpcDependencies {
   readonly assets: AssetsService;
   readonly trash: TrashService;
   readonly versions: VersionsService;
+  readonly transfer: TransferCoordinator;
   readonly pickImages: () => Promise<readonly string[]>;
 }
 
@@ -62,5 +65,6 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
       service: dependencies.assets,
       pickImages: dependencies.pickImages,
     }),
+    ...createTransferIpcHandlers(dependencies.transfer),
   };
 }

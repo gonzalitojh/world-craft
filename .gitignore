@@ -72,3 +72,6 @@ Thumbs.db
 # (pruebas manuales o scripts): nunca se versionan.
 /assets/
 /backups/
+/imports/
+/exports/
+/logs/

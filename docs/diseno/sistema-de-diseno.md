@@ -441,6 +441,8 @@ como existente lo que aún no lo está.
 | Marca procedural de mundo | Portada si existe; si no, sello determinista por `id` con 4 tramas × 4 tonos resueltos con `--entity-*`. Decorativa (`aria-hidden`), estática y legible en ambos temas. | Implementada | #127 |
 | Navegación modular de mundo | Lista de módulos con el actual en `aria-current="page"`; los previstos son texto con insignia, sin enlace ni foco. El recuento de fichas es secundario y se omite si no está disponible. | Implementada | #128 |
 | Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Adaptado v2 | #125 |
+| Diálogo de transferencia | `<Dialog>` de hasta 40rem con insignia de estado, fase anunciada, barra de progreso, resumen de recuentos, lista de avisos y error con `role="alert"`. Estados `running`, `cancelling`, `exported`, `imported` y `failed`; `Escape` bloqueado mientras está en curso. Sin tokens nuevos. | Implementado | #78 |
+| Barra de progreso indeterminada | Variante de `.wc-progress` sin porcentaje conocido: barra al 35 % con animación de 1,6 s y `role="progressbar"` con `aria-valuetext` y sin `aria-valuenow`; se detiene con `prefers-reduced-motion`. | Implementada | #78 |
 | Menú `⋯` | Acciones secundarias; teclado, foco y cierre con Escape. Se posiciona respecto al viewport, elige el lado con más espacio, limita su altura y desplaza su contenido sin cerrar el menú. | Implementado | #125 |
 | Tooltip | Visible con foco y hover, `aria-describedby`, se oculta con Escape sin cerrar el diálogo que lo contiene. Ancho de contenido con máximo de 18rem y colocación arriba o abajo según el espacio. | Adaptado v2 | #125 |
 | Aviso toast | `aria-live="polite"`, `role="status"`, cierre manual. | Adaptado v2 | #125 |
@@ -754,6 +756,48 @@ control ni texto nuevos: Ajustes (#79) consumirá la misma capa.
 El contrato completo de la decisión está en el
 [ADR 0027](../adr/0027-ui-preferences-persistence.md).
 
+### 10.9 Transferencia de mundos
+
+Implementado en #78 (ADR 0029). No añade tokens, dependencias ni un patrón de
+diálogo nuevo: reutiliza `Dialog`, `Button`, `Badge` y `.wc-progress`.
+
+**Composición**
+
+- El diálogo se abre con el **primer evento de progreso**, no al pulsar la
+  acción; mientras el selector nativo está abierto no hay diálogo.
+- Ancho máximo de **40rem**, con nombre del mundo y textos largos que envuelven
+  (`overflow-wrap` y `min-width: 0`).
+- Cabecera con insignia de estado y, en exportación, el nombre del mundo.
+- Cuerpo de progreso: fase, detalle, recuento y barra. En éxito o error, resumen
+  con metadatos, recuentos, avisos o el código traducido.
+
+**Estados y tokens**
+
+| Estado | Composición | Tokens |
+|---|---|---|
+| `running` | Insignia **En curso** (`accent`), fase, detalle, recuento, barra y **Cancelar** si la fase es cancelable | `--accent-surface`, `--muted`, `--border`, `--surface-sunken` |
+| `cancelling` | Insignia **Cancelando** (`neutral`), botón de carga deshabilitado y detalle de espera | `--disabled-*`, `--muted` |
+| `exported` / `imported` | Insignia **Completado** (`success`) o **Completado con avisos** (`warning`), resumen y acciones | `--success`, `--warning`, `--surface-sunken` |
+| `failed` | Insignia **No completado** (`danger`), mensaje con `role="alert"`, garantía de que no se ha guardado nada y reintento si procede | `--danger`, `--border`, `--surface-sunken` |
+| Avisos | Icono decorativo + texto con plural `Intl`; no usan solo color | `--warning` |
+
+**Accesibilidad y movimiento**
+
+- Fase en `role="status"` con `aria-live="polite"` y `aria-atomic="true"`; el
+  error de la operación completa en `role="alert"`.
+- Barra con `role="progressbar"`, `aria-label`, `aria-valuetext` y
+  `aria-valuemin`/`aria-valuemax`/`aria-valuenow` solo cuando el total se
+  conoce; indeterminada no expone `aria-valuenow`. `aria-busy` queda fuera de la
+  región viva para no duplicar anuncios.
+- Foco inicial en **Cancelar** si la fase es cancelable; si no, en la fase. Al
+  terminar, foco en la acción principal del resumen y, al cerrar, retorno al
+  disparador. `Escape` no cierra mientras `running` o `cancelling`.
+- La barra indeterminada usa `--ease-in-out` y se **detiene** con
+  `prefers-reduced-motion: reduce`; el estado se transmite igualmente por texto
+  y `aria-valuetext`.
+- Contraste AA en ambos temas; sin elementos nuevos fuera de los tokens
+  existentes.
+
 ## 11. Estados
 
 Toda pantalla debe cubrir:
@@ -921,6 +965,7 @@ Reglas de migración:
 | Editor mínimo y menciones | Implementado | #131 |
 | Preferencias de interfaz persistentes | Implementado | #132 |
 | Auditoría visual, temas y ruido | Implementado | #133 |
+| Diálogo de transferencia y barra indeterminada | Implementado | #78 |
 
 **M1.5 está cerrado.** La composición v2 está aplicada y auditada en tokens y
 primitivas (#125), shell (#126), Inicio (#127), vista de mundo (#128), ficha
@@ -1037,6 +1082,12 @@ previstos el grafo completo (#83) y la auditoría final de accesibilidad de M5
   la aplicación con tema, rail, panel y secciones persistidos, comprueba el reset
   por API sin pérdida de mundos ni fichas y recorre 1024/1280/1600 px en ambos
   temas con axe.
+- La transferencia se cubre desde #78: `tests/components/transfer.test.tsx` y
+  `transfer-hook.test.tsx` recorren los estados, el foco, la cancelación, los
+  avisos, el contenido largo y axe en ambos temas;
+  `tests/e2e/transfer.spec.ts` comprueba el diálogo real a 1024/1280/1600 px,
+  con contraste y `prefers-reduced-motion` en la barra indeterminada. No hay
+  tokens nuevos.
 - La auditoría visual se cubre desde #133 con un arnés propio:
   `tests/e2e/visual-audit.spec.ts` recorre 1024, 1280 y 1600 px × Claro/Oscuro
   las seis pantallas, sus estados vacíos o sin resultados, los siete overlays y

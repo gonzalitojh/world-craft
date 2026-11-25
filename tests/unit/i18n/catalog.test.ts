@@ -104,6 +104,17 @@ describe('catálogo de mensajes', () => {
     expect(i18n.t('shell.views.home')).toBe('Inicio');
   });
 
+  it('mantiene las acciones de transferencia y sus avisos concordantes', () => {
+    expect(es.transfer.actions.export).toBe('Exportar mundo…');
+    expect(es.transfer.actions.import).toBe('Importar mundo…');
+    expect(es.transfer.summary.warnings['unknown-version-origin'].one).toBe(
+      'Se ha normalizado el origen de {count} versión de ficha porque no se pudo identificar.',
+    );
+    expect(es.transfer.summary.warnings['unknown-version-origin'].other).toBe(
+      'Se ha normalizado el origen de {count} versiones de ficha porque no se pudo identificar.',
+    );
+  });
+
   it('expone un objeto I18n completo para componentes y módulos puros', () => {
     const i18n: I18n = createI18n('es');
 

@@ -41,6 +41,7 @@ export const WORLD_ACTIVITY_ACTIONS = [
   'world.restored',
   'world.duplicated',
   'world.deleted',
+  'world.imported',
 ] as const;
 
 export type WorldActivityAction = (typeof WORLD_ACTIVITY_ACTIONS)[number];

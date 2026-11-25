@@ -1,7 +1,7 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 24/11/2026 con M1-06 (#77). La base local, las migraciones, el modo
+> 25/11/2026 con M1-07 (#78). La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
@@ -9,8 +9,9 @@
 > los tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
 > imágenes, etiquetas y galería, en M1-03 (#74); las relaciones tipadas con
 > backlinks, en M1-04 (#75); la búsqueda global con FTS5 y la paleta de
-> comandos, en M1-05 (#76); y la papelera, el historial de versiones y la copia
-> `pre-purge`, en M1-06 (#77). La interfaz de copias de Ajustes llega con #79 y
+> comandos, en M1-05 (#76); la papelera, el historial de versiones y la copia
+> `pre-purge`, en M1-06 (#77); y la exportación e importación de un mundo
+> completo, en M1-07 (#78). La interfaz de copias de Ajustes llega con #79 y
 > la release pública con actualización real, en M5. Las secciones distinguen lo
 > implementado de lo previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
@@ -18,8 +19,9 @@
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
 > ADR 0012 (copias y recuperación), ADR 0016 (migraciones y modo seguro),
 > ADR 0019 (mundos del MVP), ADR 0020 (tipos de entidad y campos
-> personalizados), ADR 0023 (búsqueda global FTS5) y ADR 0028 (papelera,
-> versiones y copia previa a la purga).
+> personalizados), ADR 0023 (búsqueda global FTS5), ADR 0028 (papelera,
+> versiones y copia previa a la purga) y ADR 0029 (exportación e importación de
+> mundos).
 
 ## 1. Principio
 
@@ -55,7 +57,9 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │   │   └─ <worldId>\
   │   │       ├─ <assetId>.webp
   │   │       └─ <assetId>.thumb.webp
-  │   └─ .tmp\               (escrituras en curso, se limpian)
+  │   └─ .tmp\               (assets de importación en curso; se limpian)
+  │       └─ <operationId>\
+  │           └─ <worldId>\
   ├─ backups\
   │   ├─ daily\                 (implementado, M0-07)
   │   │   └─ <timestamp>\
@@ -82,14 +86,22 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │           ├─ world-craft.sqlite-shm      (si existía)
   │           ├─ world-craft.sqlite-journal  (si existía)
   │           └─ manifest.json
-  ├─ exports\                   (previsto, M1)
+  ├─ imports\
+  │   └─ .tmp\                  (staging de importación; se limpia al arrancar)
+  │       └─ <operationId>\
+  │           ├─ assets\        (assets extraídos y procesados)
+  │           └─ plan.json      (plan con IDs nuevos y remapeo)
+  ├─ exports\
+  │   └─ .tmp\                  (temporales de exportación; reservado y limpiado)
   ├─ logs\
   │   ├─ startup.log
   │   ├─ startup.log.1
   │   ├─ assets.log
   │   ├─ assets.log.1
   │   ├─ updates.log
-  │   └─ updates.log.1
+  │   ├─ updates.log.1
+  │   ├─ transfer.log
+  │   └─ transfer.log.1
   └─ .updaterId                 (opcional; electron-updater, sin datos del usuario)
 ```
 
@@ -105,16 +117,18 @@ arranque los detecta y **no crea una base vacía** (sección 7).
 | `data/.restore.lock`, `data/.restore.pending` | Restauración en curso o interrumpida | Solo si la app está cerrada y no hay restauración activa (sección 7.4) |
 | `data/*.rollback*`, `data/*.restore.tmp*` | Restos de una restauración interrumpida | No: se preservan y la app entra en modo seguro |
 | `assets/worlds/<worldId>/` | WebP de cada mundo y su miniatura `.thumb.webp` (implementado) | Solo desde la app o con exportación previa |
-| `assets/.tmp/` | Restos de importaciones en curso (se limpian) | Sí, con la app cerrada; la purga los clasifica |
+| `assets/.tmp/` | Assets procesados de una importación en curso, en `<operationId>/<worldId>/`; se limpian al arrancar | Sí, con la app cerrada; nunca contiene assets publicados |
 | `backups/orphans/<timestamp>/` | Copia verificable de huérfanos purgados | Solo tras comprobar que no hace falta recuperar |
 | `backups/pre-migration/` | Copia y manifiesto previos a una migración; se conservan 5 (implementado) | Solo si no hay una actualización pendiente |
 | `backups/pre-purge/` | Copia y manifiesto previos a una purga definitiva; se conservan 10 válidas (implementado, M1-06) | Solo tras comprobar que no hace falta recuperar lo purgado |
 | `backups/daily`, `weekly`, `monthly` | Copias automáticas con manifiesto (implementado, M0-07) | Las antiguas, desde la app; no borrar las recientes |
 | `backups/pre-restore/` | Base anterior y sus auxiliares antes de restaurar (implementado, M0-07) | Solo tras comprobar que la restauración fue correcta; no se poda sola |
-| `exports/` | Exportaciones ZIP/JSON generadas por el usuario (previsto) | Sí |
+| `imports/.tmp/<operationId>/` | Staging de una importación: `assets/` y `plan.json`; se limpia al arrancar y al terminar o cancelar (implementado, M1-07) | Solo con la app cerrada; no contiene el mundo publicado |
+| `exports/.tmp/` | Carpeta reservada para temporales de exportación y su limpieza (implementado, M1-07). La exportación se publica en el destino que elige el usuario, no aquí | Sí, con la app cerrada; no guarda exportaciones del usuario |
 | `logs/startup.log` | Arranque y copias en JSONL, rotado a 256 KiB | Sí; no contiene contenido del usuario |
 | `logs/assets.log` | Eventos de assets en JSONL, rotado a 256 KiB | Sí; sin rutas, IDs ni contenido |
 | `logs/updates.log` | Eventos del actualizador en JSONL, rotado a 256 KiB (M0-08) | Sí; sin URLs, rutas, versiones ni contenido |
+| `logs/transfer.log` | Eventos de exportación e importación en JSONL, rotado a 256 KiB (M1-07) | Sí; sin rutas, IDs, nombres ni contenido |
 | `.updaterId` | Identificador opcional de electron-updater para staging; no se usa con GitHub | Sí, con la app cerrada; no contiene datos del usuario |
 
 La app ofrecerá desde Ajustes «Abrir carpeta de datos», «Abrir copias» y «Abrir
@@ -162,11 +176,15 @@ transacción y volver a comprobar. Si el resultado es `ready`, el programador cr
 las copias automáticas que falten antes de crear la ventana. El cierre es
 idempotente en `before-quit`.
 
-Las operaciones largas de **exportación e importación** se ejecutarán en un
-**utility process** para no bloquear la interfaz; todavía no está implementado.
-Las copias automáticas, la copia pre-migración y la restauración se ejecutan en
-el proceso principal durante el arranque o en el diálogo de modo seguro, antes
-de que exista una ventana con la que competir. En M0 no se copia al cerrar.
+Las operaciones largas de **exportación e importación** se ejecutan en un
+**utility process** (`out/main/transfer-worker.cjs`) para no bloquear la
+interfaz: allí viven el ZIP, la validación de JSON, los checksums y el procesado
+de imágenes. La **transacción SQLite de importación** y el renombrado del
+directorio de assets siguen en el proceso principal, que es el único que
+escribe. Las copias automáticas, la copia pre-migración y la restauración se
+ejecutan en el proceso principal durante el arranque o en el diálogo de modo
+seguro, antes de que exista una ventana con la que competir. En M0 no se copia
+al cerrar.
 
 ### 3.3 Búsqueda
 
@@ -324,12 +342,35 @@ de huérfanos sigue sin canal ni interfaz.
   contención, `backups/orphans` sin validar como directorio real, ausencia de
   symlinks de archivo en las pruebas de Windows sin modo desarrollador. Los
   avisos de terceros y el desempaquetado quedaron completados en #68.
-- La **exportación e importación** de assets con rutas relativas y checksums
-  siguen previstas para M1 (sección 8).
+- La **exportación e importación** de assets usa rutas relativas y SHA-256; el
+  detalle está en la sección 8 y en el
+  [formato de exportación](formato-de-exportacion.md).
 
 > El diseño original está en el [ADR 0005](adr/0005-local-assets-custom-protocol.md)
 > y el detalle de implementación en el
 > [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md).
+
+### 4.6 Exportación e importación de assets (#78)
+
+- **Exportación:** cada asset referenciado por la portada, la imagen principal o
+  la galería viaja como `assets/<uuidv7>.webp` dentro del ZIP. Antes de
+  escribirlo se comprueba que la fila es `kind = 'image'`, que el MIME es
+  `image/webp` y que el tamaño y el SHA-256 del archivo coinciden con la base.
+  Si un asset falta o no verifica, la exportación falla con
+  `TRANSFER_ASSET_INVALID` y no publica el ZIP. **No se exportan miniaturas**:
+  se regeneran al importar.
+- **Importación:** el asset se extrae al staging, se comprueba su tamaño y
+  SHA-256 contra el manifiesto y se detecta el formato por **magic bytes**. Solo
+  se acepta WebP; después se re-codifica con los límites del servicio
+  (25 MiB, 8192 px y 24 Mpx), se calcula el SHA-256 del WebP canónico y se
+  genera la miniatura de 320 px. El par de archivos se publica en
+  `assets/.tmp/<operationId>/<worldId>/` y, dentro de la transacción, se renombra
+  a `assets/worlds/<worldId>/` antes del commit. La fila de `assets` se inserta
+  con el nuevo `worldId`, el nuevo `assetId`, la ruta relativa canónica y
+  `kind = 'image'`.
+- El nombre dentro del ZIP es el UUIDv7 del asset de origen; la importación
+  genera IDs nuevos y reconstruye `relative_path`, por lo que un paquete no
+  puede imponer una ruta en disco.
 
 ## 5. Migraciones
 
@@ -638,43 +679,140 @@ confirmación.
 
 ## 8. Exportación e importación
 
-**Previsto para M1.** El formato es:
+**Implementado en M1-07 (#78).** El formato está versionado y documentado en
+[`docs/formato-de-exportacion.md`](formato-de-exportacion.md); la decisión está
+en el [ADR 0029](adr/0029-world-export-import.md). No hay migración:
+`user_version` sigue en **8**.
 
 ### 8.1 Exportación de un mundo
 
-Un ZIP con:
+La acción **Exportar mundo…** vive en el menú del mundo y abre el diálogo nativo
+de guardado. El destino lo elige el usuario; el nombre propuesto se sanea para
+Windows y termina en `.zip`. La exportación no se guarda en una carpeta
+`exports/` de la aplicación.
 
-- `world.json`: mundo, tipos (los personalizados viajan en el bloque
-  `entity-types.v1`; los del sistema son implícitos), entidades, relaciones,
-  etiquetas, mapas, grafo, manuscritos, escenas, tablas de juego y ajustes del
-  mundo. Incluye el **historial de versiones de las fichas exportadas**; las
-  versiones de fichas en papelera se omiten.
-- `assets/`: archivos referenciados con rutas relativas.
-- `manifest.json`: versión del formato, versión de esquema, fecha y checksums.
+El archivo es un ZIP con:
 
-El formato es abierto y legible. La exportación se puede hacer completa o sin
-assets. **La papelera nunca se exporta:** solo viaja el contenido con
-`deleted_at IS NULL` cuyo mundo esté vivo, y lo purgado ya no existe en la base.
-Esta es la regla única que aplicará #78; no se duplica en la interfaz (ADR 0028).
+- `manifest.json`: `format: "world-craft-world"`, `formatVersion: 1`,
+  `schemaVersion` igual a `user_version`, `appVersion`, `exportedAt`,
+  `assetsIncluded: true`, mundo de origen, recuentos, avisos y `files` con
+  `path`, `size` y `sha256`. El manifiesto no se lista a sí mismo.
+- `world.json`: mundo, tipos personalizados (`entity-types.v1`), tipos de
+  relación personalizados (`relation-types.v1`), etiquetas, metadatos de assets,
+  fichas vivas con sus versiones, galería, imagen principal, atributos y
+  etiquetas, relaciones y portada.
+- `assets/<uuidv7>.webp`: las imágenes referenciadas, ya en WebP canónico.
 
-### 8.2 Importación
+**Solo viaja contenido vivo de mundos vivos:** fichas, tipos, etiquetas y
+relaciones con `deleted_at IS NULL`, y un mundo que no esté en la papelera. Las
+versiones de las fichas exportadas se incluyen completas; las de fichas en
+papelera no existen en la instantánea. **La papelera, lo purgado, `activity_log`,
+el índice FTS5, las preferencias y las miniaturas no se exportan.** Tampoco hay
+bloques de mapas, manuscritos, escenas o juego, porque aún no están
+implementados. Esta regla no se duplica en la interfaz más allá del aviso del
+diálogo (ADR 0028).
 
-- Se valida el ZIP y cada JSON con Zod.
-- Los tipos del bloque `entity-types.v1` rechazan las claves del sistema o ya
-  existentes en el mundo y se insertan en una transacción.
-- Límites de tamaño, número de archivos y profundidad.
-- Se rechazan rutas absolutas, `..`, enlaces simbólicos y nombres reservados de
-  Windows.
-- Se importa en una carpeta temporal y se publica en una transacción; si algo
-  falla, no queda nada a medias.
-- Los IDs se regeneran si hay colisión; el informe indica qué se renombró.
-- La importación nunca sobrescribe un mundo existente sin confirmación.
+La exportación se ejecuta en el utility process con una conexión SQLite de solo
+lectura. El orden del contenido es determinista; cada asset se verifica contra
+su tamaño y SHA-256 en la base; el ZIP se escribe en un `.partial` único junto al
+destino, se vuelve a leer para comprobar manifiesto, `world.json` y checksums de
+los assets, y solo entonces se publica con `rename`. Si algo falla, el `.partial`
+se elimina y el archivo de destino anterior queda intacto. El progreso y la
+cancelación llegan por eventos; la fase `saving` no se puede cancelar.
 
-### 8.3 Eliminación total
+### 8.2 Importación de un mundo
+
+La acción **Importar mundo…** está en Inicio y Mundos y abre el selector nativo
+de archivos. La importación **siempre crea un mundo nuevo**: nunca fusiona ni
+sobrescribe un mundo existente.
+
+1. **Preparación en el worker.** Se valida el índice del ZIP, se lee el
+   manifiesto y se rechaza con `TRANSFER_FORMAT_UNSUPPORTED` si su
+   `schemaVersion` supera el `user_version` instalado, antes de leer
+   `world.json`. Después se comprueba el tamaño y el SHA-256 de `world.json`
+   antes de parsearlo y se valida el contenido con Zod estricto. Solo se admiten
+   `manifest.json`, `world.json` y `assets/<uuidv7>.webp`; se rechazan rutas
+   absolutas, `..`, UNC, separadores `\`, ADS (`:`), nombres reservados de
+   Windows, mayúsculas, directorios, enlaces, cifrado, duplicados y entradas de
+   más. Los límites y el ratio de compresión se comprueban antes de extraer y
+   otra vez durante la extracción.
+2. **Staging.** `imports/.tmp/<operationId>/` guarda los assets extraídos, el
+   `world.json` validado y `plan.json`. Los assets se procesan con los límites
+   del servicio (magic bytes WebP, 25 MiB, 8192 px y 24 Mpx), se re-codifican y
+   se les genera la miniatura. El plan genera un UUIDv7 nuevo para cada fila y
+   remapea todas las referencias. Los assets procesados se mueven a
+   `assets/.tmp/<operationId>/<worldId>/`.
+3. **Publicación transaccional.** El proceso principal vuelve a validar las
+   rutas del worker y el plan, comprueba los assets y el espacio libre, y abre
+   una única transacción. Inserta las filas en este orden: `worlds`,
+   `entity_types`, `relation_types`, `tags`, `assets`, `entities`,
+   `entity_tags`, `entity_gallery`, `entity_versions` y `relations`. Después,
+   **antes del commit**, renombra el directorio de assets a
+   `assets/worlds/<worldId>`, actualiza `worlds.cover_asset_id` y registra la
+   actividad `world.imported`. Si el commit o el renombrado fallan, SQLite
+   revierte y el directorio publicado se elimina.
+4. **Cancelación y limpieza.** Cancelar antes de `saving` aborta la lectura, la
+   extracción o la preparación y limpia el staging. Durante `saving` la
+   operación no se puede cancelar: la transacción y el renombrado deben terminar
+   juntos. Al arrancar se vacían `imports/.tmp`, `exports/.tmp` y `assets/.tmp`;
+   nunca se toca `assets/worlds`.
+
+**No se crea una copia previa a la importación.** La operación solo añade un
+mundo nuevo y es transaccional; los mundos, fichas, imágenes, relaciones, copias
+y `schema_migrations` existentes no se modifican. La copia previa sigue siendo
+obligatoria para migraciones, purgas y vaciados.
+
+**Conflictos y saneo.** El slug global del mundo se conserva si está libre; si
+no, se prueba `-2`, `-3`… hasta `-9999`. El resultado indica `slugAdjusted`. Los
+tipos del sistema se resuelven por clave y los personalizados se insertan. Las
+referencias rotas se eliminan con avisos agregados (enlaces `wc-entity://`,
+campos `reference`, galería, portada, imagen principal, tipos y etiquetas
+ausentes, relaciones sin extremo o tipo y versiones ilegibles). Un atributo que
+no encaja se descarta; un campo obligatorio ausente no se inventa. Una ficha sin
+tipo personalizado se descarta y sus relaciones también.
+
+**Fechas y estado.** El mundo importado queda **activo**, con `settings` vacío y
+`cover_asset_id` resuelto al final. El mundo, los tipos personalizados y los
+tipos de relación usan la fecha de importación; las fichas, etiquetas, versiones,
+assets y relaciones conservan sus fechas originales. La actividad registra
+`world.imported` con los recuentos y el total de avisos. Los triggers de búsqueda
+indexan el contenido importado sin una reconstrucción aparte.
+
+### 8.3 Formato, compatibilidad y límites
+
+- **Checksums:** cada `sha256` es el SHA-256 de los bytes descomprimidos. El
+  lector comprueba tamaño y hash de `world.json` y de cada asset. El CRC del
+  contenedor no se usa como garantía; la comprobación fuerte es el SHA-256.
+- **Formato y esquema futuros:** `formatVersion` superior a 1 se rechaza con
+  `TRANSFER_FORMAT_UNSUPPORTED`. Un `schemaVersion` superior al `user_version`
+  instalado también se rechaza con `TRANSFER_FORMAT_UNSUPPORTED`, después de leer
+  el manifiesto y antes de leer `world.json` o extraer assets; los esquemas
+  iguales o anteriores se aceptan y el contenido se valida con Zod. La versión
+  instalada se propaga del proceso principal al worker. Un cambio de esquema que
+  altere el contenido exigirá además un `formatVersion` nuevo.
+- **Límites D4:** 8 GiB de ZIP, 16 GiB descomprimidos, 10.000 entradas, 256 MiB
+  de `world.json`, 16 MiB de manifiesto, 50.000 fichas, 500.000 versiones,
+  300.000 relaciones, 5.000 etiquetas, 1.000 tipos de entidad, 1.000 tipos de
+  relación, 8.000 assets y 140 caracteres de ruta. Se mantienen los límites por
+  registro (25 MiB/imagen, 8192 px/24 Mpx, 200.000 bytes/50.000 caracteres de
+  descripción, 500 de `alt`, 20 de galería, 12 etiquetas, 10 alias y 8 géneros).
+- **Ratio de compresión:** 100:1 por entrada solo al importar. La verificación de
+  una exportación propia lo desactiva para no rechazar un mundo legítimamente
+  muy comprimible.
+- **Espacio:** antes de extraer se comprueba el espacio libre con un margen de
+  64 MiB y una reserva por miniaturas y por `plan.json`; en exportación se suma
+  el tamaño del destino existente. Un fallo devuelve `TRANSFER_NO_SPACE` sin
+  dejar un mundo parcial.
+- **Modo seguro:** sin base, el coordinador de sustitución devuelve
+  `TRANSFER_UNAVAILABLE` y no abre diálogos ni escribe. La función no está
+  disponible en ese estado.
+
+### 8.4 Eliminación total
 
 Ajustes → Datos → «Eliminar todos los datos» exige escribir una confirmación,
 crea una última copia recuperable y borra la base, los assets y las copias
-según la elección del usuario. La app se reinicia en estado inicial.
+según la elección del usuario. La app se reinicia en estado inicial. Sigue
+**prevista** con la pantalla de Ajustes (#79).
 
 ## 9. Preservación en actualizaciones y desinstalación
 
@@ -732,6 +870,11 @@ en la carpeta de datos del usuario.
   `update.command`, con resultado y motivo estables, sin URLs, rutas, versiones
   ni contenido. La caché de descargas de electron-updater vive fuera de
   `userData`, en `%LOCALAPPDATA%`, y no se incluye en las copias.
+- La exportación e importación escriben `logs/transfer.log` en JSONL con
+  rotación a 256 KiB: `transfer.operation` (operación, fase, resultado, código y
+  número de avisos) y `transfer.cleanup` (resultado y entradas eliminadas). No
+  incluye rutas, IDs, nombres de mundo, contenido ni mensajes internos. Un fallo
+  al escribir el log no interrumpe la operación.
 - Si el log no se puede escribir, el arranque continúa: el diagnóstico nunca
   impide abrir la aplicación.
 - Los logs generales de la app, con nivel configurable, y la exportación de un
@@ -746,10 +889,17 @@ en la carpeta de datos del usuario.
   antes de decodificar y sobre el resultado. En M0 no hay límite por mundo ni
   deduplicación; se revisarán con la UI de M1.
 - Listas paginadas por cursor; virtualización en tablas largas.
+- **Exportación e importación:** límites D4 en la sección 8.3 y en el
+  [formato](formato-de-exportacion.md). La importación exige ratio 100:1 por
+  entrada y comprueba el espacio libre con un margen de 64 MiB; la exportación
+  reserva el tamaño de salida más el destino existente. Una operación a la vez y
+  una sola cancelación antes de `saving`. Los ZIP grandes pueden tardar varios
+  minutos; la interfaz muestra fase, recuento y avisos, y bloquea el cierre del
+  diálogo mientras la operación no es cancelable.
 - Las copias automáticas y la restauración se ejecutan en el proceso principal
   durante el arranque o en el diálogo de modo seguro, antes de la ventana. Una
-  base muy grande puede alargar el arranque; el utility process para copias y
-  exportaciones se valorará en M5.
+  base muy grande puede alargar el arranque. La exportación y la importación ya
+  usan el utility process; las copias y su posible worker se valorarán en M5.
 - Un arranque con migraciones pendientes puede ejecutar hasta **tres
   `integrity_check`** (base viva antes de migrar, copia pre-migración y base viva
   después); cada copia verificada añade sus propias comprobaciones en solo
@@ -782,6 +932,7 @@ en la carpeta de datos del usuario.
 - [Esquema de base de datos](base-de-datos/esquema.md)
 - [Migraciones](base-de-datos/migraciones.md)
 - [Continuidad y recuperación](continuidad.md)
+- [Formato de exportación](formato-de-exportacion.md)
 - [Plan de pruebas](calidad/plan-de-pruebas.md)
 - [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md)
 - [ADR 0005](adr/0005-local-assets-custom-protocol.md)
@@ -790,3 +941,4 @@ en la carpeta de datos del usuario.
 - [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md)
 - [ADR 0027](adr/0027-ui-preferences-persistence.md)
 - [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)
+- [ADR 0029](adr/0029-world-export-import.md)

@@ -15,18 +15,31 @@ import type { Page } from '@playwright/test';
 export async function analyzeWithAxe(
   page: Page,
   options: RunOptions = {},
+  context?: string,
 ): Promise<AxeResults> {
   await page.evaluate(axeCore.source);
 
-  return page.evaluate((runOptions) => {
-    const runner = (
-      window as unknown as {
-        readonly axe: {
-          run: (context: Document, options: RunOptions) => Promise<AxeResults>;
-        };
-      }
-    ).axe;
+  return page.evaluate(
+    ({ runOptions, selector }) => {
+      const runner = (
+        window as unknown as {
+          readonly axe: {
+            run: (
+              context: Document | Element,
+              options: RunOptions,
+            ) => Promise<AxeResults>;
+          };
+        }
+      ).axe;
+      const target =
+        selector === undefined ? document : document.querySelector(selector);
 
-    return runner.run(document, runOptions);
-  }, options);
+      if (target === null) {
+        throw new Error(`No existe el contexto de axe: ${selector}`);
+      }
+
+      return runner.run(target, runOptions);
+    },
+    { runOptions: options, selector: context },
+  );
 }

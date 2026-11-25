@@ -19,6 +19,8 @@ import { readTargetSchemaVersion } from './db/migrations';
 import { initializeDatabase } from './db/startup';
 import { showSafeModeDialog } from './safe-mode-dialog';
 import type { SafeModeDecision } from './safe-mode-prompt';
+import { cleanupTransferTempDirectories } from './transfer/cleanup';
+import { createTransferLogger } from './transfer/logger';
 
 /** Resultado de composición que consume el punto de entrada. */
 export type PersistenceStartupOutcome =
@@ -66,6 +68,19 @@ async function startPersistence(
 
   if (result.status === 'ready') {
     client = result.client;
+
+    // Las operaciones de transferencia interrumpidas no deben sobrevivir a un
+    // reinicio. La limpieza es best-effort y nunca toca `assets/worlds`.
+    try {
+      await cleanupTransferTempDirectories({
+        importsTempDir: result.paths.importsTempDir,
+        exportsTempDir: result.paths.exportsTempDir,
+        assetsTempDir: result.paths.assetsTempDir,
+        logger: createTransferLogger(result.paths.transferLogFile, now),
+      });
+    } catch {
+      console.error('No se pudieron limpiar los temporales de transferencia.');
+    }
 
     // Una copia automática fallida o lenta nunca bloquea el arranque ni la
     // creación de la ventana; el propio programador registra el resultado.

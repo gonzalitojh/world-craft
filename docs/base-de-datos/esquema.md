@@ -1,7 +1,7 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 24/11/2026 con M1-06 (#77). La migración
+> 25/11/2026 con M1-07 (#78). La migración
 > `0000_init` y las tablas `schema_migrations` y `app_settings` están
 > implementadas en M0-04 (#64); la tabla `assets` en `0001_assets` (M0-06, #66);
 > `worlds` y `activity_log` en `0002_worlds` (M1-01, #72); `entity_types` en
@@ -10,9 +10,10 @@
 > `relations` en `0005_relations` (M1-04, #75); el índice de búsqueda
 > `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
 > (M1-05, #76); y `entity_versions` con los índices de papelera en
-> `0007_trash_versions` (M1-06, #77). El resto de tablas de contenido llega en
-> M2, M3 y M4 con sus propias migraciones; hasta entonces figuran como
-> previstas.
+> `0007_trash_versions` (M1-06, #77). **#78 no añade migraciones ni cambia
+> `user_version`, que sigue en 8**: la exportación y la importación usan las
+> tablas existentes. El resto de tablas de contenido llega en M2, M3 y M4 con
+> sus propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -270,7 +271,7 @@ Reglas de la issue M1-02:
   transacción. El borrado del mundo es lógico y conserva sus tipos hasta la
   purga.
 - El formato de transferencia de tipos (`entity-types.v1`) solo incluye los
-  tipos personalizados; la exportación completa del mundo lo compondrá en
+  tipos personalizados; la exportación completa del mundo lo compone desde
   M1-07 (#78).
 
 ### 4.3 `entities`
@@ -728,6 +729,45 @@ Reglas (ADR 0028):
 - El borrado lógico de la ficha no toca las versiones; la purga las elimina en
   cascada. En modo seguro el servicio está `unavailable`.
 
+### 4.15 Importación de un mundo (#78)
+
+**No hay migración.** `user_version` sigue en **8** y no se modifica
+`schema_migrations`. La importación usa las tablas existentes en **una única
+transacción** y respeta las claves foráneas con este orden de inserción. Antes de
+leer `world.json` o extraer assets, rechaza con `TRANSFER_FORMAT_UNSUPPORTED` un
+manifiesto cuyo `schemaVersion` supere el `user_version` instalado; los valores
+iguales o anteriores se aceptan.
+
+El orden de inserción es:
+
+1. `worlds` (mundo nuevo, `status = 'active'`, `settings = '{}'`, sin portada
+   todavía).
+2. `entity_types` (solo los personalizados del paquete; los 18 del sistema se
+   resuelven por clave y no se duplican).
+3. `relation_types` (solo los personalizados; los del sistema por clave).
+4. `tags`.
+5. `assets` (con `world_id` nuevo, `kind = 'image'`, `mime = 'image/webp'`, ruta
+   relativa reconstruida y SHA-256 verificado).
+6. `entities`.
+7. `entity_tags`.
+8. `entity_gallery`.
+9. `entity_versions`.
+10. `relations`.
+11. Renombrar `assets/.tmp/<operationId>/<worldId>` a
+    `assets/worlds/<worldId>` **antes del commit**.
+12. `UPDATE worlds SET cover_asset_id = …` con la portada remapeada.
+13. `activity_log` con `action = 'world.imported'`, `entity_type = 'world'`,
+    `entity_id = NULL` y un `diff` con los recuentos y el total de avisos.
+
+Después se confirma la transacción. Si algo falla antes del commit, la
+transacción revierte y el directorio publicado se elimina.
+
+> **Assets sin FK a `worlds` hasta #116.** La tabla `assets` conserva su
+> `world_id` sin clave foránea (sección 4.7). La importación siempre inserta un
+> `world_id` válido del mundo recién creado, pero la base no lo impone todavía;
+> la FK y la cuarentena de huérfanos llegan con #116. Un cierre abrupto entre el
+> renombrado y el commit puede dejar assets sin mundo, nunca un mundo parcial.
+
 ## 5. Reglas de integridad
 
 1. Borrar contenido es lógico (`deleted_at`) y la purga es una acción separada,
@@ -785,3 +825,4 @@ Cualquier cambio de tabla, columna, índice o trigger requiere:
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
 - [ADR 0028](../adr/0028-trash-versions-and-pre-purge-backup.md)
+- [ADR 0029](../adr/0029-world-export-import.md)

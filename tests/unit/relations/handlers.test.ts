@@ -6,6 +6,7 @@ import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableEntitiesService } from '@/main/entities/service';
 import { createUnavailableEntityTypesService } from '@/main/entity-types/service';
 import { createIpcHandlers } from '@/main/ipc/handlers';
+import { createUnavailableTransferCoordinator } from '@/main/transfer/unavailable-coordinator';
 import { createIpcRouter } from '@/main/ipc/registry';
 import { createUnavailablePreferencesService } from '@/main/preferences/service';
 import {
@@ -106,6 +107,7 @@ function createRoute(service: RelationsService) {
       trash: createUnavailableTrashService(),
 
       versions: createUnavailableVersionsService(),
+      transfer: createUnavailableTransferCoordinator(),
       pickImages: async () => [],
     }),
   );
