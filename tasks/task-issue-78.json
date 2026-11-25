@@ -1,7 +1,7 @@
 {
   "title": "Exportación e importación de mundos",
   "description": "Implementar la portabilidad de un mundo completo: exportarlo a un ZIP abierto con manifest JSON versionado y assets, e importarlo con validación Zod, límites de tamaño y número de archivos, protección contra rutas peligrosas, carpeta temporal, publicación transaccional, resolución predecible de conflictos de ids y slugs, y progreso y cancelación. La papelera nunca se exporta: solo viaja contenido vivo de mundos vivos, con las versiones de las fichas exportadas.",
-  "status": "review",
+  "status": "published",
   "model_variant": "max",
   "issue": {
     "number": 78,
@@ -82,5 +82,12 @@
     "manual": "docs/manual-de-usuario.md: estado, sección 4.6 «Exportar e importar un mundo», 4.5, 5.10, 13.1, 13.2, 13.4, accesibilidad, problemas frecuentes, glosario y tabla de estado",
     "changelog": "CHANGELOG.md [Sin publicar]: exportación e importación, formato v1, worker y canales, dependencias y pruebas",
     "agents": "no aplica: no cambian el equipo, sus responsabilidades ni la invocación"
+  },
+  "pr": {
+    "number": 147,
+    "url": "https://github.com/gonzalitojh/world-craft/pull/147",
+    "title": "feat(transfer): exportación e importación de mundos (#78)",
+    "branch": "feat/issue-78-world-export-import",
+    "commit": "d6f81e0"
   }
 }
