@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 const { showSaveDialog, showOpenDialog } = vi.hoisted(() => ({
@@ -73,7 +75,7 @@ describe('diálogos y nombres de exportación', () => {
 
     expect(showSaveDialog).toHaveBeenCalledWith(
       expect.objectContaining({
-        defaultPath: 'C:\\datos\\Documents\\Crónica de las Mareas.zip',
+        defaultPath: join('C:\\datos\\Documents', 'Crónica de las Mareas.zip'),
         filters: [
           {
             name: 'Mundo de World Craft',

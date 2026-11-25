@@ -1,7 +1,10 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('electron', () => ({
-  app: { getPath: () => 'C:\\datos\\usuario' },
+  app: { getPath: () => process.cwd() },
   dialog: {
     showSaveDialog: vi.fn(),
     showOpenDialog: vi.fn(),
@@ -37,6 +40,17 @@ import type {
 const WORLD_ID = '018f1000-0000-7000-8000-000000000001';
 const OPERATION_ID = '018f1000-0000-7000-8000-000000000002';
 const IMPORT_OPERATION_ID = '018f1000-0000-7000-8000-000000000003';
+const ROOT = join(tmpdir(), 'wc-transfer-test');
+const DATABASE_FILE = join(ROOT, 'world-craft.sqlite');
+const ASSETS_DIR = join(ROOT, 'assets');
+const IMPORTS_DIR = join(ROOT, 'imports');
+const ASSETS_TEMP_DIR = join(ASSETS_DIR, '.tmp');
+const ASSETS_WORLDS_DIR = join(ASSETS_DIR, 'worlds');
+const EXPORT_FILE = join(ROOT, 'salida', 'mundo.zip');
+const IMPORT_FILE = join(ROOT, 'entrada', 'mundo.zip');
+const IMPORT_TEMP_DIR = join(IMPORTS_DIR, '.tmp', 'op');
+const PLAN_FILE = join(IMPORT_TEMP_DIR, 'plan.json');
+const ASSET_TEMP_OPERATION_DIR = join(ASSETS_TEMP_DIR, 'op', 'world');
 
 const counts: TransferCounts = {
   entities: 1,
@@ -84,11 +98,11 @@ class FakeWorker implements TransferWorkerHandle {
 
 function baseOptions(overrides: Record<string, unknown> = {}) {
   return {
-    databaseFile: 'C:\\datos\\world-craft.sqlite',
-    assetsDir: 'C:\\datos\\assets',
-    importsDir: 'C:\\datos\\imports',
-    assetsTempDir: 'C:\\datos\\assets\\.tmp',
-    assetsWorldsDir: 'C:\\datos\\assets\\worlds',
+    databaseFile: DATABASE_FILE,
+    assetsDir: ASSETS_DIR,
+    importsDir: IMPORTS_DIR,
+    assetsTempDir: ASSETS_TEMP_DIR,
+    assetsWorldsDir: ASSETS_WORLDS_DIR,
     appVersion: '0.1.0',
     schemaVersion: 8,
     now: () => 1_800_000_000_000,
@@ -111,7 +125,7 @@ describe('coordinador de transferencia', () => {
     const coordinator = createTransferCoordinator(
       baseOptions({
         findWorld: () => ({ name: 'Mundo', slug: 'mundo' }),
-        showExportDialog: async () => 'C:\\salida\\mundo.zip',
+        showExportDialog: async () => EXPORT_FILE,
         forkWorker: (() => worker) satisfies ForkTransferWorker,
         sendEvent: (event: TransferProgressEvent) => events.push(event),
       }),
@@ -124,7 +138,7 @@ describe('coordinador de transferencia', () => {
       type: 'export',
       operationId: OPERATION_ID,
       worldId: WORLD_ID,
-      destinationFile: 'C:\\salida\\mundo.zip',
+      destinationFile: EXPORT_FILE,
     });
 
     worker.emit(
@@ -206,8 +220,8 @@ describe('coordinador de transferencia', () => {
         const prepared = await prepare({
           operationId: IMPORT_OPERATION_ID,
           archiveFile,
-          importsDir: 'C:\\datos\\imports',
-          assetsTempDir: 'C:\\datos\\assets\\.tmp',
+          importsDir: IMPORTS_DIR,
+          assetsTempDir: ASSETS_TEMP_DIR,
           schemaVersion: 8,
           existingSlugs: ['mundo'],
           now: () => 1,
@@ -244,7 +258,7 @@ describe('coordinador de transferencia', () => {
     });
     const coordinator = createTransferCoordinator(
       baseOptions({
-        showImportDialog: async () => 'C:\\entrada\\mundo.zip',
+        showImportDialog: async () => IMPORT_FILE,
         forkWorker: (() => worker) satisfies ForkTransferWorker,
         importServiceFactory,
         sendEvent: (event: TransferProgressEvent) =>
@@ -262,7 +276,7 @@ describe('coordinador de transferencia', () => {
     expect(worker.posted[0]).toMatchObject({
       type: 'import',
       operationId: IMPORT_OPERATION_ID,
-      archiveFile: 'C:\\entrada\\mundo.zip',
+      archiveFile: IMPORT_FILE,
       schemaVersion: 8,
       existingSlugs: ['mundo'],
     });
@@ -284,9 +298,9 @@ describe('coordinador de transferencia', () => {
         type: 'result',
         operation: 'import',
         result: {
-          planFile: 'C:\\datos\\imports\\.tmp\\op\\plan.json',
-          stagingDir: 'C:\\datos\\imports\\.tmp\\op',
-          assetTempDir: 'C:\\datos\\assets\\.tmp\\op\\world',
+          planFile: PLAN_FILE,
+          stagingDir: IMPORT_TEMP_DIR,
+          assetTempDir: ASSET_TEMP_OPERATION_DIR,
           worldId: WORLD_ID,
           worldName: 'Mundo',
           slug: 'mundo-2',
@@ -332,7 +346,7 @@ describe('coordinador de transferencia', () => {
     const coordinator = createTransferCoordinator(
       baseOptions({
         findWorld: () => ({ name: 'Mundo', slug: 'mundo' }),
-        showExportDialog: async () => 'C:\\salida\\mundo.zip',
+        showExportDialog: async () => EXPORT_FILE,
         forkWorker: () => worker,
       }),
     );
@@ -387,7 +401,7 @@ describe('coordinador de transferencia', () => {
   });
 
   it('no abre el diálogo si el mundo no existe o está en papelera', async () => {
-    const showExportDialog = vi.fn(async () => 'C:\\salida\\mundo.zip');
+    const showExportDialog = vi.fn(async () => EXPORT_FILE);
     const coordinator = createTransferCoordinator(
       baseOptions({
         findWorld: () => null,
@@ -452,7 +466,7 @@ describe('coordinador de transferencia', () => {
     const coordinator = createTransferCoordinator(
       baseOptions({
         findWorld: () => ({ name: 'Mundo', slug: 'mundo' }),
-        showExportDialog: async () => 'C:\\salida\\mundo.zip',
+        showExportDialog: async () => EXPORT_FILE,
         forkWorker: () => worker,
       }),
     );
@@ -486,8 +500,8 @@ describe('coordinador de transferencia', () => {
         await prepare({
           operationId: IMPORT_OPERATION_ID,
           archiveFile,
-          importsDir: 'C:\\datos\\imports',
-          assetsTempDir: 'C:\\datos\\assets\\.tmp',
+          importsDir: IMPORTS_DIR,
+          assetsTempDir: ASSETS_TEMP_DIR,
           schemaVersion: 8,
           existingSlugs: [],
           now: () => 1,
@@ -508,7 +522,7 @@ describe('coordinador de transferencia', () => {
     });
     const coordinator = createTransferCoordinator(
       baseOptions({
-        showImportDialog: async () => 'C:\\entrada\\mundo.zip',
+        showImportDialog: async () => IMPORT_FILE,
         forkWorker: () => worker,
         importServiceFactory,
       }),
@@ -539,7 +553,7 @@ describe('coordinador de transferencia', () => {
     const coordinator = createTransferCoordinator(
       baseOptions({
         findWorld: () => ({ name: 'Mundo', slug: 'mundo' }),
-        showExportDialog: async () => 'C:\\salida\\mundo.zip',
+        showExportDialog: async () => EXPORT_FILE,
         forkWorker: () => worker,
       }),
     );
@@ -602,7 +616,7 @@ describe('coordinador de transferencia', () => {
     const coordinator = createTransferCoordinator(
       baseOptions({
         findWorld: () => ({ name: 'Mundo', slug: 'mundo' }),
-        showExportDialog: async () => 'C:\\salida\\mundo.zip',
+        showExportDialog: async () => EXPORT_FILE,
         forkWorker: () => worker,
       }),
     );
