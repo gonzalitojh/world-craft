@@ -68,19 +68,16 @@ describe('manifiesto de la biblioteca', () => {
       slug: 'cronica-de-las-mareas',
       counts: COUNTS,
     });
-    expect(parseLibraryManifestJson(serializeLibraryManifest(manifest))).toEqual(
-      manifest,
-    );
+    expect(
+      parseLibraryManifestJson(serializeLibraryManifest(manifest)),
+    ).toEqual(manifest);
   });
 
   it('rechaza recuentos incoherentes, rutas duplicadas o hashes inválidos', () => {
     for (const invalid of [
       input({ counts: { ...COUNTS, entities: 99 } }),
       input({
-        worlds: [
-          input().worlds[0]!,
-          { ...input().worlds[0]!, name: 'Otra' },
-        ],
+        worlds: [input().worlds[0]!, { ...input().worlds[0]!, name: 'Otra' }],
       }),
       input({
         worlds: [{ ...input().worlds[0]!, slug: 'Otra-Mal' }],
@@ -128,10 +125,7 @@ describe('manifiesto de la biblioteca', () => {
     expect(() => verifyLibraryFileSet(manifest, actual)).not.toThrow();
 
     expect(() =>
-      verifyLibraryFileSet(
-        manifest,
-        new Map([...actual, ['sobra.txt', 1]]),
-      ),
+      verifyLibraryFileSet(manifest, new Map([...actual, ['sobra.txt', 1]])),
     ).toThrowError(
       expect.objectContaining({ code: 'DATA_LIBRARY_VERIFY_FAILED' }),
     );
@@ -146,7 +140,12 @@ describe('manifiesto de la biblioteca', () => {
     expect(() =>
       verifyLibraryFileSet(
         manifest,
-        new Map([...actual].map(([key, size]) => [key, key === 'settings.json' ? 1 : size])),
+        new Map(
+          [...actual].map(([key, size]) => [
+            key,
+            key === 'settings.json' ? 1 : size,
+          ]),
+        ),
       ),
     ).toThrowError(
       expect.objectContaining({ code: 'DATA_LIBRARY_VERIFY_FAILED' }),

@@ -55,9 +55,7 @@ const EMPTY_DELETE_COUNTS: DataDeleteCounts = {
 };
 
 /** Construye los handlers a partir del servicio de datos. */
-export function createDataIpcHandlers(
-  service: DataService,
-): DataIpcHandlers {
+export function createDataIpcHandlers(service: DataService): DataIpcHandlers {
   return {
     [IPC_CHANNELS.dataGetSummary]: defineIpcHandler<DataEmptyPayload>({
       schema: dataEmptyPayloadSchema,
@@ -85,9 +83,7 @@ export function createDataIpcHandlers(
     [IPC_CHANNELS.dataDeleteAll]: defineIpcHandler<DataDeleteAllPayload>({
       schema: dataDeleteAllPayloadSchema,
       handle: (payload) =>
-        runDeleteResult(() =>
-          service.deleteAll(toDeleteRequest(payload)),
-        ),
+        runDeleteResult(() => service.deleteAll(toDeleteRequest(payload))),
     }),
 
     [IPC_CHANNELS.dataPlanOrphans]: defineIpcHandler<DataEmptyPayload>({
@@ -96,14 +92,13 @@ export function createDataIpcHandlers(
         runDataResult<DataOrphanSummary>(() => service.planOrphans()),
     }),
 
-    [IPC_CHANNELS.dataPurgeOrphans]:
-      defineIpcHandler<DataPurgeOrphansPayload>({
-        schema: dataPurgeOrphansPayloadSchema,
-        handle: (payload) =>
-          runDataResult<DataOrphanPurgeResult>(() =>
-            service.purgeOrphans(payload.confirmation),
-          ),
-      }),
+    [IPC_CHANNELS.dataPurgeOrphans]: defineIpcHandler<DataPurgeOrphansPayload>({
+      schema: dataPurgeOrphansPayloadSchema,
+      handle: (payload) =>
+        runDataResult<DataOrphanPurgeResult>(() =>
+          service.purgeOrphans(payload.confirmation),
+        ),
+    }),
   };
 }
 

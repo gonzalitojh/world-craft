@@ -193,10 +193,7 @@ export async function readArchiveIndexWithPolicy<
 
       const kindLimit = policy.maxBytesByKind?.[normalized.parsed.kind];
 
-      if (
-        kindLimit !== undefined &&
-        normalized.uncompressedSize > kindLimit
-      ) {
+      if (kindLimit !== undefined && normalized.uncompressedSize > kindLimit) {
         throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
       }
 

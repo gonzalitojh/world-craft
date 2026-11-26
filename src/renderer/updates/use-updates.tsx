@@ -78,7 +78,9 @@ export function UpdatesProvider({ children }: UpdatesProviderProps) {
   }, [updatesApi]);
 
   const run = useCallback(
-    async (command: () => Promise<IpcResult<UpdateSnapshot>>): Promise<void> => {
+    async (
+      command: () => Promise<IpcResult<UpdateSnapshot>>,
+    ): Promise<void> => {
       setCommandError(null);
 
       const result = await command();

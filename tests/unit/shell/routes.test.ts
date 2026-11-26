@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  SETTINGS_HASH,
-  resolveAppView,
-} from '@/renderer/shell/routes';
+import { SETTINGS_HASH, resolveAppView } from '@/renderer/shell/routes';
 
 describe('rutas por hash del shell', () => {
   it('exporta el hash documentado de Ajustes', () => {

@@ -25,8 +25,7 @@ const DATA_ERROR_MESSAGES: Record<DataErrorCode, string> = {
     'Los datos de la exportación de la biblioteca no son válidos.',
   DATA_LIBRARY_ENTRY_INVALID:
     'La biblioteca contiene una entrada no permitida.',
-  DATA_LIBRARY_MANIFEST_INVALID:
-    'El manifiesto de la biblioteca no es válido.',
+  DATA_LIBRARY_MANIFEST_INVALID: 'El manifiesto de la biblioteca no es válido.',
   DATA_LIBRARY_SETTINGS_INVALID:
     'Los ajustes incluidos en la biblioteca no son válidos.',
   DATA_LIBRARY_WORLD_FAILED:

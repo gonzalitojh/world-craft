@@ -96,10 +96,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const preMigrationBackupsDir = resolve(backupsDir, 'pre-migration');
   const preRestoreBackupsDir = resolve(backupsDir, 'pre-restore');
   const prePurgeBackupsDir = resolve(backupsDir, 'pre-purge');
-  const preDeleteBackupsDir = resolve(
-    backupsDir,
-    PRE_DELETE_BACKUPS_DIR_NAME,
-  );
+  const preDeleteBackupsDir = resolve(backupsDir, PRE_DELETE_BACKUPS_DIR_NAME);
   const assetsDir = resolve(root, ASSETS_DIR_NAME);
   const assetsWorldsDir = resolve(assetsDir, ASSETS_WORLDS_DIR_NAME);
   const assetsTempDir = resolve(assetsDir, ASSETS_TEMP_DIR_NAME);

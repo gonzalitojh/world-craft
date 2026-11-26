@@ -362,9 +362,7 @@ export function isDataOpenFolderResult(
   value: unknown,
 ): value is DataOpenFolderResult {
   return (
-    isRecord(value) &&
-    hasExactKeys(value, ['opened']) &&
-    value.opened === true
+    isRecord(value) && hasExactKeys(value, ['opened']) && value.opened === true
   );
 }
 
@@ -382,8 +380,7 @@ export function isDataLibraryResult(
 
   if (value.status === 'failed') {
     return (
-      hasExactKeys(value, ['status', 'code']) &&
-      isDataErrorCode(value.code)
+      hasExactKeys(value, ['status', 'code']) && isDataErrorCode(value.code)
     );
   }
 
@@ -443,7 +440,12 @@ export function isDataDeleteResult(value: unknown): value is DataDeleteResult {
 
   if (value.status === 'deleted') {
     return (
-      hasExactKeys(value, ['status', 'restartRequired', 'counts', 'remaining']) &&
+      hasExactKeys(value, [
+        'status',
+        'restartRequired',
+        'counts',
+        'remaining',
+      ]) &&
       value.restartRequired === true &&
       isDataDeleteCounts(value.counts) &&
       Array.isArray(value.remaining) &&
@@ -453,7 +455,12 @@ export function isDataDeleteResult(value: unknown): value is DataDeleteResult {
 
   if (value.status === 'partial') {
     return (
-      hasExactKeys(value, ['status', 'restartRequired', 'counts', 'remaining']) &&
+      hasExactKeys(value, [
+        'status',
+        'restartRequired',
+        'counts',
+        'remaining',
+      ]) &&
       typeof value.restartRequired === 'boolean' &&
       isDataDeleteCounts(value.counts) &&
       isDeleteRemaining(value.remaining)

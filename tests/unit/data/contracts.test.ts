@@ -71,18 +71,13 @@ describe('contratos compartidos de datos', () => {
     ).toBe(true);
     expect(isDataResult({ status: 'cancelled' }, isDataCounts)).toBe(true);
     expect(
-      isDataResult(
-        { status: 'failed', code: 'DATA_BUSY' },
-        isDataCounts,
-      ),
+      isDataResult({ status: 'failed', code: 'DATA_BUSY' }, isDataCounts),
     ).toBe(true);
   });
 
   it('rechaza claves extra, negativos y estados incoherentes', () => {
     expect(isDataCounts({ ...counts, extra: true })).toBe(false);
-    expect(
-      isDataCounts({ ...counts, entities: -1 }),
-    ).toBe(false);
+    expect(isDataCounts({ ...counts, entities: -1 })).toBe(false);
     expect(isDataUsage({ ...usage, extra: true })).toBe(false);
     expect(
       isDataUsage({
@@ -94,11 +89,14 @@ describe('contratos compartidos de datos', () => {
       false,
     );
     expect(isDataOpenFolderResult({ opened: false })).toBe(false);
+    expect(isDataResult({ status: 'failed', code: 'NOPE' }, isDataCounts)).toBe(
+      false,
+    );
     expect(
-      isDataResult({ status: 'failed', code: 'NOPE' }, isDataCounts),
-    ).toBe(false);
-    expect(
-      isDataResult({ status: 'completed', data: { ...counts, extra: 1 } }, isDataCounts),
+      isDataResult(
+        { status: 'completed', data: { ...counts, extra: 1 } },
+        isDataCounts,
+      ),
     ).toBe(false);
   });
 
@@ -114,9 +112,9 @@ describe('contratos compartidos de datos', () => {
       }),
     ).toBe(true);
     expect(isDataLibraryResult({ status: 'cancelled' })).toBe(true);
-    expect(
-      isDataLibraryResult({ status: 'failed', code: 'DATA_BUSY' }),
-    ).toBe(true);
+    expect(isDataLibraryResult({ status: 'failed', code: 'DATA_BUSY' })).toBe(
+      true,
+    );
     expect(
       isDataLibraryResult({
         status: 'completed',

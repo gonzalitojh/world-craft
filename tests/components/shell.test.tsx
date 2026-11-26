@@ -258,10 +258,17 @@ describe('AppShell', () => {
     });
 
     expect(footer).not.toBeNull();
-    expect(within(footer as HTMLElement).getByRole('button', { name: messages.shell.views.settings })).toBe(settings);
+    expect(
+      within(footer as HTMLElement).getByRole('button', {
+        name: messages.shell.views.settings,
+      }),
+    ).toBe(settings);
     expect(settings).toHaveAttribute('aria-current', 'page');
     expect(settings.textContent).toBe(messages.shell.views.settings);
-    expect(settings.compareDocumentPosition(collapse) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      settings.compareDocumentPosition(collapse) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('plegado, Ajustes conserva nombre accesible y tooltip', async () => {
@@ -271,7 +278,10 @@ describe('AppShell', () => {
       name: messages.shell.views.settings,
     });
 
-    expect(settings).toHaveAttribute('aria-label', messages.shell.views.settings);
+    expect(settings).toHaveAttribute(
+      'aria-label',
+      messages.shell.views.settings,
+    );
     expect(settings.textContent).toBe('');
     expect(settings).toHaveAttribute('aria-current', 'page');
 

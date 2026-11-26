@@ -13,10 +13,7 @@ import {
 import { parseManifestJson } from '../../src/main/transfer/format/manifest';
 import { parseWorldTransferJson } from '../../src/main/transfer/format/world';
 import { es as messages } from '../../src/renderer/messages/es';
-import {
-  buildRawZip,
-  type RawZipEntry,
-} from '../integration/helpers/zip';
+import { buildRawZip, type RawZipEntry } from '../integration/helpers/zip';
 
 import { analyzeWithAxe } from './fixtures/axe';
 import { expect, test } from './fixtures/electron-app';

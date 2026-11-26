@@ -44,9 +44,9 @@ describe('copia previa al borrado total', () => {
       expect(verification.ok ? verification.manifest.reason : null).toBe(
         'pre-delete',
       );
-      expect(
-        verification.ok ? verification.manifest.formatVersion : null,
-      ).toBe(2);
+      expect(verification.ok ? verification.manifest.formatVersion : null).toBe(
+        2,
+      );
       expect(
         verification.ok ? verification.manifest.assetsIncluded : null,
       ).toBe(false);

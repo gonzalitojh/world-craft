@@ -1,19 +1,10 @@
-import {
-  access,
-  mkdir,
-  mkdtemp,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DataError } from '@/main/data/errors';
-import {
-  planDataOrphans,
-  purgeDataOrphans,
-} from '@/main/data/orphans';
+import { planDataOrphans, purgeDataOrphans } from '@/main/data/orphans';
 import { resolveDataPaths } from '@/main/db/paths';
 import type { AssetRecord } from '@/main/assets/store';
 
@@ -76,11 +67,7 @@ async function createFixture(): Promise<Fixture> {
   const referencedFile = join(worldDir, `${REFERENCED_ID}.webp`);
   await writeFile(referencedFile, '0123456789', 'utf8');
   await writeFile(join(worldDir, `${ORPHAN_ID}.webp`), 'x'.repeat(20), 'utf8');
-  await writeFile(
-    join(worldDir, `${ORPHAN_ID}.thumb.webp`),
-    'xxx',
-    'utf8',
-  );
+  await writeFile(join(worldDir, `${ORPHAN_ID}.thumb.webp`), 'xxx', 'utf8');
   await writeFile(join(paths.assetsDir, '.tmp', `${TEMP_ID}.tmp`), '12345');
 
   return {

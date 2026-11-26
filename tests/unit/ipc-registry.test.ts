@@ -288,16 +288,22 @@ describe('createIpcHandlers', () => {
     for (const [channel, payload] of [
       [IPC_CHANNELS.dataGetSummary, { extra: true }],
       [IPC_CHANNELS.dataOpenFolder, { folder: 'otra' }],
-      [IPC_CHANNELS.dataDeleteAll, {
-        confirmation: 'otro',
-        keepBackups: true,
-      }],
+      [
+        IPC_CHANNELS.dataDeleteAll,
+        {
+          confirmation: 'otro',
+          keepBackups: true,
+        },
+      ],
       [IPC_CHANNELS.dataPurgeOrphans, { confirmation: 'otro' }],
-      [IPC_CHANNELS.dataDeleteAll, {
-        confirmation: 'delete-all-data',
-        keepBackups: true,
-        extra: true,
-      }],
+      [
+        IPC_CHANNELS.dataDeleteAll,
+        {
+          confirmation: 'delete-all-data',
+          keepBackups: true,
+          extra: true,
+        },
+      ],
     ] as const) {
       await expect(route(channel, payload)).resolves.toEqual({
         ok: false,

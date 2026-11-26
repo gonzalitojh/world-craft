@@ -94,12 +94,12 @@ describe('handlers IPC de datos', () => {
       ok: true,
       data: { status: 'completed', data: { opened: true } },
     });
-    await expect(route(IPC_CHANNELS.dataPlanOrphans, {})).resolves.toMatchObject(
-      {
-        ok: true,
-        data: { status: 'completed' },
-      },
-    );
+    await expect(
+      route(IPC_CHANNELS.dataPlanOrphans, {}),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { status: 'completed' },
+    });
   });
 
   it('convierte DataError en un fallo de dominio ok:true', async () => {
@@ -162,9 +162,7 @@ describe('handlers IPC de datos', () => {
   it('valida tokens y payloads antes de llamar al servicio', async () => {
     const purgeOrphans = vi.fn(service().purgeOrphans);
     const deleteAll = vi.fn(service().deleteAll);
-    const route = routeWith(
-      service({ purgeOrphans, deleteAll }),
-    );
+    const route = routeWith(service({ purgeOrphans, deleteAll }));
 
     await expect(
       route(IPC_CHANNELS.dataPurgeOrphans, { confirmation: 'otro' }),

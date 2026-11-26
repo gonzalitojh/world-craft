@@ -229,9 +229,7 @@ export interface WorldCraftDataApi {
   readonly deleteAll: (
     input: DataDeleteRequest,
   ) => Promise<IpcResult<DataDeleteResult>>;
-  readonly planOrphans: () => Promise<
-    IpcResult<DataResult<DataOrphanSummary>>
-  >;
+  readonly planOrphans: () => Promise<IpcResult<DataResult<DataOrphanSummary>>>;
   readonly purgeOrphans: () => Promise<
     IpcResult<DataResult<DataOrphanPurgeResult>>
   >;
@@ -734,11 +732,7 @@ export function createWorldCraftApi(
           isDataResult(value, isDataOpenFolderResult),
       ),
     exportAll: () =>
-      invokeWorldCommand(
-        IPC_CHANNELS.dataExportAll,
-        {},
-        isDataLibraryResult,
-      ),
+      invokeWorldCommand(IPC_CHANNELS.dataExportAll, {}, isDataLibraryResult),
     deleteAll: (input: DataDeleteRequest) =>
       invokeWorldCommand(
         IPC_CHANNELS.dataDeleteAll,

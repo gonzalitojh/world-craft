@@ -26,10 +26,7 @@ import {
   LIBRARY_MANIFEST_MAX_BYTES,
   LIBRARY_SETTINGS_FILE,
 } from './constants';
-import {
-  buildLibraryWorldPath,
-  parseLibraryEntryPath,
-} from './paths';
+import { buildLibraryWorldPath, parseLibraryEntryPath } from './paths';
 
 const sha256Schema = z.string().regex(/^[0-9a-f]{64}$/);
 
@@ -58,11 +55,7 @@ const warningsSchema = z
 
 const worldSchema = z
   .strictObject({
-    slug: z
-      .string()
-      .min(1)
-      .max(80)
-      .regex(WORLD_SLUG_PATTERN),
+    slug: z.string().min(1).max(80).regex(WORLD_SLUG_PATTERN),
     name: z.string().min(1).max(WORLD_NAME_MAX_LENGTH),
     path: z.string().min(1).max(TRANSFER_MAX_PATH_LENGTH),
     size: z.number().int().min(1),
@@ -308,9 +301,7 @@ export function verifyLibraryFileSet(
   const expected = new Map<string, number>([
     [manifest.settings.path, manifest.settings.size],
     [manifest.database.path, manifest.database.size],
-    ...manifest.worlds.map(
-      (world) => [world.path, world.size] as const,
-    ),
+    ...manifest.worlds.map((world) => [world.path, world.size] as const),
   ]);
 
   if (actual.size !== expected.size) {
@@ -325,9 +316,7 @@ export function verifyLibraryFileSet(
 }
 
 /** Suma recuentos de varios mundos. */
-export function sumCounts(
-  counts: readonly TransferCounts[],
-): TransferCounts {
+export function sumCounts(counts: readonly TransferCounts[]): TransferCounts {
   const total = {
     entities: 0,
     entityTypes: 0,

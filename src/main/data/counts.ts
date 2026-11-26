@@ -38,7 +38,11 @@ export function readDataCounts(options: DataCountsOptions): DataCounts {
          from worlds`,
       )
       .get() as
-      | { readonly trash: number; readonly active: number; readonly archived: number }
+      | {
+          readonly trash: number;
+          readonly active: number;
+          readonly archived: number;
+        }
       | undefined;
     const entities = options.sqlite
       .prepare(

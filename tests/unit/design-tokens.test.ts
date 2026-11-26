@@ -76,10 +76,7 @@ function readDeclarations(css: string): Map<string, string> {
 }
 
 /** Declaraciones de los bloques cuyo selector incluye el literal dado. */
-function readSelector(
-  css: string,
-  selector: string,
-): Map<string, string> {
+function readSelector(css: string, selector: string): Map<string, string> {
   const declarations = new Map<string, string>();
 
   for (const block of parseBlocks(css)) {
@@ -958,9 +955,7 @@ describe('ajustes editoriales', () => {
         continue;
       }
 
-      expect(block.body, block.selector).not.toMatch(
-        /color:\s*var\(--muted\)/,
-      );
+      expect(block.body, block.selector).not.toMatch(/color:\s*var\(--muted\)/);
     }
   });
 });
@@ -1376,9 +1371,7 @@ describe('apariencia por tokens', () => {
       expect(block.body, block.selector).not.toMatch(/\btransform\s*:/);
     }
 
-    expect(stripComments(scalesSource)).not.toMatch(
-      /html\s*\{[^}]*font-size/,
-    );
+    expect(stripComments(scalesSource)).not.toMatch(/html\s*\{[^}]*font-size/);
   });
 });
 

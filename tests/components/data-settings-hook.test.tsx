@@ -114,7 +114,9 @@ function installApi(api: WorldCraftDataApi): void {
   });
 }
 
-function renderHookWithProvider(options: { onNotify?: ReturnType<typeof vi.fn> } = {}) {
+function renderHookWithProvider(
+  options: { onNotify?: ReturnType<typeof vi.fn> } = {},
+) {
   return renderHook(() => useDataSettings(options), {
     wrapper: ({ children }) => (
       <I18nProvider locale="es">{children}</I18nProvider>
@@ -128,10 +130,10 @@ beforeEach(() => {
 
 describe('hook de datos', () => {
   it('carga resumen y uso en paralelo y acepta respuestas fuera de orden', async () => {
-    const summary = deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
-    const usageResult = deferred<
-      Awaited<ReturnType<WorldCraftDataApi['getUsage']>>
-    >();
+    const summary =
+      deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
+    const usageResult =
+      deferred<Awaited<ReturnType<WorldCraftDataApi['getUsage']>>>();
     const api = createApi({
       getSummary: vi.fn(() => summary.promise),
       getUsage: vi.fn(() => usageResult.promise),
@@ -163,8 +165,10 @@ describe('hook de datos', () => {
   });
 
   it('descarta una respuesta de resumen obsoleta', async () => {
-    const first = deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
-    const second = deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
+    const first =
+      deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
+    const second =
+      deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
     let call = 0;
     installApi(
       createApi({
@@ -201,7 +205,8 @@ describe('hook de datos', () => {
   });
 
   it('ignora respuestas después del desmontaje', async () => {
-    const summary = deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
+    const summary =
+      deferred<Awaited<ReturnType<WorldCraftDataApi['getSummary']>>>();
     installApi(createApi({ getSummary: vi.fn(() => summary.promise) }));
 
     const { unmount } = renderHookWithProvider();
@@ -244,7 +249,8 @@ describe('hook de datos', () => {
   });
 
   it('comparte el bloqueo entre mutaciones', async () => {
-    const pending = deferred<Awaited<ReturnType<WorldCraftDataApi['exportAll']>>>();
+    const pending =
+      deferred<Awaited<ReturnType<WorldCraftDataApi['exportAll']>>>();
     const deleteAll = vi.fn(async () => ({
       ok: true as const,
       data: {

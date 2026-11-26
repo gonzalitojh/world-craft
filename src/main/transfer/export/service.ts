@@ -48,11 +48,7 @@ import {
 import { buildTransferAssetPath } from '../format/paths';
 import { toTransferError, TransferError } from '../errors';
 import { silentTransferLogger, type TransferLogger } from '../logger';
-import {
-  assertFreeSpace,
-  fingerprintFile,
-  type FreeSpaceProbe,
-} from '../fs';
+import { assertFreeSpace, fingerprintFile, type FreeSpaceProbe } from '../fs';
 import { TRANSFER_PARTIAL_SUFFIX } from '../constants';
 import { buildWorldDataset } from './dataset';
 import { readWorldSnapshot } from './snapshot';

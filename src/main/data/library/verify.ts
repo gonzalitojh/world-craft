@@ -84,9 +84,7 @@ export async function verifyLibraryArchive(
       options.signal,
       { maxCompressionRatio: Number.POSITIVE_INFINITY },
     );
-    const manifest = parseLibraryManifestJson(
-      manifestBuffer.toString('utf8'),
-    );
+    const manifest = parseLibraryManifestJson(manifestBuffer.toString('utf8'));
     const actual = new Map<string, number>();
 
     for (const entry of index.entries) {

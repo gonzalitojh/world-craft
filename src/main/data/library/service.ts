@@ -31,7 +31,10 @@ import {
   throwIfAborted,
 } from '../../transfer/archive/reader';
 import { publishArchive } from '../../transfer/archive/publish';
-import { createArchiveWriter, type ArchiveWriter } from '../../transfer/archive/writer';
+import {
+  createArchiveWriter,
+  type ArchiveWriter,
+} from '../../transfer/archive/writer';
 import {
   assertFreeSpace,
   fingerprintFile,
@@ -65,14 +68,8 @@ import {
   serializeLibraryManifest,
   sumCounts,
 } from './manifest';
-import {
-  buildLibraryWorldPath,
-  parseLibraryEntryPath,
-} from './paths';
-import {
-  createLibrarySettings,
-  serializeLibrarySettings,
-} from './settings';
+import { buildLibraryWorldPath, parseLibraryEntryPath } from './paths';
+import { createLibrarySettings, serializeLibrarySettings } from './settings';
 import { verifyLibraryArchive } from './verify';
 
 /** Resultado de exportar toda la biblioteca. */
@@ -257,9 +254,7 @@ export async function exportAll(
     }
 
     const counts = sumCounts(worldStages.map((world) => world.counts));
-    const warnings = mergeWarnings(
-      worldStages.map((world) => world.warnings),
-    );
+    const warnings = mergeWarnings(worldStages.map((world) => world.warnings));
     const manifest = createLibraryManifest({
       schemaVersion: options.schemaVersion,
       appVersion: options.appVersion,

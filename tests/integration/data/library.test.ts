@@ -12,10 +12,7 @@ import {
   extractArchiveEntry,
   readArchiveEntry,
 } from '@/main/transfer/archive/reader';
-import {
-  closeDatabase,
-  openDatabase,
-} from '@/main/db/connection';
+import { closeDatabase, openDatabase } from '@/main/db/connection';
 import { initializeDatabase } from '@/main/db/startup';
 import type { WorldCraftDatabase } from '@/main/db/client';
 import type { SqliteDatabase } from '@/main/db/connection';
@@ -156,9 +153,7 @@ describe('exportación total de la biblioteca', () => {
 
     const index = await readLibraryArchiveIndex(destination);
 
-    expect(
-      index.entries.map((entry) => entry.path).sort(),
-    ).toEqual([
+    expect(index.entries.map((entry) => entry.path).sort()).toEqual([
       'database/world-craft.sqlite',
       'manifest.json',
       'settings.json',
@@ -187,9 +182,7 @@ describe('exportación total de la biblioteca', () => {
       (entry) => entry.parsed.kind === 'world',
     );
 
-    expect(databaseEntry?.compressedSize).toBe(
-      databaseEntry?.uncompressedSize,
-    );
+    expect(databaseEntry?.compressedSize).toBe(databaseEntry?.uncompressedSize);
     expect(worldEntry?.compressedSize).toBe(worldEntry?.uncompressedSize);
 
     const settings = parseLibrarySettingsJson(
@@ -218,15 +211,15 @@ describe('exportación total de la biblioteca', () => {
       { maxCompressionRatio: Number.POSITIVE_INFINITY },
     );
 
-    expect(
-      inspectBackupFile(databaseFile, manifest.schemaVersion),
-    ).toBe('ok');
+    expect(inspectBackupFile(databaseFile, manifest.schemaVersion)).toBe('ok');
 
     const database = openDatabase({ file: databaseFile, readonly: true });
 
     try {
       const trashed = database
-        .prepare('select count(*) as total from worlds where deleted_at is not null')
+        .prepare(
+          'select count(*) as total from worlds where deleted_at is not null',
+        )
         .get() as { readonly total: number };
       const activity = database
         .prepare('select count(*) as total from activity_log')
@@ -348,15 +341,17 @@ describe('exportación total de la biblioteca', () => {
     const service = worlds();
     service.create({ name: 'Segundo mundo' });
     let calls = 0;
-    const exportWorldFile = vi.fn(async (options: Parameters<typeof exportWorld>[0]) => {
-      calls += 1;
+    const exportWorldFile = vi.fn(
+      async (options: Parameters<typeof exportWorld>[0]) => {
+        calls += 1;
 
-      if (calls === 2) {
-        throw new Error('fallo simulado');
-      }
+        if (calls === 2) {
+          throw new Error('fallo simulado');
+        }
 
-      return exportWorld(options);
-    });
+        return exportWorld(options);
+      },
+    );
 
     const result = await exportAll(
       baseOptions({ worlds: service, exportWorldFile }),
@@ -366,7 +361,9 @@ describe('exportación total de la biblioteca', () => {
       status: 'failed',
       code: 'DATA_LIBRARY_WORLD_FAILED',
     });
-    await expect(readFile(destination)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(destination)).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
     await expect(readdir(fixture.exportsTempDir)).resolves.toEqual([]);
   });
 
@@ -374,12 +371,12 @@ describe('exportación total de la biblioteca', () => {
     const controller = new AbortController();
     controller.abort();
 
-    const result = await exportAll(
-      baseOptions({ signal: controller.signal }),
-    );
+    const result = await exportAll(baseOptions({ signal: controller.signal }));
 
     expect(result).toEqual({ status: 'cancelled' });
-    await expect(readFile(destination)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(destination)).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
   });
 
   it('falla sin espacio antes de publicar', async () => {
@@ -391,7 +388,9 @@ describe('exportación total de la biblioteca', () => {
       status: 'failed',
       code: 'DATA_LIBRARY_NO_SPACE',
     });
-    await expect(readFile(destination)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(destination)).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
   });
 
   it('sustituye un destino existente solo al publicar', async () => {
@@ -418,7 +417,9 @@ describe('exportación total de la biblioteca', () => {
       status: 'failed',
       code: 'DATA_LIBRARY_ENTRY_INVALID',
     });
-    await expect(readFile(destination)).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(readFile(destination)).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
   });
 
   it('verifica una biblioteca recién creada y rechaza una corrupta', async () => {
@@ -444,9 +445,7 @@ describe('exportación total de la biblioteca', () => {
       verifyLibraryArchive({
         file: destination,
         stagedDatabaseFile: join(fixture.rootDir, 'no-existe.sqlite'),
-        stagedWorldFiles: new Map([
-          [manifest.worlds[0]!.path, stagedWorld],
-        ]),
+        stagedWorldFiles: new Map([[manifest.worlds[0]!.path, stagedWorld]]),
       }),
     ).rejects.toMatchObject({ code: 'DATA_LIBRARY_VERIFY_FAILED' });
 
@@ -491,9 +490,9 @@ async function createEmptyLibraryFixture(): Promise<EmptyLibraryFixture> {
     sqlite: startup.client.sqlite,
     exportsTempDir: startup.paths.exportsTempDir,
     assetsDir: startup.paths.assetsDir,
-    schemaVersion: (
-      startup.client.sqlite.pragma('user_version', { simple: true }) as number
-    ),
+    schemaVersion: startup.client.sqlite.pragma('user_version', {
+      simple: true,
+    }) as number,
     close: () => startup.client.sqlite.close(),
     cleanup: () => temp.cleanup(),
   };

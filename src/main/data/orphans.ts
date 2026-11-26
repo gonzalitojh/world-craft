@@ -110,10 +110,7 @@ export async function purgeDataOrphans(
   }
 }
 
-function summarizePlan(
-  assetsDir: string,
-  plan: OrphanPlan,
-): DataOrphanSummary {
+function summarizePlan(assetsDir: string, plan: OrphanPlan): DataOrphanSummary {
   const purgeable = [
     ...plan.unreferencedFiles,
     ...plan.orphanThumbnails,
@@ -132,7 +129,10 @@ function summarizePlan(
   };
 }
 
-function sumFileSizes(assetsDir: string, relativePaths: readonly string[]): number {
+function sumFileSizes(
+  assetsDir: string,
+  relativePaths: readonly string[],
+): number {
   let total = 0;
 
   for (const relativePath of relativePaths) {

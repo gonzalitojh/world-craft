@@ -24,9 +24,7 @@ const NOW = Date.parse('2026-11-26T12:00:00.000Z');
 
 describe('diálogo de la biblioteca', () => {
   it('compone un nombre con fecha y extensión zip', () => {
-    expect(buildLibraryExportFileName(NOW)).toBe(
-      'world-craft-2026-11-26.zip',
-    );
+    expect(buildLibraryExportFileName(NOW)).toBe('world-craft-2026-11-26.zip');
   });
 
   it('abre el diálogo con filtro zip y añade la extensión', async () => {
@@ -35,15 +33,12 @@ describe('diálogo de la biblioteca', () => {
       filePath: 'C:\\salida\\biblioteca',
     });
 
-    await expect(
-      showLibraryExportDialog({ now: () => NOW }),
-    ).resolves.toBe('C:\\salida\\biblioteca.zip');
+    await expect(showLibraryExportDialog({ now: () => NOW })).resolves.toBe(
+      'C:\\salida\\biblioteca.zip',
+    );
     expect(showSaveDialog).toHaveBeenCalledWith(
       expect.objectContaining({
-        defaultPath: join(
-          'C:\\datos\\Documents',
-          'world-craft-2026-11-26.zip',
-        ),
+        defaultPath: join('C:\\datos\\Documents', 'world-craft-2026-11-26.zip'),
         filters: [
           {
             name: 'Biblioteca de World Craft',

@@ -28,10 +28,7 @@ export interface OpenDataFolderOptions {
 }
 
 /** Resuelve el enum a una ruta ya calculada de `DataPaths`. */
-function resolveDataFolderPath(
-  paths: DataPaths,
-  folder: DataFolder,
-): string {
+function resolveDataFolderPath(paths: DataPaths, folder: DataFolder): string {
   switch (folder) {
     case 'data':
       return paths.dataDir;

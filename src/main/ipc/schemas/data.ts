@@ -33,9 +33,7 @@ export const dataDeleteAllPayloadSchema = z.strictObject({
 });
 
 export type DataEmptyPayload = z.infer<typeof dataEmptyPayloadSchema>;
-export type DataOpenFolderPayload = z.infer<
-  typeof dataOpenFolderPayloadSchema
->;
+export type DataOpenFolderPayload = z.infer<typeof dataOpenFolderPayloadSchema>;
 export type DataPurgeOrphansPayload = z.infer<
   typeof dataPurgeOrphansPayloadSchema
 >;

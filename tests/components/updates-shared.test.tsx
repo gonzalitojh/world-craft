@@ -4,10 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { I18nProvider } from '@/renderer/i18n/provider';
 import { es as messages } from '@/renderer/messages/es';
-import {
-  UpdatesProvider,
-  useUpdates,
-} from '@/renderer/updates/use-updates';
+import { UpdatesProvider, useUpdates } from '@/renderer/updates/use-updates';
 import { createIdleUpdateSnapshot } from '@/shared/contracts/updates';
 import type { WorldCraftApi } from '@/shared/contracts/world-craft-api';
 

@@ -133,9 +133,9 @@ describe('API de datos del preload', () => {
     ) as unknown as IpcInvoke;
     const api = createWorldCraftApi({ invoke });
 
-    await expect(api.data.deleteAll({ keepBackups: true })).resolves.toMatchObject(
-      { ok: true, data: { status: 'deleted' } },
-    );
+    await expect(
+      api.data.deleteAll({ keepBackups: true }),
+    ).resolves.toMatchObject({ ok: true, data: { status: 'deleted' } });
     expect(invoke).toHaveBeenCalledWith(IPC_CHANNELS.dataDeleteAll, {
       confirmation: 'delete-all-data',
       keepBackups: true,

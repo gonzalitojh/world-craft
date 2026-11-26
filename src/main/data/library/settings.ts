@@ -39,9 +39,7 @@ const entityViewSchema = z
     }),
   })
   .superRefine((sections, context) => {
-    if (
-      Object.keys(sections.sections).length !== ENTITY_SECTION_IDS.length
-    ) {
+    if (Object.keys(sections.sections).length !== ENTITY_SECTION_IDS.length) {
       context.addIssue({
         code: 'custom',
         message: 'Faltan secciones de la ficha.',

@@ -12,10 +12,7 @@ import {
   LIBRARY_MANIFEST_MAX_BYTES,
   LIBRARY_SETTINGS_MAX_BYTES,
 } from './constants';
-import {
-  parseLibraryEntryPath,
-  type ParsedLibraryEntry,
-} from './paths';
+import { parseLibraryEntryPath, type ParsedLibraryEntry } from './paths';
 
 /** Tipo del índice de la biblioteca. */
 export type LibraryArchiveIndex = Awaited<

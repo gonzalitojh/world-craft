@@ -4,11 +4,7 @@
  * La ruta se queda en el proceso principal. El nombre por defecto incluye la
  * fecha, se sanea para Windows y siempre termina en `.zip`.
  */
-import {
-  app,
-  dialog,
-  type SaveDialogOptions,
-} from 'electron';
+import { app, dialog, type SaveDialogOptions } from 'electron';
 import { join } from 'node:path';
 
 import { messages } from '../messages/es';
