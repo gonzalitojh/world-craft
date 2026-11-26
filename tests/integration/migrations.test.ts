@@ -512,6 +512,273 @@ describe('migraciones', () => {
     }
   });
 
+  it('aplica 0008 sobre una base 0007 y convierte la descripción sin perder texto ni indexar JSON', async () => {
+    const test = await createTestDatabase();
+    const migrationsDir = join(test.rootDir, 'migrations');
+
+    try {
+      const files = [
+        ['0000_init', INIT_MIGRATION_SQL],
+        ['0001_assets', '0001_assets.sql'],
+        ['0002_worlds', '0002_worlds.sql'],
+        ['0003_entity_types', '0003_entity_types.sql'],
+        ['0004_entities', '0004_entities.sql'],
+        ['0005_relations', '0005_relations.sql'],
+        ['0006_search', '0006_search.sql'],
+        ['0007_trash_versions', '0007_trash_versions.sql'],
+      ] as const;
+      const fixtureEntries = await Promise.all(
+        files.map(async ([tag, file]) => ({
+          tag,
+          sql:
+            file === INIT_MIGRATION_SQL
+              ? file
+              : await readFile(join(REPOSITORY_MIGRATIONS_DIR, file), 'utf8'),
+        })),
+      );
+
+      await createMigrationFixture(migrationsDir, fixtureEntries);
+
+      const first = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir,
+        }),
+      );
+      const sqlite = first.client.sqlite;
+      const insertWorld = (
+        id: string,
+        name: string,
+        description: string | null,
+        status: string,
+        at: number,
+        archivedAt: number | null,
+        deletedAt: number | null,
+      ): void => {
+        sqlite
+          .prepare(
+            `INSERT INTO worlds (id, name, slug, description, genres, status, language, settings, created_at, updated_at, archived_at, deleted_at)
+             VALUES (?, ?, ?, ?, '[]', ?, 'es', '{}', ?, ?, ?, ?)`,
+          )
+          .run(
+            id,
+            name,
+            name
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toLowerCase(),
+            description,
+            status,
+            at,
+            at,
+            archivedAt,
+            deletedAt,
+          );
+      };
+      const longText = Array.from(
+        { length: 2_000 },
+        (_, index) => String(index % 10),
+      ).join('\n');
+      const rows = [
+        ['01900000-0000-7000-8000-000000001001', 'Nulo', null],
+        ['01900000-0000-7000-8000-000000001002', 'LF', 'Línea uno\nLínea dos'],
+        ['01900000-0000-7000-8000-000000001003', 'CRLF', 'CRLF uno\r\nCRLF dos'],
+        ['01900000-0000-7000-8000-000000001004', 'CR', 'CR uno\rCR dos'],
+        ['01900000-0000-7000-8000-000000001005', 'Espacios', '  \n\t  '],
+        ['01900000-0000-7000-8000-000000001006', 'Vacías', 'Uno\n\nDos\n   \nTres'],
+        ['01900000-0000-7000-8000-000000001007', 'Repetidos', '  con   espacios   repetidos  '],
+        ['01900000-0000-7000-8000-000000001008', 'Largo', longText],
+        ['01900000-0000-7000-8000-000000001009', 'Archivado', 'Mundo archivado'],
+        ['01900000-0000-7000-8000-000000001010', 'Borrado', 'Mundo borrado'],
+        [
+          '01900000-0000-7000-8000-000000001011',
+          'Orden',
+          'Tres\nUno\nDos\nCuatro',
+        ],
+      ] as const;
+
+      rows.forEach(([id, name, description], index) => {
+        insertWorld(
+          id,
+          name,
+          description,
+          name === 'Archivado' ? 'archived' : 'active',
+          1_760_000_000_000 + index,
+          name === 'Archivado' ? 1_760_000_000_000 : null,
+          name === 'Borrado' ? 1_760_000_000_000 : null,
+        );
+      });
+      closeDatabase(sqlite);
+
+      const upgraded = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+
+      try {
+        const migrated = upgraded.client.sqlite;
+
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.backup).not.toBeNull();
+        expect(migrated.pragma('user_version', { simple: true })).toBe(9);
+        expect(migrated.pragma('integrity_check', { simple: true })).toBe('ok');
+
+        const read = (id: string): {
+          description: string | null;
+          description_text: string | null;
+        } =>
+          migrated
+            .prepare(
+              'SELECT description, description_text FROM worlds WHERE id = ?',
+            )
+            .get(id) as {
+            description: string | null;
+            description_text: string | null;
+          };
+
+        expect(read('01900000-0000-7000-8000-000000001001')).toEqual({
+          description: null,
+          description_text: null,
+        });
+        expect(read('01900000-0000-7000-8000-000000001002')).toMatchObject({
+          description_text: 'Línea uno\nLínea dos',
+        });
+        expect(read('01900000-0000-7000-8000-000000001003')).toMatchObject({
+          description_text: 'CRLF uno\nCRLF dos',
+        });
+        expect(read('01900000-0000-7000-8000-000000001004')).toMatchObject({
+          description_text: 'CR uno\nCR dos',
+        });
+        expect(read('01900000-0000-7000-8000-000000001005')).toEqual({
+          description: null,
+          description_text: null,
+        });
+        expect(read('01900000-0000-7000-8000-000000001006')).toMatchObject({
+          description_text: 'Uno\nDos\nTres',
+        });
+        expect(read('01900000-0000-7000-8000-000000001007')).toMatchObject({
+          description_text: 'con espacios repetidos',
+        });
+        expect(read('01900000-0000-7000-8000-000000001008')).toMatchObject({
+          description_text: longText,
+        });
+        expect(read('01900000-0000-7000-8000-000000001011')).toMatchObject({
+          description_text: 'Tres\nUno\nDos\nCuatro',
+        });
+
+        expect(
+          migrated
+            .prepare(
+              `SELECT count(*) AS total FROM worlds
+               WHERE description IS NOT NULL
+                 AND (json_valid(description) = 0
+                   OR json_type(description) <> 'object'
+                   OR json_extract(description, '$.type') <> 'doc')`,
+            )
+            .get(),
+        ).toEqual({ total: 0 });
+        expect(
+          migrated
+            .prepare(
+              `SELECT json_array_length(json_extract(description, '$.content')) AS paragraphs
+               FROM worlds WHERE id = ?`,
+            )
+            .get('01900000-0000-7000-8000-000000001006'),
+        ).toEqual({ paragraphs: 3 });
+        expect(
+          migrated
+            .prepare(
+              `SELECT json_array_length(json_extract(description, '$.content')) AS paragraphs
+               FROM worlds WHERE id = ?`,
+            )
+            .get('01900000-0000-7000-8000-000000001008'),
+        ).toEqual({ paragraphs: 2_000 });
+
+        const worldBodies = migrated
+          .prepare(
+            "SELECT body FROM search_documents WHERE kind = 'world'",
+          )
+          .all() as { body: string }[];
+
+        expect(worldBodies.length).toBeGreaterThan(0);
+
+        for (const { body } of worldBodies) {
+          expect(body).not.toContain('{');
+          expect(body).not.toContain('"type"');
+        }
+
+        expect(
+          migrated
+            .prepare(
+              'SELECT d.kind FROM search_fts JOIN search_documents d ON d.rowid = search_fts.rowid WHERE search_fts MATCH ? ORDER BY d.kind',
+            )
+            .all('archivado'),
+        ).toEqual([{ kind: 'world' }]);
+        expect(
+          migrated
+            .prepare(
+              'SELECT count(*) AS total FROM search_fts WHERE search_fts MATCH ?',
+            )
+            .get('paragraph'),
+        ).toEqual({ total: 0 });
+        expect(
+          migrated
+            .prepare(
+              'SELECT count(*) AS total FROM search_documents WHERE kind = ? AND source_id = ?',
+            )
+            .get('world', '01900000-0000-7000-8000-000000001010'),
+        ).toEqual({ total: 0 });
+      } finally {
+        closeDatabase(upgraded.client.sqlite);
+      }
+
+      const idempotent = expectReady(
+        await initializeDatabase({
+          userDataDir: test.userDataDir,
+          migrationsDir: test.migrationsDir,
+        }),
+      );
+      expect(idempotent.appliedMigrations).toBe(0);
+      closeDatabase(idempotent.client.sqlite);
+
+      const database = openDatabase({ file: test.paths.databaseFile });
+      const rollbackSql = await readFile(
+        join(
+          REPOSITORY_MIGRATIONS_DIR,
+          'rollback',
+          '0008_world_description.down.sql',
+        ),
+        'utf8',
+      );
+
+      try {
+        database.exec(rollbackSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(8);
+
+        const columns = (
+          database.prepare('PRAGMA table_info(worlds)').all() as {
+            name: string;
+          }[]
+        ).map((column) => column.name);
+
+        expect(columns).not.toContain('description_text');
+        expect(
+          database
+            .prepare('SELECT description FROM worlds WHERE id = ?')
+            .get('01900000-0000-7000-8000-000000001002'),
+        ).toEqual({ description: 'Línea uno\nLínea dos' });
+      } finally {
+        closeDatabase(database);
+      }
+    } finally {
+      await test.cleanup();
+    }
+  });
+
   it('los rollbacks de referencia dejan la base vacía y sin versión', async () => {
     const test = await createTestDatabase();
 
@@ -533,6 +800,14 @@ describe('migraciones', () => {
           REPOSITORY_MIGRATIONS_DIR,
           'rollback',
           '0007_trash_versions.down.sql',
+        ),
+        'utf8',
+      );
+      const rollbackWorldDescriptionSql = await readFile(
+        join(
+          REPOSITORY_MIGRATIONS_DIR,
+          'rollback',
+          '0008_world_description.down.sql',
         ),
         'utf8',
       );
@@ -567,6 +842,18 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
+        database.exec(rollbackWorldDescriptionSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(8);
+
+        const columnsAfterWorldDescription = (
+          database.prepare('PRAGMA table_info(worlds)').all() as {
+            name: string;
+          }[]
+        ).map((column) => column.name);
+
+        expect(columnsAfterWorldDescription).not.toContain('description_text');
+
         database.exec(rollbackTrashVersionsSql);
 
         expect(database.pragma('user_version', { simple: true })).toBe(7);
@@ -715,12 +1002,12 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(8);
-        expect(upgraded.appliedMigrations).toBe(7);
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(8);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite.pragma('user_version', { simple: true }),
-        ).toBe(8);
+        ).toBe(9);
         expect(
           upgraded.client.sqlite
             .prepare('SELECT value FROM app_settings WHERE key = ?')
@@ -730,7 +1017,7 @@ describe('migraciones', () => {
           upgraded.client.sqlite
             .prepare('SELECT count(*) AS total FROM schema_migrations')
             .get(),
-        ).toEqual({ total: 8 });
+        ).toEqual({ total: 9 });
 
         expect(
           upgraded.client.sqlite
@@ -870,8 +1157,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(8);
-        expect(upgraded.appliedMigrations).toBe(5);
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(6);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -977,8 +1264,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(8);
-        expect(upgraded.appliedMigrations).toBe(4);
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(5);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1106,8 +1393,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(8);
-        expect(upgraded.appliedMigrations).toBe(3);
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(4);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1286,8 +1573,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(8);
-        expect(upgraded.appliedMigrations).toBe(2);
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(3);
         expect(upgraded.backup).not.toBeNull();
 
         const upgradedSqlite = upgraded.client.sqlite;
@@ -1567,10 +1854,10 @@ describe('migraciones', () => {
       try {
         const migrated = upgraded.client.sqlite;
 
-        expect(upgraded.schemaVersion).toBe(8);
-        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.schemaVersion).toBe(9);
+        expect(upgraded.appliedMigrations).toBe(2);
         expect(upgraded.backup).not.toBeNull();
-        expect(migrated.pragma('user_version', { simple: true })).toBe(8);
+        expect(migrated.pragma('user_version', { simple: true })).toBe(9);
 
         expect(
           migrated
@@ -1731,6 +2018,14 @@ describe('migraciones', () => {
         ),
         'utf8',
       );
+      const rollbackWorldDescriptionSql = await readFile(
+        join(
+          REPOSITORY_MIGRATIONS_DIR,
+          'rollback',
+          '0008_world_description.down.sql',
+        ),
+        'utf8',
+      );
       const rollbackRelationsSql = await readFile(
         join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0005_relations.down.sql'),
         'utf8',
@@ -1758,10 +2053,11 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
-        // El rollback de 0001 solo es válido después de deshacer 0007, 0006,
-        // 0005, 0004, 0003 y 0002, porque las relaciones, las fichas,
+        // El rollback de 0001 solo es válido después de deshacer 0008, 0007,
+        // 0006, 0005, 0004, 0003 y 0002, porque las relaciones, las fichas,
         // `entity_types`, `worlds` y las versiones referencian tablas
         // anteriores.
+        database.exec(rollbackWorldDescriptionSql);
         database.exec(rollbackTrashVersionsSql);
         database.exec(rollbackSearchSql);
         database.exec(rollbackRelationsSql);
@@ -1802,8 +2098,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(reapplied.schemaVersion).toBe(8);
-        expect(reapplied.appliedMigrations).toBe(7);
+        expect(reapplied.schemaVersion).toBe(9);
+        expect(reapplied.appliedMigrations).toBe(8);
         expect(reapplied.backup).not.toBeNull();
       } finally {
         closeDatabase(reapplied.client.sqlite);

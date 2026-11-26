@@ -13,9 +13,13 @@ import { useMessages } from '../../i18n/provider';
 import { IconButton } from '../icon-button';
 import { Menu, type MenuItem } from '../menu';
 
+export type EntityLinkMode = 'enabled' | 'disabled' | 'off';
+
 export interface EditorToolbarProps {
   readonly editor: Editor | null;
   readonly disabled: boolean;
+  readonly entityLinks: EntityLinkMode;
+  readonly navigateLinks: boolean;
   readonly onOpenLink: () => void;
   readonly onInsertMention: () => void;
   /** Se llama al abrir «Formato» para cerrar el selector de menciones. */
@@ -63,6 +67,8 @@ function LinkIcon() {
 export function EditorToolbar({
   editor,
   disabled,
+  entityLinks,
+  navigateLinks,
   onOpenLink,
   onInsertMention,
   onFormatOpen,
@@ -70,6 +76,7 @@ export function EditorToolbar({
 }: EditorToolbarProps) {
   const messages = useMessages();
   const controlsDisabled = disabled || editor === null;
+  const linksDisabled = controlsDisabled || entityLinks === 'disabled';
 
   const formatItems: readonly MenuItem[] = [
     {
@@ -169,6 +176,10 @@ export function EditorToolbar({
     },
   ];
 
+  const visibleFormatItems = navigateLinks
+    ? formatItems
+    : formatItems.filter((item) => item.id !== 'link-open');
+
   return (
     <div
       className="wc-editor__toolbar"
@@ -223,29 +234,33 @@ export function EditorToolbar({
             onFormatOpen();
           }
         }}
-        items={formatItems}
+        items={visibleFormatItems}
       />
-      <IconButton
-        label={messages.entities.editor.link}
-        icon={<LinkIcon />}
-        disabled={controlsDisabled}
-        onClick={onOpenLink}
-      />
-      <IconButton
-        label={messages.entities.editor.mention}
-        tooltip={messages.entities.editor.mentionHint}
-        icon={
-          // El glifo `@` es un símbolo tipográfico decorativo, no texto de
-          // interfaz: el nombre accesible lo aporta `mention`.
-          <span
-            className="wc-editor__glyph"
-            data-glyph="@"
-            aria-hidden="true"
+      {entityLinks === 'off' ? null : (
+        <>
+          <IconButton
+            label={messages.entities.editor.link}
+            icon={<LinkIcon />}
+            disabled={linksDisabled}
+            onClick={onOpenLink}
           />
-        }
-        disabled={controlsDisabled}
-        onClick={onInsertMention}
-      />
+          <IconButton
+            label={messages.entities.editor.mention}
+            tooltip={messages.entities.editor.mentionHint}
+            icon={
+              // El glifo `@` es un símbolo tipográfico decorativo, no texto de
+              // interfaz: el nombre accesible lo aporta `mention`.
+              <span
+                className="wc-editor__glyph"
+                data-glyph="@"
+                aria-hidden="true"
+              />
+            }
+            disabled={linksDisabled}
+            onClick={onInsertMention}
+          />
+        </>
+      )}
     </div>
   );
 }

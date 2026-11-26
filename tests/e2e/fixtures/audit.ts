@@ -1603,7 +1603,15 @@ export async function seedAuditData(page: Page): Promise<AuditSeed> {
         name: index === 1 ? longName : name,
         ...(index === 0
           ? {
-              description: longDescription,
+              description: {
+                type: 'doc' as const,
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: longDescription }],
+                  },
+                ],
+              },
               genres,
               summary: longSummary,
             }

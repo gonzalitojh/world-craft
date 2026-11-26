@@ -22,8 +22,10 @@ seguro** (#67), el **instalador NSIS con actualizador manual** (#68), los
 catálogo y campos personalizados** (#73), las **fichas con imágenes, etiquetas,
 favoritos y editor enriquecido** (#74), las **relaciones tipadas con backlinks**
 (#75), la **búsqueda global con paleta de comandos** (#76), la **papelera con
-versiones de contenido** (#77) y la **exportación e importación de mundos**
-(#78): ventana Electron segura, preload nominativo, renderer React con tokens,
+versiones de contenido** (#77), la **exportación e importación de mundos**
+(#78), la **pantalla de Ajustes y datos** (#79) y la **descripción enriquecida
+del mundo con el editor compartido** (#114): ventana Electron segura, preload
+nominativo, renderer React con tokens,
 componentes base y navegación, base SQLite con migraciones, comprobación de
 integridad y modo seguro, servicio de imágenes con protocolo propio, miniaturas
 y purga recuperable, copias automáticas con retención, verificación y
@@ -65,7 +67,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125), shell v2 con navegación Inicio/Mundos/Papelera y barra superior contextual (#126, #77) y preferencias de interfaz persistidas desde #132 | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md), [ADR 0027](adr/0027-ui-preferences-persistence.md) |
-| Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74) y convertido en editor reutilizable con barra mínima y menciones `@` / `[[ ]]` (#131); manuscrito y exportadores en M3 | [ADR 0007](adr/0007-tiptap-editor-exporters.md), [ADR 0026](adr/0026-minimal-editor-mentions.md) |
+| Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74) y convertido en editor reutilizable con barra mínima y menciones `@` / `[[ ]]` (#131); desde #114 también edita la descripción del mundo | [ADR 0007](adr/0007-tiptap-editor-exporters.md), [ADR 0026](adr/0026-minimal-editor-mentions.md), [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
 | Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; gestión visual con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
@@ -73,7 +75,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | Relaciones tipadas y backlinks | Implementado (M1-04, #75): tipos del sistema y personalizados, etiquetas directa e inversa, CRUD con notas y fuerza, backlinks navegables y API de aristas para el grafo de M2 | [ADR 0022](adr/0022-relations-backlinks-graph-api.md) |
 | Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
 | Papelera y versiones de contenido | Implementado (M1-06, #77): vista global de papelera, restauración, purga con copia `pre-purge`, vaciado y historial de la descripción de las fichas | [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
-| Exportación e importación de mundos | Implementado (M1-07, #78): ZIP abierto `world-craft-world` v1 con `manifest.json`, `world.json` y assets; worker `utilityProcess`; importación transaccional siempre como mundo nuevo | [ADR 0029](adr/0029-world-export-import.md) |
+| Exportación e importación de mundos | Implementado (M1-07, #78) y formato v2 desde #114: ZIP abierto `world-craft-world` con `manifest.json`, `world.json` y assets; worker `utilityProcess`; importación transaccional siempre como mundo nuevo y lectura de paquetes v1 | [ADR 0029](adr/0029-world-export-import.md), [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) |
 | Ajustes y gestión de datos | Implementado (M1-08, #79): apariencia con densidad y tamaño, navegación `#/settings`, apertura de carpetas, uso de disco, biblioteca total `world-craft-library` v1 y borrado con copia `pre-delete` | [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
 | Pruebas y calidad | Implementado: 762 unitarias, 251 de componentes y 231 de integración (#62-#79, #125-#133); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera, transferencia y ajustes (#70, #72, #74, #75, #76, #77, #78, #79, #125, #126, #127, #131, #132) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
@@ -100,11 +102,11 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/logging/` | Escritura JSONL con rotación compartida por el log de arranque, el de assets y el del actualizador. | Node |
 | `src/main/preferences/` | Dominio de preferencias de interfaz puro: claves `ui.*`, esquemas Zod estrictos de entrada, lectura tolerante por clave, repositorio Drizzle sobre `app_settings` y servicio con escritura transaccional y reset por prefijo. No importa Electron. | Drizzle, Zod, `src/shared/` |
 | `src/main/db/` | Capa de datos pura: rutas, conexión, esquema Drizzle, journal, runner de migraciones, copia previa, integridad, logger y errores estables. No importa Electron (regla ESLint). | Node, better-sqlite3, Drizzle, Zod |
-| `src/main/worlds/` | Dominio de mundos puro: normalización y slugs, repositorio Drizzle con filtros por `world_id` y `deleted_at`, servicio de CRUD y actividad, y errores de entrada. No importa Electron. | Drizzle, `src/shared/` |
+| `src/main/worlds/` | Dominio de mundos puro: normalización y slugs, validación y normalización de la descripción enriquecida, repositorio Drizzle con filtros por `world_id` y `deleted_at`, servicio de CRUD y actividad con validación de enlaces internos del mundo, y errores de entrada. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/entity-types/` | Dominio de tipos de entidad puro: claves, validación con Zod, repositorio con aislamiento por mundo, servicio con protección de los tipos del sistema, duplicación y transferencia JSON versionada. No importa Electron. | Drizzle, Zod, `src/shared/` |
 | `src/main/trash/` | Papelera pura: listado por cursor de los tres grupos, restauración con motivos de dominio, purga física ordenada con copia previa obligatoria y vaciado serializado. No borra assets. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/versions/` | Historial de la descripción: repositorio Drizzle sobre `entity_versions`, servicio de listar, guardar manual y restaurar, y política pura de agrupación, retención y poda. Se engancha a la transacción de `entities.update`. No importa Electron. | Drizzle, `src/shared/` |
-| `src/main/transfer/` | Dominio de exportación e importación: contratos y límites, formato ZIP `world-craft-world` v1 (`format/`), lectura y escritura con `yauzl`/`yazl` (`archive/`), instantánea y dataset de exportación (`export/`), staging, plan, repositorio transaccional y servicio de importación (`import/`), protocolo del worker, coordinador, diálogos nativos, limpieza, log y contención de rutas. Es puro respecto a Electron salvo `composition.ts` y `dialogs.ts`; `worker-entry.ts` no importa Electron y se compila a `out/main/transfer-worker.cjs`. | Node, Drizzle, Zod, yauzl, yazl |
+| `src/main/transfer/` | Dominio de exportación e importación: contratos y límites, formato ZIP `world-craft-world` v2 con lectura de v1 (`format/`), lectura y escritura con `yauzl`/`yazl` (`archive/`), instantánea y dataset de exportación (`export/`), staging, plan, repositorio transaccional y servicio de importación (`import/`), protocolo del worker, coordinador, diálogos nativos, limpieza, log y contención de rutas. Es puro respecto a Electron salvo `composition.ts` y `dialogs.ts`; `worker-entry.ts` no importa Electron y se compila a `out/main/transfer-worker.cjs`. | Node, Drizzle, Zod, yauzl, yazl |
 | `src/main/data/` | Dominio de Ajustes → Datos: resumen, uso acotado, apertura de carpetas por enum, huérfanas, biblioteca `world-craft-library` v1 (`library/`), copia verificada de assets, borrado total con `pre-delete`, errores estables, diálogo nativo, composición y sustitución en modo seguro. Solo `composition.ts` y `dialogs.ts` conocen Electron. | Node, Drizzle, Zod, `src/shared/` |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
@@ -113,7 +115,7 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search`, `preferences`, `assets`, `trash`, `versions`, `transfer` y `data`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74), el editor reutilizable con menciones (#131), la papelera (#77), el historial de versiones (#77), la transferencia de mundos (#78) y Ajustes con apariencia y datos (#79) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace), los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`), el diálogo de transferencia de #78 (`transfer/`: `world-transfer-dialog`, `transfer-progress` y `transfer-summary`) y los componentes de Ajustes de #79 (`settings/`: apariencia, idioma, atajos, actualizaciones, resumen, carpetas, uso, exportación, huérfanas, zona de peligro, reinicio y restablecer preferencias); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace), la descripción del mundo de #114 (`worlds/`: campo con editor compartido y vista de lectura), los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`), el diálogo de transferencia de #78 (`transfer/`: `world-transfer-dialog`, `transfer-progress` y `transfer-summary`) y los componentes de Ajustes de #79 (`settings/`: apariencia, idioma, atajos, actualizaciones, resumen, carpetas, uso, exportación, huérfanas, zona de peligro, reinicio y restablecer preferencias); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/transfer/` | Hook `use-world-transfer.ts` (máquina de estados, filtrado de eventos y cancelación), reducer puro `state.ts` y formateadores `format.ts` (bytes, progreso y plurales). Sin acceso a Node ni a rutas. | `src/shared/`, API tipada |
 | `src/renderer/updates/` | Hook compartido `use-updates.tsx` y textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. La barra superior y Ajustes consumen el mismo estado. | `src/shared/` |
 | `src/renderer/preferences/` | `use-ui-preferences.ts`: snapshot inicial desde el bootstrap de `main.tsx`, actualización optimista con secuencia, adopción de la respuesta canónica y descarte de respuestas tardías; sin `localStorage`. | `src/shared/`, tema, API tipada |
@@ -128,7 +130,8 @@ Electron separa tres procesos con permisos distintos:
 | `src/shared/` | Identidad, contratos y utilidades puras sin Node ni React. | — |
 | `src/shared/contracts/` | Allowlist de canales, `IpcResult`, códigos de error, contrato de la API del preload, contrato del actualizador, contrato de idioma (`locale.ts`), contrato de mundos (`worlds.ts`), contrato de tipos de entidad (`entity-types.ts`), contrato de fichas y etiquetas (`entities.ts`), contrato de preferencias de interfaz (`preferences.ts`), contrato de assets (`assets.ts`), contrato de papelera (`trash.ts`), contrato de versiones (`versions.ts`) y contrato de transferencia (`transfer.ts`: formato, fases, límites, avisos, errores y guardas), todos con guardas estructurales. | - |
 | `src/shared/entity-types/` | Catálogo del sistema en código y validación compartida con Zod de plantillas y valores de campos, reutilizable por main y por la UI de fichas. | Zod |
-| `src/shared/entities/` | Validación cerrada de la descripción de ProseMirror, extracción de texto plano y patrón UUIDv7 compartido. | Zod |
+| `src/shared/entities/` | Validación cerrada de la descripción de ProseMirror, extracción de texto plano, eliminación de enlaces internos y patrón UUIDv7 compartido. | Zod |
+| `src/shared/worlds/` | Validación de la descripción enriquecida del mundo: límites de 4.000 caracteres de texto plano y 200.000 de JSON, normalización de vacío y lectura tolerante del JSON guardado; reutiliza el esquema de las fichas. | Zod |
 | `tests/unit/` | Pruebas unitarias del scaffold, del contrato IPC, de los guards, de los enlaces externos, de la capa de datos (journal, checksum, rutas, UUIDv7, logger y modo seguro), del sistema de diseño (tokens y contraste), de i18n (catálogo, formatos y cadenas hardcodeadas), del servicio de assets (rutas, URL, formatos, importación, huérfanos, protocolo y log), de copias (manifiesto, rutas de restauración, buckets y rotación), del empaquetado (configuración, iconos y licencias), del actualizador (contrato, servicio, red, log y textos), de los mundos (slug y validación), de los tipos de entidad (catálogo, plantillas, valores, claves y esquemas IPC), de las fichas (descripción, esquemas IPC, handlers y tarjetas), de las vistas del shell, de instancia única y de transferencia (formato, rutas, manifiesto, `world.json`, remapeo, plan, archivo ZIP, protocolo, coordinador, diálogos, esquemas y handlers IPC, API del preload y reducer del diálogo). | `src/` |
 | `tests/integration/` | Arranque y migraciones contra una base SQLite real en `os.tmpdir()`; copia, integridad, preservación y rechazo de bases ajenas; CRUD, aislamiento y actividad de mundos; CRUD, protección, aislamiento, duplicación y transferencia de tipos de entidad; CRUD, validación, referencias, etiquetas, favoritos, galería, filtros y aislamiento de fichas; importación, protocolo, repositorio y purga de assets; creación, verificación, restauración, rotación y restauración interrumpida de copias; preservación de datos entre instalaciones; y exportación e importación de mundos con round-trip, corrupción, traversal, límites, cancelación, rollback, slugs y limpieza. | `src/` |
 | `tests/components/` | Testing Library y `jsdom`: botón, pestañas, patrones de teclado, estados, formularios y tarjetas de mundo y de ficha, shell v2 (navegación, plegado, primaria y menú), diálogos de creación, lectura de textos desde el proveedor de idioma, y diálogo y hook de transferencia (progreso, cancelación, éxito, aviso, error, reintento, foco y contenido largo). | `src/renderer/` |
@@ -463,9 +466,9 @@ Reglas de dependencia:
   de crear/editar, duplicar, archivar/restaurar y eliminar validan antes de enviar
   y piden confirmación.
 - **Decisiones pendientes.** La portada se guarda y se muestra si existe, pero su
-  selector llega con #115; la descripción es texto plano hasta #114. La papelera
-  y la purga con copia llegaron con #77 y la FK `assets.world_id` se completará
-  con #116.
+  selector llega con #115. La descripción enriquecida llegó con #114 (sección
+  2.19). La papelera y la purga con copia llegaron con #77 y la FK
+  `assets.world_id` se completará con #116.
 
 ### 2.9 Estado implementado de los tipos de entidad (#73)
 
@@ -797,18 +800,21 @@ Reglas de dependencia:
   (`transfer:exportWorld`, `transfer:importWorld` y `transfer:cancel`) y evento
   `transfer:event` fuera de la allowlist; API `transfer` en el preload; hook,
   reducer, diálogo y estilos en el renderer; pruebas; y
-  `out/main/transfer-worker.cjs` en el build. Sin migración (`user_version`
-  sigue en 8) y con dos dependencias MIT (`yauzl` y `yazl`).
-- **Formato.** ZIP abierto `world-craft-world` v1 con `manifest.json`,
-  `world.json` y `assets/<uuidv7>.webp`; `formatVersion: 1`, `schemaVersion` =
-  `user_version`, `assetsIncluded: true`, recuentos, avisos y `files` con
-  `path`, `size` y `sha256`; `world.json` con mundo, tipos personalizados,
-  tipos de relación personalizados, etiquetas, assets, fichas con versiones,
-  galería, imagen principal, atributos y etiquetas, relaciones y portada. Solo
-  contenido vivo de mundos vivos y siempre con assets; fuera papelera,
-  `activity_log`, FTS5, preferencias, miniaturas y bloques futuros. El detalle
-  está en [`formato-de-exportacion.md`](formato-de-exportacion.md) y el ADR
-  0029.
+  `out/main/transfer-worker.cjs` en el build. La migración de #114 sube
+  `user_version` a 9 y el formato a v2; se mantienen las dos dependencias MIT
+  (`yauzl` y `yazl`).
+- **Formato.** ZIP abierto `world-craft-world` v2 desde #114, con
+  `manifest.json`, `world.json` y `assets/<uuidv7>.webp`; `formatVersion: 2`
+  (lectura de 1), `schemaVersion` = `user_version` (9), `assetsIncluded: true`,
+  recuentos, avisos y `files` con `path`, `size` y `sha256`; `world.json` con
+  mundo y su descripción como documento ProseMirror, tipos personalizados, tipos
+  de relación personalizados, etiquetas, assets, fichas con versiones, galería,
+  imagen principal, atributos y etiquetas, relaciones y portada. Solo contenido
+  vivo de mundos vivos y siempre con assets; fuera papelera, `activity_log`,
+  FTS5, preferencias, `description_text`, miniaturas y bloques futuros. Los
+  paquetes v1 se convierten al leerlos. El detalle está en
+  [`formato-de-exportacion.md`](formato-de-exportacion.md), el ADR 0029 y el ADR
+  0031.
 - **Exportación.** `transfer:exportWorld` valida el UUID, resuelve el mundo vivo
   y abre el diálogo nativo de guardado. El worker abre SQLite en solo lectura,
   lee una instantánea diferida, construye un `world.json` determinista, verifica
@@ -858,7 +864,8 @@ Reglas de dependencia:
   `settings-page.tsx`, componentes `components/settings/`, hook
   `settings/use-data-settings.ts`, estilos `styles/settings.css` y textos en
   `src/renderer/messages/es.ts`. Se añade `settings` a las vistas persistidas y
-  `routes.ts` resuelve `#/settings`. Sin migración: `user_version` sigue en 8.
+  `routes.ts` resuelve `#/settings`. #79 no añade migración: `user_version` se
+  quedó en 8 hasta `0008_world_description` (#114), que lo sube a 9.
 - **Apariencia.** `UiPreferences` gana `density` (`comfortable`/`compact`) y
   `fontScale` (`small`/`normal`/`large`), con defectos y guardas en el contrato.
   `applyAppearance` fija `data-theme`, `data-density` y `data-font-scale` antes de
@@ -922,6 +929,66 @@ Reglas de dependencia:
   de navegación, persistencia, carpetas, exportación/importación, huérfanas,
   borrado con reinicio y matriz 1024/1280/1600 con ambos temas. La suite queda en
   762 unitarias, 251 de componentes y 231 de integración.
+
+### 2.19 Estado implementado de la descripción enriquecida del mundo (#114)
+
+- **Alcance.** Contrato en `src/shared/contracts/worlds.ts`; módulo compartido
+  `src/shared/worlds/description.ts`; migración `0008_world_description` y
+  rollback; cambios en `src/main/worlds/` (`validation`, `repository`, `service`);
+  formato portable v2 y remapeo en `src/main/transfer/format/`; envoltorios
+  `world-description-editor.tsx` y `world-description-view.tsx`; diálogo de
+  mundo, página del mundo, mensajes y estilos. **No hay canales IPC nuevos ni
+  dependencias nuevas.**
+- **Módulo compartido.** `src/shared/worlds/description.ts` reutiliza la
+  validación cerrada de `src/shared/entities/description.ts` y aplica los límites
+  del mundo: **4.000 caracteres de texto plano** y **200.000 de JSON**. Expone
+  `validateWorldDescription` y `parseWorldDescription`; una descripción vacía o
+  con solo párrafos vacíos se normaliza a `null`. La lectura es tolerante: si el
+  JSON guardado no encaja, el servicio reconstruye el documento desde
+  `description_text`. No es una segunda lista de nodos.
+- **Contrato.** `WorldDetail.description` es `WorldRichTextDocument | null`, un
+  alias estructural de la descripción de ficha con solo importación de tipos.
+  `WorldCreateInput.description` y `WorldUpdateInput` aceptan documento o `null`;
+  `isWorldDetail` acepta `null` o `{ type: 'doc', content? }`. `WorldSummary` no
+  cambia, de modo que listas y tarjetas no cargan el documento.
+- **Flujo main → preload → renderer.** El renderer envía el documento por los
+  canales existentes de `worlds`; el router lo valida con Zod y el servicio de
+  `src/main/worlds/` normaliza, valida los enlaces contra fichas vivas del mundo,
+  calcula `description_text` y escribe documento, texto y actividad en la misma
+  transacción. El repositorio lee ambas columnas; el preload valida la forma con
+  guardas puras y el renderer pinta el documento con `RichTextEditor`. El texto
+  plano **nunca se acepta del renderer**.
+- **Enlaces y duplicado.** Los `wc-entity://` solo admiten UUIDv7 de fichas no
+  borradas del mismo mundo; en creación se rechaza cualquier enlace. Al duplicar
+  se quitan las marcas de enlace conservando el texto y se recalcula el texto
+  plano (`stripRichTextLinks`), porque las fichas no se copian.
+- **Migración.** `0008_world_description` añade `description_text`, convierte el
+  texto plano párrafo a párrafo (`json_object`, `json_group_array` y
+  `group_concat` con orden), recrea `search_world_documents` sobre texto plano,
+  repuebla `search_documents` y reconstruye FTS5. `user_version` pasa a 9. El
+  runner crea la copia pre-migración y el rollback de referencia degrada a texto
+  plano y restaura la vista y los triggers de `0006`.
+- **Búsqueda.** La búsqueda global no cambia de canal: `search:query` sigue
+  leyendo `search_documents`, que ahora recibe el texto visible del mundo desde
+  `description_text`. El JSON nunca se indexa.
+- **Transferencia.** `TRANSFER_FORMAT_VERSION` pasa a 2; el manifiesto acepta
+  `formatVersion` 1 y 2 y escribe 2. `world.json` guarda el documento o `null`;
+  un paquete v1 convierte su texto a párrafos antes de validarse y un
+  `formatVersion` mayor que 2 se rechaza con `TRANSFER_FORMAT_UNSUPPORTED`. El
+  remapeo de enlaces usa el mismo mapa de IDs y cuenta `broken-entity-link` si no
+  puede resolver un destino. `description_text` se recalcula al importar.
+- **UI.** `WorldDescriptionField` (crear/editar) y `WorldDescriptionView`
+  (lectura) son envoltorios finos del editor compartido: barra de 3 controles en
+  creación y 5 en edición, estados de candidatas con reintento, roles
+  `combobox`/`textbox`/lectura, contador y error de 4.000, `--border-strong` en el
+  formulario y navegación de enlaces solo en la página. `Dialog` ignora Escape
+  con `defaultPrevented` para no cerrar el modal al cerrar un popover.
+- **Pruebas.** Unitarias del módulo compartido y del remapeo; componentes de
+  creación, edición, carga, error, exceso, pegado saneado, vacío y lectura;
+  integración de migración `0007 → 0008`, preservación, rollback, guardado,
+  duplicado y transferencia v1/v2; E2E del flujo de edición, ventana, temas, axe
+  y movimiento reducido. El detalle de la decisión está en el
+  [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md).
 
 ## 3. Flujo de una operación
 
@@ -1214,8 +1281,9 @@ guiada desde Ajustes siguen previstas.
   `entity_gallery`; `0005_relations` crea `relation_types` y `relations` y
   siembra los tipos de relación del sistema; `0006_search` crea el índice FTS5,
   sus vistas y triggers; `0007_trash_versions` crea `entity_versions` y los
-  índices de papelera. `PRAGMA user_version` guarda el número de migraciones
-  aplicadas (hoy 8).
+  índices de papelera; y `0008_world_description` añade `worlds.description_text`,
+  convierte las descripciones planas y redirige la vista del mundo al texto plano.
+  `PRAGMA user_version` guarda el número de migraciones aplicadas (hoy 9).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
   `monthly` (12), `pre-migration` (5), `pre-purge` (10), `pre-delete` (sin poda)
   y `pre-restore` (sin poda). Cada copia lleva `manifest.json` v2, SHA-256 e
@@ -1245,13 +1313,14 @@ guiada desde Ajustes siguen previstas.
   transaccional y el reset solo borra ese prefijo. Como viven en la misma base,
   las copias automáticas las incluyen, la exportación de un mundo no y la
   biblioteca total sí, dentro de su copia completa de SQLite.
-- **Exportación e importación** de mundo implementadas (#78): ZIP abierto
-  `world-craft-world` v1 con `manifest.json`, `world.json` (incluye los bloques
+- **Exportación e importación** de mundo implementadas (#78) y en formato v2
+  desde #114: ZIP abierto `world-craft-world` con `manifest.json`, `world.json`
+  (incluye la descripción del mundo como documento y los bloques
   `entity-types.v1` y `relation-types.v1` con los tipos personalizados) y
   `assets/<uuidv7>.webp`. La exportación se publica en el destino elegido por el
   usuario; el staging vive en `imports/.tmp` y `assets/.tmp` y se limpia al
   arrancar. La importación siempre crea un mundo nuevo con IDs regenerados y
-  `user_version` sigue en 8. El detalle está en
+  acepta paquetes v1. El detalle está en
   [`persistencia.md`](persistencia.md) §8 y
   [`formato-de-exportacion.md`](formato-de-exportacion.md).
 - **Biblioteca total y borrado** implementados en #79: `world-craft-library` v1

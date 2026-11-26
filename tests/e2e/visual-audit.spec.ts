@@ -67,7 +67,7 @@ const THEMES: readonly { mode: ThemeName; label: string }[] = [
   { mode: 'dark', label: messages.shell.theme.currentDark },
 ];
 
-const OVERLAY_WIDTHS = [1024, 1600] as const;
+const OVERLAY_WIDTHS = [1024, 1280, 1600] as const;
 
 test.beforeAll(async () => {
   await resetAuditStore();
@@ -460,12 +460,46 @@ for (const theme of THEMES) {
       ).toHaveCount(0);
 
       await openAuditWorlds(page);
-      await page
+
+      const worldActions = page
         .getByRole('button', {
           name: messages.worlds.card.actionsNamed(seed.primaryWorldName),
         })
-        .first()
+        .first();
+
+      await worldActions.click();
+      await page
+        .getByRole('menuitem', { name: messages.worlds.card.edit })
         .click();
+      await expect(
+        page.getByRole('dialog', {
+          name: messages.worlds.form.editTitle(seed.primaryWorldName),
+        }),
+      ).toBeVisible();
+      await expect(
+        page
+          .getByRole('dialog', {
+            name: messages.worlds.form.editTitle(seed.primaryWorldName),
+          })
+          .getByRole('combobox', {
+            name: messages.worlds.form.descriptionLabel,
+          }),
+      ).toBeVisible();
+      await capture({
+        page,
+        view: 'world-dialog',
+        state: 'edit',
+        theme: theme.mode,
+        width,
+      });
+      await page.keyboard.press('Escape');
+      await expect(
+        page.getByRole('dialog', {
+          name: messages.worlds.form.editTitle(seed.primaryWorldName),
+        }),
+      ).toHaveCount(0);
+
+      await worldActions.click();
       await expect(page.getByRole('menu')).toBeVisible();
       await capture({
         page,

@@ -56,6 +56,7 @@ export interface SnapshotWorld {
   readonly slug: string;
   readonly summary: string | null;
   readonly description: string | null;
+  readonly descriptionText: string | null;
   readonly genres: readonly string[];
   readonly language: WorldLanguage;
   readonly status: WorldStatus;
@@ -413,6 +414,7 @@ function readWorld(options: SnapshotOptions): SnapshotWorld | null {
     slug: row.slug,
     summary: row.summary,
     description: row.description,
+    descriptionText: row.descriptionText,
     genres: parseGenres(row.genres),
     language:
       row.language === 'en' || row.language === 'it' ? row.language : 'es',

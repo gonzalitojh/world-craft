@@ -62,6 +62,7 @@ export function WorldDuplicateDialog({
       open={open}
       onClose={onClose}
       title={messages.worlds.duplicate.title}
+      dismissible={!pending}
       actions={
         <>
           <Button variant="ghost" onClick={onClose} disabled={pending}>
@@ -79,6 +80,7 @@ export function WorldDuplicateDialog({
             ? messages.worlds.duplicate.title
             : messages.worlds.duplicate.body(world.name)}
         </p>
+        <p className="wc-form__note">{messages.worlds.duplicate.linksNote}</p>
         <TextField
           label={messages.worlds.duplicate.nameLabel}
           value={name}

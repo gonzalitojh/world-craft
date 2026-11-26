@@ -8,13 +8,16 @@
  */
 import {
   isWorldLanguage,
-  WORLD_DESCRIPTION_MAX_LENGTH,
   WORLD_GENRE_MAX_LENGTH,
   WORLD_GENRES_MAX,
   WORLD_NAME_MAX_LENGTH,
   WORLD_SUMMARY_MAX_LENGTH,
   type WorldLanguage,
 } from '../../shared/contracts/worlds';
+import {
+  validateWorldDescription,
+  type WorldDescriptionResult,
+} from '../../shared/worlds/description';
 import { WorldInputError } from './errors';
 
 /**
@@ -58,25 +61,23 @@ export function normalizeWorldSummary(
   return summary;
 }
 
-/** Normaliza la descripción en texto plano; vacía se guarda como `null`. */
+/**
+ * Valida la descripción enriquecida y calcula su texto plano.
+ *
+ * El documento se guarda como JSON y el texto plano derivado en
+ * `description_text`. Una descripción vacía o con solo párrafos vacíos se
+ * normaliza a `null`.
+ */
 export function normalizeWorldDescription(
-  raw: string | null | undefined,
-): string | null {
-  if (raw === null || raw === undefined) {
-    return null;
+  raw: unknown,
+): WorldDescriptionResult & { readonly ok: true } {
+  const result = validateWorldDescription(raw);
+
+  if (!result.ok) {
+    throw new WorldInputError('La descripción del mundo no es válida.');
   }
 
-  const description = raw.trim();
-
-  if (description.length === 0) {
-    return null;
-  }
-
-  if (description.length > WORLD_DESCRIPTION_MAX_LENGTH) {
-    throw new WorldInputError('La descripción es demasiado larga.');
-  }
-
-  return description;
+  return result;
 }
 
 /**

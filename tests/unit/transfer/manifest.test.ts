@@ -54,9 +54,12 @@ describe('manifiesto del mundo', () => {
 
     expect(parsed).toEqual(manifest);
     expect(parsed.format).toBe('world-craft-world');
-    expect(parsed.formatVersion).toBe(1);
+    expect(parsed.formatVersion).toBe(2);
     expect(parsed.assetsIncluded).toBe(true);
     expect(parsed.counts.assets).toBe(1);
+    expect(parseManifest({ ...manifest, formatVersion: 1 }).formatVersion).toBe(
+      1,
+    );
   });
 
   it('rechaza campos desconocidos y versiones no soportadas', () => {
@@ -65,12 +68,12 @@ describe('manifiesto del mundo', () => {
     expect(() => parseManifest({ ...valid, extra: true })).toThrow(
       TransferError,
     );
-    expect(errorCode(() => parseManifest({ ...valid, formatVersion: 2 }))).toBe(
+    expect(errorCode(() => parseManifest({ ...valid, formatVersion: 3 }))).toBe(
       'TRANSFER_FORMAT_UNSUPPORTED',
     );
     expect(
       errorCode(() =>
-        parseManifestJson(JSON.stringify({ ...valid, formatVersion: 2 })),
+        parseManifestJson(JSON.stringify({ ...valid, formatVersion: 3 })),
       ),
     ).toBe('TRANSFER_FORMAT_UNSUPPORTED');
     expect(() => parseManifest({ ...valid, format: 'otro' })).toThrow(

@@ -18,6 +18,7 @@ import {
 import { createSearchService, type SearchService } from '@/main/search/service';
 import { createWorldsService, type WorldsService } from '@/main/worlds/service';
 import { SEARCH_HIGHLIGHT_START } from '@/shared/contracts/search';
+import { plainTextToRichTextDocument } from '@/shared/entities/description';
 import type { WorldDetail } from '@/shared/contracts/worlds';
 
 import { createTestDatabase, type TempDatabase } from '../helpers/temp-db';
@@ -129,7 +130,9 @@ function seedWorlds(fixture: Fixture): {
   const world = fixture.worlds.create({
     name: 'Las Mareas Grises',
     summary: 'Un archipiélago de niebla',
-    description: 'Crónicas de cartógrafos y balleneros.',
+    description: plainTextToRichTextDocument(
+      'Crónicas de cartógrafos y balleneros.',
+    ),
     genres: ['Fantasía'],
   });
   const otherWorld = fixture.worlds.create({

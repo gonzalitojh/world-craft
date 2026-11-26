@@ -481,6 +481,27 @@ primera versión estable.
   exportación/importación, huérfanas, borrado con reinicio y matriz
   1024/1280/1600 con ambos temas. La suite queda en 762 unitarias, 251 de
   componentes y 231 de integración.
+- Descripción enriquecida del mundo (#114): la descripción se edita con el mismo
+  editor que las fichas, con formato, menciones `@`/`[[` y enlaces internos a
+  fichas del mundo. Se guarda como documento ProseMirror validado y su texto plano
+  en `worlds.description_text`. La página del mundo la muestra con su formato, el
+  recuento de palabras y enlaces navegables; el límite es de 4.000 caracteres.
+- Migración `0008_world_description` (#114): convierte las descripciones planas en
+  párrafos sin perder texto, rellena `description_text`, deja la búsqueda sobre el
+  texto visible y sube `user_version` a 9. Incluye copia previa y rollback de
+  referencia a texto plano.
+- Formato portable `world-craft-world` v2 (#114): `world.description` viaja como
+  documento o `null` y la importación sigue aceptando paquetes v1, cuyo texto se
+  convierte a párrafos. Los enlaces del mundo se remapean y los irresolubles se
+  cuentan como `broken-entity-link`. La biblioteca total mantiene su
+  `formatVersion: 1` y acepta paquetes internos v1 y v2.
+- Búsqueda de mundos por texto plano (#114): `search_world_documents` compone el
+  cuerpo con el resumen y `description_text`, nunca con el JSON de la descripción.
+- Pruebas de la descripción del mundo (#114): unitarias del módulo compartido, de
+  la conversión y del remapeo; componentes de creación, edición, carga, error,
+  exceso, pegado saneado, vacío y lectura; integración de `0007 → 0008`,
+  preservación, rollback, guardado, duplicado y transferencia v1/v2; E2E del flujo
+  de edición con ventana, temas, axe y movimiento reducido.
 
 ### Cambiado
 
@@ -604,6 +625,12 @@ primera versión estable.
   el dashboard cuando hay mundos y el estado vacío cuando no los hay; la barra
   superior muestra el nombre del mundo abierto. El botón «Crear mundo» ya abre el
   formulario real.
+- La descripción del mundo deja de ser texto plano (#114): el formulario usa el
+  editor compartido con contador de 4.000 caracteres, y la página la muestra con
+  formato, recuento de palabras y enlaces internos. Duplicar un mundo convierte
+  sus enlaces a fichas en texto.
+- El formato de mundo sube a `formatVersion 2` (#114) manteniendo la lectura de
+  paquetes v1; el manifiesto acepta ambas versiones y la escritura usa siempre 2.
 
 ### Eliminado
 

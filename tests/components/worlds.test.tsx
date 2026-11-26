@@ -18,6 +18,7 @@ import { I18nProvider } from '@/renderer/i18n/provider';
 import { es as messages } from '@/renderer/messages/es';
 import type { EntitySummary } from '@/shared/contracts/entities';
 import type { WorldCraftApi } from '@/shared/contracts/world-craft-api';
+import { plainTextToRichTextDocument } from '@/shared/entities/description';
 import type {
   WorldActivityEntry,
   WorldDetail,
@@ -53,7 +54,7 @@ function makeWorld(overrides: Partial<WorldDetail> = {}): WorldDetail {
     name: 'Las Mareas Grises',
     slug: 'las-mareas-grises',
     summary: 'Una historia de mareas y cartógrafos.',
-    description: 'Descripción del mundo.',
+    description: plainTextToRichTextDocument('Descripción del mundo.'),
     genres: ['Fantasía', 'Aventura'],
     language: 'es',
     status: 'active',
@@ -565,7 +566,9 @@ describe('página de mundo', () => {
     ).toBeVisible();
 
     // Descripción y datos del mundo.
-    expect(screen.getByText(world.description ?? '')).toBeInTheDocument();
+    expect(
+      screen.getByText('Descripción del mundo.'),
+    ).toBeInTheDocument();
     expect(screen.getByText(world.slug)).toBeInTheDocument();
     expect(screen.getAllByRole('term')).toHaveLength(4);
     expect(screen.getAllByRole('definition')).toHaveLength(4);
@@ -670,6 +673,20 @@ describe('página de mundo', () => {
     expect(screen.queryByRole('navigation')).toBeNull();
   });
 
+  it('formatea el recuento de palabras con Intl y anuncia su etiqueta', () => {
+    const words = Array.from({ length: 1_000 }, () => 'palabra').join(' ');
+    const world = makeWorld({
+      description: plainTextToRichTextDocument(words),
+    });
+
+    renderPage({ world });
+
+    expect(screen.getByText('1.000 palabras')).toBeInTheDocument();
+    expect(
+      screen.getByText(messages.worlds.detail.descriptionWordsLabel),
+    ).toHaveClass('wc-visually-hidden');
+  });
+
   it('pinta contenido largo sin truncar la descripción ni los géneros', () => {
     const description = 'Crónica de mareas y cartógrafos. '
       .repeat(122)
@@ -678,7 +695,10 @@ describe('página de mundo', () => {
       { length: 8 },
       (_, index) => `Género ${index + 1} de nombre largo`,
     );
-    const world = makeWorld({ description, genres });
+    const world = makeWorld({
+      description: plainTextToRichTextDocument(description),
+      genres,
+    });
 
     expect(description).toHaveLength(4000);
 

@@ -5,7 +5,6 @@ import {
   parseWorldTransfer,
   parseWorldTransferJson,
   verifyWorldAgainstManifest,
-  worldTransferSchema,
 } from '@/main/transfer/format/world';
 import { createManifest } from '@/main/transfer/format/manifest';
 import { TransferError } from '@/main/transfer/errors';
@@ -29,7 +28,7 @@ interface TestWorld {
 function world(overrides: Partial<TestWorld> = {}): TestWorld {
   return {
     format: 'world-craft-world',
-    formatVersion: 1,
+    formatVersion: 2,
     world: {
       name: 'Mundo',
       slug: 'mundo',
@@ -91,6 +90,33 @@ describe('world.json', () => {
       relations: 0,
       versions: 0,
       assets: 0,
+    });
+  });
+
+  it('lee la versión 1 y normaliza la descripción del mundo a documento', () => {
+    const payload = {
+      ...world(),
+      formatVersion: 1,
+      world: {
+        ...world().world,
+        description: 'Línea uno\nLínea dos',
+      },
+    };
+    const parsed = parseWorldTransfer(payload);
+
+    expect(parsed.formatVersion).toBe(2);
+    expect(parsed.world.description).toEqual({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Línea uno' }],
+        },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Línea dos' }],
+        },
+      ],
     });
   });
 
@@ -190,12 +216,12 @@ describe('world.json', () => {
     };
 
     expect(
-      code(() => parseWorldTransfer({ ...payload, formatVersion: 2 })),
+      code(() => parseWorldTransfer({ ...payload, formatVersion: 3 })),
     ).toBe('TRANSFER_FORMAT_UNSUPPORTED');
     expect(
       code(() =>
         parseWorldTransferJson(
-          JSON.stringify({ ...payload, formatVersion: 2 }),
+          JSON.stringify({ ...payload, formatVersion: 3 }),
         ),
       ),
     ).toBe('TRANSFER_FORMAT_UNSUPPORTED');
@@ -218,7 +244,7 @@ describe('world.json', () => {
       ],
     };
 
-    expect(worldTransferSchema.safeParse(payload).success).toBe(true);
+    expect(() => parseWorldTransfer(payload)).not.toThrow();
   });
 
   it('cruza el mundo con el manifiesto', () => {

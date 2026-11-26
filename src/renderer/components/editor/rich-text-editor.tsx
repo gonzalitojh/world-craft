@@ -43,25 +43,36 @@ import {
   insertMentionTrigger,
   setActiveMention,
   setMentionCandidates,
+  setMentionEnabled,
 } from './extensions/mention';
 import { LinkDialog } from './link-dialog';
 import { buildMentionContent } from './mention-content';
 import { MentionPopover } from './mention-popover';
 import { filterMentionCandidates } from './mention-query';
 
+export type EntityLinkMode = 'enabled' | 'disabled' | 'off';
+
 export interface RichTextEditorProps {
   readonly document: EntityRichTextDocument | null;
   /** Nombre accesible del editor y de su barra. */
   readonly label: string;
+  readonly labelledBy?: string | undefined;
+  readonly describedBy?: string | undefined;
+  readonly invalid?: boolean;
+  readonly hintId?: string | undefined;
   readonly candidates: readonly EntitySummary[];
   readonly hint?: string | undefined;
   readonly disabled?: boolean;
   /** Modo lectura: sin barra, sin selector y sin atributos de formulario. */
   readonly readOnly?: boolean;
+  /** `off` no monta enlace ni menciones; `disabled` los deja deshabilitados. */
+  readonly entityLinks?: EntityLinkMode;
+  /** Con `false`, Ctrl/Cmd+clic y «Abrir enlace» no navegan. */
+  readonly navigateLinks?: boolean;
   readonly onChange: (document: EntityRichTextDocument | null) => void;
-  readonly onOpenEntity: (entityId: string) => void;
+  readonly onOpenEntity?: (entityId: string) => void;
   /** Referencia al editor para foco o desplazamiento programático. */
-  readonly editorRef?: Ref<Editor | null>;
+  readonly editorRef?: Ref<Editor | null> | undefined;
 }
 
 const EMPTY_DOCUMENT: EntityRichTextDocument = {
@@ -77,10 +88,16 @@ const EMPTY_DOCUMENT: EntityRichTextDocument = {
 export function RichTextEditor({
   document,
   label,
+  labelledBy,
+  describedBy,
+  invalid = false,
+  hintId,
   candidates,
   hint,
   disabled = false,
   readOnly = false,
+  entityLinks = 'enabled',
+  navigateLinks = true,
   onChange,
   onOpenEntity,
   editorRef,
@@ -116,7 +133,9 @@ export function RichTextEditor({
         isAllowedUri: (url: string) => url.startsWith(ENTITY_LINK_PREFIX),
         validate: (url: string) => url.startsWith(ENTITY_LINK_PREFIX),
       }),
-      Mention.configure({ limit: 8 }),
+      Mention.configure({
+        limit: 8,
+      }),
     ],
     [],
   );
@@ -144,7 +163,12 @@ export function RichTextEditor({
     }
 
     editor.setEditable(!disabled && !readOnly);
-  }, [editor, disabled, readOnly]);
+    setMentionEnabled(editor, entityLinks === 'enabled' && !readOnly);
+
+    if (entityLinks !== 'enabled') {
+      closeMention(editor);
+    }
+  }, [editor, disabled, readOnly, entityLinks]);
 
   useImperativeHandle(editorRef, () => editor ?? null, [editor]);
 
@@ -196,9 +220,9 @@ export function RichTextEditor({
     }
   }, [editor, mentionState.open, mentionState.to]);
 
-  // Combobox/listbox: `role`, `aria-expanded` y `aria-controls` siempre en
-  // edición; `aria-activedescendant` solo con una opción activa. En lectura se
-  // retiran todos los atributos de formulario y no se monta el popup.
+  // Matriz ARIA del contrato: combobox solo con menciones habilitadas; textbox
+  // multilínea mientras cargan, fallan o no hay enlaces; lectura sin atributos
+  // de formulario. El rol cambia sin recrear el editor para no perder foco.
   useEffect(() => {
     if (editor === null) {
       return;
@@ -210,6 +234,10 @@ export function RichTextEditor({
       for (const attribute of [
         'role',
         'aria-label',
+        'aria-labelledby',
+        'aria-describedby',
+        'aria-invalid',
+        'aria-disabled',
         'aria-expanded',
         'aria-controls',
         'aria-activedescendant',
@@ -224,21 +252,70 @@ export function RichTextEditor({
       return;
     }
 
-    dom.setAttribute('role', 'combobox');
-    dom.setAttribute('aria-label', label);
-    dom.setAttribute('aria-expanded', mentionState.open ? 'true' : 'false');
-    dom.setAttribute('aria-controls', listboxId);
-    dom.setAttribute('aria-autocomplete', 'list');
     dom.setAttribute('tabindex', '0');
-    dom.removeAttribute('aria-multiline');
     dom.removeAttribute('aria-owns');
 
-    if (activeOptionId === null) {
-      dom.removeAttribute('aria-activedescendant');
+    if (disabled) {
+      dom.setAttribute('aria-disabled', 'true');
     } else {
-      dom.setAttribute('aria-activedescendant', activeOptionId);
+      dom.removeAttribute('aria-disabled');
     }
-  }, [editor, readOnly, label, listboxId, mentionState.open, activeOptionId]);
+
+    if (labelledBy !== undefined) {
+      dom.setAttribute('aria-labelledby', labelledBy);
+      dom.removeAttribute('aria-label');
+    } else {
+      dom.setAttribute('aria-label', label);
+      dom.removeAttribute('aria-labelledby');
+    }
+
+    if (describedBy !== undefined && describedBy.length > 0) {
+      dom.setAttribute('aria-describedby', describedBy);
+    } else {
+      dom.removeAttribute('aria-describedby');
+    }
+
+    if (invalid) {
+      dom.setAttribute('aria-invalid', 'true');
+    } else {
+      dom.removeAttribute('aria-invalid');
+    }
+
+    if (entityLinks === 'enabled') {
+      dom.setAttribute('role', 'combobox');
+      dom.setAttribute('aria-expanded', mentionState.open ? 'true' : 'false');
+      dom.setAttribute('aria-controls', listboxId);
+      dom.setAttribute('aria-autocomplete', 'list');
+      dom.removeAttribute('aria-multiline');
+
+      if (activeOptionId === null) {
+        dom.removeAttribute('aria-activedescendant');
+      } else {
+        dom.setAttribute('aria-activedescendant', activeOptionId);
+      }
+
+      return;
+    }
+
+    dom.setAttribute('role', 'textbox');
+    dom.setAttribute('aria-multiline', 'true');
+    dom.removeAttribute('aria-expanded');
+    dom.removeAttribute('aria-controls');
+    dom.removeAttribute('aria-activedescendant');
+    dom.removeAttribute('aria-autocomplete');
+  }, [
+    editor,
+    readOnly,
+    disabled,
+    label,
+    labelledBy,
+    describedBy,
+    invalid,
+    entityLinks,
+    listboxId,
+    mentionState.open,
+    activeOptionId,
+  ]);
 
   useEffect(() => {
     if (editor === null) {
@@ -286,7 +363,9 @@ export function RichTextEditor({
   }, [editor, readOnly, mentionState.open]);
 
   const openLinkFromEvent = (event: MouseEvent<HTMLDivElement>): void => {
-    if (!readOnly && !event.ctrlKey && !event.metaKey) {
+    if (readOnly) {
+      // En lectura basta un clic o Enter: los enlaces son la única parada.
+    } else if (!navigateLinks || (!event.ctrlKey && !event.metaKey)) {
       return;
     }
 
@@ -314,7 +393,7 @@ export function RichTextEditor({
       return;
     }
 
-    onOpenEntity(entityId);
+    onOpenEntity?.(entityId);
   };
 
   const handleOpenLink = (): void => {
@@ -358,11 +437,18 @@ export function RichTextEditor({
   };
 
   return (
-    <div className="wc-editor" data-readonly={readOnly ? 'true' : 'false'}>
+    <div
+      className="wc-editor"
+      data-readonly={readOnly ? 'true' : 'false'}
+      data-disabled={disabled ? 'true' : 'false'}
+      data-entity-links={entityLinks}
+    >
       {readOnly ? null : (
         <EditorToolbar
           editor={editor}
           disabled={disabled}
+          entityLinks={entityLinks}
+          navigateLinks={navigateLinks}
           onOpenLink={handleOpenLink}
           onInsertMention={handleInsertMention}
           onFormatOpen={() => {
@@ -370,14 +456,16 @@ export function RichTextEditor({
               closeMention(editor);
             }
           }}
-          onOpenEntity={onOpenEntity}
+          onOpenEntity={(entityId) => {
+            onOpenEntity?.(entityId);
+          }}
         />
       )}
 
       <div className="wc-editor__surface" onClickCapture={openLinkFromEvent}>
         <EditorContent editor={editor} />
 
-        {readOnly ? null : (
+        {readOnly || entityLinks !== 'enabled' ? null : (
           <MentionPopover
             id={listboxId}
             open={mentionState.open}
@@ -402,10 +490,12 @@ export function RichTextEditor({
       </div>
 
       {!readOnly && hint !== undefined ? (
-        <p className="wc-field__hint">{hint}</p>
+        <p className="wc-field__hint" id={hintId}>
+          {hint}
+        </p>
       ) : null}
 
-      {readOnly ? null : (
+      {readOnly || entityLinks !== 'enabled' ? null : (
         <LinkDialog
           open={linkOpen}
           candidates={candidates}

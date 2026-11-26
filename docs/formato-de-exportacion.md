@@ -1,12 +1,14 @@
 # Formato de exportación de un mundo
 
 > **Estado:** implementado en #78 (M1-07) para el formato
-> `world-craft-world` **versión 1** y en #79 (M1-08) para la biblioteca
-> `world-craft-library` **versión 1**. La exportación y la importación de mundos
-> usan el mismo contrato; el detalle de las decisiones está en el
-> [ADR 0029](adr/0029-world-export-import.md) (D-052) y en el
-> [ADR 0030](adr/0030-settings-data-and-full-deletion.md) (D-053) del
-> [registro](registro-decisiones.md).
+> `world-craft-world` **versión 1**; en #79 (M1-08) para la biblioteca
+> `world-craft-library` **versión 1**; y en #114 para el formato de mundo
+> **versión 2**, que mantiene la lectura de paquetes v1. La exportación y la
+> importación de mundos usan el mismo contrato; el detalle de las decisiones está
+> en el [ADR 0029](adr/0029-world-export-import.md) (D-052), el
+> [ADR 0030](adr/0030-settings-data-and-full-deletion.md) (D-053) y el
+> [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) (D-054)
+> del [registro](registro-decisiones.md).
 > **Ámbito:** estructura del ZIP de mundo y de la biblioteca total, campos de
 > `manifest.json`, `world.json` y `settings.json`, checksums, compatibilidad,
 > exclusiones y política de importación.
@@ -14,9 +16,10 @@
 ## 1. Qué es
 
 Un archivo de mundo es un **ZIP abierto y legible** que contiene un mundo
-completo: sus fichas, tipos personalizados, etiquetas, relaciones, versiones de
-la descripción e imágenes. Se puede inspeccionar con cualquier herramienta de
-ZIP y con un editor de texto; no hace falta World Craft para leer los JSON.
+completo: su descripción, fichas, tipos personalizados, etiquetas, relaciones,
+versiones de la descripción e imágenes. Se puede inspeccionar con cualquier
+herramienta de ZIP y con un editor de texto; no hace falta World Craft para leer
+los JSON.
 
 La exportación incluye **siempre los assets**. La importación **siempre crea un
 mundo nuevo** y nunca modifica los mundos existentes.
@@ -75,11 +78,11 @@ la política o un recuento incoherente invalidan el paquete entero.
 | Campo | Tipo | Regla |
 |---|---|---|
 | `format` | string | Literal `world-craft-world`. |
-| `formatVersion` | number | Literal `1` en esta versión. |
-| `schemaVersion` | number | `PRAGMA user_version` de la base de origen (hoy **8**); entero ≥ 1. Si supera el `user_version` instalado, la importación lo rechaza con `TRANSFER_FORMAT_UNSUPPORTED` antes de leer `world.json` o extraer assets. |
+| `formatVersion` | number | `1` o `2`; la escritura usa siempre `2`. El lector acepta `1` para los paquetes anteriores con la descripción del mundo en texto plano. |
+| `schemaVersion` | number | `PRAGMA user_version` de la base de origen (hoy **9**); entero ≥ 1. Si supera el `user_version` instalado, la importación lo rechaza con `TRANSFER_FORMAT_UNSUPPORTED` antes de leer `world.json` o extraer assets. |
 | `appVersion` | string | Versión de World Craft que exportó, de 1 a 40 caracteres. |
 | `exportedAt` | string | Fecha ISO 8601 en UTC, de 20 a 40 caracteres y parseable. |
-| `assetsIncluded` | boolean | Siempre `true` en v1. |
+| `assetsIncluded` | boolean | Siempre `true`. |
 | `world.sourceId` | UUIDv7 | ID del mundo en la instalación de origen. Es informativo: la importación genera uno nuevo. |
 | `world.name` | string | Nombre del mundo, 1–120 caracteres; debe coincidir con `world.json`. |
 | `world.slug` | string | Slug del mundo, 1–80 caracteres; debe coincidir con `world.json`. |
@@ -137,8 +140,8 @@ real debe contener el SHA-256 verdadero de sus bytes descomprimidos.
 ```json
 {
   "format": "world-craft-world",
-  "formatVersion": 1,
-  "schemaVersion": 8,
+  "formatVersion": 2,
+  "schemaVersion": 9,
   "appVersion": "0.1.0",
   "exportedAt": "2026-11-25T10:00:00.000Z",
   "assetsIncluded": true,
@@ -182,8 +185,8 @@ este archivo y el nombre y el slug del mundo deben ser los mismos.
 
 | Bloque | Contenido |
 |---|---|
-| `format` / `formatVersion` | Literales `world-craft-world` y `1`. |
-| `world` | `name`, `slug`, `summary`, `description`, `genres` (máx. 8), `language` (`es`, `en` o `it`), `createdAt`, `updatedAt`. **No** incluye estado de archivo. |
+| `format` / `formatVersion` | Literales `world-craft-world` y `2` al escribir; el lector acepta `1`. |
+| `world` | `name`, `slug`, `summary`, `description`, `genres` (máx. 8), `language` (`es`, `en` o `it`), `createdAt`, `updatedAt`. **No** incluye estado de archivo. En v2, `description` es un documento de ProseMirror o `null`; en v1 era texto plano. |
 | `entityTypes` | `{ "version": 1, "types": [...] }` con los tipos **personalizados** (`entity-types.v1`). Los 18 del sistema son implícitos. |
 | `relationTypes` | `{ "version": 1, "types": [...] }` con los tipos de relación **personalizados** (`relation-types.v1`). Los 18 del sistema son implícitos. |
 | `tags` | Etiquetas del mundo: `name`, `color`, `createdAt`. |
@@ -229,6 +232,26 @@ una clave del sistema.
   (1–120 o `null`), `origin` (`auto`, `manual` o `restore`) y `createdAt`.
 - `aliases` admite hasta 10 valores.
 
+### 4.3.1 Descripción del mundo
+
+En `formatVersion 2`, `world.description` es un documento de ProseMirror o
+`null`, con la misma lista cerrada de nodos y marcas que la descripción de una
+ficha. Los enlaces internos son `wc-entity://<uuidv7>` y solo apuntan a fichas
+del propio paquete; al exportar e importar se remapean con el resto de IDs. Un
+enlace que no se puede resolver se quita conservando el texto y se cuenta como
+`broken-entity-link`.
+
+- Límite de texto plano: **4.000 caracteres**; límite del JSON: **200.000
+  caracteres**. El segundo se valida al parsear; el primero, al convertir el
+  documento en texto plano.
+- `description_text` **no viaja** en el paquete: se recalcula al importar a
+  partir del documento, igual que en las fichas.
+- Un paquete `formatVersion: 1` guarda `world.description` como texto plano de
+  hasta 4.000 caracteres. Al leerlo se convierte a documento párrafo a párrafo,
+  normalizando `CRLF`/`CR`, tabuladores y espacios, y se valida con el esquema
+  del mundo antes de continuar. Un paquete v1 y otro v2 del mismo mundo producen
+  la misma descripción visible.
+
 ### 4.4 Ejemplo ficticio
 
 El ejemplo es un mundo pequeño completo: dos fichas, un tipo personalizado, un
@@ -237,12 +260,22 @@ tipo de relación, una etiqueta, un asset, una versión y una relación.
 ```json
 {
   "format": "world-craft-world",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "world": {
     "name": "Crónica de las Mareas",
     "slug": "cronica-de-las-mareas",
     "summary": "Un archipiélago de mareas grises.",
-    "description": null,
+    "description": {
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "Un mundo de mareas y faros." }
+          ]
+        }
+      ]
+    },
     "genres": ["Fantasía", "Aventura"],
     "language": "es",
     "createdAt": 1760000000000,
@@ -413,11 +446,15 @@ sobre una carpeta extraída ni muevas archivos a `assets/worlds` a mano.
 
 ## 7. Compatibilidad y evolución
 
-- **`formatVersion` superior a 1:** se rechaza con
+- **`formatVersion` superior a 2:** se rechaza con
   `TRANSFER_FORMAT_UNSUPPORTED` antes del parse estricto, para invitar a
   actualizar World Craft.
-- **`formatVersion` distinto de 1 pero no futuro** (por ejemplo `0`): el Zod
-  estricto lo rechaza como manifiesto o mundo inválido.
+- **`formatVersion` 1:** se acepta y se convierte. Su `world.description` de
+  texto plano se transforma en documento párrafo a párrafo antes de validarse; el
+  resto del paquete se lee con la misma política que v2. La escritura siempre usa
+  `2`.
+- **`formatVersion` distinto de 1 o 2** (por ejemplo `0`): el Zod estricto lo
+  rechaza como manifiesto o mundo inválido.
 - **`schemaVersion` superior al de la aplicación:** se rechaza con
   `TRANSFER_FORMAT_UNSUPPORTED` después de validar el manifiesto y antes de leer
   `world.json` o extraer assets. La versión instalada se compara con la del
@@ -426,7 +463,7 @@ sobre una carpeta extraída ni muevas archivos a `assets/worlds` a mano.
   además un `formatVersion` nuevo.
 - **Campos desconocidos:** se rechazan. No hay campos opcionales fuera de los
   documentados.
-- **Bloques futuros:** mapas, manuscritos, escenas y juego no existen en v1 y no
+- **Bloques futuros:** mapas, manuscritos, escenas y juego no existen en v2 y no
   se aceptan aunque estén vacíos.
 - **Un mundo archivado** puede exportarse, pero el formato no guarda su estado:
   al importarlo queda activo.
@@ -457,25 +494,31 @@ sobre una carpeta extraída ni muevas archivos a `assets/worlds` a mano.
 2. **Referencias remapeadas.** Enlaces `wc-entity://`, campos `reference`,
    galería, imagen principal, portada y relaciones se reescriben con el mapa de
    IDs. Las etiquetas se resuelven por nombre exacto (las mayúsculas importan) y
-   los tipos del sistema por clave.
-3. **Slug global.** El slug del mundo se conserva si está libre. Si ya existe en
+   los tipos del sistema por clave. Un enlace del mundo o de una ficha que no se
+   puede resolver se quita conservando el texto y se cuenta como
+   `broken-entity-link`.
+3. **Descripción del mundo.** `world.description` se valida como documento (v2) o
+   se convierte desde texto plano (v1) antes de insertarse; `description_text` se
+   recalcula y no se copia del paquete. La descripción importada se indexa con el
+   resto del mundo.
+4. **Slug global.** El slug del mundo se conserva si está libre. Si ya existe en
    cualquier estado, se prueba `-2`, `-3`… hasta `-9999`, recortando la base si
    hace falta para no superar 80 caracteres. El resultado indica
    `slugAdjusted`.
-4. **Saneo con avisos.** Una referencia rota se elimina y se cuenta. Una ficha
+5. **Saneo con avisos.** Una referencia rota se elimina y se cuenta. Una ficha
    sin tipo personalizado se descarta; sus relaciones también. Una relación sin
    extremo, con tipo ausente, autorreferente o duplicada se descarta. Un atributo
    inválido se quita; un campo obligatorio ausente no se inventa.
-5. **Fechas y estado.** El mundo, los tipos personalizados y los tipos de
+6. **Fechas y estado.** El mundo, los tipos personalizados y los tipos de
    relación usan la fecha de importación; las fichas, etiquetas, versiones,
    assets y relaciones conservan sus fechas originales. El mundo queda `active` y
    la actividad registra `world.imported`.
-6. **Un mundo a la vez.** Solo hay una operación activa. La importación se
+7. **Un mundo a la vez.** Solo hay una operación activa. La importación se
    prepara en `imports/.tmp/<operationId>` y los assets en
    `assets/.tmp/<operationId>/<worldId>`; la transacción y el renombrado ocurren
    juntos. Cancelar antes de `saving` limpia todo; durante `saving` ya no se
    puede cancelar.
-7. **Sin copia previa.** La operación solo añade y es transaccional. Los mundos,
+8. **Sin copia previa.** La operación solo añade y es transaccional. Los mundos,
    fichas, imágenes, relaciones, copias y `schema_migrations` existentes no se
    tocan.
 
@@ -498,7 +541,8 @@ sobre una carpeta extraída ni muevas archivos a `assets/worlds` a mano.
 | Longitud de ruta | 140 caracteres |
 | Ratio de compresión por entrada (importación) | 100:1 |
 | Imagen | 25 MiB, 8192 px por lado, 24 Mpx |
-| Descripción | 200.000 bytes / 50.000 caracteres |
+| Descripción de una ficha | 200.000 caracteres de JSON / 50.000 de texto plano |
+| Descripción de un mundo | 200.000 caracteres de JSON / 4.000 de texto plano |
 | `alt` | 500 caracteres |
 | Galería | 20 imágenes |
 | Etiquetas por ficha | 12 |
@@ -532,7 +576,7 @@ worlds/<slug>.zip
 | `manifest.json` | Sí, exactamente una | Identidad de la biblioteca, versiones, fecha, metadatos de la base y de `settings.json`, lista de mundos con tamaño y SHA-256, recuentos y avisos agregados. No se lista a sí mismo. |
 | `settings.json` | Sí, exactamente una | Preferencias de apariencia y vista de ficha (sección 11.3). |
 | `database/world-craft.sqlite` | Sí, exactamente una | Copia completa y verificada de la base SQLite de la aplicación (sección 11.4). |
-| `worlds/<slug>.zip` | Una por mundo vivo | Paquete `world-craft-world` v1 de #78, con el contenido vivo del mundo y sus imágenes. |
+| `worlds/<slug>.zip` | Una por mundo vivo | Paquete `world-craft-world` de #78, en v2 desde #114, con el contenido vivo del mundo y sus imágenes. |
 
 No hay entradas de directorio, archivos sueltos, miniaturas ni rutas fuera de
 esas cuatro formas. La lista blanca es cerrada: se rechazan rutas absolutas, `\`,
@@ -546,7 +590,7 @@ mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**
 {
   "format": "world-craft-library",
   "formatVersion": 1,
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "appVersion": "0.1.0",
   "exportedAt": "2026-11-26T10:00:00.000Z",
   "database": {
@@ -554,7 +598,7 @@ mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**
     "size": 4096,
     "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "integrity": "ok",
-    "schemaVersion": 8
+    "schemaVersion": 9
   },
   "settings": {
     "path": "settings.json",
@@ -594,7 +638,10 @@ mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**
 ```
 
 - **`schemaVersion`** es el `user_version` de la base en el momento de exportar.
-  Debe coincidir con `database.schemaVersion`.
+  Debe coincidir con `database.schemaVersion`; hoy es 9.
+- **La biblioteca sigue en `formatVersion: 1`.** No cambia su manifiesto, pero
+  cada `worlds/<slug>.zip` se escribe con `world-craft-world` v2; la validación
+  del manifiesto interno de cada paquete acepta v1 y v2.
 - **`database.integrity`** es siempre `"ok"`: la copia se verificó antes de
   publicar.
 - **`counts` y `warnings`** de la biblioteca son la suma y la fusión por código
@@ -694,7 +741,8 @@ como vía de recuperación manual, no como una restauración automática.
 
 - [ADR 0029](adr/0029-world-export-import.md)
 - [ADR 0030](adr/0030-settings-data-and-full-deletion.md)
-- [Persistencia](persistencia.md), secciones 8 y 8.5
+- [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md)
+- [Persistencia](persistencia.md), secciones 5 y 8
 - [Arquitectura](arquitectura.md), secciones 2.17, 2.18 y 3.6
 - [Continuidad](continuidad.md), sección 3.4
 - [Esquema de base de datos](base-de-datos/esquema.md), sección 4.15

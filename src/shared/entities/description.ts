@@ -113,7 +113,7 @@ const listItemSchema: z.ZodType<unknown> = z.lazy(() =>
 export const entityDescriptionDocumentSchema = z.strictObject({
   type: z.literal('doc'),
   content: z.array(blockNodeSchema).max(MAX_NODES).optional(),
-});
+}) as unknown as z.ZodType<EntityRichTextDocument>;
 
 /** Error de descripción enriquecida. */
 export interface EntityDescriptionError {
@@ -203,6 +203,76 @@ export function collectEntityLinkIds(
   visit(document.content ?? []);
 
   return [...ids];
+}
+
+/**
+ * Convierte texto plano en un documento válido de la lista cerrada.
+ *
+ * Se usa al migrar la descripción antigua del mundo y al leer paquetes v1. Las
+ * líneas CRLF/CR se normalizan a LF, los tabuladores y espacios repetidos se
+ * colapsan, se recortan los extremos y se descartan las líneas vacías. Cada
+ * línea se convierte en un párrafo; si superan el máximo de bloques del
+ * esquema, se agrupan con `hardBreak` para no generar un documento inválido.
+ *
+ * Devuelve `null` cuando no queda texto visible.
+ */
+export function plainTextToRichTextDocument(
+  text: string,
+): EntityRichTextDocument | null {
+  const lines = text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+/g, ' ').trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  if (lines.length <= MAX_NODES) {
+    return {
+      type: 'doc',
+      content: lines.map((line) => ({
+        type: 'paragraph',
+        content: [{ type: 'text', text: line }],
+      })),
+    };
+  }
+
+  const groupSize = Math.ceil(lines.length / MAX_NODES);
+  const content: EntityRichTextNode[] = [];
+
+  for (let index = 0; index < lines.length; index += groupSize) {
+    const chunk = lines.slice(index, index + groupSize);
+    const inline: EntityRichTextNode[] = [];
+
+    chunk.forEach((line, position) => {
+      if (position > 0) {
+        inline.push({ type: 'hardBreak' });
+      }
+
+      inline.push({ type: 'text', text: line });
+    });
+
+    content.push({ type: 'paragraph', content: inline });
+  }
+
+  return { type: 'doc', content };
+}
+
+/**
+ * Quita las marcas de enlace interno conservando el texto y el resto de marcas.
+ *
+ * Se usa al duplicar un mundo (las fichas no se copian y los enlaces
+ * quedarían apuntando al mundo original) y al degradar paquetes importados.
+ * Devuelve `null` si el documento queda sin contenido visible.
+ */
+export function stripRichTextLinks(
+  document: EntityRichTextDocument,
+): EntityRichTextDocument | null {
+  const content = stripNodeLinks(document.content ?? []);
+
+  return content.length === 0 ? null : { type: 'doc', content };
 }
 
 /**
@@ -304,4 +374,22 @@ function inlineText(nodes: readonly unknown[]): string {
   }
 
   return parts.join('');
+}
+
+function stripNodeLinks(
+  nodes: readonly EntityRichTextNode[],
+): EntityRichTextNode[] {
+  return nodes.map((node) => {
+    const marks = node.marks?.filter((mark) => mark.type !== 'link');
+
+    return {
+      type: node.type,
+      ...(node.attrs === undefined ? {} : { attrs: node.attrs }),
+      ...(node.text === undefined ? {} : { text: node.text }),
+      ...(marks === undefined || marks.length === 0 ? {} : { marks }),
+      ...(node.content === undefined
+        ? {}
+        : { content: stripNodeLinks(node.content) }),
+    };
+  });
 }

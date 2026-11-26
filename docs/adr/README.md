@@ -45,6 +45,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0028](0028-trash-versions-and-pre-purge-backup.md) | Papelera, versiones de contenido y copia previa a la purga (#77) | Aceptado | D-051 |
 | [0029](0029-world-export-import.md) | Exportación e importación de mundos en ZIP v1 (#78) | Aceptado | D-052; consumido por D-053/0030 |
 | [0030](0030-settings-data-and-full-deletion.md) | Ajustes, datos, biblioteca total y borrado con copia previa (#79) | Aceptado | D-053 |
+| [0031](0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) | Descripción enriquecida del mundo y formato portable v2 (#114) | Aceptado | D-054 |
 
 ## 3. Relación con otros documentos
 
@@ -98,3 +99,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-24 | Se añade el ADR 0028 (papelera, versiones de contenido y copia previa a la purga, #77), con la decisión D-051, y se anota la convivencia de `pre-purge` con el manifiesto v2 del ADR 0012. |
 | 2026-11-25 | Se añade el ADR 0029 (exportación e importación de mundos en ZIP v1, #78), con la decisión D-052, y se enlaza el formato en [`formato-de-exportacion.md`](../formato-de-exportacion.md). |
 | 2026-11-26 | Se añade el ADR 0030 (Ajustes, datos, biblioteca total y borrado con copia previa, #79), con la decisión D-053, y se anota que consume la API de preferencias del ADR 0027 y la exportación de mundo del ADR 0029 sin supersederlas. |
+| 2026-11-26 | Se añade el ADR 0031 (descripción enriquecida del mundo y formato portable v2, #114), con la decisión D-054, y se anota que evoluciona el formato de mundo del ADR 0029 a `formatVersion 2` con lectura de v1 sin supersederlo. |

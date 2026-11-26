@@ -4,12 +4,14 @@ import type {
   WorldActivityEntry,
   WorldDetail,
 } from '../../shared/contracts/worlds';
+import { extractEntityDescriptionText } from '../../shared/entities/description';
 import { Badge } from '../components/badge';
 import { Button } from '../components/button';
 import {
   WorldActivityList,
   type WorldActivityState,
 } from '../components/worlds/world-activity-list';
+import { WorldDescriptionView } from '../components/worlds/world-description-view';
 import { WorldMark } from '../components/worlds/world-mark';
 import { WorldModuleNav } from '../components/worlds/world-module-nav';
 import { useEntityCount } from '../hooks/use-entity-count';
@@ -25,6 +27,7 @@ export interface WorldPageProps {
   readonly onRetry: () => void;
   readonly onRetryActivity: () => void;
   readonly onOpenEntities: () => void;
+  readonly onOpenEntity: (entityId: string) => void;
 }
 
 /**
@@ -45,6 +48,7 @@ export function WorldPage({
   onRetry,
   onRetryActivity,
   onOpenEntities,
+  onOpenEntity,
 }: WorldPageProps) {
   const { messages, formats } = useI18n();
   const summaryId = useId();
@@ -89,9 +93,20 @@ export function WorldPage({
     ? messages.worlds.status.archived
     : messages.worlds.status.active;
   const languageLabel = messages.worlds.languages[world.language];
+  const descriptionText =
+    world.description === null
+      ? ''
+      : extractEntityDescriptionText(world.description);
+  const descriptionEmpty = descriptionText.trim().length === 0;
+  const descriptionWords = descriptionEmpty
+    ? 0
+    : descriptionText.trim().split(/\s+/).length;
+  const descriptionWordsLabel = formats.formatNumber(descriptionWords, {
+    useGrouping: true,
+  });
   const checks = [
     { key: 'summary', done: world.summary !== null },
-    { key: 'description', done: world.description !== null },
+    { key: 'description', done: !descriptionEmpty },
     { key: 'genres', done: world.genres.length > 0 },
   ] as const;
   const completed = checks.filter((check) => check.done).length;
@@ -142,17 +157,28 @@ export function WorldPage({
       />
 
       <section className="wc-page__section" aria-labelledby={summaryId}>
-        <h2 className="wc-page__section-title" id={summaryId}>
-          {messages.worlds.detail.summaryTitle}
-        </h2>
-        <p
-          className={cx(
-            'wc-world-description',
-            world.description === null && 'wc-world-description--empty',
+        <div className="wc-section-heading">
+          <h2 className="wc-page__section-title" id={summaryId}>
+            {messages.worlds.detail.summaryTitle}
+          </h2>
+          {descriptionEmpty ? null : (
+            <p className="wc-page__section-meta">
+              <span className="wc-visually-hidden">
+                {messages.worlds.detail.descriptionWordsLabel}{' '}
+              </span>
+              {descriptionWords === 1
+                ? messages.worlds.detail.descriptionMetaOne(
+                    descriptionWordsLabel,
+                  )
+                : messages.worlds.detail.descriptionMeta(descriptionWordsLabel)}
+            </p>
           )}
-        >
-          {world.description ?? messages.worlds.detail.noDescription}
-        </p>
+        </div>
+
+        <WorldDescriptionView
+          document={world.description}
+          onOpenEntity={onOpenEntity}
+        />
 
         <div className="wc-world-data">
           <h3 className="wc-world-section__title" id={metadataId}>

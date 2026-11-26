@@ -219,7 +219,7 @@ describe('exportación de un mundo', () => {
     );
 
     expect(manifest.format).toBe('world-craft-world');
-    expect(manifest.formatVersion).toBe(1);
+    expect(manifest.formatVersion).toBe(2);
     expect(manifest.assetsIncluded).toBe(true);
     expect(manifest.world.name).toBe('Crónica de las Mareas');
     expect(manifest.files).toHaveLength(6);
@@ -255,7 +255,7 @@ describe('exportación de un mundo', () => {
     expect(JSON.stringify(world)).not.toContain('activity_log');
     expect(JSON.stringify(world)).not.toContain('"world.updated"');
 
-    expect(readUserVersion(fixture.sqlite)).toBe(8);
+    expect(readUserVersion(fixture.sqlite)).toBe(9);
   });
 
   it('sanea enlaces y referencias rotas con avisos', async () => {

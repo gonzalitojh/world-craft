@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0029.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0031.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -349,5 +349,34 @@ completa de SQLite), que elevó la issue a `size: l`. No hay migración:
 - Referencias: ADR 0030, ADR 0006, ADR 0012, ADR 0016, ADR 0017, ADR 0025,
   ADR 0027, ADR 0028, ADR 0029, #66, #67, #77, #78, #79, #116, #132, #133,
   `docs/persistencia.md`, `docs/formato-de-exportacion.md`,
+  `docs/arquitectura.md`, `docs/diseno/sistema-de-diseno.md` y
+  `docs/manual-de-usuario.md`.
+
+## 2026-11-26 — Descripción enriquecida del mundo y formato portable v2 (#114)
+
+**Contexto.** La descripción del mundo era texto plano desde #72, mientras que
+las fichas ya usaban desde #74 un documento ProseMirror validado con el editor
+mínimo de #131 y sus menciones `@` / `[[ ]]`. La issue #114 pedía dar al mundo el
+mismo editor sin perder los textos existentes, sin romper la búsqueda FTS5 ni el
+formato portable de #78, y sin duplicar el editor. El usuario aprobó el plan de
+`task-architect` el 2026-11-26 con un límite de **4.000 caracteres de texto
+plano** en lugar de los 50.000 de las fichas; la issue pasó de `size: s` a
+`size: m` y la migración y la UI entraron juntas.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-054 | Descripción enriquecida del mundo y formato v2 | **`worlds.description` guarda un documento ProseMirror validado** con el mismo esquema cerrado que las fichas (alias `WorldRichTextDocument`); nueva columna **`worlds.description_text`** con el texto plano derivado, calculado en el proceso principal y usado por la vista `search_world_documents`; la búsqueda nunca indexa JSON. **Límites:** 4.000 caracteres de texto plano (`WORLD_DESCRIPTION_TEXT_MAX_LENGTH`) y 200.000 de JSON (`WORLD_DESCRIPTION_JSON_MAX_LENGTH`); contador, error y bloqueo se calculan sobre el texto extraído. **Mismo editor de #131:** barra de tres controles en creación (Negrita, Cursiva, Formato) y cinco en edición (más Enlace y Mención), roles `combobox`/`textbox`/lectura, sin bifurcar el editor ni las menciones. **Enlaces `wc-entity://` solo a fichas vivas del mismo mundo;** en creación se rechaza cualquier enlace y el proceso principal es la autoridad. **Duplicar degrada los enlaces a texto** conservando el texto y recalculando `description_text`; las fichas no se copian. **Sin `CHECK` JSON en `worlds`** porque obligaría a reconstruir la tabla raíz referenciada por assets, activity_log, entity_types, entities, tags, relations, search_documents y sus triggers; se compensa con Zod en el IPC, validación de dominio, esquema cerrado del editor y lectura tolerante desde `description_text`. **Migración `0008_world_description`:** copia previa verificable, `description_text`, conversión de cada línea no vacía en un párrafo con `json_object`/`json_group_array` y `group_concat(... ORDER BY ordinal)`, normalización CRLF/CR y tabuladores, descarte de líneas vacías o de solo espacios, recreación de la vista, repoblación de `search_documents` y `rebuild` de FTS5; `user_version` pasa a **9**; rollback de referencia que degrada a texto plano, elimina la columna, restaura vista y triggers de `0006` y deja `user_version` 8, perdiendo formato y enlaces pero no el texto. **Formato portable `world-craft-world` v2:** `world.description` es documento o `null`, el manifiesto acepta `formatVersion` 1 y 2 y escribe 2, un paquete v1 convierte su texto a párrafos al leerlo, un `formatVersion` mayor que 2 se rechaza con `TRANSFER_FORMAT_UNSUPPORTED`, los enlaces se remapean y los irresolubles se cuentan como `broken-entity-link`, `schemaVersion` viaja como `user_version` (9) y `description_text` sigue fuera del paquete y se recalcula. La **biblioteca total** `world-craft-library` v1 no cambia su versión y consume paquetes v2. **Sin canales IPC nuevos**, sin dependencias y sin red. | El mundo deja de tener una descripción prevista y comparte editor, formato y menciones con las fichas; la búsqueda sigue leyendo texto legible; los textos existentes se conservan párrafo a párrafo con copia previa y rollback documentado; los paquetes v1 de #78 se siguen importando; duplicar no deja enlaces al mundo original. La migración toca datos y el rollback pierde formato y enlaces; un texto heredado de más de 4.000 caracteres debe acortarse para volver a guardarse; sin `CHECK` JSON el riesgo es local y se compensa con validación; el esquema recursivo no limita profundidad (LOW heredado); el lector de biblioteca debe aceptar paquetes v1 y v2. El detalle está en el ADR 0031 y en `docs/formato-de-exportacion.md`. |
+
+- **Relación con D-052:** D-054 **actualiza parcialmente** la exportación de
+  mundos de D-052 al subir `formatVersion` a 2 y aceptar la lectura de v1, pero
+  **no la supersede del todo**: el formato abierto `world-craft-world`, la
+  importación siempre como mundo nuevo, el remapeo de IDs, los límites y los
+  avisos de D-052 siguen vigentes. La biblioteca total de D-053 conserva su
+  `world-craft-library` v1.
+- Referencias: ADR 0031, ADR 0002, ADR 0007, ADR 0009, ADR 0012, ADR 0016,
+  ADR 0026, ADR 0029, ADR 0030, #72, #74, #77, #78, #79, #114, #115, #116, #131,
+  `docs/diseno/mundo-descripcion-issue-114.md`,
+  `docs/base-de-datos/migraciones.md`, `docs/base-de-datos/esquema.md`,
+  `docs/formato-de-exportacion.md`, `docs/persistencia.md`,
   `docs/arquitectura.md`, `docs/diseno/sistema-de-diseno.md` y
   `docs/manual-de-usuario.md`.

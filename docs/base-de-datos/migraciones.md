@@ -1,8 +1,8 @@
 # Migraciones de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 24/11/2026 con M1-06 (#77): historial de versiones, índices de papelera,
-> rollback de referencia y `user_version` 8.
+> 26/11/2026 con #114: descripción enriquecida del mundo, conversión de texto a
+> párrafos, vista de búsqueda sobre texto plano y `user_version` 9.
 > **Ámbito:** creación, aplicación, verificación y reversión de migraciones
 > SQLite. El esquema vigente está en [`esquema.md`](esquema.md).
 
@@ -53,8 +53,10 @@ y deja `user_version` en 6. La migración `0006_search` (M1-05, #76) crea el
 índice de búsqueda con FTS5, sus vistas y triggers, y deja `user_version` en 7.
 La migración `0007_trash_versions` (M1-06, #77) crea `entity_versions` con su
 índice, añade `entities_deleted_idx` y `entity_types_deleted_idx`, y deja
-`user_version` en 8. El resto de tablas de contenido llega en M2, M3 y M4 con
-migraciones `0008` y siguientes.
+`user_version` en 8. La migración `0008_world_description` (#114) añade
+`worlds.description_text`, convierte la descripción plana de cada mundo en un
+documento de ProseMirror párrafo a párrafo y deja `user_version` en 9. El resto
+de tablas de contenido llega en M2, M3 y M4 con migraciones `0009` y siguientes.
 
 ## 3. Flujo de una migración
 
@@ -183,6 +185,7 @@ drizzle/
   0005_relations.sql
   0006_search.sql
   0007_trash_versions.sql
+  0008_world_description.sql
   meta/
     _journal.json
   rollback/
@@ -194,6 +197,7 @@ drizzle/
     0005_relations.down.sql
     0006_search.down.sql
     0007_trash_versions.down.sql
+    0008_world_description.down.sql
 ```
 
 - Cuatro dígitos, secuencia sin huecos y etiqueta en `snake_case` e inglés.
@@ -203,9 +207,10 @@ drizzle/
   `0002_worlds` los mundos y su actividad, `0003_entity_types` los tipos de
   entidad con su seed, `0004_entities` las fichas, etiquetas y galería,
   `0005_relations` los tipos de relación y las aristas, `0006_search` el índice
-  de búsqueda y `0007_trash_versions` el historial de versiones y los índices de
-  papelera. Las siguientes (`0008` en adelante) son previstas para M2, M3 y M4 y
-  no se reservan nombres de antemano.
+  de búsqueda, `0007_trash_versions` el historial de versiones y los índices de
+  papelera, y `0008_world_description` la descripción enriquecida del mundo. Las
+  siguientes (`0009` en adelante) son previstas para M2, M3 y M4 y no se reservan
+  nombres de antemano.
 - `0002_worlds` crea `worlds` antes que `activity_log` para que la clave foránea
   de la actividad siempre encuentre su tabla. Su rollback deshace primero
   `activity_log`, después `worlds` y deja `user_version` en 2.
@@ -247,6 +252,35 @@ drizzle/
   `user_version` en 7. Solo se pierden las versiones, que la copia previa
   conserva. La prueba de preservación migra una base en `0006` con un mundo, un
   tipo personalizado, fichas, etiquetas, galería, relaciones y búsqueda.
+- `0008_world_description` cambia la forma de un campo con datos: añade
+  `worlds.description_text` y convierte `worlds.description` de texto plano a un
+  documento de ProseMirror. **Qué convierte y cómo:** normaliza `CRLF` y `CR` a
+  `LF`, cambia tabuladores por espacios, colapsa espacios repetidos y recorta
+  cada línea; cada línea no vacía se convierte en un párrafo con un nodo `text`,
+  en el orden original, usando una tabla temporal y las funciones JSON de SQLite
+  (`json_object` y `json_group_array(... ORDER BY ordinal)`), que escapan
+  comillas y barras. No concatena cadenas para construir el JSON. Un texto que
+  solo tenía saltos, tabuladores o espacios queda en `NULL`; `description_text`
+  se rellena con `group_concat(body, char(10) ORDER BY ordinal)` y la vista
+  `search_world_documents` se recrea para leer ese texto plano en lugar del JSON.
+  Después se repuebla `search_documents` para los mundos y se ejecuta
+  `INSERT INTO search_fts(search_fts) VALUES ('rebuild')`. **Por qué no hay
+  `CHECK` en `worlds`:** SQLite exigiría reconstruir la tabla raíz, referenciada
+  por `assets`, `activity_log`, `entity_types`, `entities`, `tags`, `relations`,
+  `search_documents` y sus triggers; la forma se valida con Zod en el IPC, la
+  validación de dominio y el esquema cerrado del editor, y el texto plano se
+  recalcula siempre en el proceso principal. La conversión usa las funciones JSON
+  de SQLite y `group_concat` con `ORDER BY`; el binario de better-sqlite3 13.x
+  incluye SQLite ≥ 3.44, que es el mínimo que la migración documenta.
+  **Rollback de referencia**
+  (`drizzle/rollback/0008_world_description.down.sql`): degrada el documento a
+  texto plano con `worlds.description_text`, retira los triggers de búsqueda del
+  mundo, elimina la columna, restaura la vista y los triggers de `0006`, repuebla
+  `search_documents`, reconstruye FTS y deja `user_version` en 8. Se pierde el
+  formato y los enlaces, **nunca el texto visible**; la copia previa conserva el
+  estado original. La prueba de preservación migra una base en `0007` con mundos
+  de texto plano, `CRLF`, `CR`, líneas vacías, solo espacios, orden no
+  alfabético, más de 2.000 líneas y un JSON ya migrado.
 
 ## 5. Pruebas
 
@@ -255,18 +289,19 @@ drizzle/
 | `journal` | Journal válido, secuencia sin huecos, etiquetas sin traversal y checksum normalizado. | Implementada (unitaria) |
 | `migrations` | Una base vacía llega a la última versión sin errores y es idempotente al reabrir. | Implementada (integración) |
 | `upgrade-0001` | Una base en `0000` migra a `0001_assets` conservando `app_settings` y creando `assets`, con `user_version` 2. | Implementada (integración) |
-| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`, `relations`, `search_documents` y `entity_versions`, con `user_version` 8. | Implementada (integración) |
+| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`, `relations`, `search_documents` y `entity_versions`, con `user_version` 9. | Implementada (integración) |
 | `upgrade-0003` | Una base en `0002` con mundos y actividad migra a `0003`, `0004` y `0005` sin perder filas y con los 18 tipos del sistema. | Implementada (integración) |
 | `upgrade-0004` | Una base en `0003` con mundos y tipos personalizados migra a `0004` y `0005` sin perder filas y crea las tablas de fichas, etiquetas, galería, tipos de relación y relaciones. | Implementada (integración) |
 | `upgrade-0005` | Una base en `0004` con mundos, tipos y fichas migra a `0005` sin perder filas, crea `relation_types` y `relations` y siembra los 18 tipos de relación del sistema. | Implementada (integración) |
 | `upgrade-0006` | Una base en `0005` con mundos, fichas, etiquetas y relaciones migra a `0006` sin perder filas, crea el índice y lo repuebla desde las vistas. | Implementada (integración) |
 | `upgrade-0007` | Una base en `0006` con mundos, tipos, fichas, etiquetas, galería, relaciones y búsqueda migra a `0007` sin perder filas; crea `entity_versions` y los índices de papelera, conserva los assets y deja `user_version` 8. | Implementada (integración) |
-| `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo. | Implementada (integración) |
+| `upgrade-0008` | Una base en `0007` con descripciones planas migra a `0008` conservando el texto y el orden de los párrafos, convierte `CRLF`/`CR`, líneas vacías, solo espacios y más de 2.000 líneas, rellena `description_text`, deja la vista de búsqueda sin JSON y deja `user_version` 9. | Implementada (integración) |
+| `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo; incluye la descripción y `description_text` de `0008`. | Implementada (integración) |
 | `backup` | Copia previa con manifiesto, tamaño, SHA-256 e integridad; fallo de copia no migra. | Implementada (integración) |
 | `integrity` | `PRAGMA integrity_check` detecta corrupción y el arranque no escribe. | Implementada (integración) |
 | `foreign-db` | Una base con tablas propias sin `schema_migrations` se rechaza. | Implementada (integración) |
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
-| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0007_trash_versions` deja `user_version` 7, `0006_search` 6, `0005_relations` 5, `0004_entities` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
+| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0008_world_description` deja `user_version` 8 y convierte el documento a texto plano, `0007_trash_versions` deja `user_version` 7, `0006_search` 6, `0005_relations` 5, `0004_entities` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
 | `backup-schedule` | Copias diaria, semanal y mensual al arrancar, sin duplicar el bucket, y rotación 7/4/12/5 sin podar pre-restore. | Implementada (unitaria e integración) |
 | `backup-prepurge` | La copia previa a la purga escribe manifiestos `pre-purge` verificables, rota a 10 sin borrar la más reciente y no deja una copia parcial si falla la escritura. | Implementada (integración) |

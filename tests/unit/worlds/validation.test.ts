@@ -9,6 +9,7 @@ import {
   normalizeWorldSummary,
 } from '@/main/worlds/validation';
 import type { WorldLanguage } from '@/shared/contracts/worlds';
+import { plainTextToRichTextDocument } from '@/shared/entities/description';
 
 describe('validación de campos del mundo', () => {
   it('recorta y colapsa los espacios del nombre', () => {
@@ -31,14 +32,25 @@ describe('validación de campos del mundo', () => {
     );
   });
 
-  it('conserva los saltos de línea de la descripción y la recorta', () => {
-    expect(normalizeWorldDescription('  Primera línea.\n\nSegunda.  ')).toBe(
-      'Primera línea.\n\nSegunda.',
+  it('normaliza la descripción a documento y calcula su texto plano', () => {
+    const normalized = normalizeWorldDescription(
+      plainTextToRichTextDocument('  Primera línea.\n\nSegunda.  '),
     );
-    expect(normalizeWorldDescription('   ')).toBeNull();
-    expect(() => normalizeWorldDescription('a'.repeat(4_001))).toThrow(
-      WorldInputError,
+
+    expect(normalized.text).toBe('Primera línea.\nSegunda.');
+    expect(normalized.document).toEqual(
+      plainTextToRichTextDocument('Primera línea.\nSegunda.'),
     );
+    expect(normalized.json).toContain('"type":"doc"');
+    expect(normalizeWorldDescription(null).json).toBeNull();
+    expect(
+      normalizeWorldDescription(plainTextToRichTextDocument('   ')).text,
+    ).toBeNull();
+    expect(() =>
+      normalizeWorldDescription(
+        plainTextToRichTextDocument('a'.repeat(4_001)),
+      ),
+    ).toThrow(WorldInputError);
   });
 
   it('deduplica géneros sin distinguir mayúsculas y descarta los vacíos', () => {

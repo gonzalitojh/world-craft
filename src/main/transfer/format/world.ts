@@ -51,7 +51,6 @@ import {
 } from '../../../shared/contracts/relations';
 import {
   TRANSFER_FORMAT,
-  TRANSFER_FORMAT_VERSION,
   TRANSFER_MAX_ASSETS,
   TRANSFER_MAX_ENTITIES,
   TRANSFER_MAX_ENTITY_TYPES,
@@ -63,7 +62,7 @@ import {
   type TransferCounts,
 } from '../../../shared/contracts/transfer';
 import {
-  WORLD_DESCRIPTION_MAX_LENGTH,
+  WORLD_DESCRIPTION_TEXT_MAX_LENGTH,
   WORLD_GENRES_MAX,
   WORLD_GENRE_MAX_LENGTH,
   WORLD_LANGUAGES,
@@ -72,7 +71,8 @@ import {
   WORLD_SLUG_PATTERN,
   WORLD_SUMMARY_MAX_LENGTH,
 } from '../../../shared/contracts/worlds';
-import { entityDescriptionDocumentSchema } from '../../../shared/entities/description';
+import { entityDescriptionDocumentSchema, plainTextToRichTextDocument } from '../../../shared/entities/description';
+import { validateWorldDescription } from '../../../shared/worlds/description';
 import { isSystemEntityTypeKey } from '../../../shared/entity-types/catalog';
 import { entityTypeTransferEntrySchema } from '../../entity-types/transfer';
 import { isSystemRelationTypeKey } from '../../../shared/relations/catalog';
@@ -268,119 +268,218 @@ const relationTypesSchema = z
   })
   .strict();
 
-/** Esquema estricto de `world.json`. */
-export const worldTransferSchema = z
+const worldFieldsShape = {
+  name: z.string().trim().min(1).max(WORLD_NAME_MAX_LENGTH),
+  slug: z
+    .string()
+    .min(1)
+    .max(WORLD_SLUG_MAX_LENGTH)
+    .regex(WORLD_SLUG_PATTERN),
+  summary: z.string().max(WORLD_SUMMARY_MAX_LENGTH).nullable(),
+  genres: z
+    .array(z.string().trim().min(1).max(WORLD_GENRE_MAX_LENGTH))
+    .max(WORLD_GENRES_MAX),
+  language: z.enum(WORLD_LANGUAGES),
+  createdAt: z.number().int().min(0),
+  updatedAt: z.number().int().min(0),
+};
+
+const worldTransferShape = {
+  format: z.literal(TRANSFER_FORMAT),
+  entityTypes: entityTypesSchema,
+  relationTypes: relationTypesSchema,
+  tags: z.array(tagSchema).max(TRANSFER_MAX_TAGS),
+  assets: z.array(assetSchema).max(TRANSFER_MAX_ASSETS),
+  entities: z.array(entitySchema).max(TRANSFER_MAX_ENTITIES),
+  relations: z.array(relationSchema).max(TRANSFER_MAX_RELATIONS),
+  coverAssetId: uuidSchema.nullable(),
+};
+
+/** Formato 1: la descripción del mundo era texto plano. */
+const worldV1TransferSchema = z
   .strictObject({
-    format: z.literal(TRANSFER_FORMAT),
-    formatVersion: z.literal(TRANSFER_FORMAT_VERSION),
+    ...worldTransferShape,
+    formatVersion: z.literal(1),
     world: z
       .strictObject({
-        name: z.string().trim().min(1).max(WORLD_NAME_MAX_LENGTH),
-        slug: z
+        ...worldFieldsShape,
+        description: z
           .string()
-          .min(1)
-          .max(WORLD_SLUG_MAX_LENGTH)
-          .regex(WORLD_SLUG_PATTERN),
-        summary: z.string().max(WORLD_SUMMARY_MAX_LENGTH).nullable(),
-        description: z.string().max(WORLD_DESCRIPTION_MAX_LENGTH).nullable(),
-        genres: z
-          .array(z.string().trim().min(1).max(WORLD_GENRE_MAX_LENGTH))
-          .max(WORLD_GENRES_MAX),
-        language: z.enum(WORLD_LANGUAGES),
-        createdAt: z.number().int().min(0),
-        updatedAt: z.number().int().min(0),
+          .max(WORLD_DESCRIPTION_TEXT_MAX_LENGTH)
+          .nullable(),
       })
       .strict(),
-    entityTypes: entityTypesSchema,
-    relationTypes: relationTypesSchema,
-    tags: z.array(tagSchema).max(TRANSFER_MAX_TAGS),
-    assets: z.array(assetSchema).max(TRANSFER_MAX_ASSETS),
-    entities: z.array(entitySchema).max(TRANSFER_MAX_ENTITIES),
-    relations: z.array(relationSchema).max(TRANSFER_MAX_RELATIONS),
-    coverAssetId: uuidSchema.nullable(),
   })
   .strict()
-  .superRefine((payload, context) => {
-    const entityIds = new Set<string>();
-    const entitySlugs = new Set<string>();
-    const tagNames = new Set<string>();
-    const assetIds = new Set<string>();
-    let versionCount = 0;
+  .superRefine(refineWorldPayload);
 
-    for (const entity of payload.entities) {
-      if (entityIds.has(entity.id)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'El mundo repite el identificador de una ficha.',
-          path: ['entities'],
-        });
-      }
+/** Formato 2: la descripción del mundo es un documento de ProseMirror. */
+const worldV2TransferSchema = z
+  .strictObject({
+    ...worldTransferShape,
+    formatVersion: z.literal(2),
+    world: z
+      .strictObject({
+        ...worldFieldsShape,
+        description: entityDescriptionDocumentSchema.nullable(),
+      })
+      .strict(),
+  })
+  .strict()
+  .superRefine(refineWorldPayload);
 
-      entityIds.add(entity.id);
+export type WorldTransfer = z.infer<typeof worldV2TransferSchema>;
+export type WorldTransferV1 = z.infer<typeof worldV1TransferSchema>;
 
-      if (entitySlugs.has(entity.slug)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'El mundo repite el slug de una ficha.',
-          path: ['entities'],
-        });
-      }
+interface WorldPayloadShape {
+  readonly entities: readonly {
+    readonly id: string;
+    readonly slug: string;
+    readonly versions: readonly unknown[];
+  }[];
+  readonly tags: readonly { readonly name: string }[];
+  readonly assets: readonly { readonly id: string }[];
+  readonly entityTypes: {
+    readonly types: readonly { readonly key: string }[];
+  };
+}
 
-      entitySlugs.add(entity.slug);
-      versionCount += entity.versions.length;
-    }
+interface RefinementContext {
+  addIssue(issue: {
+    code: 'custom';
+    message: string;
+    path?: (string | number)[];
+  }): void;
+}
 
-    for (const tag of payload.tags) {
-      if (tagNames.has(tag.name)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'El mundo repite una etiqueta.',
-          path: ['tags'],
-        });
-      }
+function refineWorldPayload(
+  payload: WorldPayloadShape,
+  context: RefinementContext,
+): void {
+  const entityIds = new Set<string>();
+  const entitySlugs = new Set<string>();
+  const tagNames = new Set<string>();
+  const assetIds = new Set<string>();
+  let versionCount = 0;
 
-      tagNames.add(tag.name);
-    }
-
-    for (const asset of payload.assets) {
-      if (assetIds.has(asset.id)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'El mundo repite un asset.',
-          path: ['assets'],
-        });
-      }
-
-      assetIds.add(asset.id);
-    }
-
-    // Los tipos del sistema se resuelven por clave en la importación. Una
-    // entidad con un tipo desconocido se descarta con aviso en `plan.ts`, no
-    // aquí, porque el paquete sigue siendo estructuralmente válido.
-    const customTypeKeys = new Set(
-      payload.entityTypes.types.map((type) => type.key),
-    );
-
-    for (const key of customTypeKeys) {
-      if (isSystemEntityTypeKey(key)) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Un tipo personalizado no puede usar una clave del sistema.',
-          path: ['entityTypes'],
-        });
-      }
-    }
-
-    if (versionCount > TRANSFER_MAX_VERSIONS) {
+  for (const entity of payload.entities) {
+    if (entityIds.has(entity.id)) {
       context.addIssue({
         code: 'custom',
-        message: 'El mundo supera el número máximo de versiones.',
+        message: 'El mundo repite el identificador de una ficha.',
         path: ['entities'],
       });
     }
-  });
 
-export type WorldTransfer = z.infer<typeof worldTransferSchema>;
+    entityIds.add(entity.id);
+
+    if (entitySlugs.has(entity.slug)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'El mundo repite el slug de una ficha.',
+        path: ['entities'],
+      });
+    }
+
+    entitySlugs.add(entity.slug);
+    versionCount += entity.versions.length;
+  }
+
+  for (const tag of payload.tags) {
+    if (tagNames.has(tag.name)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'El mundo repite una etiqueta.',
+        path: ['tags'],
+      });
+    }
+
+    tagNames.add(tag.name);
+  }
+
+  for (const asset of payload.assets) {
+    if (assetIds.has(asset.id)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'El mundo repite un asset.',
+        path: ['assets'],
+      });
+    }
+
+    assetIds.add(asset.id);
+  }
+
+  // Los tipos del sistema se resuelven por clave en la importación. Una
+  // entidad con un tipo desconocido se descarta con aviso en `plan.ts`, no
+  // aquí, porque el paquete sigue siendo estructuralmente válido.
+  for (const type of payload.entityTypes.types) {
+    if (isSystemEntityTypeKey(type.key)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Un tipo personalizado no puede usar una clave del sistema.',
+        path: ['entityTypes'],
+      });
+    }
+  }
+
+  if (versionCount > TRANSFER_MAX_VERSIONS) {
+    context.addIssue({
+      code: 'custom',
+      message: 'El mundo supera el número máximo de versiones.',
+      path: ['entities'],
+    });
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Convierte el paquete v1 a la forma normalizada v2. */
+function normalizeWorldV1(payload: WorldTransferV1): WorldTransfer {
+  const document =
+    payload.world.description === null
+      ? null
+      : plainTextToRichTextDocument(payload.world.description);
+  const validated = validateWorldDescription(document);
+
+  if (!validated.ok) {
+    throw new TransferError('TRANSFER_WORLD_INVALID');
+  }
+
+  return {
+    ...payload,
+    formatVersion: 2,
+    world: {
+      ...payload.world,
+      description: validated.document,
+    },
+  };
+}
+
+function parseWorldValue(value: unknown): WorldTransfer {
+  assertSupportedTransferFormat(value);
+
+  if (isRecord(value) && value.formatVersion === 1) {
+    const parsedV1 = worldV1TransferSchema.safeParse(value);
+
+    if (!parsedV1.success) {
+      throw new TransferError('TRANSFER_WORLD_INVALID', {
+        cause: parsedV1.error,
+      });
+    }
+
+    return normalizeWorldV1(parsedV1.data);
+  }
+
+  const parsed = worldV2TransferSchema.safeParse(value);
+
+  if (!parsed.success) {
+    throw new TransferError('TRANSFER_WORLD_INVALID', { cause: parsed.error });
+  }
+
+  return parsed.data;
+}
 
 /** Lee y valida `world.json` desde texto. */
 export function parseWorldTransferJson(text: string): WorldTransfer {
@@ -398,26 +497,12 @@ export function parseWorldTransferJson(text: string): WorldTransfer {
 
   assertSupportedTransferFormat(value);
 
-  const parsed = worldTransferSchema.safeParse(value);
-
-  if (!parsed.success) {
-    throw new TransferError('TRANSFER_WORLD_INVALID', { cause: parsed.error });
-  }
-
-  return parsed.data;
+  return parseWorldValue(value);
 }
 
 /** Valida un `world.json` ya deserializado. */
 export function parseWorldTransfer(value: unknown): WorldTransfer {
-  assertSupportedTransferFormat(value);
-
-  const parsed = worldTransferSchema.safeParse(value);
-
-  if (!parsed.success) {
-    throw new TransferError('TRANSFER_WORLD_INVALID', { cause: parsed.error });
-  }
-
-  return parsed.data;
+  return parseWorldValue(value);
 }
 
 /** Serializa `world.json` con formato legible e inspeccionable. */

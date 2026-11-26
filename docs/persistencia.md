@@ -1,7 +1,7 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 25/11/2026 con M1-07 (#78). La base local, las migraciones, el modo
+> 26/11/2026 con la descripción enriquecida del mundo (#114). La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
@@ -10,10 +10,11 @@
 > imágenes, etiquetas y galería, en M1-03 (#74); las relaciones tipadas con
 > backlinks, en M1-04 (#75); la búsqueda global con FTS5 y la paleta de
 > comandos, en M1-05 (#76); la papelera, el historial de versiones y la copia
-> `pre-purge`, en M1-06 (#77); y la exportación e importación de un mundo
-> completo, en M1-07 (#78). La interfaz de copias de Ajustes llega con #79 y
-> la release pública con actualización real, en M5. Las secciones distinguen lo
-> implementado de lo previsto.
+> `pre-purge`, en M1-06 (#77); la exportación e importación de un mundo
+> completo, en M1-07 (#78); la pantalla de Ajustes y la gestión de datos, en
+> M1-08 (#79); y la descripción enriquecida del mundo, con la migración `0008`,
+> en #114. La release pública con actualización real llega en M5. Las secciones
+> distinguen lo implementado de lo previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
@@ -163,9 +164,9 @@ en la tabla `app_settings`; no se crea `config.json`.
   migrar; si falla, modo seguro sin escritura.
 - `PRAGMA user_version` es el **número de migraciones aplicadas** (con
   `0000_init`, `0001_assets`, `0002_worlds`, `0003_entity_types`,
-  `0004_entities`, `0005_relations`, `0006_search` y `0007_trash_versions`, vale
-  8), no el prefijo de la etiqueta. La tabla `schema_migrations` conserva el
-  detalle y se contrasta con él.
+  `0004_entities`, `0005_relations`, `0006_search`, `0007_trash_versions` y
+  `0008_world_description`, vale 9), no el prefijo de la etiqueta. La tabla
+  `schema_migrations` conserva el detalle y se contrasta con él.
 - Timestamps en milisegundos UTC; la interfaz muestra la zona local.
 - IDs UUIDv7 generados en el proceso principal (`src/main/db/ids.ts`) con
   contador para mantener el orden dentro del mismo milisegundo. Tras M1-06
@@ -403,8 +404,8 @@ de huérfanos sigue sin canal ni interfaz.
 - La versión del esquema se guarda en `PRAGMA user_version` como **número de
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
   SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds`,
-  `0003_entity_types`, `0004_entities`, `0005_relations`, `0006_search` y
-  `0007_trash_versions`, vale 8.
+  `0003_entity_types`, `0004_entities`, `0005_relations`, `0006_search`,
+  `0007_trash_versions` y `0008_world_description`, vale 9.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -447,6 +448,20 @@ de huérfanos sigue sin canal ni interfaz.
   versiones se pierde y la copia previa lo conserva. La prueba de preservación
   migra una base en `0006` con mundo, tipo personalizado, fichas, etiquetas,
   galería, relaciones y búsqueda.
+- `0008_world_description` cambia la forma de un campo con datos y deja
+  `user_version` 9. Añade `worlds.description_text`, convierte la descripción
+  plana de cada mundo en un documento de ProseMirror párrafo a párrafo
+  (normalizando `CRLF`/`CR`, tabuladores y espacios, y descartando líneas vacías o
+  de solo espacios), rellena el texto plano, recrea `search_world_documents`
+  sobre `description_text`, repuebla `search_documents` y reconstruye FTS5. No
+  añade `CHECK` JSON a `worlds` para no reconstruir la tabla raíz; la forma se
+  valida con Zod, la validación de dominio y el esquema cerrado del editor. Su
+  rollback está en `drizzle/rollback/0008_world_description.down.sql`: degrada el
+  documento a texto plano, retira la columna, restaura la vista y los triggers de
+  `0006` y deja `user_version` 8; se pierden formato y enlaces, no el texto. La
+  prueba de preservación migra una base en `0007` con textos planos variados
+  (`CRLF`, `CR`, líneas vacías, solo espacios, orden no alfabético y más de 2.000
+  líneas).
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o
@@ -706,12 +721,14 @@ ni sin confirmación.
 
 ## 8. Exportación e importación
 
-**Implementado en M1-07 (#78) y ampliado en M1-08 (#79).** El formato está
-versionado y documentado en
+**Implementado en M1-07 (#78), ampliado en M1-08 (#79) y evolucionado en #114.**
+El formato está versionado y documentado en
 [`docs/formato-de-exportacion.md`](formato-de-exportacion.md); las decisiones
-están en el [ADR 0029](adr/0029-world-export-import.md) y el
-[ADR 0030](adr/0030-settings-data-and-full-deletion.md). No hay migración:
-`user_version` sigue en **8**.
+están en el [ADR 0029](adr/0029-world-export-import.md), el
+[ADR 0030](adr/0030-settings-data-and-full-deletion.md) y el
+[ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md). La
+migración `0008_world_description` deja `user_version` en **9**, y el formato de
+mundo pasa a **v2** con lectura de v1.
 
 ### 8.1 Exportación de un mundo
 
@@ -722,15 +739,20 @@ Windows y termina en `.zip`. La exportación no se guarda en una carpeta
 
 El archivo es un ZIP con:
 
-- `manifest.json`: `format: "world-craft-world"`, `formatVersion: 1`,
-  `schemaVersion` igual a `user_version`, `appVersion`, `exportedAt`,
+- `manifest.json`: `format: "world-craft-world"`, `formatVersion: 2`,
+  `schemaVersion` igual a `user_version` (9), `appVersion`, `exportedAt`,
   `assetsIncluded: true`, mundo de origen, recuentos, avisos y `files` con
   `path`, `size` y `sha256`. El manifiesto no se lista a sí mismo.
-- `world.json`: mundo, tipos personalizados (`entity-types.v1`), tipos de
-  relación personalizados (`relation-types.v1`), etiquetas, metadatos de assets,
-  fichas vivas con sus versiones, galería, imagen principal, atributos y
-  etiquetas, relaciones y portada.
+- `world.json`: mundo con su **descripción como documento de ProseMirror o
+  `null`**, tipos personalizados (`entity-types.v1`), tipos de relación
+  personalizados (`relation-types.v1`), etiquetas, metadatos de assets, fichas
+  vivas con sus versiones, galería, imagen principal, atributos y etiquetas,
+  relaciones y portada. `description_text` no viaja: se recalcula al importar.
 - `assets/<uuidv7>.webp`: las imágenes referenciadas, ya en WebP canónico.
+
+Al exportar, los enlaces `wc-entity://` del mundo se remapean con el mapa de IDs;
+los que no se resuelven se quitan conservando el texto y se cuentan como
+`broken-entity-link`.
 
 **Solo viaja contenido vivo de mundos vivos:** fichas, tipos, etiquetas y
 relaciones con `deleted_at IS NULL`, y un mundo que no esté en la papelera. Las
@@ -759,7 +781,11 @@ sobrescribe un mundo existente.
    manifiesto y se rechaza con `TRANSFER_FORMAT_UNSUPPORTED` si su
    `schemaVersion` supera el `user_version` instalado, antes de leer
    `world.json`. Después se comprueba el tamaño y el SHA-256 de `world.json`
-   antes de parsearlo y se valida el contenido con Zod estricto. Solo se admiten
+   antes de parsearlo y se valida el contenido con Zod estricto. Un paquete
+   `formatVersion: 1` se acepta: su descripción plana se convierte a documento
+   párrafo a párrafo antes de validarse con el esquema del mundo. Un
+   `formatVersion` mayor que 2 se rechaza con `TRANSFER_FORMAT_UNSUPPORTED` antes
+   del parse estricto. Solo se admiten
    `manifest.json`, `world.json` y `assets/<uuidv7>.webp`; se rechazan rutas
    absolutas, `..`, UNC, separadores `\`, ADS (`:`), nombres reservados de
    Windows, mayúsculas, directorios, enlaces, cifrado, duplicados y entradas de
@@ -812,8 +838,9 @@ indexan el contenido importado sin una reconstrucción aparte.
 - **Checksums:** cada `sha256` es el SHA-256 de los bytes descomprimidos. El
   lector comprueba tamaño y hash de `world.json` y de cada asset. El CRC del
   contenedor no se usa como garantía; la comprobación fuerte es el SHA-256.
-- **Formato y esquema futuros:** `formatVersion` superior a 1 se rechaza con
-  `TRANSFER_FORMAT_UNSUPPORTED`. Un `schemaVersion` superior al `user_version`
+- **Formato y esquema futuros:** `formatVersion` superior a 2 se rechaza con
+  `TRANSFER_FORMAT_UNSUPPORTED`; v1 se acepta y su descripción plana se convierte
+  a párrafos. Un `schemaVersion` superior al `user_version`
   instalado también se rechaza con `TRANSFER_FORMAT_UNSUPPORTED`, después de leer
   el manifiesto y antes de leer `world.json` o extraer assets; los esquemas
   iguales o anteriores se aceptan y el contenido se valida con Zod. La versión
@@ -823,8 +850,10 @@ indexan el contenido importado sin una reconstrucción aparte.
   de `world.json`, 16 MiB de manifiesto, 50.000 fichas, 500.000 versiones,
   300.000 relaciones, 5.000 etiquetas, 1.000 tipos de entidad, 1.000 tipos de
   relación, 8.000 assets y 140 caracteres de ruta. Se mantienen los límites por
-  registro (25 MiB/imagen, 8192 px/24 Mpx, 200.000 bytes/50.000 caracteres de
-  descripción, 500 de `alt`, 20 de galería, 12 etiquetas, 10 alias y 8 géneros).
+  registro (25 MiB/imagen, 8192 px/24 Mpx, 200.000 caracteres de JSON y 50.000 de
+  texto plano en la descripción de una ficha, 200.000 de JSON y 4.000 de texto
+  plano en la del mundo, 500 de `alt`, 20 de galería, 12 etiquetas, 10 alias y 8
+  géneros).
 - **Ratio de compresión:** 100:1 por entrada solo al importar. La verificación de
   una exportación propia lo desactiva para no rechazar un mundo legítimamente
   muy comprimible.

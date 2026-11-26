@@ -1,7 +1,7 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 25/11/2026 con M1-07 (#78). La migración
+> 26/11/2026 con #114. La migración
 > `0000_init` y las tablas `schema_migrations` y `app_settings` están
 > implementadas en M0-04 (#64); la tabla `assets` en `0001_assets` (M0-06, #66);
 > `worlds` y `activity_log` en `0002_worlds` (M1-01, #72); `entity_types` en
@@ -9,11 +9,12 @@
 > `entity_gallery` en `0004_entities` (M1-03, #74); `relation_types` y
 > `relations` en `0005_relations` (M1-04, #75); el índice de búsqueda
 > `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
-> (M1-05, #76); y `entity_versions` con los índices de papelera en
-> `0007_trash_versions` (M1-06, #77). **#78 no añade migraciones ni cambia
-> `user_version`, que sigue en 8**: la exportación y la importación usan las
-> tablas existentes. El resto de tablas de contenido llega en M2, M3 y M4 con
-> sus propias migraciones; hasta entonces figuran como previstas.
+> (M1-05, #76); `entity_versions` con los índices de papelera en
+> `0007_trash_versions` (M1-06, #77); y `worlds.description_text` con la vista
+> de búsqueda sobre texto plano en `0008_world_description` (#114). **La versión
+> vigente es 9**: #78 y #79 no cambiaron `user_version` y #114 lo sube al añadir
+> la descripción enriquecida. El resto de tablas de contenido llega en M2, M3 y
+> M4 con sus propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -87,10 +88,10 @@ CREATE TABLE `schema_migrations` (
 La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
 guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
 `0001_assets` vale 2, con `0002_worlds` vale 3, con `0003_entity_types` vale 4,
-con `0004_entities` vale 5, con `0005_relations` vale 6, con `0006_search` vale 7
-y con `0007_trash_versions` vale **8**; no es el prefijo de la etiqueta. El
-runner contrasta ese valor con `schema_migrations` y entra en modo seguro si no
-coinciden.
+con `0004_entities` vale 5, con `0005_relations` vale 6, con `0006_search` vale 7,
+con `0007_trash_versions` vale 8 y con `0008_world_description` vale **9**; no es
+el prefijo de la etiqueta. El runner contrasta ese valor con
+`schema_migrations` y entra en modo seguro si no coinciden.
 
 ### 3.1 `schema_migrations`
 
@@ -134,7 +135,8 @@ Las claves no-UI y las tablas de dominio no se tocan. El detalle está en
 `entity_tags` y `entity_gallery` en `0004_entities` (M1-03, #74),
 `relation_types` y `relations` en `0005_relations` (M1-04, #75), el índice
 `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
-(M1-05, #76), `entity_versions` en `0007_trash_versions` (M1-06, #77) y `assets`
+(M1-05, #76), `entity_versions` en `0007_trash_versions` (M1-06, #77),
+`worlds.description_text` en `0008_world_description` (#114) y `assets`
 en `0001_assets` (M0-06, #66). Las demás tablas de esta sección describen el
 modelo objetivo y todavía no existen; llegarán con sus issues de M2, M3 y M4.
 
@@ -167,13 +169,20 @@ CREATE TABLE `worlds` (
 );
 ```
 
+`worlds.description_text` llega con `0008_world_description` (#114):
+
+```sql
+ALTER TABLE `worlds` ADD `description_text` text;
+```
+
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | TEXT | PK | UUIDv7. |
 | `name` | TEXT | NOT NULL, CHECK 1–120 | Nombre visible. |
 | `slug` | TEXT | NOT NULL, UNIQUE | Identificador estable; minúsculas, números y guiones. |
 | `summary` | TEXT | NULL | Sinopsis breve de una línea. |
-| `description` | TEXT | NULL | Texto plano hasta que llegue el editor compartido (#114). |
+| `description` | TEXT | NULL | Documento de ProseMirror validado con Zod; nunca HTML. Máximo 200.000 caracteres de JSON. |
+| `description_text` | TEXT | NULL | Texto plano derivado de `description` para la búsqueda; máximo 4.000 caracteres. Se recalcula en el proceso principal y no se exporta. |
 | `cover_asset_id` | TEXT | FK `assets(id)` `RESTRICT`, NULL | Portada; el selector llega con #115. |
 | `genres` | TEXT | NOT NULL DEFAULT `'[]'`, CHECK JSON array | Géneros como JSON; máximo 8, validado por la app. |
 | `status` | TEXT | NOT NULL DEFAULT `'active'`, CHECK | `active`, `archived`. |
@@ -202,6 +211,16 @@ Reglas de la issue M1-01:
   en ese orden, y nunca los assets (ADR 0028).
 - Los géneros y el nombre se validan en el proceso principal además de en la
   interfaz; el `CHECK` de SQLite es la última barrera.
+- **Descripción enriquecida (#114).** `description` guarda un documento
+  ProseMirror cerrado (párrafos, títulos 1–3, listas, cita, texto, salto y
+  enlaces `wc-entity://<uuidv7>`) y `description_text` su texto plano. La vista
+  `search_world_documents` compone el cuerpo con `summary` y `description_text`,
+  nunca con el JSON. Los enlaces solo admiten fichas vivas del mismo mundo.
+- **Sin `CHECK` JSON en `description`.** Añadirlo obligaría a reconstruir la
+  tabla raíz, referenciada por `assets`, `activity_log`, `entity_types`,
+  `entities`, `tags`, `relations`, `search_documents` y sus triggers. La forma se
+  valida con Zod en el IPC, la validación de dominio y el esquema cerrado del
+  editor; el texto plano se recalcula siempre.
 
 ### 4.2 `entity_types`
 
@@ -668,7 +687,10 @@ CREATE VIRTUAL TABLE search_fts USING fts5(
 `search_vocabulary` usa `fts5vocab(search_fts, 'row')` para la expansión
 aproximada de términos. Las vistas `search_world_documents`,
 `search_entity_documents` y `search_relation_documents` definen qué texto y
-metadatos produce cada tipo; excluyen filas borradas y mundos en papelera. Los
+metadatos produce cada tipo; excluyen filas borradas y mundos en papelera. Desde
+`0008_world_description`, `search_world_documents` lee
+`coalesce(summary, '') || char(10) || coalesce(description_text, '')`:
+**el mundo nunca indexa el JSON de su descripción**. Los
 triggers de `worlds`, `entities`, `relations`, `relation_types`, `entity_tags` y
 `tags` mantienen `search_documents`, y los triggers `search_documents_ai`,
 `search_documents_ad` y `search_documents_au` mantienen `search_fts`. La reconstrucción completa sanea
@@ -731,9 +753,10 @@ Reglas (ADR 0028):
 
 ### 4.15 Importación de un mundo (#78)
 
-**No hay migración.** `user_version` sigue en **8** y no se modifica
-`schema_migrations`. La importación usa las tablas existentes en **una única
-transacción** y respeta las claves foráneas con este orden de inserción. Antes de
+**No hay migración adicional para importar.** La importación usa las tablas
+existentes —incluida `description_text`, que se recalcula al escribir el mundo—
+en **una única transacción** y respeta las claves foráneas con este orden de
+inserción. `user_version` vale **9** desde `0008_world_description`. Antes de
 leer `world.json` o extraer assets, rechaza con `TRANSFER_FORMAT_UNSUPPORTED` un
 manifiesto cuyo `schemaVersion` supere el `user_version` instalado; los valores
 iguales o anteriores se aceptan.

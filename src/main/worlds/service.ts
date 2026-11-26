@@ -16,16 +16,28 @@ import {
   type WorldCreateInput,
   type WorldDetail,
   type WorldDuplicateInput,
+  type WorldRichTextDocument,
   type WorldSetArchivedInput,
   type WorldSummary,
   type WorldUpdateInput,
 } from '../../shared/contracts/worlds';
+import {
+  collectEntityLinkIds,
+  extractEntityDescriptionText,
+  plainTextToRichTextDocument,
+  stripRichTextLinks,
+} from '../../shared/entities/description';
+import {
+  parseWorldDescription,
+  validateWorldDescription,
+} from '../../shared/worlds/description';
 import {
   createWorldRepository,
   type ActivityRecord,
   type NewActivityRecord,
   type WorldRecord,
 } from './repository';
+import { WorldInputError } from './errors';
 import { normalizeWorldSlug, slugifyWorldName, uniqueWorldSlug } from './slug';
 import {
   normalizeWorldDescription,
@@ -97,6 +109,30 @@ export function createWorldsService(
     });
   };
 
+  /**
+   * Comprueba que los enlaces internos apuntan a fichas vivas del mismo mundo.
+   *
+   * En la creación el mundo aún no existe y no puede tener fichas, así que
+   * cualquier enlace se rechaza. La autoridad final es este proceso principal:
+   * la interfaz valida antes solo cuando la lista de candidatas está completa.
+   */
+  const validateDescriptionLinks = (
+    worldId: string | null,
+    document: WorldRichTextDocument | null,
+  ): void => {
+    if (document === null) {
+      return;
+    }
+
+    for (const entityId of collectEntityLinkIds(document)) {
+      if (worldId === null || repository.findLiveEntity(worldId, entityId) === null) {
+        throw new WorldInputError(
+          'La descripción enlaza a una ficha que no está disponible en este mundo.',
+        );
+      }
+    }
+  };
+
   return {
     list() {
       return repository.list().map(toSummary);
@@ -118,12 +154,17 @@ export function createWorldsService(
           ? normalizeWorldSlug(input.slug)
           : slugifyWorldName(name);
       const slug = uniqueWorldSlug(baseSlug, slugExists);
+      const description = normalizeWorldDescription(input.description);
+
+      validateDescriptionLinks(null, description.document);
+
       const record: WorldRecord = {
         id: generateId(),
         name,
         slug,
         summary: normalizeWorldSummary(input.summary),
-        description: normalizeWorldDescription(input.description),
+        description: description.json,
+        descriptionText: description.text,
         coverAssetId: null,
         genres: normalizeWorldGenres(input.genres),
         status: 'active',
@@ -176,13 +217,17 @@ export function createWorldsService(
           : existing.slug;
       const summary = normalizeWorldSummary(input.summary);
       const description = normalizeWorldDescription(input.description);
+
+      validateDescriptionLinks(existing.id, description.document);
+
       const genres = normalizeWorldGenres(input.genres);
       const language = normalizeWorldLanguage(input.language);
       const changed = changedFields(existing, {
         name,
         slug,
         summary,
-        description,
+        description: description.json,
+        descriptionText: description.text,
         genres,
         language,
       });
@@ -196,7 +241,8 @@ export function createWorldsService(
         name,
         slug,
         summary,
-        description,
+        description: description.json,
+        descriptionText: description.text,
         genres,
         language,
         updatedAt: at,
@@ -220,11 +266,16 @@ export function createWorldsService(
       const at = now();
       const name = normalizeWorldName(input.name);
       const slug = uniqueWorldSlug(slugifyWorldName(name), slugExists);
+      // Las fichas no se copian: un enlace interno apuntaría al mundo original.
+      // Se conserva el texto y se quita solo la marca de enlace.
+      const degraded = degradeDescription(source);
       const copy: WorldRecord = {
         ...source,
         id: generateId(),
         name,
         slug,
+        description: degraded.description,
+        descriptionText: degraded.descriptionText,
         // La portada es un asset del mundo original: no se comparte entre
         // mundos. La galería del mundo permitirá elegir otra.
         coverAssetId: null,
@@ -352,7 +403,82 @@ function toSummary(record: WorldRecord): WorldSummary {
 }
 
 function toDetail(record: WorldRecord): WorldDetail {
-  return { ...toSummary(record), description: record.description };
+  return {
+    ...toSummary(record),
+    description: readDescriptionDocument(record),
+  };
+}
+
+/**
+ * Lee el documento guardado con tolerancia a datos corruptos.
+ *
+ * Si el JSON es ilegible o no cumple el esquema, reconstruye un documento desde
+ * el texto plano para que el texto visible no se pierda; nunca se registra el
+ * contenido en logs.
+ */
+function readDescriptionDocument(
+  record: WorldRecord,
+): WorldRichTextDocument | null {
+  const parsed = parseWorldDescription(record.description);
+
+  if (parsed.ok) {
+    if (parsed.document !== null) {
+      return parsed.document;
+    }
+
+    return plainTextToRichTextDocument(record.descriptionText ?? '');
+  }
+
+  return plainTextToRichTextDocument(record.descriptionText ?? '');
+}
+
+/**
+ * Degrada los enlaces internos de una descripción al duplicar o restaurar.
+ *
+ * Conserva el texto y el resto de marcas. Si el documento guardado fuera
+ * ilegible, se reconstruye desde `description_text`.
+ */
+function degradeDescription(record: WorldRecord): {
+  readonly description: string | null;
+  readonly descriptionText: string | null;
+} {
+  const parsed = parseWorldDescription(record.description);
+
+  if (parsed.ok && parsed.document !== null) {
+    const stripped = stripRichTextLinks(parsed.document);
+
+    if (stripped !== null) {
+      const validated = validateWorldDescription(stripped);
+
+      if (validated.ok) {
+        return {
+          description: validated.json,
+          descriptionText: validated.text,
+        };
+      }
+    }
+  }
+
+  const fallback = plainTextToRichTextDocument(record.descriptionText ?? '');
+
+  if (fallback === null) {
+    return { description: null, descriptionText: record.descriptionText };
+  }
+
+  const validated = validateWorldDescription(fallback);
+
+  if (validated.ok) {
+    return { description: validated.json, descriptionText: validated.text };
+  }
+
+  // Documento heredado que supera el límite vigente: se conserva el texto
+  // visible en el documento y en `description_text`. La lectura lo reconstruye
+  // desde el texto plano si la validación estricta no lo acepta, de modo que el
+  // duplicado nunca deja la descripción como `null`.
+  return {
+    description: JSON.stringify(fallback),
+    descriptionText: extractEntityDescriptionText(fallback),
+  };
 }
 
 function toActivityEntry(record: ActivityRecord): WorldActivityEntry {
@@ -372,6 +498,7 @@ interface EditableFields {
   readonly slug: string;
   readonly summary: string | null;
   readonly description: string | null;
+  readonly descriptionText: string | null;
   readonly genres: readonly string[];
   readonly language: WorldRecord['language'];
 }
@@ -386,10 +513,20 @@ function changedFields(
   if (before.name !== after.name) changed.push('name');
   if (before.slug !== after.slug) changed.push('slug');
   if (before.summary !== after.summary) changed.push('summary');
-  if (before.description !== after.description) changed.push('description');
+
+  // El documento y su texto plano son un solo campo visible: se comparan
+  // juntos y se registra una única entrada `description`.
+  if (
+    before.description !== after.description ||
+    before.descriptionText !== after.descriptionText
+  ) {
+    changed.push('description');
+  }
+
   if (JSON.stringify(before.genres) !== JSON.stringify(after.genres)) {
     changed.push('genres');
   }
+
   if (before.language !== after.language) changed.push('language');
 
   return changed;

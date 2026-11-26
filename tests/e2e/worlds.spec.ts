@@ -163,7 +163,7 @@ async function fillWorldForm(
 
   if (values.description !== undefined) {
     await page
-      .getByLabel(messages.worlds.form.descriptionLabel)
+      .locator('[data-field="description"] .ProseMirror')
       .fill(values.description);
   }
 
@@ -552,6 +552,42 @@ test('la vista de mundo es modular', async ({ page }) => {
     page.getByRole('heading', { level: 1, name: WORLD_NAME, exact: true }),
   ).toBeVisible();
   await expect(entitiesButton).toContainText(messages.entities.list.count(1));
+});
+
+test('crea y lee una descripción enriquecida con formato', async ({ page }) => {
+  await openCreateDialog(page);
+  await page
+    .getByLabel(messages.worlds.form.nameLabel, { exact: false })
+    .fill('Crónica del faro');
+
+  const editor = page.locator('[data-field="description"] .ProseMirror');
+
+  await editor.click();
+  await page
+    .getByRole('button', { name: messages.entities.editor.format })
+    .click();
+  await page
+    .getByRole('menuitemradio', { name: messages.entities.editor.heading3 })
+    .click();
+  await editor.pressSequentially('Crónica');
+  await editor.press('Enter');
+  await page
+    .getByRole('button', { name: messages.entities.editor.bold })
+    .click();
+  await editor.pressSequentially('Mareas');
+
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: messages.worlds.form.submitCreate })
+    .click();
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Crónica del faro', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.wc-world-description h3')).toHaveText('Crónica');
+  await expect(page.locator('.wc-world-description strong')).toHaveText(
+    'Mareas',
+  );
 });
 
 test('la vista de mundo no desborda ni rompe el contraste con contenido largo', async ({

@@ -28,8 +28,14 @@ export const TRANSFER_FORMAT = 'world-craft-world';
  */
 export const TRANSFER_EVENT_CHANNEL = 'transfer:event';
 
-/** Versión del formato que entiende esta versión de la aplicación. */
-export const TRANSFER_FORMAT_VERSION = 1;
+/**
+ * Versión del formato que escribe esta versión de la aplicación.
+ *
+ * La lectura acepta también la versión 1 (descripción en texto plano) y
+ * normaliza el paquete a la 2. Una versión superior se rechaza con
+ * `TRANSFER_FORMAT_UNSUPPORTED`.
+ */
+export const TRANSFER_FORMAT_VERSION = 2;
 
 /** Operaciones de transferencia. */
 export const TRANSFER_OPERATIONS = ['export', 'import'] as const;
