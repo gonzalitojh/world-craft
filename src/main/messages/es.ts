@@ -20,6 +20,10 @@ export interface MainMessages {
     readonly importFilterName: string;
     readonly importAllFilesFilterName: string;
   };
+  readonly data: {
+    readonly exportDialogTitle: string;
+    readonly exportFilterName: string;
+  };
   readonly safeMode: {
     readonly buttons: {
       readonly openBackups: string;
@@ -105,6 +109,10 @@ export const messages: MainMessages = {
     importDialogTitle: 'Importar mundo',
     importFilterName: 'Mundo de World Craft',
     importAllFilesFilterName: 'Todos los archivos',
+  },
+  data: {
+    exportDialogTitle: 'Exportar todos los datos',
+    exportFilterName: 'Biblioteca de World Craft',
   },
   safeMode: {
     buttons: {

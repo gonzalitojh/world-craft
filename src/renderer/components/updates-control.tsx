@@ -1,13 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import {
-  createIdleUpdateSnapshot,
-  type UpdateSnapshot,
-} from '../../shared/contracts/updates';
-import type { IpcResult } from '../../shared/contracts/result';
 import { useMessages } from '../i18n/provider';
+import { useUpdates } from '../updates/use-updates';
 import { IconButton } from './icon-button';
-import { UpdatesDialog } from './updates-dialog';
 
 function UpdatesIcon() {
   return (
@@ -32,68 +25,14 @@ function UpdatesIcon() {
  * Control de actualizaciones de la barra superior.
  *
  * En v2 es un icono discreto: el nombre accesible y el tooltip cambian cuando
- * hay una versión disponible y un punto de acento lo señala visualmente. La
- * versión instalada se consulta en el propio diálogo. No comprueba
- * automáticamente: la primera comprobación ocurre solo si el usuario la pide.
- * La suscripción se retira al desmontar. Si el transporte IPC falla, el diálogo
- * muestra un aviso genérico en lugar de quedarse en silencio.
+ * hay una versión disponible y un punto de acento lo señala visualmente. El
+ * estado y el diálogo viven en `UpdatesProvider`, compartidos con Ajustes, para
+ * no duplicar suscripciones. No comprueba automáticamente: la primera
+ * comprobación ocurre solo si el usuario la pide.
  */
 export function UpdatesControl() {
   const messages = useMessages();
-  const updatesApi = window.worldCraft.updates;
-  const { version } = window.worldCraft.appInfo;
-  const [open, setOpen] = useState(false);
-  const [snapshot, setSnapshot] = useState<UpdateSnapshot>(() =>
-    createIdleUpdateSnapshot(version),
-  );
-  const [commandError, setCommandError] = useState<string | null>(null);
-  const stateRevision = useRef(0);
-
-  useEffect(() => {
-    let active = true;
-    const requestRevision = stateRevision.current;
-    const unsubscribe = updatesApi.onStateChanged((next) => {
-      stateRevision.current += 1;
-      setSnapshot(next);
-    });
-
-    void updatesApi.getState().then((result) => {
-      // Si llegó un evento mientras la respuesta estaba en vuelo, el snapshot
-      // del evento es más reciente y no debe sobrescribirse con el antiguo.
-      if (active && result.ok && stateRevision.current === requestRevision) {
-        setSnapshot(result.data);
-      }
-    });
-
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [updatesApi]);
-
-  const run = useCallback(
-    async (
-      command: () => Promise<IpcResult<UpdateSnapshot>>,
-    ): Promise<void> => {
-      setCommandError(null);
-
-      const result = await command();
-
-      if (result.ok) {
-        setSnapshot(result.data);
-        return;
-      }
-
-      setCommandError(messages.updates.errors.transport);
-    },
-    [messages],
-  );
-
-  const close = useCallback(() => {
-    setOpen(false);
-    setCommandError(null);
-  }, []);
-
+  const { snapshot, open, openDialog } = useUpdates();
   const hasUpdate =
     snapshot.phase === 'available' || snapshot.phase === 'downloaded';
   const announcement =
@@ -117,31 +56,11 @@ export function UpdatesControl() {
         }
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => {
-          setOpen(true);
-        }}
+        onClick={openDialog}
       />
       <span className="wc-visually-hidden" aria-live="polite">
         {announcement ?? ''}
       </span>
-      <UpdatesDialog
-        open={open}
-        snapshot={snapshot}
-        commandError={commandError}
-        onClose={close}
-        onCheck={() => {
-          void run(updatesApi.check);
-        }}
-        onCancel={() => {
-          void run(updatesApi.cancel);
-        }}
-        onDownload={() => {
-          void run(updatesApi.download);
-        }}
-        onInstall={() => {
-          void run(updatesApi.install);
-        }}
-      />
     </>
   );
 }

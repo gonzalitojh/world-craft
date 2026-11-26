@@ -25,6 +25,15 @@ export interface AddArchiveFileOptions {
   readonly compress?: boolean;
 }
 
+/** Opciones del escritor. */
+export interface ArchiveWriterOptions {
+  /**
+   * Política de nombres; por defecto la del formato de mundo. La biblioteca
+   * pasa su propia lista blanca sin duplicar la escritura de yazl.
+   */
+  readonly parsePath?: (path: string) => unknown;
+}
+
 /** Escritor de un ZIP en construcción. */
 export interface ArchiveWriter {
   addBuffer(
@@ -48,7 +57,9 @@ const FIXED_MTIME = new Date('1980-01-01T00:00:00.000Z');
 export function createArchiveWriter(
   outputFile: string,
   signal?: AbortSignal,
+  options: ArchiveWriterOptions = {},
 ): ArchiveWriter {
+  const parsePath = options.parsePath ?? parseTransferEntryPath;
   const zip = new yazl.ZipFile();
   const output: WriteStream = createWriteStream(outputFile, {
     flags: 'wx',
@@ -93,7 +104,7 @@ export function createArchiveWriter(
   };
 
   const assertPath = (path: string): void => {
-    parseTransferEntryPath(path);
+    parsePath(path);
   };
 
   return {

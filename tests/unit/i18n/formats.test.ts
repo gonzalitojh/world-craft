@@ -44,6 +44,13 @@ describe('formatos localizados con Intl', () => {
     expect(normalize(formats.formatPercent(1))).toBe('100 %');
   });
 
+  it('formatea bytes con unidades de Intl', () => {
+    expect(normalize(formats.formatBytes(0))).toBe('0 B');
+    expect(normalize(formats.formatBytes(1024))).toBe('1 kB');
+    expect(normalize(formats.formatBytes(1536))).toBe('1,5 kB');
+    expect(normalize(formats.formatBytes(2 * 1024 ** 2))).toBe('2 MB');
+  });
+
   it('formatea listas y ordena con Collator', () => {
     expect(formats.formatList(['A', 'B', 'C'])).toBe('A, B y C');
     expect(formats.compare('á', 'b')).toBeLessThan(0);

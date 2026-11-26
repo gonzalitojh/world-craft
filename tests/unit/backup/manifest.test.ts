@@ -53,6 +53,13 @@ describe('manifiesto de copia', () => {
     expect(normalizeBackupManifest(v2Manifest)).toEqual(v2Manifest);
   });
 
+  it('acepta pre-delete en v2 y mantiene la lectura de v2 antiguos', () => {
+    const manifest = { ...v2Manifest, reason: 'pre-delete' };
+
+    expect(normalizeBackupManifest(manifest)).toEqual(manifest);
+    expect(normalizeBackupManifest(v2Manifest)).toEqual(v2Manifest);
+  });
+
   it('normaliza un manifiesto v1 como copia íntegra y sin assets', () => {
     const manifest = normalizeBackupManifest({
       formatVersion: 1,
@@ -100,6 +107,9 @@ describe('manifiesto de copia', () => {
       false,
     );
     expect(isRestorableManifest({ ...manifest, schemaVersion: null })).toBe(
+      false,
+    );
+    expect(isRestorableManifest({ ...manifest, reason: 'pre-delete' })).toBe(
       false,
     );
   });

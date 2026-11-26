@@ -37,6 +37,8 @@ export interface Formatters {
     value: number,
     options?: Intl.NumberFormatOptions,
   ) => string;
+  /** Formatea un tamaño en la unidad legible más cercana. */
+  readonly formatBytes: (size: number) => string;
   readonly formatList: (
     values: readonly string[],
     options?: Intl.ListFormatOptions,
@@ -107,6 +109,37 @@ export function createFormatters(locale: Locale): Formatters {
   ): string =>
     new Intl.DateTimeFormat(intlLocale, options).format(toDate(value));
 
+  const formatNumber = (
+    value: number,
+    options?: Intl.NumberFormatOptions,
+  ): string => new Intl.NumberFormat(intlLocale, options).format(value);
+
+  const formatBytes = (size: number): string => {
+    const safeSize = Number.isFinite(size) && size > 0 ? Math.trunc(size) : 0;
+
+    let value = safeSize;
+    let unit: 'byte' | 'kilobyte' | 'megabyte' | 'gigabyte' = 'byte';
+
+    if (safeSize >= 1024 ** 3) {
+      value = safeSize / 1024 ** 3;
+      unit = 'gigabyte';
+    } else if (safeSize >= 1024 ** 2) {
+      value = safeSize / 1024 ** 2;
+      unit = 'megabyte';
+    } else if (safeSize >= 1024) {
+      value = safeSize / 1024;
+      unit = 'kilobyte';
+    }
+
+    return formatNumber(value, {
+      style: 'unit',
+      unit,
+      unitDisplay: 'short',
+      maximumFractionDigits: value < 10 ? 1 : 0,
+      minimumFractionDigits: 0,
+    });
+  };
+
   const formatRelativeTime = (
     value: Date | number | string,
     now: number = Date.now(),
@@ -148,8 +181,8 @@ export function createFormatters(locale: Locale): Formatters {
     formatDateTime: (value, options = DEFAULT_DATE_TIME_OPTIONS) =>
       formatDate(value, options),
     formatRelativeTime,
-    formatNumber: (value, options) =>
-      new Intl.NumberFormat(intlLocale, options).format(value),
+    formatNumber,
+    formatBytes,
     formatPercent: (value, options = DEFAULT_PERCENT_OPTIONS) =>
       new Intl.NumberFormat(intlLocale, options).format(value),
     formatList: (values, options) =>

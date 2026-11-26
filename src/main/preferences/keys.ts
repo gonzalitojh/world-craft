@@ -9,6 +9,8 @@ export const UI_PREFERENCE_PREFIX = 'ui.';
 /** Claves conocidas por esta versión. */
 export const UI_PREFERENCE_KEYS = {
   theme: 'ui.theme',
+  density: 'ui.density',
+  fontScale: 'ui.font-scale',
   railCollapsed: 'ui.rail-collapsed',
   entityView: 'ui.entity-view',
   lastView: 'ui.last-view',

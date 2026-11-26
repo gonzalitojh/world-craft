@@ -7,6 +7,7 @@ import { Menu, type MenuItem } from '../components/menu';
 import { Tooltip } from '../components/tooltip';
 import { UpdatesControl } from '../components/updates-control';
 import { useMessages } from '../i18n/provider';
+import { UpdatesProvider } from '../updates/use-updates';
 import { cx } from '../lib/class-names';
 import type { ThemeMode } from '../theme';
 import type { AppNavView, AppView, ShellPrimaryAction } from './views';
@@ -107,6 +108,25 @@ function TrashIcon() {
       focusable="false"
     >
       <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v4M14 11v4" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg
+      className="wc-nav-item__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
     </svg>
   );
 }
@@ -226,7 +246,9 @@ export function AppShell({
       ? view === 'home'
       : id === 'trash'
         ? view === 'trash'
-        : WORLDS_VIEWS.includes(view);
+        : id === 'settings'
+          ? view === 'settings'
+          : WORLDS_VIEWS.includes(view);
 
   const renderNavButton = (
     id: AppNavView,
@@ -249,9 +271,10 @@ export function AppShell({
   );
 
   return (
-    <>
-      <a
-        className="wc-skip-link"
+    <UpdatesProvider>
+      <>
+        <a
+          className="wc-skip-link"
         href="#wc-main"
         onClick={(event) => {
           // El enlace conserva `href` por semántica, pero no cambia el hash:
@@ -309,6 +332,24 @@ export function AppShell({
           </nav>
 
           <div className="wc-shell__rail-footer">
+            {isCollapsed ? (
+              <Tooltip
+                label={messages.shell.views.settings}
+                align="end"
+              >
+                {renderNavButton(
+                  'settings',
+                  messages.shell.views.settings,
+                  <SettingsIcon />,
+                )}
+              </Tooltip>
+            ) : (
+              renderNavButton(
+                'settings',
+                messages.shell.views.settings,
+                <SettingsIcon />,
+              )
+            )}
             <IconButton
               className="wc-shell__collapse"
               label={collapseLabel}
@@ -392,6 +433,7 @@ export function AppShell({
           </main>
         </div>
       </div>
-    </>
+      </>
+    </UpdatesProvider>
   );
 }

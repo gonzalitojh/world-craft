@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { createUnavailableAssetsService } from '@/main/assets/service';
+import { createUnavailableDataService } from '@/main/data/unavailable';
 import { createUnavailableTrashService } from '@/main/trash/service';
 import { createUnavailableVersionsService } from '@/main/versions/service';
 import { createUnavailableEntitiesService } from '@/main/entities/service';
@@ -38,6 +39,7 @@ const createHandlers = () =>
     trash: createUnavailableTrashService(),
     versions: createUnavailableVersionsService(),
     transfer: createUnavailableTransferCoordinator(),
+    data: createUnavailableDataService(),
     pickImages: async () => [],
   });
 
@@ -178,6 +180,8 @@ describe('createIpcHandlers', () => {
       ok: true,
       data: {
         theme: 'light',
+        density: 'comfortable',
+        fontScale: 'normal',
         railCollapsed: false,
         entityView: {
           propertiesOpen: true,
@@ -246,6 +250,62 @@ describe('createIpcHandlers', () => {
     ).resolves.toEqual({ ok: false, error: { code: 'INVALID_INPUT' } });
   });
 
+  it('atiende los canales de datos y valida tokens y payloads', async () => {
+    const route = createIpcRouter(createHandlers());
+
+    await expect(route(IPC_CHANNELS.dataGetSummary, {})).resolves.toEqual({
+      ok: true,
+      data: { status: 'failed', code: 'DATA_UNAVAILABLE' },
+    });
+    await expect(
+      route(IPC_CHANNELS.dataOpenFolder, { folder: 'logs' }),
+    ).resolves.toEqual({
+      ok: true,
+      data: { status: 'failed', code: 'DATA_UNAVAILABLE' },
+    });
+    await expect(route(IPC_CHANNELS.dataExportAll, {})).resolves.toEqual({
+      ok: true,
+      data: { status: 'failed', code: 'DATA_UNAVAILABLE' },
+    });
+    await expect(
+      route(IPC_CHANNELS.dataDeleteAll, {
+        confirmation: 'delete-all-data',
+        keepBackups: false,
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { status: 'failed', code: 'DATA_UNAVAILABLE' },
+    });
+    await expect(
+      route(IPC_CHANNELS.dataPurgeOrphans, {
+        confirmation: 'purge-orphans',
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      data: { status: 'failed', code: 'DATA_UNAVAILABLE' },
+    });
+
+    for (const [channel, payload] of [
+      [IPC_CHANNELS.dataGetSummary, { extra: true }],
+      [IPC_CHANNELS.dataOpenFolder, { folder: 'otra' }],
+      [IPC_CHANNELS.dataDeleteAll, {
+        confirmation: 'otro',
+        keepBackups: true,
+      }],
+      [IPC_CHANNELS.dataPurgeOrphans, { confirmation: 'otro' }],
+      [IPC_CHANNELS.dataDeleteAll, {
+        confirmation: 'delete-all-data',
+        keepBackups: true,
+        extra: true,
+      }],
+    ] as const) {
+      await expect(route(channel, payload)).resolves.toEqual({
+        ok: false,
+        error: { code: 'INVALID_INPUT' },
+      });
+    }
+  });
+
   it('atiende las órdenes de actualizaciones con un objeto vacío estricto', async () => {
     const route = createIpcRouter(createHandlers());
 
@@ -304,6 +364,7 @@ describe('registerIpcHandlers', () => {
         trash: createUnavailableTrashService(),
         versions: createUnavailableVersionsService(),
         transfer: createUnavailableTransferCoordinator(),
+        data: createUnavailableDataService(),
         pickImages: async () => [],
       }),
     );

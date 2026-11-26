@@ -1,7 +1,7 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 25/11/2026 con M1-07 (#78). El modo seguro, la
+> 26/11/2026 con M1-08 (#79). El modo seguro, la
 > comprobación de integridad y la copia pre-migración se implementaron en M0-04
 > (#64); las copias automáticas con retención y la restauración desde el diálogo
 > de modo seguro, en M0-07 (#67); el instalador por usuario, la actualización
@@ -10,19 +10,21 @@
 > tipos de entidad con sus plantillas, en M1-02 (#73); las fichas con
 > autoguardado, imágenes, etiquetas y favoritos, en M1-03 (#74); las relaciones
 > tipadas con backlinks, en M1-04 (#75); la papelera, la purga con copia
-> `pre-purge` y el historial de versiones, en M1-06 (#77); y la exportación e
-> importación de un mundo completo, en M1-07 (#78). La dirección visual v2
-> llegó con M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con la
-> auditoría visual de todas las pantallas en ambos temas y tres anchos, sin
+> `pre-purge` y el historial de versiones, en M1-06 (#77); la exportación e
+> importación de un mundo completo, en M1-07 (#78); y Ajustes con la biblioteca
+> total y el borrado con copia `pre-delete`, en M1-08 (#79). La dirección visual
+> v2 llegó con M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con
+> la auditoría visual de todas las pantallas en ambos temas y tres anchos, sin
 > cambios de datos ni de copias. Quedan previstos los mapas y el grafo (M2, #83),
-> la escritura (M3), los ajustes (#79), la FK de assets y la cuarentena de
-> huérfanos (#116), los avisos en la top layer de los diálogos modales (#144), el
-> módulo actual no interactivo de la página de mundo (#93) y la release pública
-> con actualización real contra GitHub Releases (M5).
+> la escritura (M3), las copias manuales y la restauración guiada desde Ajustes,
+> la FK de assets y la cuarentena de huérfanos (#116), los avisos en la top layer
+> de los diálogos modales (#144), el módulo actual no interactivo de la página de
+> mundo (#93) y la release pública con actualización real contra GitHub Releases
+> (M5).
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
 > **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020, ADR 0021,
-> ADR 0028 y ADR 0029.
+> ADR 0028, ADR 0029 y ADR 0030.
 > La
 > estructura de datos está en [`persistencia.md`](persistencia.md).
 
@@ -50,7 +52,8 @@ quiere, en una unidad externa.
 | Sin conexión al actualizar | Comprobación manual | Error controlado; la app sigue funcionando con la versión instalada (M0-08) | Todos |
 | Borrado accidental de un mundo | Borrado lógico con confirmación | La fila conserva `deleted_at` y desaparece de las vistas; se restaura desde la Papelera (M1-01, #72; M1-06, #77) | Mundo y assets |
 | Borrado definitivo | Confirmación en la Papelera | Copia `pre-purge` verificable antes de borrar; si falla, no se borra (M1-06, #77) | Copia previa; los assets no se borran |
-| Pérdida de la carpeta de datos o del equipo | Manual | La exportación de un mundo en ZIP incluye sus assets y se importa en otra instalación como mundo nuevo (M1-07, #78); las copias automáticas solo contienen SQLite | El mundo exportado; el resto depende de las copias |
+| Borrado total | Confirmación escrita y copia previa | Frase **ELIMINAR TODO**, copia `pre-delete` de base y assets verificada; si falla, no se borra nada; reinicio y recuperación manual (M1-08, #79) | Copia `pre-delete`, instalación y `.updaterId` |
+| Pérdida de la carpeta de datos o del equipo | Manual | La exportación de un mundo en ZIP incluye sus assets y se importa en otra instalación como mundo nuevo (M1-07, #78); la biblioteca total de Ajustes añade una copia completa de la base y un paquete por mundo (M1-08, #79); las copias automáticas solo contienen SQLite | El mundo exportado o la biblioteca; el resto depende de las copias |
 | Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
 | Archivo de asset perdido | Al abrir | El protocolo devuelve 404 y lo registra; aviso y placeholder en M1 (M0-06) | Metadatos |
 | Base de versión superior | Al arrancar | Se niega a escribir y pide actualizar (M0-04) | Todos |
@@ -71,8 +74,10 @@ pre-migración funciona desde M0-04 y su poda llegó en M0-07.
 - **Pre-restauración:** antes de reemplazar la base, con una copia en bruto de
   la base actual y sus `-wal`, `-shm` y `-journal`. **No se poda** y no se ofrece
   para restaurar desde la app: es recuperación manual.
-- **Antes de operaciones destructivas:** borrar un mundo, vaciar la papelera o
-  eliminar todos los datos (previstas con sus issues).
+- **Antes de operaciones destructivas:** purgar la papelera (implementado en
+  #77, copia `pre-purge`) y eliminar todos los datos (implementado en #79, copia
+  `pre-delete` con base y assets). Borrar un mundo o una ficha es lógico y se
+  recupera desde la Papelera.
 
 Las copias automáticas se ejecutan **una vez por arranque**, después de que la
 base quede en estado `ready` y antes de crear la ventana. **No se copia al
@@ -87,15 +92,19 @@ corruptas no cuentan, no se ofrecen y no se borran solas. Nunca se elimina la
 copia válida más reciente ni la última de un motivo, y cada candidata se
 reverifica antes de borrarla.
 
-Las copias contienen **solo la base SQLite y su manifiesto**: los assets no se
-incluyen ni se sustituyen al restaurar.
+Las **copias automáticas** contienen **solo la base SQLite y su manifiesto**: los
+assets no se incluyen ni se sustituyen al restaurar. La copia `pre-delete` es la
+excepción: incluye la base y una copia verificada de los assets porque el borrado
+total los elimina.
 
 ### 3.2 Manuales
 
-El usuario podrá crear una copia completa (base + assets) desde Ajustes → Datos
-(sección Copias). Podrá elegir destino, incluida una unidad externa o una carpeta
-de red de confianza. La app no sube la copia a Internet. Sigue **prevista para
-M1**: la interfaz de copias no existe en M0.
+El usuario podrá crear una copia manual completa (base + assets) desde Ajustes →
+Datos, con elección de destino, incluida una unidad externa o una carpeta de red
+de confianza. La app no sube la copia a Internet. Sigue **prevista**: Ajustes ya
+permite **Exportar todos los datos** (biblioteca `world-craft-library` v1, que
+incluye la base y los assets), pero no es una copia restaurable desde la app y la
+sección de copias manuales todavía no existe.
 
 ### 3.3 Verificación
 
@@ -154,8 +163,8 @@ El detalle del formato está en
 
 ## 4. Restauración
 
-**Implementada en M0-07 (#67).** En M0 se ofrece desde el **diálogo nativo de
-modo seguro**, porque la pantalla Ajustes → Datos llega en M1. El flujo es:
+**Implementada en M0-07 (#67).** Se ofrece desde el **diálogo nativo de modo
+seguro**; Ajustes → Datos existe desde #79 pero no restaura copias. El flujo es:
 
 1. El aviso de modo seguro ofrece «Restaurar copia.». El usuario elige la copia
    válida más reciente o una carpeta dentro de `backups/`.
@@ -177,15 +186,17 @@ modo seguro**, porque la pantalla Ajustes → Datos llega en M1. El flujo es:
    pendientes con su copia pre-migración.
 
 La restauración **nunca se ejecuta en segundo plano** ni sin confirmación. No
-hay una UI de copias en M0; elegir carpeta, confirmar y reintentar forma parte
-del diálogo nativo. Tampoco hay una acción para restaurar con la base sana: el
-diálogo solo aparece si el arranque entra en modo seguro. Esa acción llegará con
-Ajustes → Datos en M1. Las copias pre-restauración no se ofrecen para restaurar
-desde la app: la recuperación es manual y está descrita en
-[`persistencia.md`](persistencia.md), sección 7.4.
+hay una UI de copias: elegir carpeta, confirmar y reintentar forma parte del
+diálogo nativo. Ajustes abre la carpeta de copias y muestra su uso, pero tampoco
+permite restaurar con la base sana; esa acción sigue prevista. Las copias
+pre-restauración no se ofrecen para restaurar desde la app: la recuperación es
+manual y está descrita en [`persistencia.md`](persistencia.md), sección 7.4. La
+copia `pre-delete` del borrado total tampoco se ofrece: su recuperación manual
+está en el manual, sección 12.7.
 
 Los assets existentes quedan intactos porque la copia solo contiene la base; las
-referencias huérfanas se gestionarán en M1.
+referencias huérfanas se pueden revisar y purgar desde Ajustes (#79), y la
+cuarentena automática de assets llega con #116.
 
 ## 5. Modo seguro
 
@@ -212,9 +223,10 @@ En modo seguro:
 - Se puede **continuar en modo seguro** (sin escritura) o **salir**.
 - El arranque y la restauración quedan registrados en `logs/startup.log` (JSONL,
   rotación a 256 KiB, sin SQL, filas, rutas ni contenido).
-- La exportación de mundos existe desde #78, pero en modo seguro el coordinador
-  devuelve `TRANSFER_UNAVAILABLE`: no hay base y no se puede exportar. La
-  interfaz de Ajustes sigue prevista.
+- La exportación de mundos existe desde #78 y la biblioteca total desde #79, pero
+  en modo seguro el coordinador devuelve `TRANSFER_UNAVAILABLE` y los datos
+  devuelven `DATA_UNAVAILABLE`: no hay base y no se puede exportar ni borrar.
+  Ajustes sí puede abrir las carpetas.
 
 Los códigos nuevos de restauración son `DB_RESTORE_INVALID` (la copia no
 verifica), `DB_RESTORE_FAILED` (fallo del reemplazo con rollback correcto),
@@ -354,7 +366,7 @@ El instalador por usuario sustituye los binarios en
 La actualización real contra una release pública de GitHub se probará en M5; en
 M0-08 se probó el flujo de instalación y la actualización local de 0.1.0 a 0.1.1
 con 194 archivos de `userData` intactos. El interruptor para desactivar la
-comprobación llegará con Ajustes (M1); hoy no existe porque tampoco hay
+comprobación sigue previsto para M5-05; hoy no existe porque tampoco hay
 comprobación automática.
 
 ### 7.2 Reinstalación (implementada en M0-08)
@@ -435,9 +447,8 @@ del desarrollador. Las de integración usan `os.tmpdir()`.
   `update.install` y `update.command`: solo resultados y códigos estables, sin
   URLs, rutas, versiones ni contenido. Un fallo al escribir no interrumpe la
   comprobación.
-- Ajustes → Ayuda → «Exportar diagnóstico» (previsto) generará un ZIP con
-  versión, sistema, estado de la base, configuración no sensible y últimas
-  líneas de log.
+- La exportación de datos (prevista) generará un ZIP con versión, sistema, estado
+  de la base, configuración no sensible y últimas líneas de log.
 - El usuario revisará el ZIP antes de compartirlo.
 - No se envía nada automáticamente.
 - Los informes de error usan códigos estables y no incluyen contenido del
@@ -455,4 +466,5 @@ del desarrollador. Las de integración usan `os.tmpdir()`.
 - [ADR 0018](adr/0018-nsis-packaging-and-update-service.md)
 - [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)
 - [ADR 0029](adr/0029-world-export-import.md)
+- [ADR 0030](adr/0030-settings-data-and-full-deletion.md)
 - [Formato de exportación](formato-de-exportacion.md)

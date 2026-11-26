@@ -67,6 +67,14 @@ function toStoredEntries(preferences: UiPreferences): StoredEntry[] {
       value: JSON.stringify(preferences.theme),
     },
     {
+      key: UI_PREFERENCE_KEYS.density,
+      value: JSON.stringify(preferences.density),
+    },
+    {
+      key: UI_PREFERENCE_KEYS.fontScale,
+      value: JSON.stringify(preferences.fontScale),
+    },
+    {
       key: UI_PREFERENCE_KEYS.railCollapsed,
       value: JSON.stringify(preferences.railCollapsed),
     },
@@ -164,6 +172,18 @@ export function createPreferencesService(
         entries.get(UI_PREFERENCE_KEYS.theme) ?? '',
         current.theme !== next.theme,
         parsed.data.theme !== undefined,
+      );
+      writeIfChanged(
+        UI_PREFERENCE_KEYS.density,
+        entries.get(UI_PREFERENCE_KEYS.density) ?? '',
+        current.density !== next.density,
+        parsed.data.density !== undefined,
+      );
+      writeIfChanged(
+        UI_PREFERENCE_KEYS.fontScale,
+        entries.get(UI_PREFERENCE_KEYS.fontScale) ?? '',
+        current.fontScale !== next.fontScale,
+        parsed.data.fontScale !== undefined,
       );
       writeIfChanged(
         UI_PREFERENCE_KEYS.railCollapsed,

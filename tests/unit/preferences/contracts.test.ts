@@ -41,6 +41,15 @@ describe('contrato de preferencias', () => {
     );
   });
 
+  it('parte de densidad cómoda y tamaño normal', () => {
+    expect(DEFAULT_UI_PREFERENCES.density).toBe('comfortable');
+    expect(DEFAULT_UI_PREFERENCES.fontScale).toBe('normal');
+    expect(createDefaultUiPreferences()).toMatchObject({
+      density: 'comfortable',
+      fontScale: 'normal',
+    });
+  });
+
   it('normaliza el ancho con redondeo y límites', () => {
     expect(clampPropertiesWidth(279)).toBe(PROPERTIES_WIDTH_MIN);
     expect(clampPropertiesWidth(361)).toBe(PROPERTIES_WIDTH_MAX);
@@ -68,6 +77,8 @@ describe('contrato de preferencias', () => {
 
     expect(next.theme).toBe('dark');
     expect(next.railCollapsed).toBe(false);
+    expect(next.density).toBe('comfortable');
+    expect(next.fontScale).toBe('normal');
     expect(next.entityView.propertiesOpen).toBe(false);
     expect(next.entityView.propertiesWidth).toBe(PROPERTIES_WIDTH_MAX);
     expect(next.entityView.sections).toEqual({
@@ -79,6 +90,19 @@ describe('contrato de preferencias', () => {
     expect(next.lastView).toBe('world');
     expect(next.recentLocation).toEqual({ kind: 'world', worldId: WORLD_ID });
     expect(current).toEqual(snapshot);
+  });
+
+  it('fusiona densidad y tamaño de texto sin tocar el resto', () => {
+    const current = createPreferences();
+    const next = applyUiPreferencesPatch(current, {
+      density: 'compact',
+      fontScale: 'large',
+    });
+
+    expect(next.density).toBe('compact');
+    expect(next.fontScale).toBe('large');
+    expect(next.theme).toBe(current.theme);
+    expect(next.entityView).toBe(current.entityView);
   });
 
   it('distingue un destino borrado de una clave ausente', () => {
@@ -117,6 +141,8 @@ describe('contrato de preferencias', () => {
       'world',
       'entities',
       'entity',
+      'trash',
+      'settings',
     ]) {
       expect(isPersistedAppView(view), view).toBe(true);
     }
@@ -148,6 +174,8 @@ describe('contrato de preferencias', () => {
       { ...valid, extra: true },
       { ...valid, theme: 'sepia' },
       { ...valid, railCollapsed: 'yes' },
+      { ...valid, density: 'amplia' },
+      { ...valid, fontScale: 'gigante' },
       { ...valid, lastView: 'samples' },
       {
         ...valid,

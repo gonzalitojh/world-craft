@@ -59,6 +59,9 @@ describe('rutas de datos', () => {
     expect(paths.prePurgeBackupsDir).toBe(
       join(resolve(userDataDir), 'backups', 'pre-purge'),
     );
+    expect(paths.preDeleteBackupsDir).toBe(
+      join(resolve(userDataDir), 'backups', 'pre-delete'),
+    );
   });
 
   it('deriva las rutas de assets y del log de assets dentro de userData', () => {
@@ -109,6 +112,7 @@ describe('rutas de datos', () => {
       paths.monthlyBackupsDir,
       paths.preMigrationBackupsDir,
       paths.preRestoreBackupsDir,
+      paths.preDeleteBackupsDir,
       paths.databaseFile,
       paths.startupLogFile,
       paths.assetsDir,
@@ -139,6 +143,7 @@ describe('rutas de datos', () => {
       paths.monthlyBackupsDir,
       paths.preMigrationBackupsDir,
       paths.preRestoreBackupsDir,
+      paths.preDeleteBackupsDir,
       paths.assetsDir,
       paths.assetsWorldsDir,
       paths.assetsTempDir,

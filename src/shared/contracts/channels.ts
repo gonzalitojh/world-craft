@@ -64,6 +64,13 @@ export const IPC_CHANNELS = {
   transferExportWorld: 'transfer:exportWorld',
   transferImportWorld: 'transfer:importWorld',
   transferCancel: 'transfer:cancel',
+  dataGetSummary: 'data:getSummary',
+  dataGetUsage: 'data:getUsage',
+  dataOpenFolder: 'data:openFolder',
+  dataExportAll: 'data:exportAll',
+  dataDeleteAll: 'data:deleteAll',
+  dataPlanOrphans: 'data:planOrphans',
+  dataPurgeOrphans: 'data:purgeOrphans',
 } as const;
 
 /** Unión de todos los canales admitidos. */

@@ -6,6 +6,8 @@
  */
 import { IPC_CHANNELS } from '../../../shared/contracts/channels';
 import type { AssetsService } from '../../assets/service';
+import type { DataService } from '../../data/service';
+import { createUnavailableDataService } from '../../data/unavailable';
 import type { EntitiesService } from '../../entities/service';
 import type { EntityTypesService } from '../../entity-types/service';
 import type { PreferencesService } from '../../preferences/service';
@@ -18,6 +20,7 @@ import type { VersionsService } from '../../versions/service';
 import type { WorldsService } from '../../worlds/service';
 import type { IpcHandlers } from '../registry';
 import { createAssetIpcHandlers } from './assets';
+import { createDataIpcHandlers } from './data';
 import { createEntityIpcHandlers } from './entities';
 import { createEntityTypeIpcHandlers } from './entity-types';
 import { createPreferencesIpcHandlers } from './preferences';
@@ -44,6 +47,8 @@ export interface IpcDependencies {
   readonly trash: TrashService;
   readonly versions: VersionsService;
   readonly transfer: TransferCoordinator;
+  /** Si falta, se usa el servicio inerte de modo seguro. */
+  readonly data?: DataService;
   readonly pickImages: () => Promise<readonly string[]>;
 }
 
@@ -66,5 +71,8 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
       pickImages: dependencies.pickImages,
     }),
     ...createTransferIpcHandlers(dependencies.transfer),
+    ...createDataIpcHandlers(
+      dependencies.data ?? createUnavailableDataService(),
+    ),
   };
 }

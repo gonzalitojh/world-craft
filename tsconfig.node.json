@@ -44,6 +44,7 @@
     "src/renderer/components/editor/mention-content.ts",
     "src/renderer/shell/views.ts",
     "src/renderer/shell/internal-views.ts",
+    "src/renderer/shell/routes.ts",
     "tests/unit/**/*.ts",
     "tests/integration/**/*.ts",
     "electron.vite.config.ts",

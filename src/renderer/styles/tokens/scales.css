@@ -129,3 +129,41 @@
   --focus-width: 2px;
   --focus-offset: 2px;
 }
+
+/* --- Density presets ------------------------------------------------------
+ * Solo cambia el ritmo vertical y horizontal. Los mínimos de los controles,
+ * los iconos, los radios, el foco y los dos primeros pasos de espacio se
+ * mantienen para no romper objetivos táctiles ni el anillo visible.
+ */
+[data-density='compact'] {
+  --space-3: 0.5rem;
+  --space-4: 0.75rem;
+  --space-5: 1rem;
+  --space-6: 1.25rem;
+  --space-7: 1.5rem;
+  --space-9: 2rem;
+}
+
+/* --- Text-scale presets ---------------------------------------------------
+ * La escala se resuelve token a token para no tocar `html { font-size }`, el
+ * zoom ni `transform`. `base` sigue siendo el cuerpo estándar de la interfaz.
+ */
+[data-font-scale='small'] {
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.8125rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-display: 1.75rem;
+}
+
+[data-font-scale='large'] {
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-display: 2.25rem;
+}

@@ -68,6 +68,8 @@ const activity: WorldActivityEntry = {
 function createPreferences(theme: 'light' | 'dark'): UiPreferences {
   return {
     theme,
+    density: 'comfortable',
+    fontScale: 'normal',
     railCollapsed: false,
     entityView: {
       propertiesOpen: true,
@@ -105,6 +107,7 @@ describe('world-craft-api', () => {
       'trash',
       'versions',
       'transfer',
+      'data',
     ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
     expect(Object.keys(api.updates)).toEqual([
@@ -122,6 +125,15 @@ describe('world-craft-api', () => {
       'empty',
     ]);
     expect(Object.keys(api.versions)).toEqual(['list', 'create', 'restore']);
+    expect(Object.keys(api.data)).toEqual([
+      'getSummary',
+      'getUsage',
+      'openFolder',
+      'exportAll',
+      'deleteAll',
+      'planOrphans',
+      'purgeOrphans',
+    ]);
     expect(Object.keys(api.worlds)).toEqual([
       'list',
       'get',
@@ -152,6 +164,7 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.search)).toBe(true);
     expect(Object.isFrozen(api.assets)).toBe(true);
     expect(Object.isFrozen(api.transfer)).toBe(true);
+    expect(Object.isFrozen(api.data)).toBe(true);
 
     expect(() => {
       (api.appInfo as { version: string }).version = '9.9.9';
@@ -223,6 +236,8 @@ describe('world-craft-api', () => {
   it('envía preferencias por sus canales y valida la forma', async () => {
     const preferences = {
       theme: 'dark',
+      density: 'compact',
+      fontScale: 'large',
       railCollapsed: true,
       entityView: {
         propertiesOpen: false,

@@ -45,6 +45,9 @@ export const ASSETS_TEMP_DIR_NAME = '.tmp';
 /** Subcarpeta de copias de huérfanos purgados. */
 export const ORPHAN_BACKUPS_DIR_NAME = 'orphans';
 
+/** Subcarpeta de la copia previa al borrado total de datos. */
+export const PRE_DELETE_BACKUPS_DIR_NAME = 'pre-delete';
+
 /** Rutas derivadas de la carpeta de datos del usuario. */
 export interface DataPaths {
   readonly userDataDir: string;
@@ -59,6 +62,7 @@ export interface DataPaths {
   readonly preMigrationBackupsDir: string;
   readonly preRestoreBackupsDir: string;
   readonly prePurgeBackupsDir: string;
+  readonly preDeleteBackupsDir: string;
   readonly assetsDir: string;
   readonly assetsWorldsDir: string;
   readonly assetsTempDir: string;
@@ -92,6 +96,10 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const preMigrationBackupsDir = resolve(backupsDir, 'pre-migration');
   const preRestoreBackupsDir = resolve(backupsDir, 'pre-restore');
   const prePurgeBackupsDir = resolve(backupsDir, 'pre-purge');
+  const preDeleteBackupsDir = resolve(
+    backupsDir,
+    PRE_DELETE_BACKUPS_DIR_NAME,
+  );
   const assetsDir = resolve(root, ASSETS_DIR_NAME);
   const assetsWorldsDir = resolve(assetsDir, ASSETS_WORLDS_DIR_NAME);
   const assetsTempDir = resolve(assetsDir, ASSETS_TEMP_DIR_NAME);
@@ -115,6 +123,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     preMigrationBackupsDir,
     preRestoreBackupsDir,
     prePurgeBackupsDir,
+    preDeleteBackupsDir,
     assetsDir,
     assetsWorldsDir,
     assetsTempDir,
@@ -144,6 +153,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     preMigrationBackupsDir,
     preRestoreBackupsDir,
     prePurgeBackupsDir,
+    preDeleteBackupsDir,
     assetsDir,
     assetsWorldsDir,
     assetsTempDir,
@@ -184,6 +194,7 @@ export function ensureDataDirectories(paths: DataPaths): void {
     paths.preMigrationBackupsDir,
     paths.preRestoreBackupsDir,
     paths.prePurgeBackupsDir,
+    paths.preDeleteBackupsDir,
     paths.orphanBackupsDir,
     paths.importsDir,
     paths.importsTempDir,

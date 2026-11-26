@@ -5,9 +5,10 @@
 > primitivas; #126 migró el shell, la navegación y la barra superior; #127 migró
 > Inicio y las tarjetas de mundo; #128 migró la vista de mundo modular; #129
 > migró la ficha como documento y su panel de propiedades; #130, las relaciones;
-> #131, el editor mínimo y las menciones; #132, las preferencias persistentes; y
-> #133 cerró **M1.5** con la auditoría visual de todas las pantallas. La auditoría
-> final de accesibilidad sigue en #93 y el grafo completo, en #83. Este documento
+> #131, el editor mínimo y las menciones; #132, las preferencias persistentes;
+> #79, Ajustes y la gestión de datos; y #133 cerró **M1.5** con la auditoría
+> visual de todas las pantallas. La auditoría final de accesibilidad sigue en #93
+> y el grafo completo, en #83. Este documento
 > describe el contrato completo y distingue lo implementado de lo previsto, sin
 > presentar como existente nada que aún no lo esté. El estado real se mantiene en
 > la sección 17.
@@ -697,30 +698,86 @@ extensa de once controles y cualquier segunda fila.
 
 ### 10.7 Ajustes
 
-- Tema, rail, panel, ancho y secciones se persisten desde #132; el detalle de
-  arranque y escritura está en §10.8.
-- Las preferencias se aplican antes del primer pintado para evitar parpadeo.
-- El **restablecimiento** de las preferencias existe solo como API desde #132
-  (`window.worldCraft.preferences.reset`) y **no tiene control visible**: llegará
-  con Ajustes (#79). Solo afecta a las preferencias de interfaz.
-- «Datos y copias» y el borrado completo siguen su propio flujo confirmado.
+Implementado en #79 (ADR 0030). Ajustes es una **página editorial de una
+columna** —no un dashboard de tarjetas—, con un ancho máximo de 60 rem y scroll
+vertical. Se abre desde el **pie del rail**, encima del botón de plegar, con
+`aria-current="page"`, desde el comando **Abrir Ajustes** de la paleta y por el
+hash estable `#/settings`. La aplicación sigue abriendo en Inicio.
+
+**Orden y composición**
+
+```text
+Ajustes
+  lead
+  Apariencia        tema · densidad · tamaño · Restablecer apariencia
+  Idioma            valor actual + nota, sin selector
+  Atajos            plegable, cerrado; solo Ctrl+K y Esc + nota del editor
+  Actualizaciones   versión, última comprobación, estado y abrir diálogo
+  Datos             resumen · carpetas · uso (plegable) · exportar ·
+                    huérfanas · zona de peligro (siempre visible)
+  Restablecer preferencias
+```
+
+- Solo se pliegan **Atajos de consulta** y **Uso de disco**. La zona de peligro
+  nunca se pliega.
+- Los cambios de apariencia se aplican al instante; las preferencias se guardan
+  en la misma capa de #132 (§10.8).
+- «Restablecer apariencia» vuelve a Claro, Cómoda y Normal con `update`, no con
+  `reset`; «Restablecer preferencias» usa `reset` tras confirmación y no borra
+  contenido.
+
+**Apariencia y tokens**
+
+- Tres `fieldset` con `legend` único: Tema (Claro/Oscuro), Densidad (Cómoda/
+  Compacta) y Tamaño del texto (Pequeño/Normal/Grande). Nunca un `select` para
+  estas opciones.
+- La densidad redefine `--space-3` a `--space-9` y mantiene `--space-1`,
+  `--space-2`, los mínimos de control (≥28 px), iconos, radios y `--focus-*`.
+- El tamaño redefine `--text-xs` a `--text-display` por token. No se toca
+  `html { font-size }`, `zoom`, `transform` ni `--space-*`.
+- La rejilla de apariencia usa `auto-fit`/`minmax(14rem, 1fr)`; a 1024 px pasa a
+  2 o 1 columna sin recortar etiquetas.
+- La tabla de carpetas usa `table-layout: fixed`, `caption` oculta y
+  `scope="col"`/`scope="row"`; la ruta relativa va en mono y la acción envuelve.
+  Las tablas no generan scroll horizontal de página.
+- La zona de peligro usa `--danger-surface` de fondo, `--danger` en borde y
+  título, y `--fg` en el cuerpo (nunca `--muted`). Cero colores literales.
+
+**Datos y diálogos**
+
+- Estados de carga con esqueletos solo en Datos; error inline con `role="alert"`
+  y reintento; modo seguro con el texto de no disponible.
+- Exportar muestra nombre, tamaño y número de mundos; el diálogo no se descarta
+  mientras dura.
+- Purgar huérfanas y eliminar todos los datos usan diálogos destructivos no
+  descartables, con foco inicial en **Cancelar**, foco al estado durante la
+  operación y al resultado al terminar, y retorno al disparador al cerrar.
+- El borrado exige escribir **ELIMINAR TODO**, con la casilla «Conservar también
+  las copias» desmarcada por defecto; el éxito se lee en un panel de reinicio
+  enfocable.
+- Una sola región `aria-live="polite"` por página mediante
+  `SettingsAnnouncerProvider`; los errores usan `role="alert"` y no duplican el
+  anuncio. `prefers-reduced-motion` detiene esqueletos y transiciones.
 
 ### 10.8 Preferencias persistentes de interfaz
 
-Implementado en #132 (ADR 0027). El estado de interfaz que antes vivía en memoria
-se guarda en la base local y se aplica antes del primer pintado. No hay pantalla,
-control ni texto nuevos: Ajustes (#79) consumirá la misma capa.
+Implementado en #132 (ADR 0027) y ampliado en #79 (ADR 0030). El estado de
+interfaz que antes vivía en memoria se guarda en la base local y se aplica antes
+del primer pintado. Ajustes (§10.7) consume esta misma capa: no hay pantalla con
+almacenamiento paralelo ni `localStorage`.
 
 **Matriz de estados persistidos**
 
 | Preferencia | Al abrir | Defecto | Valor inválido | Ámbito | Cuándo se escribe |
 |---|---|---|---|---|---|
-| Tema | Toda la UI en el tema guardado; `data-theme` antes de `createRoot` y fondo de ventana coherente | Claro | Claro | Aplicación | Toggle de la barra y comando de la paleta (un solo `toggleTheme`) |
+| Tema | Toda la UI en el tema guardado; `data-theme` antes de `createRoot` y fondo de ventana coherente | Claro | Claro | Aplicación | Toggle de la barra, comando de la paleta, radios de Ajustes |
+| Densidad | Espaciado guardado desde el primer frame | Cómoda | Cómoda | Aplicación | Radios de Ajustes o «Restablecer apariencia» |
+| Tamaño del texto | Escala de texto guardada desde el primer frame | Normal | Normal | Aplicación | Radios de Ajustes o «Restablecer apariencia» |
 | Rail plegado | 240/64 px desde el primer frame, sin animación | Expandido | Expandido | Aplicación | Al plegar o expandir |
 | Panel visible | `aside` Propiedades como se dejó | Visible | Visible | Global, no por ficha | Toggle de la barra de página |
 | Ancho del panel | Ancho guardado entre 280 y 360 px | 320 | Redondeo o recorte; no finito → 320 | Global | Solo en commits explícitos: soltar arrastre, flechas, Inicio/Fin, doble clic y toggle |
 | Secciones | Descripción, Campos, Relaciones y Recursos como se dejaron | Solo Descripción abierta | Solo Descripción abierta, por sección | Global | Al plegar o expandir; también cuando un error abre una sección |
-| Última vista | No se ve: la aplicación abre siempre en Inicio | Inicio | Inicio | Aplicación | Cada cambio de vista salvo Muestras |
+| Última vista | No se ve: la aplicación abre siempre en Inicio | Inicio | Inicio | Aplicación | Cada cambio de vista salvo Muestras; incluye `settings` |
 | Último mundo o ficha | Tarjeta Continuar | Ausente | Se limpia | Aplicación | Abrir mundo o ficha, cargar el nombre, borrar y degradar |
 
 **Reglas de arranque**
@@ -731,30 +788,36 @@ control ni texto nuevos: Ajustes (#79) consumirá la misma capa.
 2. La ventana nace oculta y solo se muestra cuando coinciden `ready-to-show` y
    `did-finish-load`, con un límite de 2.500 ms para no dejarla invisible. Enfocar
    una segunda instancia no adelanta esa compuerta.
-3. El renderer lee el snapshot antes de montar React, fija `data-theme` antes de
-   `createRoot` y descarta una respuesta tardía tras 1.500 ms; así `StrictMode`
-   no duplica la lectura ni hay cambio de tema tras el primer pintado.
+3. El renderer lee el snapshot antes de montar React, fija `data-theme`,
+   `data-density` y `data-font-scale` antes de `createRoot` y descarta una
+   respuesta tardía tras 1.500 ms; así `StrictMode` no duplica la lectura ni hay
+   cambio de apariencia tras el primer pintado.
 4. Un fallo de lectura, una forma inválida o una API ausente caen en los valores
    por defecto sin bloquear el arranque. Un fallo de escritura conserva el estado
    de la sesión y no muestra aviso, toast ni `aria-live`: el tema ya aplicado no se
    revierte y el cromo de la ventana sigue coherente.
 5. `lastView` se guarda pero **nunca navega** ni toca el hash. «Continuar» es la
-   única reanudación y se valida contra la biblioteca; `samples` no se persiste.
+   única reanudación y se valida contra la biblioteca; `samples` no se persiste y
+   `settings` sí.
 
-**Escritura y restablecimiento**
+**Escritura, restablecimiento y restauración**
 
 - Leer no crea filas ni repara valores: cada clave cae a su defecto sin contagiar
   a las demás. La primera escritura crea su fila.
 - Se escribe solo lo que cambia, con `updated_at` y en una transacción.
-- El restablecimiento borra únicamente las claves `ui.*` y devuelve los valores
-  por defecto; no toca mundos, fichas, imágenes, relaciones, copias ni
-  migraciones. Se adopta en caliente, sin recargar ni cerrar diálogos. **No hay
-  botón todavía**: llegará con Ajustes (#79).
+- **Restablecer apariencia** envía un `update` con `theme: 'light'`,
+  `density: 'comfortable'` y `fontScale: 'normal'`; conserva el resto de
+  preferencias y no toca datos.
+- **Restablecer preferencias** borra únicamente las claves `ui.*` tras la
+  confirmación del diálogo y devuelve los valores por defecto; no toca mundos,
+  fichas, imágenes, relaciones, copias ni migraciones. Se adopta en caliente, sin
+  recargar ni cerrar diálogos.
 - A **≤ 1180 px** el panel se apila y el ancho guardado no se aplica; al volver a
   más de 1180 px se recupera el ancho persistido.
 
 El contrato completo de la decisión está en el
-[ADR 0027](../adr/0027-ui-preferences-persistence.md).
+[ADR 0027](../adr/0027-ui-preferences-persistence.md) y en el
+[ADR 0030](../adr/0030-settings-data-and-full-deletion.md).
 
 ### 10.9 Transferencia de mundos
 
@@ -964,6 +1027,7 @@ Reglas de migración:
 | Relaciones legibles y grafo contextual | Implementado (relaciones); grafo previsto en #83 | #130 |
 | Editor mínimo y menciones | Implementado | #131 |
 | Preferencias de interfaz persistentes | Implementado | #132 |
+| Ajustes, apariencia y datos | Implementado | #79 |
 | Auditoría visual, temas y ruido | Implementado | #133 |
 | Diálogo de transferencia y barra indeterminada | Implementado | #78 |
 
@@ -1081,7 +1145,11 @@ previstos el grafo completo (#83) y la auditoría final de accesibilidad de M5
   cubre el hook y la adopción optimista. `tests/e2e/preferences.spec.ts` reinicia
   la aplicación con tema, rail, panel y secciones persistidos, comprueba el reset
   por API sin pérdida de mundos ni fichas y recorre 1024/1280/1600 px en ambos
-  temas con axe.
+  temas con axe. Ajustes (#79) se cubre con pruebas de componentes de apariencia,
+  idioma, atajos, actualizaciones y datos, y con `tests/e2e/settings.spec.ts`:
+  navegación y persistencia, matriz de anchos y temas con axe, carpetas
+  instrumentadas, exportación e importación real, huérfanas y borrado con copia
+  `pre-delete`, reinicio simulado y sentinel de instalación.
 - La transferencia se cubre desde #78: `tests/components/transfer.test.tsx` y
   `transfer-hook.test.tsx` recorren los estados, el foco, la cancelación, los
   avisos, el contenido largo y axe en ambos temas;
@@ -1145,6 +1213,7 @@ y manual actualizado.
 - [ADR 0025: dirección visual v2](../adr/0025-visual-direction-v2.md)
 - [ADR 0006: dos temas y sistema de diseño de escritorio](../adr/0006-two-themes-desktop-design-system.md)
 - [ADR 0027: preferencias de interfaz persistentes](../adr/0027-ui-preferences-persistence.md)
+- [ADR 0030: Ajustes, datos y borrado total](../adr/0030-settings-data-and-full-deletion.md)
 - [Contrato de la ficha #129](ficha-issue-129.md)
 - [Contrato del editor mínimo #131](editor-issue-131.md)
 - [Contrato y auditoría visual #133](auditoria-visual-issue-133.md)

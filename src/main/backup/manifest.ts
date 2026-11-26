@@ -5,8 +5,9 @@
  * pre-restauración y pre-purga) e incluye el motivo, el estado de integridad
  * conocido y la marca de que los assets no van dentro. El lector acepta también
  * el v1 creado por M0-04 para no invalidar copias pre-migración ya existentes.
- * Añadir `pre-purge` al enum mantiene el formato v2: los manifiestos anteriores
- * no contienen ese valor y el lector actual sigue aceptándolos.
+ * Añadir `pre-purge` o `pre-delete` al enum mantiene el formato v2: los
+ * manifiestos anteriores no contienen esos valores y el lector actual sigue
+ * aceptándolos.
  *
  * Los errores nunca incluyen rutas ni el contenido del manifiesto.
  */
@@ -33,6 +34,7 @@ export const BACKUP_REASONS = [
   'pre-migration',
   'pre-restore',
   'pre-purge',
+  'pre-delete',
 ] as const;
 
 export type BackupReason = (typeof BACKUP_REASONS)[number];
@@ -129,11 +131,20 @@ export type RestorableBackupManifest = BackupManifest & {
   readonly integrity: 'ok';
 };
 
-/** Indica si el manifiesto permite ofrecer la copia para restaurar. */
+/**
+ * Indica si el manifiesto permite ofrecer la copia para restaurar.
+ *
+ * `pre-delete` queda fuera: la restauración guiada solo sustituye la base y
+ * esa copia también contiene assets, que no se restauran en ese flujo.
+ */
 export function isRestorableManifest(
   manifest: BackupManifest,
 ): manifest is RestorableBackupManifest {
-  return manifest.integrity === 'ok' && manifest.schemaVersion !== null;
+  return (
+    manifest.reason !== 'pre-delete' &&
+    manifest.integrity === 'ok' &&
+    manifest.schemaVersion !== null
+  );
 }
 
 /** Lee y valida `manifest.json`; devuelve `null` si falta o no encaja. */

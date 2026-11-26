@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useUiPreferences } from '@/renderer/preferences/use-ui-preferences';
+import { applyAppearance } from '@/renderer/theme';
 import {
   createDefaultUiPreferences,
   type UiPreferences,
@@ -58,6 +59,30 @@ function installApi(
 
 beforeEach(() => {
   document.documentElement.dataset.theme = 'light';
+  document.documentElement.dataset.density = 'comfortable';
+  document.documentElement.dataset.fontScale = 'normal';
+});
+
+describe('applyAppearance', () => {
+  it('fija tema, densidad y tamaño en el mismo evento', () => {
+    applyAppearance({ theme: 'dark', density: 'compact', fontScale: 'large' });
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.dataset.density).toBe('compact');
+    expect(document.documentElement.dataset.fontScale).toBe('large');
+  });
+
+  it('cae a los valores seguros si la forma es inválida', () => {
+    applyAppearance({
+      theme: 'sepia',
+      density: 'amplia',
+      fontScale: 'gigante',
+    } as unknown as Parameters<typeof applyAppearance>[0]);
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(document.documentElement.dataset.density).toBe('comfortable');
+    expect(document.documentElement.dataset.fontScale).toBe('normal');
+  });
 });
 
 describe('useUiPreferences', () => {
@@ -99,6 +124,38 @@ describe('useUiPreferences', () => {
       expect(result.current.preferences.railCollapsed).toBe(true);
     });
     expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('aplica densidad y tamaño de forma optimista y adopta la respuesta', async () => {
+    const pending = deferred<IpcResult<UiPreferences>>();
+    const { update } = installApi(() => pending.promise);
+    const { result } = renderHook(() => useUiPreferences(createInitial()));
+
+    act(() => {
+      result.current.update({ density: 'compact', fontScale: 'large' });
+    });
+
+    expect(result.current.preferences.density).toBe('compact');
+    expect(result.current.preferences.fontScale).toBe('large');
+    expect(document.documentElement.dataset.density).toBe('compact');
+    expect(document.documentElement.dataset.fontScale).toBe('large');
+
+    await act(async () => {
+      pending.resolve({
+        ok: true,
+        data: createInitial({ density: 'compact', fontScale: 'small' }),
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.preferences.fontScale).toBe('small');
+    });
+    expect(document.documentElement.dataset.density).toBe('compact');
+    expect(document.documentElement.dataset.fontScale).toBe('small');
+    expect(update).toHaveBeenCalledWith({
+      density: 'compact',
+      fontScale: 'large',
+    });
   });
 
   it('conserva el estado de la sesión si la escritura falla', async () => {
@@ -168,6 +225,8 @@ describe('useUiPreferences', () => {
       useUiPreferences(
         createInitial({
           theme: 'dark',
+          density: 'compact',
+          fontScale: 'large',
           railCollapsed: true,
           lastView: 'entity',
           recentLocation: {
@@ -185,5 +244,7 @@ describe('useUiPreferences', () => {
     expect(reset).toHaveBeenCalledTimes(1);
     expect(result.current.preferences).toEqual(createDefaultUiPreferences());
     expect(document.documentElement.dataset.theme).toBe('light');
+    expect(document.documentElement.dataset.density).toBe('comfortable');
+    expect(document.documentElement.dataset.fontScale).toBe('normal');
   });
 });

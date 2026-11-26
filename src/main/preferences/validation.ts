@@ -13,6 +13,8 @@ import { z } from 'zod';
 import { UUID_V7_PATTERN } from '../db/ids';
 import { ENTITY_NAME_MAX_LENGTH } from '../../shared/contracts/entities';
 import {
+  DENSITY_PREFERENCES,
+  FONT_SCALE_PREFERENCES,
   PERSISTED_APP_VIEWS,
   PROPERTIES_WIDTH_DEFAULT,
   PROPERTIES_WIDTH_MAX,
@@ -61,6 +63,8 @@ const entityViewInputSchema = z.strictObject({
 export const uiPreferencesPatchSchema = z
   .strictObject({
     theme: z.enum(THEME_PREFERENCES).optional(),
+    density: z.enum(DENSITY_PREFERENCES).optional(),
+    fontScale: z.enum(FONT_SCALE_PREFERENCES).optional(),
     railCollapsed: z.boolean().optional(),
     entityView: entityViewInputSchema.optional(),
     lastView: z.enum(PERSISTED_APP_VIEWS).optional(),
@@ -84,6 +88,8 @@ const DEFAULT_ENTITY_VIEW: EntityViewPreferences = Object.freeze({
 });
 
 const themeReadSchema = z.enum(THEME_PREFERENCES).catch('light');
+const densityReadSchema = z.enum(DENSITY_PREFERENCES).catch('comfortable');
+const fontScaleReadSchema = z.enum(FONT_SCALE_PREFERENCES).catch('normal');
 const railReadSchema = z.boolean().catch(false);
 const lastViewReadSchema = z.enum(PERSISTED_APP_VIEWS).catch('home');
 
@@ -167,6 +173,18 @@ export function readStoredPreferences(
       UI_PREFERENCE_KEYS.theme,
       themeReadSchema,
       defaults.theme,
+    ),
+    density: readKey(
+      entries,
+      UI_PREFERENCE_KEYS.density,
+      densityReadSchema,
+      defaults.density,
+    ),
+    fontScale: readKey(
+      entries,
+      UI_PREFERENCE_KEYS.fontScale,
+      fontScaleReadSchema,
+      defaults.fontScale,
     ),
     railCollapsed: readKey(
       entries,

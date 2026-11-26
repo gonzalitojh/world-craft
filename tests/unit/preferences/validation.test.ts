@@ -15,6 +15,8 @@ describe('validación estricta de escritura', () => {
     for (const patch of [
       { theme: 'dark' },
       { railCollapsed: true },
+      { density: 'compact' },
+      { fontScale: 'large' },
       { entityView: { propertiesWidth: 360 } },
       { entityView: { sections: { relations: true } } },
       { lastView: 'entity' },
@@ -42,6 +44,9 @@ describe('validación estricta de escritura', () => {
       { theme: 'sepia' },
       { theme: 'dark', extra: true },
       { railCollapsed: 'yes' },
+      { density: 'amplia' },
+      { fontScale: 'gigante' },
+      { density: null },
       { entityView: { propertiesWidth: 279 } },
       { entityView: { propertiesWidth: 361 } },
       { entityView: { propertiesWidth: 320.5 } },
@@ -96,6 +101,8 @@ describe('lectura tolerante', () => {
     const entries = new Map<string, string>([
       [UI_PREFERENCE_KEYS.theme, 'no-json'],
       [UI_PREFERENCE_KEYS.railCollapsed, '"yes"'],
+      [UI_PREFERENCE_KEYS.density, '"amplia"'],
+      [UI_PREFERENCE_KEYS.fontScale, '"gigante"'],
       [UI_PREFERENCE_KEYS.lastView, '"samples"'],
       [UI_PREFERENCE_KEYS.recentLocation, '{"kind":"entity"}'],
       [UI_PREFERENCE_KEYS.entityView, '{"propertiesWidth":999}'],
@@ -104,6 +111,8 @@ describe('lectura tolerante', () => {
 
     expect(preferences.theme).toBe('light');
     expect(preferences.railCollapsed).toBe(false);
+    expect(preferences.density).toBe('comfortable');
+    expect(preferences.fontScale).toBe('normal');
     expect(preferences.lastView).toBe('home');
     expect(preferences.recentLocation).toBeNull();
     expect(preferences.entityView.propertiesWidth).toBe(320);
@@ -149,12 +158,25 @@ describe('lectura tolerante', () => {
     expect(preferences.theme).toBe('dark');
     expect(preferences.railCollapsed).toBe(false);
     expect(Object.keys(preferences).sort()).toEqual([
+      'density',
       'entityView',
+      'fontScale',
       'lastView',
       'railCollapsed',
       'recentLocation',
       'theme',
     ]);
+  });
+
+  it('lee densidad y tamaño válidos por clave', () => {
+    const entries = new Map<string, string>([
+      [UI_PREFERENCE_KEYS.density, '"compact"'],
+      [UI_PREFERENCE_KEYS.fontScale, '"small"'],
+    ]);
+    const preferences = readStoredPreferences(entries);
+
+    expect(preferences.density).toBe('compact');
+    expect(preferences.fontScale).toBe('small');
   });
 
   it('normaliza una ficha con nombre nulo y conserva un mundo válido', () => {

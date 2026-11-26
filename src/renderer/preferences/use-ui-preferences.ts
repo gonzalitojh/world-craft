@@ -7,6 +7,9 @@
  * respuesta tardía nunca pisa un cambio posterior y un fallo conserva el
  * estado de la sesión sin anuncios ni estado de «guardando».
  *
+ * Tema, densidad y tamaño de texto se aplican juntos en el mismo evento para
+ * que el primer clic repinte la interfaz sin esperar al IPC (C2 de #79).
+ *
  * No lee ni escribe `localStorage`: la única fuente de verdad es la API del
  * preload y el servicio de `app_settings`.
  */
@@ -20,12 +23,12 @@ import {
   type UiPreferencesPatch,
 } from '../../shared/contracts/preferences';
 import type { IpcResult } from '../../shared/contracts/result';
-import { applyTheme } from '../theme';
+import { applyAppearance } from '../theme';
 
-/** API del hook; suficiente para `App` y para futuros Ajustes (#79). */
+/** API del hook; suficiente para `App` y para Ajustes (#79). */
 export interface UseUiPreferencesResult {
   readonly preferences: UiPreferences;
-  /** Fusiona un parche y aplica el tema en el mismo evento. */
+  /** Fusiona un parche y aplica la apariencia en el mismo evento. */
   readonly update: (patch: UiPreferencesPatch) => void;
   /** Alterna Claro/Oscuro usando el estado más reciente. */
   readonly toggleTheme: () => void;
@@ -39,58 +42,64 @@ export function useUiPreferences(
 ): UseUiPreferencesResult {
   const [preferences, setPreferences] =
     useState<UiPreferences>(initialPreferences);
+  const preferencesRef = useRef(initialPreferences);
   const sequenceRef = useRef(0);
 
-  const update = useCallback((patch: UiPreferencesPatch) => {
-    // Cada operación tiene su secuencia; solo la última puede adoptar la
-    // respuesta canónica del proceso principal.
-    sequenceRef.current += 1;
-    const sequence = sequenceRef.current;
-
-    setPreferences((current) => applyUiPreferencesPatch(current, patch));
-
-    if (patch.theme !== undefined) {
-      // El tema no espera al IPC: el mismo clic repinta la interfaz.
-      applyTheme(patch.theme);
-    }
-
-    let request: Promise<IpcResult<UiPreferences>>;
-
-    try {
-      request = window.worldCraft.preferences.update(patch);
-    } catch {
-      // Un transporte roto conserva el estado optimista de la sesión.
-      return;
-    }
-
-    void request.then(
-      (result) => {
-        if (sequence !== sequenceRef.current) {
-          return;
-        }
-
-        if (result.ok && isUiPreferences(result.data)) {
-          setPreferences(result.data);
-          applyTheme(result.data.theme);
-        }
-      },
-      () => {
-        // Se conserva el estado optimista de la sesión.
-      },
-    );
+  const adopt = useCallback((next: UiPreferences) => {
+    preferencesRef.current = next;
+    setPreferences(next);
+    applyAppearance(next);
   }, []);
 
+  const update = useCallback(
+    (patch: UiPreferencesPatch) => {
+      // Cada operación tiene su secuencia; solo la última puede adoptar la
+      // respuesta canónica del proceso principal.
+      sequenceRef.current += 1;
+      const sequence = sequenceRef.current;
+      const next = applyUiPreferencesPatch(preferencesRef.current, patch);
+
+      // La apariencia no espera al IPC: el mismo clic repinta la interfaz.
+      adopt(next);
+
+      let request: Promise<IpcResult<UiPreferences>>;
+
+      try {
+        request = window.worldCraft.preferences.update(patch);
+      } catch {
+        // Un transporte roto conserva el estado optimista de la sesión.
+        return;
+      }
+
+      void request.then(
+        (result) => {
+          if (sequence !== sequenceRef.current) {
+            return;
+          }
+
+          if (result.ok && isUiPreferences(result.data)) {
+            adopt(result.data);
+          }
+        },
+        () => {
+          // Se conserva el estado optimista de la sesión.
+        },
+      );
+    },
+    [adopt],
+  );
+
   const toggleTheme = useCallback(() => {
-    update({ theme: preferences.theme === 'light' ? 'dark' : 'light' });
-  }, [preferences.theme, update]);
+    update({
+      theme: preferencesRef.current.theme === 'light' ? 'dark' : 'light',
+    });
+  }, [update]);
 
   const reset = useCallback(() => {
     sequenceRef.current += 1;
     const sequence = sequenceRef.current;
-    const defaults = createDefaultUiPreferences();
 
-    setPreferences(defaults);
-    applyTheme(defaults.theme);
+    adopt(createDefaultUiPreferences());
 
     let request: Promise<IpcResult<UiPreferences>>;
 
@@ -107,15 +116,14 @@ export function useUiPreferences(
         }
 
         if (result.ok && isUiPreferences(result.data)) {
-          setPreferences(result.data);
-          applyTheme(result.data.theme);
+          adopt(result.data);
         }
       },
       () => {
         // Se conserva el estado optimista de la sesión.
       },
     );
-  }, []);
+  }, [adopt]);
 
   return { preferences, update, toggleTheme, reset };
 }

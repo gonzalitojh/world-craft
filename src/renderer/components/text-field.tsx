@@ -19,6 +19,7 @@ export interface TextFieldProps {
   readonly type?: 'text' | 'search' | 'email' | 'url' | 'number' | 'date';
   readonly placeholder?: string;
   readonly autoComplete?: string;
+  readonly spellCheck?: boolean;
   readonly autoFocus?: boolean;
   /** Recibe el foco cuando se abre un diálogo, sin depender del orden del DOM. */
   readonly autoFocusOnOpen?: boolean;
@@ -49,6 +50,7 @@ export function TextField({
   type = 'text',
   placeholder,
   autoComplete,
+  spellCheck,
   autoFocus = false,
   autoFocusOnOpen = false,
   maxLength,
@@ -96,6 +98,7 @@ export function TextField({
         readOnly={readOnly}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        spellCheck={spellCheck}
         autoFocus={autoFocus}
         data-autofocus={autoFocus || autoFocusOnOpen ? 'true' : undefined}
         maxLength={maxLength}

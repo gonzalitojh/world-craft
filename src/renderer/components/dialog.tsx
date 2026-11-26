@@ -62,7 +62,39 @@ export function Dialog({
   const messages = useMessages();
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const openRef = useRef(open);
   const titleId = useId();
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      const previous = previousFocusRef.current;
+
+      previousFocusRef.current = null;
+
+      if (!openRef.current || previous === null || !previous.isConnected) {
+        return;
+      }
+
+      const active = document.activeElement;
+
+      // No se roba el foco si otra acción ya lo movió (por ejemplo, el foco al
+      // resultado tras una operación) ni al navegar a otra vista.
+      if (
+        active !== null &&
+        active !== document.body &&
+        active !== previous &&
+        active.isConnected
+      ) {
+        return;
+      }
+
+      previous.focus();
+    };
+  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;

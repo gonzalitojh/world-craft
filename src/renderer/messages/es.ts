@@ -10,6 +10,8 @@
  * Convención de ejemplo: los textos de la página de muestras describen un
  * mundo ficticio plausible («Las Mareas Grises»), nunca datos reales.
  */
+import type { DataErrorCode } from '../../shared/contracts/data';
+
 export const es = {
   app: {
     title: 'World Craft',
@@ -27,6 +29,7 @@ export const es = {
       entities: 'Fichas',
       entity: 'Ficha',
       trash: 'Papelera',
+      settings: 'Ajustes',
       samples: 'Muestras',
     },
     collapse: 'Plegar menú lateral',
@@ -1452,6 +1455,7 @@ export const es = {
     commands: {
       home: 'Ir a Inicio',
       worlds: 'Ir a Mundos',
+      settings: 'Abrir Ajustes',
       search: 'Abrir la página de búsqueda',
       createWorld: 'Crear un mundo',
       createEntity: 'Crear una ficha',
@@ -1483,6 +1487,314 @@ export const es = {
         success: 'Éxito',
         error: 'Error',
       },
+    },
+  },
+  settings: {
+    lead: 'Ajusta cómo se ve World Craft y consulta el estado de la aplicación. Los cambios de apariencia se aplican al instante y se guardan en este equipo.',
+    appearance: {
+      title: 'Apariencia',
+      lead: 'Elige el tema, la densidad de la interfaz y el tamaño del texto. Los controles se adaptan sin recargar la aplicación.',
+      theme: {
+        legend: 'Tema',
+        light: 'Claro',
+        dark: 'Oscuro',
+      },
+      density: {
+        legend: 'Densidad',
+        comfortable: 'Cómoda',
+        compact: 'Compacta',
+      },
+      fontScale: {
+        legend: 'Tamaño del texto',
+        small: 'Pequeño',
+        normal: 'Normal',
+        large: 'Grande',
+      },
+      reset: 'Restablecer apariencia',
+      resetHint:
+        'Vuelve a Claro, densidad Cómoda y texto Normal. No cambia tus datos.',
+      resetDone:
+        'Apariencia restablecida: tema Claro, densidad Cómoda y texto Normal.',
+    },
+    language: {
+      title: 'Idioma',
+      label: 'Idioma de la interfaz',
+      current: 'Español',
+      note: 'World Craft está en español. La aplicación está preparada para añadir más idiomas en el futuro, pero todavía no hay otros disponibles.',
+    },
+    shortcuts: {
+      title: 'Atajos de consulta',
+      meta: 'Ctrl+K',
+      caption: 'Atajos de teclado disponibles',
+      columns: {
+        action: 'Acción',
+        shortcut: 'Atajo',
+      },
+      rows: {
+        palette: 'Abrir la paleta de comandos',
+        close: 'Cerrar un diálogo o menú',
+      },
+      paletteKeys: 'Ctrl+K',
+      closeKeys: 'Esc',
+      editorNote:
+        'En el editor, escribe @ para mencionar una ficha. Los atajos son solo de consulta y no se pueden reasignar.',
+    },
+    updates: {
+      title: 'Actualizaciones',
+      installed: 'Versión instalada',
+      lastChecked: 'Última comprobación',
+      never: 'Todavía no se ha comprobado.',
+      open: 'Abrir actualizaciones',
+      privacy:
+        'La comprobación consulta GitHub Releases solo cuando tú la pides y nunca envía el contenido de tus mundos ni datos personales.',
+    },
+    data: {
+      title: 'Datos y copias',
+      lead: 'Abre las carpetas de la aplicación, exporta todos los datos, revisa el uso de disco y gestiona las imágenes huérfanas.',
+      loading: 'Cargando los datos de la aplicación…',
+      retry: 'Volver a intentar',
+      unavailable:
+        'Los datos no están disponibles en modo seguro. Reinicia la aplicación o restaura una copia desde el aviso de inicio.',
+      busy: 'Ya hay una operación de datos en curso.',
+      summary: {
+        title: 'Resumen',
+        caption: 'Resumen de los datos de la aplicación',
+        worldsActive: 'Mundos activos',
+        worldsArchived: 'Mundos archivados',
+        worldsTrash: 'Mundos en la papelera',
+        entities: 'Fichas',
+        assets: 'Imágenes',
+        backups: 'Copias',
+      },
+      folders: {
+        title: 'Carpetas',
+        lead: 'Abre las carpetas de la aplicación para revisar sus archivos. Solo se muestran nombres y rutas relativas dentro de la carpeta de datos; nunca la ruta completa del equipo.',
+        caption: 'Carpetas de datos',
+        columns: {
+          folder: 'Carpeta',
+          contents: 'Contenido',
+          action: 'Acción',
+        },
+        data: {
+          label: 'Datos',
+          contents: 'Base de datos, preferencias y archivos internos.',
+        },
+        assets: {
+          label: 'Imágenes',
+          contents: 'Imágenes y miniaturas de las fichas.',
+        },
+        backups: {
+          label: 'Copias',
+          contents: 'Copias automáticas y previas a operaciones.',
+        },
+        logs: {
+          label: 'Registros',
+          contents: 'Registros técnicos de la aplicación.',
+        },
+        open: {
+          data: 'Abrir datos',
+          assets: 'Abrir imágenes',
+          backups: 'Abrir copias',
+          logs: 'Abrir registros',
+          imports: 'Abrir importaciones',
+          exports: 'Abrir exportaciones',
+        },
+        opening: 'Abriendo…',
+        tempTitle: 'Temporales',
+        imports: {
+          label: 'Importaciones',
+          contents: 'Trabajo temporal de importación.',
+        },
+        exports: {
+          label: 'Exportaciones',
+          contents: 'Trabajo temporal de exportación.',
+        },
+      },
+      usage: {
+        title: 'Uso de disco',
+        caption: 'Uso de disco por categoría',
+        columns: {
+          category: 'Categoría',
+          size: 'Tamaño',
+        },
+        categories: {
+          database: 'Base de datos',
+          assets: 'Imágenes',
+          backups: 'Copias',
+          logs: 'Registros',
+          temporary: 'Temporales',
+          total: 'Total',
+        },
+        partialBadge: 'Parcial',
+        partialNote:
+          'La medición es parcial: no se pudo medir alguna categoría o se alcanzó el límite. El resto de cifras está disponible.',
+        recalc: 'Volver a calcular',
+        loading: 'Midiendo el uso de disco…',
+      },
+      export: {
+        title: 'Exportar todos los datos',
+        lead: 'Crea una biblioteca abierta con todo el contenido de World Craft.',
+        includes:
+          'Incluye un paquete por cada mundo vivo, activo o archivado, con fichas, tipos, etiquetas, relaciones, versiones e imágenes.',
+        database:
+          'Incluye settings.json con la apariencia y una copia completa y verificada de la base SQLite en database/. Esa copia sí contiene la papelera, la actividad y las preferencias, incluidos el último mundo o ficha y los datos de vista.',
+        packages:
+          'Los paquetes de mundo excluyen la papelera, la actividad y las preferencias.',
+        excludes: 'No incluye copias automáticas ni imágenes huérfanas.',
+        import: 'La importación se hace mundo a mundo con «Importar mundo».',
+        empty:
+          'No hay mundos que exportar; la biblioteca incluirá la base y las preferencias.',
+        action: 'Exportar todos los datos',
+        running: 'Creando la biblioteca…',
+        resultTitle: 'Biblioteca creada',
+        resultFile: 'Archivo',
+        resultSize: 'Tamaño',
+        resultWorlds: 'Mundos',
+        worldsCount: {
+          one: '{count} mundo',
+          other: '{count} mundos',
+        },
+        errorTitle: 'No se pudo exportar la biblioteca.',
+      },
+      orphans: {
+        title: 'Imágenes huérfanas',
+        lead: 'Solo se eliminan las imágenes que ninguna ficha usa y los archivos temporales de assets.',
+        safety:
+          'Antes de borrar se guarda una copia verificable. Las imágenes que usa alguna ficha no se tocan.',
+        analyze: 'Analizar',
+        analyzing: 'Analizando imágenes huérfanas…',
+        purge: 'Purgar…',
+        purging: 'Eliminando imágenes huérfanas…',
+        empty: 'No hay imágenes huérfanas.',
+        caption: 'Resumen de imágenes huérfanas',
+        rows: {
+          purgeable: 'Archivos a purgar',
+          unreferenced: 'Imágenes sin referencia',
+          thumbnails: 'Miniaturas huérfanas',
+          temporary: 'Temporales',
+          missing: 'Archivos ausentes',
+          suspicious: 'Enlaces no seguidos',
+          unexpected: 'Entradas no reconocidas',
+        },
+        recoverable: 'Espacio recuperable',
+        fileCount: {
+          one: '{count} imagen',
+          other: '{count} imágenes',
+        },
+        resultTitle: 'Purga completada',
+        result: '{files} ({size})',
+        dialogTitle: 'Purgar imágenes huérfanas',
+        summary: 'Se eliminarán {files} que ninguna ficha usa ({size}).',
+        notReferenced: 'Las imágenes que usa alguna ficha no se tocan.',
+        confirmLabel: 'Confirmo que quiero eliminar estas imágenes',
+        cancel: 'Cancelar',
+        confirm: 'Purgar imágenes',
+        errorCopy:
+          'No se ha borrado nada porque no se pudo crear la copia de seguridad. Revisa el espacio libre e inténtalo de nuevo.',
+      },
+      danger: {
+        title: 'Zona de peligro',
+        lead: 'Elimina todo el contenido de World Craft de este equipo. La instalación y la copia previa al borrado se conservan.',
+        action: 'Eliminar todos los datos',
+        dialogTitle: 'Eliminar todos los datos',
+        dialogLead:
+          'Se eliminará todo el contenido de World Craft en este equipo y la aplicación se reiniciará.',
+        deleteTitle: 'Se eliminará',
+        deleteItems: [
+          'Mundos, fichas, tipos, etiquetas, relaciones, versiones y actividad.',
+          'Imágenes, temporales, registros y copias de seguridad.',
+          'Las preferencias de la interfaz.',
+        ],
+        keepTitle: 'Se conservará',
+        keepItems: [
+          'La copia previa al borrado en backups/pre-delete.',
+          'La instalación de la aplicación.',
+          'El identificador de actualizaciones (.updaterId).',
+        ],
+        keepBackupsLabel: 'Conservar también las copias de seguridad',
+        keepBackupsHint:
+          'Desmarcada, también se borran las copias automáticas. La copia previa al borrado se conserva siempre.',
+        phraseLabel: 'Escribe ELIMINAR TODO para confirmar',
+        phraseError: 'La frase no coincide. Escribe exactamente ELIMINAR TODO.',
+        phraseValue: 'ELIMINAR TODO',
+        cancel: 'Cancelar',
+        confirm: 'Eliminar todos los datos',
+        deleting: 'Creando la copia de seguridad y eliminando los datos…',
+        error:
+          'No se ha borrado nada. No se pudo crear la copia previa; revisa el espacio libre e inténtalo de nuevo.',
+        doneTitle: 'Datos eliminados',
+        doneBody:
+          'Se han eliminado los datos y se ha conservado la copia previa. La aplicación se reiniciará.',
+        partialTitle: 'Datos eliminados parcialmente',
+        partialBody:
+          'Se ha conservado la copia previa, pero algunos elementos no se pudieron borrar. Revisa las categorías restantes.',
+        partialRestartBody:
+          'Se ha conservado la copia previa y la aplicación se reiniciará. Algunos elementos secundarios no se pudieron borrar.',
+        remainingLabel: 'Categorías restantes',
+        categories: {
+          temporaries: 'Temporales',
+          database: 'Base de datos',
+          assets: 'Imágenes',
+          logs: 'Registros',
+          backups: 'Copias',
+        },
+      },
+      errors: {
+        codes: {
+          DATA_UNAVAILABLE:
+            'Los datos no están disponibles en modo seguro. Reinicia la aplicación o restaura una copia desde el aviso de inicio.',
+          DATA_BUSY: 'Ya hay una operación de datos en curso.',
+          DATA_FOLDER_INVALID: 'La carpeta solicitada no es válida.',
+          DATA_FOLDER_OPEN_FAILED: 'No se pudo abrir la carpeta solicitada.',
+          DATA_COUNTS_FAILED:
+            'No se pudieron leer los datos de la aplicación. Tus datos siguen guardados en este equipo.',
+          DATA_ORPHAN_CONFIRMATION_REQUIRED:
+            'La purga de imágenes huérfanas exige una confirmación explícita.',
+          DATA_ORPHAN_PLAN_FAILED:
+            'No se pudieron revisar las imágenes huérfanas.',
+          DATA_ORPHAN_PURGE_FAILED:
+            'No se pudieron eliminar las imágenes huérfanas.',
+          DATA_LIBRARY_INPUT_INVALID:
+            'Los datos de la exportación no son válidos.',
+          DATA_LIBRARY_ENTRY_INVALID:
+            'La biblioteca contiene una entrada no permitida.',
+          DATA_LIBRARY_MANIFEST_INVALID:
+            'El manifiesto de la biblioteca no es válido.',
+          DATA_LIBRARY_SETTINGS_INVALID:
+            'Los ajustes incluidos en la biblioteca no son válidos.',
+          DATA_LIBRARY_WORLD_FAILED: 'No se pudo exportar uno de los mundos.',
+          DATA_LIBRARY_DATABASE_FAILED:
+            'No se pudo crear o verificar la copia de la base de datos.',
+          DATA_LIBRARY_VERIFY_FAILED:
+            'La biblioteca no pasó la verificación posterior.',
+          DATA_LIBRARY_CREATE_FAILED:
+            'No se pudo escribir el archivo de la biblioteca.',
+          DATA_LIBRARY_NO_SPACE:
+            'No hay espacio suficiente para exportar la biblioteca.',
+          DATA_LIBRARY_DESTINATION_UNAVAILABLE:
+            'El destino de la biblioteca no está disponible.',
+          DATA_DELETE_CONFIRMATION_REQUIRED:
+            'El borrado total exige una confirmación explícita.',
+          DATA_DELETE_ROOT_INVALID:
+            'Una carpeta de datos no es válida y no se puede borrar con seguridad.',
+          DATA_DELETE_COPY_FAILED:
+            'No se pudo crear o verificar la copia previa al borrado.',
+          DATA_DELETE_FAILED: 'No se pudieron eliminar todos los datos.',
+          TRANSPORT:
+            'No se pudo comunicar con el proceso principal. Vuelve a intentarlo.',
+          UNKNOWN: 'La operación de datos falló por un error desconocido.',
+        } satisfies Record<DataErrorCode | 'TRANSPORT' | 'UNKNOWN', string>,
+      },
+    },
+    resetPreferences: {
+      title: 'Restablecer preferencias',
+      lead: 'El tema, el rail, el panel de propiedades, las secciones plegables y el último mundo o ficha recordados vuelven a sus valores iniciales.',
+      action: 'Restablecer preferencias',
+      dialogTitle: 'Restablecer preferencias',
+      dialogBody:
+        'Vuelve a los valores iniciales el tema, la barra lateral, el panel de propiedades, las secciones plegables y el último mundo o ficha recordados. No borra mundos, fichas, imágenes, relaciones, copias ni registros.',
+      cancel: 'Cancelar',
+      confirm: 'Restablecer preferencias',
     },
   },
   updates: {

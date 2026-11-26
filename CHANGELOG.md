@@ -450,9 +450,58 @@ primera versión estable.
   cancelación, rollback, slugs y limpieza; componentes y E2E de transferencia
   1/1. La suite queda en 671 unitarias (4 omitidas), 213 de componentes y 204 de
   integración (1 omitida).
+- Pantalla de Ajustes (#79): página editorial de una columna con Apariencia,
+  Idioma, Atajos de consulta, Actualizaciones, Datos y Restablecer preferencias.
+  Se abre desde el pie del rail, por el hash `#/settings` y desde la paleta, y
+  la aplicación sigue abriendo en Inicio.
+- Apariencia (#79): tema Claro/Oscuro, densidad **Cómoda/Compacta** y tamaño de
+  texto **Pequeño/Normal/Grande** con presets de tokens, aplicados al instante y
+  recordados antes del primer pintado. **Restablecer apariencia** vuelve a
+  Claro/Cómoda/Normal sin tocar datos ni el resto de preferencias.
+- Datos y copias en Ajustes (#79): resumen de mundos, fichas, imágenes y copias;
+  apertura de las carpetas de datos, imágenes, copias, registros, importaciones y
+  exportaciones con rutas relativas; uso de disco acotado por categorías y
+  gestión de imágenes huérfanas con copia verificable.
+- Exportar todos los datos (#79): biblioteca abierta `world-craft-library` v1 con
+  `manifest.json`, `settings.json`, un paquete `world-craft-world` v1 por mundo y
+  una copia completa y verificada de SQLite en `database/`. Incluye fichas,
+  tipos, etiquetas, relaciones, versiones e imágenes; la copia de base incluye
+  papelera, actividad y preferencias. La importación sigue siendo mundo a mundo.
+- Eliminar todos los datos (#79): confirmación escrita **ELIMINAR TODO**, copia
+  `pre-delete` de la base y de los assets con `recovery.json`, borrado ordenado,
+  verificación, resultado `partial` si algo queda y reinicio automático. Se
+  conservan la copia previa, la instalación y `.updaterId`.
+- Preferencias de apariencia (#79): claves `ui.density` y `ui.font-scale`,
+  `settings` en las vistas persistidas, `applyAppearance` antes de `createRoot` y
+  tokens de densidad y escala de texto en `scales.css`.
+- Pruebas de Ajustes y datos (#79): unitarias de contratos, guardas, uso,
+  carpetas, huérfanas, manifiesto, biblioteca, borrado y handlers; integración de
+  `pre-delete`, preservación, sentinel de instalación y fallos inyectados;
+  componentes de Ajustes y datos; E2E de navegación, persistencia, carpetas,
+  exportación/importación, huérfanas, borrado con reinicio y matriz
+  1024/1280/1600 con ambos temas. La suite queda en 762 unitarias, 251 de
+  componentes y 231 de integración.
 
 ### Cambiado
 
+- Ajustes deja de ser una función prevista (#79): tema, densidad, tamaño de
+  texto, idioma informativo, atajos, actualizaciones y datos tienen pantalla
+  propia, entrada en el pie del rail y comando en la paleta. La aplicación sigue
+  abriendo en Inicio y `lastView` solo se recuerda como metadato.
+- Las preferencias de interfaz ganan densidad y tamaño de texto (#79): las claves
+  `ui.density` y `ui.font-scale` se aplican antes del primer pintado, el
+  restablecimiento de preferencias ya tiene control con confirmación y la
+  exportación de un mundo sigue sin incluirlas; la biblioteca total sí las lleva
+  en su copia completa de SQLite.
+- La sección de idioma es informativa (#79): solo español, sin selector ni opción
+  deshabilitada, con la estructura preparada para más idiomas.
+- Las actualizaciones se consultan también desde Ajustes (#79): muestran versión,
+  última comprobación y estado, y abren el mismo diálogo de la barra superior. No
+  se añade auto-comprobación ni interruptor; ese ajuste sigue previsto para
+  M5-05.
+- La restauración de copias sigue en el aviso de modo seguro (#79): Ajustes abre
+  la carpeta de copias y muestra su uso, pero no crea, verifica ni restaura
+  copias; la restauración guiada desde Ajustes queda prevista.
 - Los avisos de borrado de un mundo y de una ficha dejan de prometer una
   papelera futura (#77): explican que se mueven a la **Papelera** y que se pueden
   recuperar desde allí. La muestra interna de diálogo ya no habla de treinta

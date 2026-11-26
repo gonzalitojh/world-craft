@@ -12,10 +12,11 @@ export type AppView =
   | 'entities'
   | 'entity'
   | 'trash'
+  | 'settings'
   | 'samples';
 
 /** Vistas con entrada propia en la navegación del rail. */
-export type AppNavView = 'home' | 'worlds' | 'trash';
+export type AppNavView = 'home' | 'worlds' | 'trash' | 'settings';
 
 /** Acción primaria contextual de la barra superior. */
 export interface ShellPrimaryAction {
