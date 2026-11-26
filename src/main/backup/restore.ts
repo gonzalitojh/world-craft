@@ -350,7 +350,8 @@ export async function findLatestRestorableBackup(options: {
 
       if (
         !isRestorableManifest(manifest) ||
-        manifest.reason === 'pre-restore'
+        manifest.reason === 'pre-restore' ||
+        manifest.reason === 'pre-delete'
       ) {
         continue;
       }
@@ -379,12 +380,15 @@ export async function inspectRestorableBackup(options: {
     return { ok: false, reason: verification.reason };
   }
 
-  if (!isRestorableManifest(verification.manifest)) {
-    return { ok: false, reason: 'integrity' };
+  if (
+    verification.manifest.reason === 'pre-restore' ||
+    verification.manifest.reason === 'pre-delete'
+  ) {
+    return { ok: false, reason: 'manifest' };
   }
 
-  if (verification.manifest.reason === 'pre-restore') {
-    return { ok: false, reason: 'manifest' };
+  if (!isRestorableManifest(verification.manifest)) {
+    return { ok: false, reason: 'integrity' };
   }
 
   return {

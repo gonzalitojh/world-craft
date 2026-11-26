@@ -17,6 +17,16 @@ export const THEME_PREFERENCES = ['light', 'dark'] as const;
 
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
+/** Densidad de la interfaz: espaciado cómodo o compacto. */
+export const DENSITY_PREFERENCES = ['comfortable', 'compact'] as const;
+
+export type DensityPreference = (typeof DENSITY_PREFERENCES)[number];
+
+/** Presets de tamaño de texto; nunca cambian el tamaño raíz. */
+export const FONT_SCALE_PREFERENCES = ['small', 'normal', 'large'] as const;
+
+export type FontScalePreference = (typeof FONT_SCALE_PREFERENCES)[number];
+
 /** Secciones plegables de la ficha, con identificadores estables. */
 export const ENTITY_SECTION_IDS = [
   'description',
@@ -61,6 +71,7 @@ export const PERSISTED_APP_VIEWS = [
   'entities',
   'entity',
   'trash',
+  'settings',
 ] as const;
 
 export type PersistedAppView = (typeof PERSISTED_APP_VIEWS)[number];
@@ -83,6 +94,8 @@ export type RecentLocationPreference =
 /** Snapshot completo de preferencias de interfaz. */
 export interface UiPreferences {
   readonly theme: ThemePreference;
+  readonly density: DensityPreference;
+  readonly fontScale: FontScalePreference;
   readonly railCollapsed: boolean;
   readonly entityView: EntityViewPreferences;
   readonly lastView: PersistedAppView;
@@ -92,6 +105,8 @@ export interface UiPreferences {
 /** Parche parcial: las claves ausentes conservan su valor actual. */
 export interface UiPreferencesPatch {
   readonly theme?: ThemePreference | undefined;
+  readonly density?: DensityPreference | undefined;
+  readonly fontScale?: FontScalePreference | undefined;
   readonly railCollapsed?: boolean | undefined;
   readonly entityView?: EntityViewPatch | undefined;
   readonly lastView?: PersistedAppView | undefined;
@@ -115,6 +130,8 @@ const DEFAULT_ENTITY_VIEW: EntityViewPreferences = Object.freeze({
 /** Valores por defecto canónicos, congelados para evitar mutaciones. */
 export const DEFAULT_UI_PREFERENCES: UiPreferences = Object.freeze({
   theme: 'light',
+  density: 'comfortable',
+  fontScale: 'normal',
   railCollapsed: false,
   entityView: DEFAULT_ENTITY_VIEW,
   lastView: 'home',
@@ -125,6 +142,8 @@ export const DEFAULT_UI_PREFERENCES: UiPreferences = Object.freeze({
 export function createDefaultUiPreferences(): UiPreferences {
   return {
     theme: 'light',
+    density: 'comfortable',
+    fontScale: 'normal',
     railCollapsed: false,
     entityView: {
       propertiesOpen: true,
@@ -192,6 +211,8 @@ export function applyUiPreferencesPatch(
 ): UiPreferences {
   return {
     theme: patch.theme ?? current.theme,
+    density: patch.density ?? current.density,
+    fontScale: patch.fontScale ?? current.fontScale,
     railCollapsed: patch.railCollapsed ?? current.railCollapsed,
     entityView:
       patch.entityView === undefined
@@ -226,6 +247,26 @@ export function isThemePreference(value: unknown): value is ThemePreference {
   return (
     typeof value === 'string' &&
     (THEME_PREFERENCES as readonly string[]).includes(value)
+  );
+}
+
+/** Indica si un valor es una densidad admitida. */
+export function isDensityPreference(
+  value: unknown,
+): value is DensityPreference {
+  return (
+    typeof value === 'string' &&
+    (DENSITY_PREFERENCES as readonly string[]).includes(value)
+  );
+}
+
+/** Indica si un valor es un tamaño de texto admitido. */
+export function isFontScalePreference(
+  value: unknown,
+): value is FontScalePreference {
+  return (
+    typeof value === 'string' &&
+    (FONT_SCALE_PREFERENCES as readonly string[]).includes(value)
   );
 }
 
@@ -312,6 +353,8 @@ export function isUiPreferences(value: unknown): value is UiPreferences {
   if (
     !hasExactKeys(value, [
       'theme',
+      'density',
+      'fontScale',
       'railCollapsed',
       'entityView',
       'lastView',
@@ -323,6 +366,8 @@ export function isUiPreferences(value: unknown): value is UiPreferences {
 
   return (
     isThemePreference(value.theme) &&
+    isDensityPreference(value.density) &&
+    isFontScalePreference(value.fontScale) &&
     typeof value.railCollapsed === 'boolean' &&
     isEntityViewPreferences(value.entityView) &&
     isPersistedAppView(value.lastView) &&

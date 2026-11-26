@@ -71,6 +71,13 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │   │   └─ <timestamp>\
   │   │       ├─ assets\        (huérfanos purgados, con su ruta relativa)
   │   │       └─ manifest.json
+  │   ├─ pre-delete\            (implementado, M1-08; recuperación manual)
+  │   │   └─ <timestamp>\
+  │   │       ├─ world-craft.sqlite
+  │   │       ├─ manifest.json
+  │   │       ├─ assets\        (copia verificada del árbol de imágenes)
+  │   │       ├─ assets-manifest.json
+  │   │       └─ recovery.json
   │   ├─ pre-migration\
   │   │   └─ <timestamp>\
   │   │       ├─ world-craft.sqlite
@@ -92,7 +99,7 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │           ├─ assets\        (assets extraídos y procesados)
   │           └─ plan.json      (plan con IDs nuevos y remapeo)
   ├─ exports\
-  │   └─ .tmp\                  (temporales de exportación; reservado y limpiado)
+  │   └─ .tmp\                  (staging de exportación de mundo y biblioteca; se limpia)
   ├─ logs\
   │   ├─ startup.log
   │   ├─ startup.log.1
@@ -121,22 +128,24 @@ arranque los detecta y **no crea una base vacía** (sección 7).
 | `backups/orphans/<timestamp>/` | Copia verificable de huérfanos purgados | Solo tras comprobar que no hace falta recuperar |
 | `backups/pre-migration/` | Copia y manifiesto previos a una migración; se conservan 5 (implementado) | Solo si no hay una actualización pendiente |
 | `backups/pre-purge/` | Copia y manifiesto previos a una purga definitiva; se conservan 10 válidas (implementado, M1-06) | Solo tras comprobar que no hace falta recuperar lo purgado |
+| `backups/pre-delete/` | Copia previa al borrado total: base v2, `assets/`, `assets-manifest.json` y `recovery.json` (implementado, M1-08). No se poda y no se ofrece en la restauración guiada | Solo tras comprobar que no hace falta recuperar el contenido borrado |
 | `backups/daily`, `weekly`, `monthly` | Copias automáticas con manifiesto (implementado, M0-07) | Las antiguas, desde la app; no borrar las recientes |
 | `backups/pre-restore/` | Base anterior y sus auxiliares antes de restaurar (implementado, M0-07) | Solo tras comprobar que la restauración fue correcta; no se poda sola |
 | `imports/.tmp/<operationId>/` | Staging de una importación: `assets/` y `plan.json`; se limpia al arrancar y al terminar o cancelar (implementado, M1-07) | Solo con la app cerrada; no contiene el mundo publicado |
-| `exports/.tmp/` | Carpeta reservada para temporales de exportación y su limpieza (implementado, M1-07). La exportación se publica en el destino que elige el usuario, no aquí | Sí, con la app cerrada; no guarda exportaciones del usuario |
+| `exports/.tmp/` | Staging de la exportación de un mundo y de la biblioteca total; se limpia al arrancar y al terminar o cancelar (implementado, M1-07 y M1-08). La exportación se publica en el destino que elige el usuario, no aquí | Sí, con la app cerrada; no guarda exportaciones del usuario |
 | `logs/startup.log` | Arranque y copias en JSONL, rotado a 256 KiB | Sí; no contiene contenido del usuario |
 | `logs/assets.log` | Eventos de assets en JSONL, rotado a 256 KiB | Sí; sin rutas, IDs ni contenido |
 | `logs/updates.log` | Eventos del actualizador en JSONL, rotado a 256 KiB (M0-08) | Sí; sin URLs, rutas, versiones ni contenido |
 | `logs/transfer.log` | Eventos de exportación e importación en JSONL, rotado a 256 KiB (M1-07) | Sí; sin rutas, IDs, nombres ni contenido |
 | `.updaterId` | Identificador opcional de electron-updater para staging; no se usa con GitHub | Sí, con la app cerrada; no contiene datos del usuario |
 
-La app ofrecerá desde Ajustes «Abrir carpeta de datos», «Abrir copias» y «Abrir
-logs». Esas acciones abrirán el explorador de Windows sin exponer rutas al
-renderer. En M0 el diálogo de modo seguro ya permite abrir la carpeta de copias
-(o `userData` si aún no existe) y el log de arranque se escribe sin interfaz. Las
-preferencias de ventana, tema e idioma se guardarán en la tabla `app_settings`;
-no se crea `config.json`.
+La app ofrece desde Ajustes → Datos «Abrir datos», «Abrir imágenes», «Abrir
+copias», «Abrir registros» y, en el grupo de temporales, «Abrir importaciones» y
+«Abrir exportaciones». Esas acciones abren el explorador de Windows sin exponer
+rutas al renderer. El diálogo de modo seguro ya permite abrir la carpeta de
+copias (o `userData` si aún no existe) y el log de arranque se escribe sin
+interfaz. Las preferencias de ventana, tema, densidad, tamaño e idioma se guardan
+en la tabla `app_settings`; no se crea `config.json`.
 
 ## 3. SQLite
 
@@ -203,19 +212,23 @@ dependencia del binario, no un servicio externo; si un binario futuro no lo
 incluyera, la aplicación lo detectaría en las pruebas nativas y no se publicaría
 esa versión. El detalle está en el [ADR 0023](adr/0023-global-search-fts5-command-palette.md).
 
-### 3.4 Preferencias de interfaz (implementado, #132)
+### 3.4 Preferencias de interfaz (implementado, #132 y #79)
 
 Las preferencias de interfaz viven en `app_settings`, la tabla creada en
 `0000_init`, con **una fila por clave** y el prefijo reservado `ui.`. **No hay
 migración nueva** ni se toca ninguna tabla de dominio. El detalle de la decisión
-está en el [ADR 0027](adr/0027-ui-preferences-persistence.md).
+está en el [ADR 0027](adr/0027-ui-preferences-persistence.md); Ajustes (#79) las
+consume y añade densidad y tamaño de texto sin almacenamiento paralelo
+([ADR 0030](adr/0030-settings-data-and-full-deletion.md)).
 
 | Clave | Valor JSON | Defecto |
 |---|---|---|
 | `ui.theme` | `"light"` o `"dark"` | `"light"` |
+| `ui.density` | `"comfortable"` o `"compact"` | `"comfortable"` |
+| `ui.font-scale` | `"small"`, `"normal"` o `"large"` | `"normal"` |
 | `ui.rail-collapsed` | `true` o `false` | `false` (expandido) |
 | `ui.entity-view` | `{ propertiesOpen, propertiesWidth, sections: { description, attributes, relations, resources } }`; ancho entero de 280 a 360 | `propertiesOpen: true`, ancho `320`, solo `description` abierta |
-| `ui.last-view` | `"home"`, `"worlds"`, `"search"`, `"world"`, `"entities"` o `"entity"` | `"home"` |
+| `ui.last-view` | `"home"`, `"worlds"`, `"search"`, `"world"`, `"entities"`, `"entity"` o `"settings"` | `"home"` |
 | `ui.recent-location` | `{ kind: "world", worldId }` o `{ kind: "entity", worldId, entityId, entityName }` con UUIDv7 y nombre de 1 a 120 caracteres o `null` | Ausente |
 
 - **Lectura tolerante.** Se leen las filas `ui.*` y cada clave se parsea por
@@ -231,7 +244,9 @@ está en el [ADR 0027](adr/0027-ui-preferences-persistence.md).
 - **Reset por prefijo.** `reset` ejecuta un `DELETE` con `GLOB 'ui.*'`, sensible a
   mayúsculas, y devuelve los valores por defecto. Solo afecta al espacio `ui.*`:
   no borra claves no-UI de `app_settings`, mundos, fichas, imágenes, relaciones,
-  copias ni `schema_migrations`.
+  copias ni `schema_migrations`. Ajustes lo ofrece en **Restablecer
+  preferencias**, con confirmación; **Restablecer apariencia** usa `update` con
+  los tres valores de apariencia y no `reset`.
 - **Modo seguro.** Sin base, la lectura devuelve los defectos, la escritura falla
   de forma estable y el tema validado se sigue aplicando al cromo de la ventana
   durante la sesión.
@@ -450,9 +465,12 @@ de huérfanos sigue sin canal ni interfaz.
 ## 6. Copias de seguridad
 
 **Implementado en M0-07 (#67)** para las copias automáticas, pre-migración y
-pre-restauración, y ampliado en M1-06 (#77) con la copia previa a la purga. Las
-copias **contienen solo la base SQLite y su manifiesto**: los assets no se
-incluyen ni se sustituyen al restaurar.
+pre-restauración, ampliado en M1-06 (#77) con la copia previa a la purga y en
+M1-08 (#79) con la copia previa al borrado total. Las copias automáticas
+**contienen solo la base SQLite y su manifiesto**: los assets no se incluyen ni
+se sustituyen al restaurar. La copia `pre-delete` es la excepción deliberada:
+incluye una copia verificada de los assets porque el borrado total también los
+elimina.
 
 | Tipo | Cuándo se crea | Retención | Contenido | Estado |
 |---|---|---|---|---|
@@ -461,6 +479,7 @@ incluyen ni se sustituyen al restaurar.
 | Mensual | Primera copia del mes local | 12 | SQLite + manifiesto | Implementada (M0-07) |
 | Pre-migración | Antes de migrar una base existente | 5 | SQLite + manifiesto | Implementada (M0-04; poda M0-07) |
 | Pre-purga | Antes de cada purga individual o vaciado confirmado | 10 | SQLite + manifiesto | Implementada (M1-06) |
+| Pre-borrado total | Antes de eliminar todos los datos desde Ajustes | Sin poda | SQLite + manifiesto + assets verificados + `recovery.json` | Implementada (M1-08); recuperación manual |
 | Pre-restauración | Antes de reemplazar la base | Sin poda | SQLite + WAL/SHM/journal + manifiesto | Implementada (M0-07); recuperación manual |
 | Huérfanos purgados | Antes de cada purga confirmada de assets | La decide el usuario | Archivos + manifiesto con SHA-256 | Implementada (M0-06) |
 | Manual | Cuando el usuario lo pide | La decide el usuario | SQLite + assets opcionales | Prevista (M1, Ajustes) |
@@ -487,8 +506,9 @@ incluyen ni se sustituyen al restaurar.
 ### 6.2 Contenido y manifiesto
 
 Cada carpeta de copia contiene `world-craft.sqlite` y `manifest.json`; las de
-`pre-restore` pueden incluir además `-wal`, `-shm` y `-journal`. El manifiesto
-actual es la **versión 2** y se valida con Zod en modo estricto:
+`pre-restore` pueden incluir además `-wal`, `-shm` y `-journal`, y las de
+`pre-delete` añaden `assets/`, `assets-manifest.json` y `recovery.json`. El
+manifiesto actual es la **versión 2** y se valida con Zod en modo estricto:
 
 ```json
 {
@@ -568,9 +588,14 @@ antes de abrir su contenido.
 - Ubicación por defecto: `backups/`. Las copias son locales y **no se suben a
   ningún servicio**.
 - La copia manual (base + assets opcionales) y la elección de una carpeta
-  externa desde Ajustes → Datos (sección Copias) siguen **previstas para M1**.
+  externa desde Ajustes → Datos siguen **previstas**. Ajustes ya permite
+  **Exportar todos los datos** (biblioteca abierta), que no es una copia
+  restaurable desde la app.
 - Las copias **pre-restauración** no se ofrecen para restaurar desde la app y no
   se podan. Se conservan para recuperación manual (sección 7.4).
+- La copia **`pre-delete`** se crea antes del borrado total, incluye la base y
+  una copia verificada de los assets, **no se poda** y **no se ofrece** en la
+  restauración guiada. Su recuperación es manual (sección 8.4).
 - Las copias **`pre-purge`** se crean antes de eliminar contenido de la papelera,
   se verifican con el mismo criterio que el resto y se conservan las 10 válidas
   más recientes. Son la red de recuperación de una purga: no hay un botón
@@ -583,12 +608,12 @@ antes de abrir su contenido.
 
 ## 7. Restauración
 
-**Implementado en M0-07 (#67).** En M0 no existe la pantalla Ajustes → Datos
-(llega en M1): la restauración se ofrece desde el **diálogo nativo de modo
-seguro**, que aparece cuando el arranque falla o cuando detecta una restauración
-interrumpida. El flujo no abre ninguna conexión de escritura: verifica en solo
-lectura y reemplaza archivos. Nunca se ejecuta en segundo plano ni sin
-confirmación.
+**Implementado en M0-07 (#67).** Ajustes → Datos ya existe desde M1-08 (#79),
+pero **no restaura copias**: la restauración se ofrece desde el **diálogo nativo
+de modo seguro**, que aparece cuando el arranque falla o cuando detecta una
+restauración interrumpida. El flujo no abre ninguna conexión de escritura:
+verifica en solo lectura y reemplaza archivos. Nunca se ejecuta en segundo plano
+ni sin confirmación.
 
 ### 7.1 Entrada y elección
 
@@ -603,7 +628,9 @@ confirmación.
    carpeta de copias.
 4. Antes de ofrecer la confirmación se verifica la copia completa (sección 6.3).
    Una copia corrupta, con manifiesto inválido, versión futura o motivo
-   `pre-restore` se rechaza con `DB_RESTORE_INVALID` y no se ofrece.
+   `pre-restore` se rechaza con `DB_RESTORE_INVALID` y no se ofrece. Las copias
+   `pre-delete` tampoco se ofrecen: solo sustituyen la base y dejarían los
+   assets desalineados; su recuperación es manual (sección 8.4).
 
 ### 7.2 Confirmación y copia previa
 
@@ -659,8 +686,8 @@ confirmación.
   restauración. Queda el caso de un `.restore.lock` obsoleto o ilegible, que se
   puede borrar a mano con la app cerrada.
 - En M0 la restauración solo se ofrece cuando el arranque entra en modo seguro;
-  no hay una acción para restaurar con la base sana hasta la pantalla de Ajustes
-  de M1.
+  Ajustes existe desde M1-08 pero **no ofrece restaurar** con la base sana. La
+  restauración guiada desde Ajustes sigue prevista.
 - Una base de **0 bytes** se considera nueva; con restos de restauración, en
   cambio, siempre se entra en modo seguro.
 - Una base válida con restos `.rollback*` o con el marcador también obliga a
@@ -679,9 +706,11 @@ confirmación.
 
 ## 8. Exportación e importación
 
-**Implementado en M1-07 (#78).** El formato está versionado y documentado en
-[`docs/formato-de-exportacion.md`](formato-de-exportacion.md); la decisión está
-en el [ADR 0029](adr/0029-world-export-import.md). No hay migración:
+**Implementado en M1-07 (#78) y ampliado en M1-08 (#79).** El formato está
+versionado y documentado en
+[`docs/formato-de-exportacion.md`](formato-de-exportacion.md); las decisiones
+están en el [ADR 0029](adr/0029-world-export-import.md) y el
+[ADR 0030](adr/0030-settings-data-and-full-deletion.md). No hay migración:
 `user_version` sigue en **8**.
 
 ### 8.1 Exportación de un mundo
@@ -809,10 +838,64 @@ indexan el contenido importado sin una reconstrucción aparte.
 
 ### 8.4 Eliminación total
 
-Ajustes → Datos → «Eliminar todos los datos» exige escribir una confirmación,
-crea una última copia recuperable y borra la base, los assets y las copias
-según la elección del usuario. La app se reinicia en estado inicial. Sigue
-**prevista** con la pantalla de Ajustes (#79).
+Ajustes → Datos → **Eliminar todos los datos** exige escribir la frase exacta
+**ELIMINAR TODO** y envía el token `delete-all-data`; la interfaz solo puede
+enviar `keepBackups`, que está desmarcado por defecto. La operación, implementada
+en M1-08 (#79), sigue este orden:
+
+1. **Copia previa obligatoria.** Crea `backups/pre-delete/<timestamp>/` con una
+   copia online de la base en manifiesto v2 (`reason: 'pre-delete'`), verifica
+   tamaño, SHA-256, `integrity_check` y `user_version`, copia el árbol de
+   `assets/` sin seguir enlaces y lo verifica con `assets-manifest.json`, y
+   escribe `recovery.json` con instrucciones, tamaños y hashes. Si algo falla, no
+   se borra nada y el resultado es `failed`.
+2. **Validación y cierre.** Se validan las raíces (`data`, `assets`, temporales,
+   `logs`, `backups` y `pre-delete`) con `lstat`/`realpath` dentro de `userData`;
+   un enlace, junction o escape devuelve `DATA_DELETE_ROOT_INVALID`. Se comprueba
+   que no haya una transferencia activa y se cierra la persistencia.
+3. **Borrado ordenado.** Temporales (`imports/.tmp`, `exports/.tmp`,
+   `assets/.tmp`), base (`data/`), assets, logs y, si no se conservan, las
+   copias. La copia `pre-delete` se conserva siempre. `userData`, sus entradas
+   desconocidas, `.updaterId` y la instalación **no se tocan**.
+4. **Verificación y reinicio.** La comprobación final sobre disco produce
+   `deleted` o `partial` con las categorías restantes. Como la base ya está
+   cerrada, cualquier resultado exige reiniciar; la composición lanza
+   `app.relaunch()` y `app.exit(0)` a los 750 ms.
+
+La copia `pre-delete` **no se ofrece en la restauración guiada**: esa ruta solo
+sustituye SQLite y dejaría los assets desalineados. Se recupera a mano: cerrar la
+aplicación, copiar `world-craft.sqlite` a `data/`, copiar la carpeta `assets`
+junto a `data`, comprobar `assets-manifest.json` y seguir `recovery.json`. El
+manual lo explica paso a paso en la sección 12.7.
+
+### 8.5 Biblioteca total (`world-craft-library` v1)
+
+«Exportar todos los datos» (M1-08, #79) genera un ZIP abierto independiente de
+las copias automáticas:
+
+```text
+manifest.json
+settings.json
+database/world-craft.sqlite
+worlds/<slug>.zip
+```
+
+- Cada `worlds/<slug>.zip` es un paquete `world-craft-world` v1 de #78, con el
+  contenido vivo del mundo y sus imágenes.
+- `settings.json` guarda tema, densidad, tamaño de texto, rail y memoria de la
+  vista de ficha; **no** guarda `lastView` ni `recentLocation`.
+- `database/world-craft.sqlite` es una **copia completa** de la base obtenida con
+  `sqlite.backup` y verificada. Incluye papelera, actividad y preferencias,
+  también `lastView` y `recentLocation`.
+- El manifiesto lista cada entrada con tamaño y SHA-256, más recuentos y avisos
+  agregados. La exportación es todo-o-nada: staging en `exports/.tmp`, `.partial`
+  junto al destino, comprobación de espacio, relectura y `rename`; un fallo no
+  publica nada y conserva el destino anterior.
+
+La importación sigue siendo **mundo a mundo** con `transfer:importWorld`; no se
+importa la biblioteca completa ni se restaura su base desde la aplicación. El
+detalle del formato está en
+[`docs/formato-de-exportacion.md`](formato-de-exportacion.md), sección 12.
 
 ## 9. Preservación en actualizaciones y desinstalación
 
@@ -875,11 +958,16 @@ en la carpeta de datos del usuario.
   número de avisos) y `transfer.cleanup` (resultado y entradas eliminadas). No
   incluye rutas, IDs, nombres de mundo, contenido ni mensajes internos. Un fallo
   al escribir el log no interrumpe la operación.
+- Ajustes → Datos define el evento `data.operation` para exportación y borrado
+  con solo operación, resultado y código. **En esta entrega no se conecta un
+  sumidero nuevo**: no se crea `logs/data.log`, de modo que ni siquiera esos
+  campos se escriben. El contrato prohíbe expresamente rutas, IDs, nombres,
+  tamaños y contenido.
 - Si el log no se puede escribir, el arranque continúa: el diagnóstico nunca
   impide abrir la aplicación.
 - Los logs generales de la app, con nivel configurable, y la exportación de un
   diagnóstico local (versión, sistema, estado de la base y últimas líneas)
-  llegarán con M1/M5. No habrá envío automático de diagnósticos.
+  siguen previstos. No habrá envío automático de diagnósticos.
 
 ## 11. Límites y rendimiento
 
@@ -900,6 +988,13 @@ en la carpeta de datos del usuario.
   durante el arranque o en el diálogo de modo seguro, antes de la ventana. Una
   base muy grande puede alargar el arranque. La exportación y la importación ya
   usan el utility process; las copias y su posible worker se valorarán en M5.
+- **Uso de disco de Ajustes:** se detiene a las 100 000 entradas o a los 4
+  segundos y marca el resultado como parcial; no bloquea la ventana ni sigue
+  enlaces. La biblioteca total se ejecuta en el proceso principal reutilizando el
+  escritor de #78, calcula el espacio libre antes de publicar y no se cancela
+  desde la interfaz. El borrado total copia la base y los assets antes de borrar:
+  necesita espacio libre suficiente para esa copia y no se puede interrumpir sin
+  dejar un resultado `partial`.
 - Un arranque con migraciones pendientes puede ejecutar hasta **tres
   `integrity_check`** (base viva antes de migrar, copia pre-migración y base viva
   después); cada copia verificada añade sus propias comprobaciones en solo
@@ -942,3 +1037,4 @@ en la carpeta de datos del usuario.
 - [ADR 0027](adr/0027-ui-preferences-persistence.md)
 - [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)
 - [ADR 0029](adr/0029-world-export-import.md)
+- [ADR 0030](adr/0030-settings-data-and-full-deletion.md)

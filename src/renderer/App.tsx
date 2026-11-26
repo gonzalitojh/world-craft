@@ -31,6 +31,7 @@ import { EntityDetailPage } from './pages/entity-detail-page';
 import { HomePage, type WorldLibraryState } from './pages/home-page';
 import { SamplesPage } from './pages/samples-page';
 import { SearchPage } from './pages/search-page';
+import { SettingsPage } from './pages/settings-page';
 import { TrashPage } from './pages/trash-page';
 import { WorldPage } from './pages/world-page';
 import { WorldsPage } from './pages/worlds-page';
@@ -41,7 +42,7 @@ import {
   type ShellPrimaryAction,
 } from './shell/app-shell';
 import { useUiPreferences } from './preferences/use-ui-preferences';
-import { resolveInternalView } from './shell/internal-views';
+import { SETTINGS_HASH, resolveAppView } from './shell/routes';
 import { useWorldTransfer } from './transfer/use-world-transfer';
 
 type DialogState =
@@ -74,9 +75,10 @@ export function App({ initialPreferences }: AppProps) {
     preferences,
     update: updatePreferences,
     toggleTheme,
+    reset: resetPreferences,
   } = useUiPreferences(initialPreferences);
   const [view, setView] = useState<AppView>(
-    () => resolveInternalView(window.location.hash) ?? 'home',
+    () => resolveAppView(window.location.hash) ?? 'home',
   );
   const [toasts, setToasts] = useState<readonly Toast[]>([]);
   const nextToastId = useRef(0);
@@ -149,28 +151,34 @@ export function App({ initialPreferences }: AppProps) {
   }, []);
 
   /**
-   * Cambia de vista y retira el hash interno de Muestras al salir.
+   * Cambia de vista y ajusta el hash de la URL.
    *
-   * La limpieza usa `history.replaceState` (sin recarga) para que volver a
-   * cargar la ventana no devuelva al banco interno. Si el hash no existe, no
-   * se toca la URL.
+   * Ajustes usa `history.replaceState` con `#/settings` para poder recargar o
+   * restaurar la ventana en esa página; el resto de vistas retira el hash
+   * interno de Muestras al salir. `samples` nunca se persiste. `lastView` no
+   * se usa para navegar: solo alimenta la memoria de la interfaz.
    */
   const goToView = useCallback(
     (next: AppView) => {
       setView(next);
 
-      // `samples` nunca se persiste; el resto alimenta Ajustes (#79) y una
-      // futura opción explícita. `lastView` no se usa para navegar.
       if (next !== 'samples') {
         updatePreferences({ lastView: next });
       }
 
-      if (next !== 'samples' && window.location.hash.length > 0) {
+      const base = `${window.location.pathname}${window.location.search}`;
+
+      if (next === 'settings') {
         window.history.replaceState(
           window.history.state,
           '',
-          `${window.location.pathname}${window.location.search}`,
+          `${base}${SETTINGS_HASH}`,
         );
+        return;
+      }
+
+      if (next !== 'samples' && window.location.hash.length > 0) {
+        window.history.replaceState(window.history.state, '', base);
       }
     },
     [updatePreferences],
@@ -178,10 +186,15 @@ export function App({ initialPreferences }: AppProps) {
 
   useEffect(() => {
     const handleHashChange = (): void => {
-      const internal = resolveInternalView(window.location.hash);
+      const routed = resolveAppView(window.location.hash);
 
-      if (internal !== null) {
-        setView(internal);
+      if (routed !== null) {
+        setView(routed);
+
+        // Ajustes es una vista persistible; Muestras sigue siendo interno.
+        if (routed !== 'samples') {
+          updatePreferences({ lastView: routed });
+        }
         return;
       }
 
@@ -194,7 +207,7 @@ export function App({ initialPreferences }: AppProps) {
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-  }, [goToView]);
+  }, [goToView, updatePreferences]);
 
   const openPalette = useCallback(() => {
     // La clave remonta la paleta para que cada apertura empiece con la
@@ -1264,6 +1277,13 @@ export function App({ initialPreferences }: AppProps) {
             onEntityViewChange={(patch) => {
               updatePreferences({ entityView: patch });
             }}
+            onNotify={notify}
+          />
+        ) : view === 'settings' ? (
+          <SettingsPage
+            preferences={preferences}
+            onUpdate={updatePreferences}
+            onReset={resetPreferences}
             onNotify={notify}
           />
         ) : view === 'samples' ? (

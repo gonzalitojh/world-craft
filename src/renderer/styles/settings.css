@@ -1,0 +1,424 @@
+/* ==========================================================================
+ * World Craft · Ajustes (#79)
+ * --------------------------------------------------------------------------
+ * Página editorial de una columna, sin dashboard de tarjetas. Usa solo tokens
+ * semánticos; los presets de densidad y tamaño de texto llegan de
+ * `tokens/scales.css` por los atributos `data-density` y `data-font-scale`.
+ *
+ * La zona de peligro usa fondo `--danger-surface`, borde y título `--danger`,
+ * y cuerpo `--fg` (nunca `--muted` sobre el tinte rojo).
+ * ========================================================================== */
+
+.wc-page--settings {
+  gap: var(--space-6);
+  max-inline-size: 60rem;
+}
+
+.wc-page--settings > .wc-page__lead {
+  max-inline-size: 68ch;
+}
+
+.wc-settings__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border);
+}
+
+.wc-settings__heading {
+  font-family: var(--font-content);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__lead,
+.wc-settings__note,
+.wc-settings__hint {
+  max-inline-size: 68ch;
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__note,
+.wc-settings__hint {
+  font-size: var(--text-sm);
+}
+
+.wc-settings__status-line {
+  flex: 1 1 16rem;
+  min-width: 0;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__status {
+  min-block-size: 1.5em;
+  min-width: 0;
+  color: var(--fg);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__appearance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.wc-settings__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-settings__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-settings__row > * {
+  min-width: 0;
+}
+
+.wc-settings__label {
+  color: var(--fg);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__table-wrap {
+  min-width: 0;
+  max-inline-size: 100%;
+}
+
+.wc-settings__table {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wc-settings__table th,
+.wc-settings__table td {
+  padding: var(--space-2) var(--space-3);
+  border-block-end: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__table thead th {
+  background-color: var(--surface-sunken);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.wc-settings__table tbody tr {
+  background-color: var(--surface);
+}
+
+.wc-settings__table tbody th {
+  color: var(--fg);
+  font-weight: var(--weight-medium);
+}
+
+.wc-settings__table-group th {
+  background-color: var(--surface-sunken);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.wc-settings__path {
+  display: block;
+  margin-block-start: var(--space-1);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__kbd {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-sunken);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.wc-settings__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-settings__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
+
+.wc-settings__meta-label {
+  flex: 0 1 14rem;
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__meta-value {
+  flex: 1 1 12rem;
+  min-width: 0;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+/* --- Zona de peligro ------------------------------------------------------
+ * Visible siempre en la sección de Datos para que la promesa de una acción
+ * destructiva nunca quede escondida. El cuerpo usa `--fg`, no `--muted`.
+ */
+.wc-settings__danger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background-color: var(--danger-surface);
+  color: var(--fg);
+}
+
+.wc-settings__danger-title {
+  color: var(--danger);
+  font-family: var(--font-content);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+/* --- Datos y copias ------------------------------------------------------- */
+
+.wc-settings__data {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.wc-settings__subsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-settings__subheading {
+  font-family: var(--font-content);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.wc-settings__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-inline-size: 68ch;
+  min-width: 0;
+  padding-inline-start: var(--space-5);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-2) var(--space-5);
+  min-width: 0;
+}
+
+.wc-settings__summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--border);
+}
+
+.wc-settings__summary-row dt {
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__summary-row dd {
+  min-width: 0;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-settings__empty {
+  max-inline-size: 68ch;
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background-color: var(--danger-surface);
+  color: var(--fg);
+}
+
+.wc-settings__inline-error {
+  min-width: 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__unavailable {
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  background-color: var(--warning-surface);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__table--numeric td,
+.wc-settings__table--numeric .wc-settings__number {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.wc-settings__table-total th,
+.wc-settings__table-total td {
+  border-block-start: 2px solid var(--border-strong);
+  background-color: var(--surface-sunken);
+  font-weight: var(--weight-semibold);
+}
+
+.wc-settings__progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-settings__progress {
+  inline-size: 100%;
+  block-size: 0.5rem;
+  accent-color: var(--accent);
+}
+
+.wc-settings__result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-md);
+  background-color: var(--success-surface);
+  color: var(--fg);
+}
+
+.wc-settings__result-title {
+  color: var(--success);
+  font-family: var(--font-content);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__danger-body {
+  max-inline-size: 68ch;
+  min-width: 0;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.wc-settings__danger-lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.wc-settings__dialog-subheading {
+  margin-block-end: var(--space-2);
+  color: var(--fg);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+/* A 1024 la rejilla se reparte sola; la tabla nunca provoca scroll de página
+ * y las acciones envuelven sin recortar su texto. */
+@media (max-width: 72rem) {
+  .wc-settings__table th,
+  .wc-settings__table td {
+    padding-inline: var(--space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-settings__section {
+    transition: none;
+  }
+
+  .wc-settings__progress {
+    display: none;
+  }
+}

@@ -329,3 +329,25 @@ D1–D11; D4 se aprobó con el doble de los límites propuestos. No hay migraci�
   `docs/arquitectura.md`, `docs/base-de-datos/esquema.md`,
   `docs/continuidad.md`, `docs/calidad/plan-de-pruebas.md` y
   `docs/manual-de-usuario.md`.
+
+## 2026-11-26 — Ajustes, datos y borrado total (#79, M1-08)
+
+**Contexto.** La API de preferencias de #132 ya guardaba el tema, el rail, el
+panel y la vista, pero no tenía pantalla ni restablecimiento visible. La
+exportación de #78 resolvía un mundo, no una biblioteca completa, y las copias
+automáticas no incluían assets. La issue #79 pedía una pantalla de Ajustes y
+control sobre los datos: abrir carpetas, medir el disco, exportar todo, gestionar
+huérfanas y eliminar todos los datos con copia recuperable. El usuario aprobó el
+plan de `task-architect` con D1–D6 y la opción D2-B (biblioteca con copia
+completa de SQLite), que elevó la issue a `size: l`. No hay migración:
+`user_version` sigue en 8.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-053 | Ajustes, datos, biblioteca total y borrado con copia previa | **Ajustes consume #132** sin almacenamiento paralelo, con el orden Apariencia → Idioma → Atajos → Actualizaciones → Datos → Restablecer preferencias, entrada en el pie del rail, comando de paleta y hash `#/settings`; `lastView` incluye `settings` pero la app sigue abriendo en Inicio. **Apariencia por presets:** `ui.density` (`comfortable`/`compact`) y `ui.font-scale` (`small`/`normal`/`large`) aplicados como atributos y tokens antes de `createRoot`, sin `font-size` raíz, `zoom` ni `transform`; «Restablecer apariencia» usa `update` con los defectos y no `reset`. **Servicio de datos** en `src/main/data/` con siete canales (`data:getSummary`, `getUsage`, `openFolder`, `exportAll`, `deleteAll`, `planOrphans` y `purgeOrphans`), Zod estricto, API `window.worldCraft.data` y solo enums al renderer; una mutación a la vez con `DATA_BUSY`. **Carpetas por enum** (`data`, `assets`, `backups`, `logs`, `imports`, `exports`) con validación `lstat`/`realpath` y sin rutas en el renderer. **Uso de disco acotado** a 100 000 entradas y 4 s, con categorías que coinciden con el borrado y marca `partial`. **Huérfanas** con el plan y la purga de #66, token `purge-orphans` y copia verificable. **Biblioteca `world-craft-library` v1**: `manifest.json`, `settings.json`, `database/world-craft.sqlite` y `worlds/<slug>.zip` por mundo vivo con el formato #78; la base es una copia **completa** y verificada que incluye papelera, actividad y preferencias (también `lastView` y `recentLocation`), mientras los paquetes de mundo las excluyen; `settings.json` no guarda esos dos últimos; exportación todo-o-nada con `.partial`, espacio libre, relectura y `rename`; sin copias automáticas ni huérfanas; la importación sigue siendo mundo a mundo. **Borrado total** con frase **ELIMINAR TODO**, token `delete-all-data`, casilla «Conservar también las copias» desmarcada por defecto, copia `backups/pre-delete/<timestamp>/` con base v2 `pre-delete`, `assets/` verificado con `assets-manifest.json` y `recovery.json`; sin copia válida no se borra nada; se cierran las raíces y se borran temporales → base → assets → logs → copias, conservando `pre-delete`, `userData` desconocido, `.updaterId` y la instalación; resultado `deleted`/`partial` y reinicio a los 750 ms; la copia `pre-delete` no se ofrece en la restauración guiada y se recupera a mano. **Sin migración** (`user_version` 8), sin dependencias nuevas, sin red y sin telemetría; el contrato de log `data.operation` no admite rutas, IDs, nombres ni contenido. | Ajustes deja de ser previsto y la apariencia se aplica sin destellos; la biblioteca total permite recuperar o llevar la base completa, la actividad y las preferencias, y cada mundo con sus imágenes; el borrado no puede ejecutarse sin copia y no desinstala; las carpetas no exponen rutas y el uso de disco no promete espacio que no se libere; la purga no toca imágenes referenciadas; la restauración de `pre-delete` es manual y puede dejar imágenes rotas si se copia solo la base; el borrado no es atómico y puede quedar `partial`; la exportación no se cancela y puede ser grande; la importación total y la restauración guiada desde Ajustes quedan para issues futuras. El detalle está en el ADR 0030. |
+
+- Referencias: ADR 0030, ADR 0006, ADR 0012, ADR 0016, ADR 0017, ADR 0025,
+  ADR 0027, ADR 0028, ADR 0029, #66, #67, #77, #78, #79, #116, #132, #133,
+  `docs/persistencia.md`, `docs/formato-de-exportacion.md`,
+  `docs/arquitectura.md`, `docs/diseno/sistema-de-diseno.md` y
+  `docs/manual-de-usuario.md`.

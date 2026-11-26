@@ -5,6 +5,7 @@
  * y otra vez sobre las dimensiones reales. Cambiarlos exige revisar el ADR 0005
  * y las pruebas de límites.
  */
+import { DATA_ORPHAN_PURGE_CONFIRMATION } from '../../shared/contracts/data';
 
 /** Tipos de asset admitidos por el esquema de base de datos. */
 export const ASSET_KINDS = ['image', 'map', 'document', 'other'] as const;
@@ -79,7 +80,7 @@ export const ASSET_LOG_MAX_BYTES = 256 * 1024;
 export const ASSET_TEMP_DIR_NAME = '.tmp';
 
 /** Token exacto que exige la purga de huérfanos. */
-export const PURGE_ORPHANS_CONFIRMATION = 'purge-orphans';
+export const PURGE_ORPHANS_CONFIRMATION = DATA_ORPHAN_PURGE_CONFIRMATION;
 
 /** Versión del manifiesto de copia de huérfanos. */
 export const ORPHAN_BACKUP_FORMAT_VERSION = 1;

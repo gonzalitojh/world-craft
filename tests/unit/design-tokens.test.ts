@@ -75,6 +75,38 @@ function readDeclarations(css: string): Map<string, string> {
   return declarations;
 }
 
+/** Declaraciones de los bloques cuyo selector incluye el literal dado. */
+function readSelector(css: string, selector: string): Map<string, string> {
+  const declarations = new Map<string, string>();
+
+  for (const block of parseBlocks(css)) {
+    const matches = block.selector
+      .split(',')
+      .map((part) => part.trim())
+      .includes(selector);
+
+    if (!matches) {
+      continue;
+    }
+
+    for (const entry of block.body.split(';')) {
+      const separator = entry.indexOf(':');
+
+      if (separator === -1) {
+        continue;
+      }
+
+      const name = entry.slice(0, separator).trim();
+
+      if (name.startsWith('--')) {
+        declarations.set(name, entry.slice(separator + 1).trim());
+      }
+    }
+  }
+
+  return declarations;
+}
+
 /** Declaraciones de los bloques de un tema concreto. */
 function readTheme(css: string, theme: ThemeName): Map<string, string> {
   const selector = `[data-theme="${theme}"]`;
@@ -156,6 +188,7 @@ const baseSource = readStyle('base.css');
 const componentsSource = readStyle('components.css');
 const relationsSource = readStyle('relations.css');
 const fontsSource = readStyle('fonts.css');
+const settingsSource = readStyle('settings.css');
 
 const palette = readDeclarations(paletteSource);
 const scales = readDeclarations(scalesSource);
@@ -462,7 +495,19 @@ const CONTRAST_PAIRS = [
     fg: '--danger',
     bg: '--danger-surface',
     min: 4.5,
-    label: 'texto normal',
+    label: 'texto de peligro',
+  },
+  {
+    fg: '--fg',
+    bg: '--danger-surface',
+    min: 4.5,
+    label: 'texto normal sobre peligro',
+  },
+  {
+    fg: '--focus',
+    bg: '--danger-surface',
+    min: 3,
+    label: 'foco sobre peligro',
   },
   {
     fg: '--danger-contrast',
@@ -894,6 +939,27 @@ describe('shell v2', () => {
   });
 });
 
+describe('ajustes editoriales', () => {
+  it('no usa colores literales ni desplazamiento horizontal de página', () => {
+    expect(stripComments(settingsSource)).not.toMatch(
+      /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(/i,
+    );
+    expect(stripComments(settingsSource)).not.toMatch(
+      /overflow-x\s*:\s*(?:hidden|auto|scroll)/,
+    );
+  });
+
+  it('no pinta texto secundario sobre el tinte de peligro', () => {
+    for (const block of parseBlocks(settingsSource)) {
+      if (!/background-color:\s*var\(--danger-surface\)/.test(block.body)) {
+        continue;
+      }
+
+      expect(block.body, block.selector).not.toMatch(/color:\s*var\(--muted\)/);
+    }
+  });
+});
+
 describe('foco 2+2', () => {
   it('declara el anillo y lo aplica en base sin anularlo', () => {
     expect(scales.get('--focus-width')).toBe('2px');
@@ -927,6 +993,7 @@ describe('disciplina de capas', () => {
       ['base.css', baseSource],
       ['components.css', componentsSource],
       ['relations.css', relationsSource],
+      ['settings.css', settingsSource],
       ['fonts.css', fontsSource],
     ] as const) {
       expect(stripComments(source), name).not.toMatch(LITERAL_COLOR);
@@ -940,6 +1007,7 @@ describe('disciplina de capas', () => {
       ['base.css', baseSource],
       ['components.css', componentsSource],
       ['relations.css', relationsSource],
+      ['settings.css', settingsSource],
       ['fonts.css', fontsSource],
     ] as const) {
       expect(stripComments(source), name).not.toMatch(/var\(--palette-/);
@@ -966,6 +1034,7 @@ describe('disciplina de capas', () => {
       ['base.css', baseSource],
       ['components.css', componentsSource],
       ['relations.css', relationsSource],
+      ['settings.css', settingsSource],
       ['fonts.css', fontsSource],
     ] as const) {
       for (const match of stripComments(source).matchAll(
@@ -1021,6 +1090,7 @@ describe('disciplina de capas', () => {
       ['base.css', baseSource],
       ['components.css', componentsSource],
       ['relations.css', relationsSource],
+      ['settings.css', settingsSource],
     ] as const) {
       expect(stripComments(source), name).not.toMatch(/@font-face/);
     }
@@ -1051,6 +1121,7 @@ describe('tipografía y fuente local', () => {
       ['base.css', baseSource],
       ['components.css', componentsSource],
       ['relations.css', relationsSource],
+      ['settings.css', settingsSource],
       ['fonts.css', fontsSource],
     ] as const) {
       expect(stripComments(source), name).not.toMatch(/--font-display/);
@@ -1167,6 +1238,7 @@ describe('tipografía y fuente local', () => {
 });
 
 describe('escalas y medidas', () => {
+  const root = readSelector(scalesSource, ':root');
   const toPx = (value: string): number => {
     const parsed = Number.parseFloat(value);
 
@@ -1192,7 +1264,7 @@ describe('escalas y medidas', () => {
     ]);
 
     for (const [token, px] of expected) {
-      expect(toPx(scales.get(token) ?? ''), token).toBe(px);
+      expect(toPx(root.get(token) ?? ''), token).toBe(px);
     }
   });
 
@@ -1224,6 +1296,82 @@ describe('escalas y medidas', () => {
     expect(scales.get('--sidebar-width')).toBe('240px');
     expect(scales.get('--sidebar-width-collapsed')).toBe('64px');
     expect(scales.get('--topbar-height')).toBe('56px');
+  });
+});
+
+describe('apariencia por tokens', () => {
+  const toPx = (value: string): number =>
+    Number.parseFloat(value) * (value.includes('rem') ? 16 : 1);
+
+  it('define los presets de densidad compacta sin tocar mínimos ni foco', () => {
+    const compact = readSelector(scalesSource, "[data-density='compact']");
+    const expected = new Map<string, number>([
+      ['--space-3', 8],
+      ['--space-4', 12],
+      ['--space-5', 16],
+      ['--space-6', 20],
+      ['--space-7', 24],
+      ['--space-9', 32],
+    ]);
+
+    for (const [token, px] of expected) {
+      expect(toPx(compact.get(token) ?? ''), token).toBe(px);
+    }
+
+    for (const token of ['--space-1', '--space-2']) {
+      expect(compact.has(token), token).toBe(false);
+    }
+
+    for (const token of [
+      '--focus-width',
+      '--focus-offset',
+      '--icon-sm',
+      '--radius-sm',
+    ]) {
+      expect(compact.has(token), token).toBe(false);
+    }
+  });
+
+  it('define los presets de texto pequeño y grande', () => {
+    const small = readSelector(scalesSource, "[data-font-scale='small']");
+    const large = readSelector(scalesSource, "[data-font-scale='large']");
+    const expected = new Map<string, readonly [number, number]>([
+      ['--text-xs', [12, 13]],
+      ['--text-sm', [13, 14]],
+      ['--text-base', [13, 16]],
+      ['--text-md', [15, 18]],
+      ['--text-lg', [17, 20]],
+      ['--text-xl', [20, 24]],
+      ['--text-display', [28, 36]],
+    ]);
+
+    for (const [token, [smallPx, largePx]] of expected) {
+      expect(toPx(small.get(token) ?? ''), `small ${token}`).toBe(smallPx);
+      expect(toPx(large.get(token) ?? ''), `large ${token}`).toBe(largePx);
+    }
+
+    for (const token of ['--space-3', '--focus-width', '--icon-md']) {
+      expect(small.has(token), `small no toca ${token}`).toBe(false);
+      expect(large.has(token), `large no toca ${token}`).toBe(false);
+    }
+  });
+
+  it('no usa font-size raíz, zoom ni transform para escalar', () => {
+    const presets = [
+      ...parseBlocks(scalesSource).filter((block) =>
+        /data-(?:density|font-scale)/.test(block.selector),
+      ),
+    ];
+
+    expect(presets.length).toBeGreaterThan(0);
+
+    for (const block of presets) {
+      expect(block.body, block.selector).not.toMatch(/font-size\s*:/);
+      expect(block.body, block.selector).not.toMatch(/\bzoom\s*:/);
+      expect(block.body, block.selector).not.toMatch(/\btransform\s*:/);
+    }
+
+    expect(stripComments(scalesSource)).not.toMatch(/html\s*\{[^}]*font-size/);
   });
 });
 
@@ -1321,6 +1469,7 @@ describe('estados y movimiento', () => {
       ['tokens/scales.css', scalesSource],
       ['components.css', componentsSource],
       ['relations.css', relationsSource],
+      ['settings.css', settingsSource],
       ['fonts.css', fontsSource],
     ] as const) {
       expect(stripComments(source), name).not.toMatch(/!important/);

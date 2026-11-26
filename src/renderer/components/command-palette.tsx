@@ -131,6 +131,13 @@ export function CommandPalette({
         },
       },
       {
+        id: 'go-settings',
+        label: messages.palette.commands.settings,
+        run: () => {
+          onNavigate('settings');
+        },
+      },
+      {
         id: 'create-world',
         label: messages.palette.commands.createWorld,
         run: onCreateWorld,

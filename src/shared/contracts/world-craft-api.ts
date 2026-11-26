@@ -20,6 +20,28 @@ import {
 } from './assets';
 import { IPC_CHANNELS, type IpcChannel } from './channels';
 import {
+  DATA_DELETE_ALL_CONFIRMATION,
+  DATA_ORPHAN_PURGE_CONFIRMATION,
+  isDataCounts,
+  isDataDeleteResult,
+  isDataLibraryResult,
+  isDataOpenFolderResult,
+  isDataOrphanPurgeResult,
+  isDataOrphanSummary,
+  isDataResult,
+  isDataUsage,
+  type DataCounts,
+  type DataDeleteRequest,
+  type DataDeleteResult,
+  type DataFolder,
+  type DataLibraryResult,
+  type DataOpenFolderResult,
+  type DataOrphanPurgeResult,
+  type DataOrphanSummary,
+  type DataResult,
+  type DataUsage,
+} from './data';
+import {
   isEntityDeleteResult,
   isEntityDetail,
   isEntityList,
@@ -196,6 +218,23 @@ export interface WorldCraftPreferencesApi {
   readonly reset: () => Promise<IpcResult<UiPreferences>>;
 }
 
+/** Puente nominativo de datos, ajustes y mantenimiento (#79). */
+export interface WorldCraftDataApi {
+  readonly getSummary: () => Promise<IpcResult<DataResult<DataCounts>>>;
+  readonly getUsage: () => Promise<IpcResult<DataResult<DataUsage>>>;
+  readonly openFolder: (
+    folder: DataFolder,
+  ) => Promise<IpcResult<DataResult<DataOpenFolderResult>>>;
+  readonly exportAll: () => Promise<IpcResult<DataLibraryResult>>;
+  readonly deleteAll: (
+    input: DataDeleteRequest,
+  ) => Promise<IpcResult<DataDeleteResult>>;
+  readonly planOrphans: () => Promise<IpcResult<DataResult<DataOrphanSummary>>>;
+  readonly purgeOrphans: () => Promise<
+    IpcResult<DataResult<DataOrphanPurgeResult>>
+  >;
+}
+
 /** API mínima disponible en `window.worldCraft`. */
 export interface WorldCraftApi {
   readonly appInfo: AppInfo;
@@ -213,6 +252,7 @@ export interface WorldCraftApi {
   readonly trash: WorldCraftTrashApi;
   readonly versions: WorldCraftVersionsApi;
   readonly transfer: WorldCraftTransferApi;
+  readonly data: WorldCraftDataApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -326,8 +366,8 @@ function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
  *
  * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `preferences`,
  * `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`,
- * `search`, `assets`, `trash`, `versions` y `transfer` para que el renderer no
- * pueda sustituirlos en tiempo de ejecución.
+ * `search`, `assets`, `trash`, `versions`, `transfer` y `data` para que el
+ * renderer no pueda sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -669,6 +709,55 @@ export function createWorldCraftApi(
     },
   });
 
+  const data: WorldCraftDataApi = Object.freeze({
+    getSummary: () =>
+      invokeWorldCommand(
+        IPC_CHANNELS.dataGetSummary,
+        {},
+        (value): value is DataResult<DataCounts> =>
+          isDataResult(value, isDataCounts),
+      ),
+    getUsage: () =>
+      invokeWorldCommand(
+        IPC_CHANNELS.dataGetUsage,
+        {},
+        (value): value is DataResult<DataUsage> =>
+          isDataResult(value, isDataUsage),
+      ),
+    openFolder: (folder: DataFolder) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.dataOpenFolder,
+        { folder },
+        (value): value is DataResult<DataOpenFolderResult> =>
+          isDataResult(value, isDataOpenFolderResult),
+      ),
+    exportAll: () =>
+      invokeWorldCommand(IPC_CHANNELS.dataExportAll, {}, isDataLibraryResult),
+    deleteAll: (input: DataDeleteRequest) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.dataDeleteAll,
+        {
+          confirmation: DATA_DELETE_ALL_CONFIRMATION,
+          keepBackups: input.keepBackups,
+        },
+        isDataDeleteResult,
+      ),
+    planOrphans: () =>
+      invokeWorldCommand(
+        IPC_CHANNELS.dataPlanOrphans,
+        {},
+        (value): value is DataResult<DataOrphanSummary> =>
+          isDataResult(value, isDataOrphanSummary),
+      ),
+    purgeOrphans: () =>
+      invokeWorldCommand(
+        IPC_CHANNELS.dataPurgeOrphans,
+        { confirmation: DATA_ORPHAN_PURGE_CONFIRMATION },
+        (value): value is DataResult<DataOrphanPurgeResult> =>
+          isDataResult(value, isDataOrphanPurgeResult),
+      ),
+  });
+
   return Object.freeze({
     appInfo,
     shell,
@@ -685,5 +774,6 @@ export function createWorldCraftApi(
     trash,
     versions,
     transfer,
+    data,
   });
 }

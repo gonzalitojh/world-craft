@@ -55,29 +55,7 @@ export function buildProgressCount(
     : messages.step(formattedCompleted, formattedTotal);
 }
 
-/** Formatea un tamaño en la unidad legible más cercana. */
+/** Formatea un tamaño delegando en el formateador del idioma activo. */
 export function formatBytes(size: number, formats: Formatters): string {
-  const safeSize = Number.isFinite(size) && size > 0 ? Math.trunc(size) : 0;
-
-  let value = safeSize;
-  let unit: 'byte' | 'kilobyte' | 'megabyte' | 'gigabyte' = 'byte';
-
-  if (safeSize >= 1024 ** 3) {
-    value = safeSize / 1024 ** 3;
-    unit = 'gigabyte';
-  } else if (safeSize >= 1024 ** 2) {
-    value = safeSize / 1024 ** 2;
-    unit = 'megabyte';
-  } else if (safeSize >= 1024) {
-    value = safeSize / 1024;
-    unit = 'kilobyte';
-  }
-
-  return formats.formatNumber(value, {
-    style: 'unit',
-    unit,
-    unitDisplay: 'short',
-    maximumFractionDigits: value < 10 ? 1 : 0,
-    minimumFractionDigits: 0,
-  });
+  return formats.formatBytes(size);
 }

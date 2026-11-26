@@ -146,6 +146,29 @@ export async function createPrePurgeBackup(options: {
   });
 }
 
+/**
+ * Crea `backups/pre-delete/<timestamp>/` antes de eliminar todos los datos.
+ *
+ * Es una copia coherente y verificada de la base, con manifiesto v2 y
+ * `reason: 'pre-delete'`. Los assets se copian aparte con el verificador de
+ * árbol de S5; esta función no cambia `assetsIncluded` ni la versión del
+ * manifiesto. Si falla, la carpeta parcial se elimina.
+ */
+export async function createPreDeleteBackup(options: {
+  readonly database: SqliteDatabase;
+  readonly backupRootDir: string;
+  readonly timestamp: number;
+  readonly schemaVersion: number;
+}): Promise<BackupResult> {
+  return createBackup({
+    database: options.database,
+    parentDir: options.backupRootDir,
+    reason: 'pre-delete',
+    timestamp: options.timestamp,
+    schemaVersion: options.schemaVersion,
+  });
+}
+
 export interface CreatePreservationCopyOptions {
   /** Base actual, que puede estar corrupta. */
   readonly databaseFile: string;

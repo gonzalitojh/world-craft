@@ -23,12 +23,17 @@
 > la Papelera** y eliminar de verdad lo que ya no quieras; consultar y
 > restaurar el **historial de versiones** de la descripción de una ficha; y
 > **exportar e importar un mundo completo** en un archivo abierto que incluye
-> sus imágenes. Todavía no hay mapas, manuscritos ni ajustes. La aplicación
-> **recuerda entre sesiones** el tema, la barra lateral plegada, el panel de
-> propiedades con su ancho y las secciones de la ficha, y **Continuar** retoma el
-> último mundo o ficha aunque cierres y vuelvas a abrir. Las **muestras** de
-> componentes siguen existiendo solo como página interna de desarrollo y no
-> aparecen en la navegación ni en la búsqueda.
+> sus imágenes. También existe una pantalla de **Ajustes** para cambiar la
+> apariencia, consultar el idioma y los atajos, ver el estado de las
+> actualizaciones y **gestionar tus datos**: abrir las carpetas, ver el uso de
+> disco, exportar todo, limpiar imágenes huérfanas y eliminar todos los datos
+> con una copia recuperable. Todavía no hay mapas, manuscritos ni juego. La
+> aplicación **recuerda entre sesiones** el tema, la densidad, el tamaño del
+> texto, la barra lateral plegada, el panel de propiedades con su ancho y las
+> secciones de la ficha, y **Continuar** retoma el último mundo o ficha aunque
+> cierres y vuelvas a abrir. Las **muestras** de componentes siguen existiendo
+> solo como página interna de desarrollo y no aparecen en la navegación ni en la
+> búsqueda.
 
 ## 1. Qué es World Craft
 
@@ -119,11 +124,10 @@ de una ficha guarda un **historial de versiones** que puedes consultar y
 restaurar. También puedes **exportar un mundo completo** a un archivo y
 **volver a importarlo** en esta u otra instalación: el archivo incluye las
 fichas, los tipos personalizados, las etiquetas, las relaciones, las versiones y
-las imágenes (sección 4.6). Todavía no hay ventanas de mapas, manuscritos, grafo
-ni ajustes, y la portada del mundo y la descripción enriquecida del mundo
-llegarán en actualizaciones posteriores. **No hay una release pública**: el
-instalador se genera y se prueba en local, y la publicación oficial llegará con
-M5.
+las imágenes (sección 4.6). Todavía no hay ventanas de mapas, manuscritos ni
+grafo, y la portada del mundo y la descripción enriquecida del mundo llegarán en
+actualizaciones posteriores. **No hay una release pública**: el instalador se
+genera y se prueba en local, y la publicación oficial llegará con M5.
 
 El **rediseño visual** está terminado: todas las pantallas que ya existen se han
 revisado en los modos **Claro** y **Oscuro** y con ventanas de 1024, 1280 y
@@ -139,10 +143,11 @@ Estas partes ya existen en la versión instalada y en el entorno de desarrollo:
 
 - **Barra lateral:** contiene el logotipo y el nombre de la aplicación, la
   navegación entre **Inicio**, **Mundos** y **Papelera**, y un botón para
-  plegarla. Expandida
-  ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo y los iconos, con
-  su nombre accesible y una ayuda emergente. La aplicación recuerda si la
-  dejaste plegada o expandida. No muestra lema permanente ni versión.
+  plegarla. En el pie, encima del botón de plegar, está **Ajustes**. Expandida
+  ocupa 240 px y plegada 64 px; al plegarla quedan el logotipo, los iconos y el
+  de Ajustes, con su nombre accesible y una ayuda emergente. La aplicación
+  recuerda si la dejaste plegada o expandida. No muestra lema permanente ni
+  versión.
 - **Barra superior:** ocupa 56 px y muestra un único **título contextual**: el
   nombre del mundo cuando estás en un mundo, en sus fichas o en una ficha, y el
   nombre de la vista en el resto. A su lado están el disparador de la **paleta
@@ -169,7 +174,7 @@ formulario permanente.
 
 Siguen **previstas**, para cuando existan mapas y escritura:
 
-- **Mapas, escritura, juego y ajustes** en la barra lateral.
+- **Mapas, escritura y juego** en la barra lateral.
 - **Paneles** de filtros o de detalles en otras pantallas.
 - **Barra de estado** con el guardado y los avisos.
 
@@ -207,6 +212,10 @@ use la aplicación; solo se abre por su dirección interna.
   flechas mueven la selección, `Inicio` y `Fin` van al primer y último resultado,
   `Enter` abre el elemento seleccionado y `Escape` cierra. El atajo no se activa
   mientras escribes en un campo ni con un diálogo abierto.
+- **Ajustes** se recorre como el resto de la navegación: `Tab` llega a su botón,
+  `Enter` lo abre y `Escape` cierra los diálogos que abras dentro. En Apariencia,
+  las flechas cambian de opción dentro de cada grupo; en la tabla de carpetas,
+  `Tab` recorre los botones de abrir.
 - En los resultados de la búsqueda, `Tab` recorre los resultados y las flechas
   arriba y abajo mueven el foco entre ellos.
 - En un diálogo, el foco se queda dentro mientras está abierto y `Escape` lo
@@ -254,8 +263,9 @@ ambos temas.
 El tema elegido **se recuerda**: al cerrar y volver a abrir la aplicación se
 aplica el mismo tema desde el primer momento, sin un destello del otro modo. Si
 la preferencia guardada no se puede leer, la aplicación abre en Claro. El tema
-también se puede cambiar desde la paleta `Ctrl+K`; elegirlo desde una pantalla de
-Ajustes llegará más adelante.
+también se puede cambiar desde la paleta `Ctrl+K` y desde **Ajustes →
+Apariencia**, donde están el tema, la densidad y el tamaño del texto (sección
+12.1).
 
 ### 3.4 Tamaño de ventana
 
@@ -328,9 +338,9 @@ actualizaciones**.
 La comprobación solo consulta GitHub Releases. **No envía el contenido de tus
 mundos, tus fichas ni datos personales.** En el entorno de desarrollo, en modo
 seguro o si la instalación no incluye la configuración de actualizaciones, el
-diálogo explica que están desactivadas. Todavía **no hay un interruptor para
-desactivarlas** porque no hay comprobación automática; ese ajuste llegará con la
-pantalla de Ajustes en M1.
+diálogo explica que están desactivadas. **No hay comprobación automática ni un
+interruptor para desactivarla**; Ajustes muestra la versión, la última
+comprobación y un botón que abre este mismo diálogo (sección 12.4).
 
 Si la comprobación o la descarga fallan, el diálogo muestra un aviso y puedes
 volver a intentarlo. Un fallo de actualización no toca tus datos: la base, los
@@ -871,8 +881,9 @@ sean válidas; las dañadas no se borran solas y no cuentan para ese límite.
   definitiva sigue siendo definitiva desde la interfaz.
 - Es la **red de recuperación**. Si necesitas volver atrás, esa copia se puede
   elegir en el aviso de modo seguro o restaurar a mano con la aplicación cerrada
-  (secciones 13.3 y 13.4). La pantalla de Ajustes → Datos facilitará la
-  restauración guiada más adelante.
+  (secciones 13.3 y 13.4). Ajustes → Datos permite abrir la carpeta de copias,
+  pero **todavía no restaura** desde ahí: la restauración guiada desde Ajustes
+  sigue prevista.
 - La copia contiene la base de datos, no las imágenes ni los archivos. Como la
   purga tampoco borra assets, los archivos siguen en el equipo; las filas que
   quedan sin mundo se pondrán en cuarentena en una actualización posterior.
@@ -880,6 +891,8 @@ sean válidas; las dañadas no se borran solas y no cuentan para ese límite.
 ### 6.5 Lo que llegará después
 
 - **Restaurar una copia desde Ajustes** sin pasar por el aviso de modo seguro.
+  Hoy Ajustes solo abre la carpeta de copias y muestra su uso; crear, verificar
+  y restaurar copias manuales desde ahí sigue previsto.
 - **Cuarentena de imágenes y archivos huérfanos** tras purgar un mundo, con su
   propia copia recuperable.
 - **Papelera de mapas y escenas** cuando existan esos módulos, reutilizando esta
@@ -1063,9 +1076,10 @@ volver rápido a lo que estabas usando.
 Pulsa `Ctrl+K`, o el disparador de la barra superior, para abrir la paleta:
 
 - Escribe para filtrar **comandos** y **resultados** al mismo tiempo.
-- Los comandos permiten ir a Inicio o Mundos, **abrir la página de búsqueda**,
-  crear un mundo, crear una ficha, cambiar el tema y **reconstruir el índice de
-  búsqueda**. **Muestras** no aparece: es una página interna de desarrollo.
+- Los comandos permiten ir a Inicio, Mundos o **Ajustes**, **abrir la página de
+  búsqueda**, crear un mundo, crear una ficha, cambiar el tema y **reconstruir el
+  índice de búsqueda**. **Muestras** no aparece: es una página interna de
+  desarrollo.
 - Las flechas mueven la selección, `Enter` la ejecuta y `Escape` cierra.
 - El atajo no se activa mientras escribes en un campo ni con otro diálogo
   abierto, para no interferir con el texto.
@@ -1077,8 +1091,8 @@ borrar o restaurar contenido. Si sospechas que está desincronizado, abre el men
 `⋯` de la pantalla de **Búsqueda** y elige **Reconstruir el índice de búsqueda**;
 también puedes abrir la paleta con `Ctrl+K`, escribir `reconstruir` y elegir el
 mismo comando. No borra ningún dato: solo vuelve a leer los mundos, las fichas y
-las relaciones. La pantalla Ajustes → Datos añadirá este mismo botón más
-adelante.
+las relaciones. Ajustes no incluye hoy este botón; sigue disponible en los dos
+sitios anteriores.
 
 ### 11.6 Lo que llegará después
 
@@ -1086,29 +1100,242 @@ La búsqueda de mapas, manuscritos y escenas llegará con esas secciones. El gra
 interactivo tendrá su propia búsqueda y navegación. La búsqueda es siempre local y
 no se envía a ningún servicio externo.
 
-## 12. Ajustes (previsto)
+## 12. Ajustes
 
-- **Apariencia:** tema Claro u Oscuro; se aplica a toda la aplicación y **se
-  recuerda** entre sesiones desde el icono de la barra superior o la paleta
-  `Ctrl+K` (sección 3.3). Esta pantalla reunirá además el **restablecimiento** de
-  las preferencias de interfaz a sus valores iniciales —tema Claro, barra
-  lateral expandida, panel visible con su ancho inicial y solo la descripción
-  abierta—, que **todavía no tiene un control visible**: llegará con Ajustes.
-  Restablecerlas no borrará mundos, fichas, imágenes, relaciones ni copias.
-- **Idioma:** español en el MVP; la estructura está preparada para más idiomas.
-- **Ventana:** recordar tamaño y posición.
-- **Datos:** abrir carpetas, verificar la base, reconstruir la búsqueda (hoy se
-  hace desde el menú `⋯` de la pantalla de Búsqueda o desde la paleta `Ctrl+K`,
-  sección 11.5), compactar y eliminar todos los datos.
-- **Copias:** dentro de Ajustes → Datos, crear, verificar y restaurar copias. La
-  restauración desde el aviso de modo seguro ya existe (sección 13.3); esta
-  pantalla, con la copia manual y la elección de carpeta, es prevista.
-- **Actualizaciones:** hoy se buscan, descargan e instalan desde el icono de
-  actualizaciones de la barra superior (sección 3.6). Ajustes añadirá el
-  interruptor y la frecuencia, pero **no habrá comprobación automática hasta
-  M1**; ahora no existe un ajuste para desactivarla porque no hay nada que
-  desactivar.
-- **Ayuda:** abrir este manual y exportar un diagnóstico.
+La pantalla de **Ajustes** ya está disponible. Se abre desde **Ajustes**, en el
+pie de la barra lateral, encima del botón de plegar; también desde la paleta
+`Ctrl+K` con el comando **Abrir Ajustes** y por su dirección interna
+`#/settings`. La aplicación **sigue abriendo en Inicio**: Ajustes no cambia la
+pantalla de arranque.
+
+Los cambios de apariencia se aplican **al instante** y se guardan en este equipo.
+La página se lee de arriba abajo: Apariencia, Idioma, Atajos de consulta,
+Actualizaciones, Datos y copias y Restablecer preferencias.
+
+### 12.1 Apariencia
+
+Tres grupos de opciones, cada uno con sus botones de opción:
+
+- **Tema:** **Claro** u **Oscuro**. Se aplica a toda la ventana y es el mismo
+  ajuste que el icono de tema de la barra superior y el comando de la paleta
+  (sección 3.3).
+- **Densidad:** **Cómoda** o **Compacta**. Cambia el espacio entre bloques y
+  controles; no cambia el tamaño del texto ni oculta información. Compacta
+  permite ver más contenido en la misma ventana.
+- **Tamaño del texto:** **Pequeño**, **Normal** o **Grande**. Cambia el tamaño de
+  los textos de la interfaz, no el tamaño de la ventana ni el zoom del sistema.
+  Con **Grande** y densidad **Compacta** la ventana sigue adaptándose a 1024 px
+  sin desplazamiento horizontal de página.
+
+Debajo está **Restablecer apariencia**. Vuelve a **Claro**, **Cómoda** y
+**Normal** y lo anuncia en la propia sección. No cambia tus mundos, fichas,
+imágenes, relaciones, copias ni registros, y no toca el resto de preferencias:
+para eso está **Restablecer preferencias** (final de la página).
+
+### 12.2 Idioma
+
+La interfaz está en **español**. Ajustes muestra el idioma actual y una nota
+informativa; **no hay un selector** porque todavía no hay otros idiomas
+disponibles. La aplicación está preparada para añadirlos en el futuro, pero no
+se promete una fecha ni una lista.
+
+### 12.3 Atajos de consulta
+
+Una sección plegable, cerrada por defecto, reúne los atajos disponibles:
+
+| Acción | Atajo |
+|---|---|
+| Abrir la paleta de comandos | `Ctrl+K` |
+| Cerrar un diálogo o menú | `Esc` |
+
+En el editor, `@` abre la mención de una ficha. **Los atajos son solo de
+consulta y no se pueden reasignar** en esta versión. El resto del teclado se
+explica en la sección 3.2.
+
+### 12.4 Actualizaciones
+
+Muestra la **versión instalada**, la **última comprobación** (o «Todavía no se ha
+comprobado») y el estado actual. **Abrir actualizaciones** lleva al mismo diálogo
+del icono de la barra superior, donde se busca, descarga e instala con tu
+consentimiento (sección 3.6).
+
+No hay comprobación automática ni un interruptor de frecuencia: la aplicación
+solo consulta GitHub Releases cuando tú lo pides y **nunca** envía el contenido
+de tus mundos ni datos personales.
+
+### 12.5 Datos y copias
+
+Al entrar, la sección carga un **resumen** con los mundos activos, archivados y
+en la papelera, las fichas, las imágenes y las copias. Si la lectura falla,
+aparece un aviso con **Volver a intentar** y el resto de la pantalla sigue
+siendo utilizable. En **modo seguro** los datos no están disponibles: la
+sección lo explica, no permite exportar, purgar ni borrar, pero **sí puedes abrir
+las carpetas** para revisar o recuperar archivos.
+
+**Carpetas**
+
+La tabla de carpetas permite abrir en el Explorador de Windows las carpetas de
+la aplicación:
+
+| Carpeta | Contenido |
+|---|---|
+| `data` | Base de datos, preferencias y archivos internos. |
+| `assets` | Imágenes y miniaturas de las fichas. |
+| `backups` | Copias automáticas y copias previas a operaciones. |
+| `logs` | Registros técnicos de la aplicación. |
+| `imports` | Trabajo temporal de importación (grupo **Temporales**). |
+| `exports` | Trabajo temporal de exportación (grupo **Temporales**). |
+
+Solo se muestran el nombre y la ruta **relativa** dentro de la carpeta de datos;
+**nunca la ruta completa del equipo**. Si una carpeta no existe, la aplicación la
+crea antes de abrirla. Si no puede abrirla, lo explica sin exponer rutas.
+
+**Uso de disco**
+
+La sección **Uso de disco** está plegada y muestra el total en su cabecera. Al
+abrirla, presenta el tamaño de la base de datos, las imágenes, las copias, los
+registros y los temporales, más el total. **Volver a calcular** repite la
+medición.
+
+La medición es rápida y tiene un límite: si hay muchísimos archivos o tarda
+demasiado, aparece la insignia **Parcial** y el resto de cifras sigue siendo
+válido. Los temporales son los mismos directorios que vacía el borrado total, de
+modo que la cifra no promete espacio que no se vaya a liberar.
+
+**Exportar todos los datos**
+
+1. Pulsa **Exportar todos los datos**.
+2. Elige en el diálogo de Windows dónde guardar el archivo y con qué nombre. El
+   formato es un ZIP abierto llamado **biblioteca** (`world-craft-library`,
+   versión 1).
+3. La aplicación prepara primero una carpeta temporal y después publica el
+   archivo. Mientras dura, el diálogo no se puede cerrar.
+4. Al terminar verás el **nombre del archivo**, su **tamaño** y cuántos **mundos**
+   incluye. Si eliges un archivo que ya existía, se sustituye solo al final; un
+   fallo conserva el anterior.
+
+La biblioteca contiene:
+
+- **Un paquete por cada mundo vivo**, activo o archivado, con sus fichas, tipos
+  personalizados, etiquetas, relaciones, versiones de la descripción e imágenes.
+  Es el mismo formato de la sección 4.6, así que cada paquete se puede importar
+  por separado.
+- **`settings.json`** con la apariencia: tema, densidad, tamaño del texto, barra
+  lateral y memoria de la vista de ficha.
+- **`database/world-craft.sqlite`**, una **copia completa y verificada de la base
+  de datos**. Esa copia sí incluye la **papelera**, la **actividad** y las
+  **preferencias**, también el último mundo o ficha recordados y los datos de
+  vista.
+
+Los paquetes de mundo **excluyen** la papelera, la actividad y las preferencias;
+esas tres cosas solo están en la copia de la base. La biblioteca **no incluye**
+las copias automáticas ni las imágenes huérfanas. Si no hay mundos, la
+exportación sigue siendo válida e incluye la base y las preferencias.
+
+**La importación sigue siendo mundo a mundo:** usa **Importar mundo** en Inicio o
+Mundos (sección 4.6) y elige el paquete `worlds/<nombre>.zip` que quieras. No hay
+un botón para importar la biblioteca completa.
+
+**Imágenes huérfanas**
+
+Una imagen huérfana es la que ninguna ficha usa. Pulsa **Analizar** para ver el
+resumen: archivos que se pueden purgar, imágenes sin referencia, miniaturas
+huérfanas, temporales, archivos ausentes, enlaces no seguidos, entradas no
+reconocidas y espacio recuperable.
+
+Si hay algo que purgar, **Purgar…** abre una confirmación con el número de
+archivos y su tamaño. Marca la casilla de confirmación y pulsa **Purgar
+imágenes**. Antes de borrar se guarda una **copia verificable** en
+`backups/orphans`; si la copia falla, no se borra nada. **Las imágenes que usa
+alguna ficha no se tocan.**
+
+**Eliminar todos los datos**
+
+La **zona de peligro** elimina todo el contenido de World Craft de este equipo.
+Es una acción distinta de desinstalar: **no desinstala la aplicación ni borra la
+carpeta de instalación**.
+
+1. Pulsa **Eliminar todos los datos**.
+2. Lee la lista de lo que se eliminará y de lo que se conservará.
+3. Decide si marcas **Conservar también las copias de seguridad**. Está
+   **desmarcada por defecto**: si la dejas así, también se borran las copias
+   automáticas. La copia previa al borrado se conserva **siempre**.
+4. Escribe exactamente **ELIMINAR TODO**. El botón no se habilita hasta que la
+   frase coincide; si no coincide, se explica el error.
+5. Pulsa **Eliminar todos los datos** y espera. El diálogo no se puede cerrar
+   durante el proceso.
+6. Al terminar, la aplicación avisa y **se reinicia sola**. La base se vuelve a
+   crear vacía al arrancar.
+
+Se eliminan los mundos, fichas, tipos, etiquetas, relaciones, versiones,
+actividad, preferencias, imágenes, temporales, registros y las copias (salvo que
+hayas marcado conservarlas). Se conservan la **copia previa** en
+`backups/pre-delete`, la **instalación** y el identificador técnico de
+actualizaciones. Si algún elemento no se puede borrar —por ejemplo, porque
+Windows lo tiene bloqueado—, la aplicación indica las **categorías restantes** y
+se reinicia igualmente para dejar un estado limpio.
+
+**Restablecer preferencias**
+
+Vuelve a los valores iniciales el tema, la barra lateral, el panel de
+propiedades, las secciones plegables y el último mundo o ficha recordados. Pide
+confirmación y **no borra** mundos, fichas, imágenes, relaciones, copias ni
+registros. Es distinto de **Restablecer apariencia**, que solo toca tema,
+densidad y tamaño del texto.
+
+### 12.6 Qué hace cada acción y cómo se recupera
+
+| Acción | Qué hace | Qué no hace | Cómo se recupera |
+|---|---|---|---|
+| **Restablecer preferencias** | Devuelve tema, rail, panel, secciones y último destino a sus valores iniciales. | No borra contenido, copias ni registros. | No hace falta: se puede volver a configurar a mano. |
+| **Exportar todos los datos** | Crea una biblioteca con un paquete por mundo, `settings.json` y una copia completa de la base. | No incluye copias automáticas, imágenes huérfanas ni la instalación. | Importa cada mundo con **Importar mundo**; la copia completa de la base se puede abrir con una herramienta SQLite o copiar con la aplicación cerrada, sin restauración guiada. |
+| **Purgar imágenes huérfanas** | Borra imágenes y miniaturas que ninguna ficha usa, tras copiarlas. | No toca imágenes referenciadas ni fichas. | Copia los archivos desde `backups/orphans` con la aplicación cerrada. |
+| **Eliminar todos los datos** | Borra el contenido, las imágenes, los registros y las copias según tu elección, y reinicia. | No desinstala ni toca la carpeta de instalación. | Restaura a mano la copia `backups/pre-delete` (sección 12.7). |
+
+### 12.7 Recuperar la copia previa al borrado total
+
+La copia previa al borrado **no se restaura sola ni se ofrece en el aviso de
+modo seguro**: esa restauración guiada solo sustituye la base y dejaría las
+imágenes desalineadas. La recuperación es manual y requiere mover archivos con
+la aplicación cerrada.
+
+1. **Cierra World Craft** por completo. Comprueba que no queda abierta en la
+   bandeja del sistema.
+2. Abre la carpeta de copias desde Ajustes → Datos → **Abrir copias** (o desde
+   `%APPDATA%\World Craft\backups`) y entra en **`pre-delete`**.
+3. Elige la carpeta con la fecha del borrado que quieras recuperar. Dentro
+   encontrarás `world-craft.sqlite`, la carpeta `assets`, `assets-manifest.json`,
+   `manifest.json` y `recovery.json`.
+4. Copia `world-craft.sqlite` sobre `%APPDATA%\World Craft\data\world-craft.sqlite`.
+   Si en `data` quedan archivos `-wal`, `-shm` o `-journal` de la base vacía,
+   bórralos antes de arrancar.
+5. Copia la carpeta `assets` de la copia en `%APPDATA%\World Craft\`, junto a
+   `data`, de modo que sustituya a la carpeta de imágenes actual.
+6. Antes de abrir la aplicación, sigue las instrucciones de `recovery.json` y
+   comprueba los archivos con `assets-manifest.json`: ahí están el recuento, los
+   tamaños y los hashes SHA-256. **No edites esos archivos.**
+7. Abre World Craft con normalidad. La aplicación comprobará la base y, si todo
+   cuadra, verás los mundos, las fichas, la papelera y las preferencias de la
+   copia.
+
+Si algo no cuadra, **no borres la copia ni la carpeta de datos**: conserva ambas
+y pide ayuda antes de seguir. La copia `pre-delete` no se poda sola y no cuenta
+para los límites de las copias automáticas.
+
+### 12.8 Lo que llegará después
+
+Siguen **previstos**, sin fecha en esta pantalla:
+
+- Crear, verificar y restaurar copias manuales desde Ajustes, con elección de
+  carpeta.
+- Compactar y verificar la base de datos desde Ajustes.
+- Exportar un diagnóstico local.
+- Recordar el tamaño y la posición de la ventana.
+- El interruptor y la frecuencia de las actualizaciones, cuando exista la
+  comprobación automática (M5-05).
+- Más idiomas y un selector real de idioma.
+- Importar una biblioteca completa y restaurar una copia desde Ajustes con un
+  flujo guiado.
 
 ## 13. Tus datos y las copias
 
@@ -1130,21 +1357,28 @@ no se envía a ningún servicio externo.
   fichas ni el contenido de tus archivos. Las descargas de actualizaciones se
   guardan en una carpeta temporal de Windows, fuera de `userData`; al instalar
   o cancelar no se mezclan con tus datos.
-- Tus **preferencias de interfaz** —el tema, la barra lateral plegada, el panel
-  de propiedades con su ancho, las secciones plegables y el último mundo o ficha
-  de **Continuar**— se guardan en la misma base de datos local. Entran en las
-  copias automáticas, de modo que una restauración las recupera, y **no** forman
-  parte de la exportación de un mundo. Restablecerlas, cuando exista el control
-  en Ajustes, solo devuelve sus valores iniciales: **no borra** mundos, fichas,
-  imágenes, relaciones ni copias.
+- Tus **preferencias de interfaz** —el tema, la densidad, el tamaño del texto,
+  la barra lateral plegada, el panel de propiedades con su ancho, las secciones
+  plegables y el último mundo o ficha de **Continuar**— se guardan en la misma
+  base de datos local. Entran en las copias automáticas, de modo que una
+  restauración las recupera, y **no** forman parte de la exportación de un
+  mundo. **Restablecer preferencias** en Ajustes solo devuelve sus valores
+  iniciales: **no borra** mundos, fichas, imágenes, relaciones ni copias. La
+  biblioteca total de Ajustes sí incluye las preferencias en su copia completa de
+  la base (sección 12.5).
+- El **borrado total** de Ajustes elimina el contenido, las imágenes, los
+  registros y las copias que elijas, pero **no desinstala la aplicación ni toca
+  la carpeta de instalación**. Antes de borrar guarda una copia `pre-delete` que
+  se conserva siempre (secciones 12.5 y 12.7).
 - No hay sincronización automática entre equipos ni subida de datos a Internet.
 
 ### 13.2 Copias automáticas
 
 Mientras la aplicación está en desarrollo, las copias ya funcionan pero no
 tienen una pantalla propia: se crean solas al arrancar con normalidad y solo se
-pueden consultar o restaurar desde el aviso de modo seguro. La pantalla
-Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
+pueden consultar o restaurar desde el aviso de modo seguro. Ajustes → Datos ya
+permite **abrir la carpeta de copias**, ver cuánto ocupan y exportar todos los
+datos, pero **crear, verificar o restaurar copias desde ahí sigue previsto**.
 
 - **Cuándo se crean:** al abrir la aplicación, una vez comprobada la base. No se
   crean al cerrar. Si pasas días sin abrirla, al volver se crea la copia del
@@ -1161,8 +1395,11 @@ Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
   automáticamente. Las copias **pre-restauración** no se borran solas.
 - **Qué contienen:** solo la base de datos, incluidas tus preferencias de
   interfaz. **Las imágenes y los archivos (assets) no van dentro de la copia** y
-  no se sustituyen al restaurar. Si necesitas las imágenes, exporta el mundo
-  (sección 4.6): el ZIP sí las incluye y se puede importar en otra instalación.
+  no se sustituyen al restaurar. La copia `pre-delete` del borrado total es la
+  excepción: incluye también las imágenes (sección 12.7). Si necesitas las
+  imágenes sin borrar nada, exporta el mundo (sección 4.6) o usa la biblioteca
+  total (sección 12.5): ambas incluyen los assets y se pueden importar en otra
+  instalación.
 - **Copias dañadas:** si una copia no supera la comprobación, no se te ofrece,
   no cuenta para el límite y **no se borra automáticamente**. Se queda donde
   está por si sirve para un diagnóstico.
@@ -1171,10 +1408,11 @@ Ajustes → Datos, con la sección de copias, llegará en una etapa posterior.
 ### 13.3 Restaurar una copia
 
 Hoy la restauración se ofrece desde el **aviso de modo seguro**, que aparece
-cuando la aplicación no puede usar la base de datos con seguridad. La pantalla
-Ajustes → Datos llegará en una etapa posterior. Si la aplicación arranca con
-normalidad, **todavía no hay una pantalla para restaurar una copia**: esa opción
-llegará con Ajustes.
+cuando la aplicación no puede usar la base de datos con seguridad. Ajustes →
+Datos ya existe, pero **no restaura copias**: permite abrir la carpeta de copias,
+ver su uso y exportar todos los datos. La restauración guiada desde Ajustes sigue
+prevista. Si la aplicación arranca con normalidad, **todavía no hay una pantalla
+para restaurar una copia**.
 
 1. Abre World Craft. Si hay un problema, antes de la ventana aparece el aviso
    «World Craft ha arrancado en modo seguro», con una explicación y un código.
@@ -1196,7 +1434,7 @@ dejar los datos como estaban. No se pierde la copia que acabas de elegir ni la
 copia de los datos anteriores. La restauración **nunca se hace sola ni en
 segundo plano**.
 
-### 13.4 Copias pre-restauración, pre-purga y recuperación manual
+### 13.4 Copias pre-restauración, pre-purga, pre-delete y recuperación manual
 
 Antes de reemplazar la base, la aplicación guarda la base anterior en la
 subcarpeta `backups/pre-restore`. Esa copia **no se ofrece desde la aplicación**
@@ -1208,7 +1446,9 @@ a diferencia de las copias automáticas, el ZIP incluye las imágenes y se puede
 importar en una instalación nueva. Solo contiene contenido vivo del mundo
 exportado, no la papelera, la actividad ni las preferencias. Si pierdes la
 carpeta de datos, el ZIP te permite recuperar ese mundo, pero no la biblioteca
-completa ni las copias.
+completa ni las copias. La **biblioteca total** de Ajustes añade una copia
+completa de la base y un paquete por mundo (sección 12.5), pero tampoco incluye
+las copias automáticas.
 
 Las copias **pre-purga** de la papelera viven en `backups/pre-purge`, sí se
 ofrecen como cualquier copia válida en el aviso de modo seguro y también se
@@ -1220,6 +1460,11 @@ pueden recuperar a mano:
   la copia, se copian también.
 - Si no te sientes cómodo moviendo archivos, **no borres nada**: conserva la
   carpeta de datos y la de copias y pide ayuda antes de tocar los archivos.
+
+La copia **pre-delete** del borrado total vive en `backups/pre-delete` y es
+distinta: incluye la base **y** las imágenes, y **no se ofrece en el aviso de
+modo seguro**. Su recuperación es siempre manual y está explicada paso a paso en
+la sección 12.7. La aplicación no la restaura sola ni la poda.
 
 ### 13.5 Si la aplicación no arranca o no ofrece una copia
 
@@ -1401,9 +1646,14 @@ las funciones correspondientes.
 
 | Función | Estado |
 |---|---|
-| Barra lateral con navegación Inicio/Mundos/Papelera y plegado | Implementada (en desarrollo); sin lema ni versión |
+| Barra lateral con navegación Inicio/Mundos/Papelera, Ajustes en el pie y plegado | Implementada (en desarrollo); sin lema ni versión |
 | Barra superior con título contextual, buscador `Ctrl+K`, acción primaria, menú `⋯` e iconos de actualizaciones y tema | Implementada (en desarrollo) |
 | Tema Claro/Oscuro conmutable | Implementado (en desarrollo); se recuerda al reiniciar y se aplica sin destello |
+| Densidad Cómoda/Compacta y tamaño de texto Pequeño/Normal/Grande | Implementados (en desarrollo); presets de tokens, se aplican al instante y se recuerdan |
+| Pantalla de Ajustes en el pie del rail, `#/settings` y paleta | Implementada (en desarrollo); la aplicación sigue abriendo en Inicio |
+| Apariencia: tema, densidad, tamaño y **Restablecer apariencia** | Implementada (en desarrollo); el restablecimiento no toca datos ni el resto de preferencias |
+| Idioma informativo (solo español, sin selector) | Implementado (en desarrollo); la estructura está preparada para más idiomas |
+| Atajos de consulta y actualizaciones informativas en Ajustes | Implementados (en desarrollo); los atajos no se reasignan y no hay auto-comprobación |
 | Instalador por usuario, sin administrador, en `%LOCALAPPDATA%` | Implementado (local); la release pública llega con M5 |
 | Desinstalación que conserva `%APPDATA%\World Craft` | Implementada (local); el desinstalador avisa de los datos conservados |
 | Comprobación manual de actualizaciones con descarga y cancelación | Implementada (en desarrollo); requiere una versión instalada y una release publicada para probarse de extremo a extremo |
@@ -1425,7 +1675,10 @@ las funciones correspondientes.
 | Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
 | Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12, 5 pre-migración y 10 pre-purga |
-| Restauración desde el aviso de modo seguro | Implementada (en desarrollo); la pantalla de Ajustes llega en una etapa posterior |
+| Restauración desde el aviso de modo seguro | Implementada (en desarrollo); Ajustes no restaura copias todavía |
+| Datos en Ajustes: resumen, carpetas, uso de disco e imágenes huérfanas | Implementados (en desarrollo); rutas relativas, medición acotada y purga con copia |
+| Exportar todos los datos como biblioteca `world-craft-library` v1 | Implementado (en desarrollo); paquete por mundo, `settings.json` y copia completa de SQLite verificada |
+| Eliminar todos los datos con copia `pre-delete` y reinicio | Implementado (en desarrollo); frase **ELIMINAR TODO**, copia de base y assets, conserva la instalación y la copia |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
 | Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y se recupera desde la Papelera |
@@ -1446,13 +1699,17 @@ las funciones correspondientes.
 | Mapas | Prevista |
 | Escritura | Prevista |
 | Juego | Prevista |
-| Ajustes | Prevista |
-| Guardar la preferencia de tema | Implementada (en desarrollo); también se podrá cambiar desde Ajustes |
+| Ajustes | Implementada (en desarrollo); apariencia, idioma informativo, atajos, actualizaciones, datos y restablecimiento |
+| Guardar la preferencia de tema | Implementada (en desarrollo); también se cambia desde Ajustes y la paleta |
 | Recordar la barra lateral plegada | Implementada (en desarrollo) |
 | Recordar el panel de propiedades, su ancho y las secciones plegables de la ficha | Implementada (en desarrollo); estado global, no por ficha |
-| Restablecer las preferencias de interfaz | Prevista (con Ajustes); la base ya lo permite, pero todavía no hay control visible |
-| Copias manuales y elección de carpeta | Prevista (con Ajustes) |
-| Ajustes de actualizaciones (interruptor y frecuencia) | Previstos (con Ajustes, M1); hoy no hay auto-check |
+| Restablecer las preferencias de interfaz | Implementada (en desarrollo); confirmación y sin borrar contenido |
+| Copias manuales y elección de carpeta | Prevista |
+| Ajustes de actualizaciones (interruptor y frecuencia) | Previstos (M5-05); hoy no hay auto-comprobación |
+| Recordar el tamaño y la posición de la ventana | Previsto |
+| Importar una biblioteca completa o restaurar una copia desde Ajustes | Previstas |
+| Exportar un diagnóstico local | Previsto |
+| Más idiomas y selector de idioma | Previstos |
 | Firma de código del instalador | Opcional y de pago; fuera del MVP (ADR 0015) |
 | Release pública y actualización desde GitHub Releases | Previstas para M5 |
 | Manual dentro de la app | Prevista |

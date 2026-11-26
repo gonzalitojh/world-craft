@@ -79,6 +79,7 @@ describe('catálogo de mensajes', () => {
           entity: 'Entry',
           trash: 'Trash',
           samples: 'Samples',
+          settings: 'Settings',
         },
       },
     } satisfies MessageCatalog;

@@ -10,13 +10,14 @@ import type { WorldCraftApi } from '../shared/contracts/world-craft-api';
 import { App } from './App';
 import { I18nProvider } from './i18n/provider';
 import { DEFAULT_LOCALE, getCatalog } from './messages';
-import { applyTheme } from './theme';
+import { applyAppearance } from './theme';
 import './styles/fonts.css';
 import './styles/tokens/palette.css';
 import './styles/tokens/semantic.css';
 import './styles/tokens/scales.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/settings.css';
 import './styles/relations.css';
 import './styles/trash.css';
 import './styles/versions.css';
@@ -93,7 +94,7 @@ function loadInitialPreferences(): Promise<UiPreferences> {
 // primer pintado con el tema correcto y no hay destello claro.
 const initialPreferences = await loadInitialPreferences();
 
-applyTheme(initialPreferences.theme);
+applyAppearance(initialPreferences);
 document.title = getCatalog(DEFAULT_LOCALE).app.title;
 
 createRoot(container).render(

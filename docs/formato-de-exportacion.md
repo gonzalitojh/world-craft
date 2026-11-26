@@ -1,12 +1,15 @@
 # Formato de exportación de un mundo
 
 > **Estado:** implementado en #78 (M1-07) para el formato
-> `world-craft-world` **versión 1**. La exportación y la importación usan el
-> mismo contrato; el detalle de la decisión está en el
-> [ADR 0029](adr/0029-world-export-import.md) y la decisión D-052 del
+> `world-craft-world` **versión 1** y en #79 (M1-08) para la biblioteca
+> `world-craft-library` **versión 1**. La exportación y la importación de mundos
+> usan el mismo contrato; el detalle de las decisiones está en el
+> [ADR 0029](adr/0029-world-export-import.md) (D-052) y en el
+> [ADR 0030](adr/0030-settings-data-and-full-deletion.md) (D-053) del
 > [registro](registro-decisiones.md).
-> **Ámbito:** estructura del ZIP, campos de `manifest.json` y `world.json`,
-> checksums, compatibilidad, exclusiones y política de importación.
+> **Ámbito:** estructura del ZIP de mundo y de la biblioteca total, campos de
+> `manifest.json`, `world.json` y `settings.json`, checksums, compatibilidad,
+> exclusiones y política de importación.
 
 ## 1. Qué es
 
@@ -17,6 +20,11 @@ ZIP y con un editor de texto; no hace falta World Craft para leer los JSON.
 
 La exportación incluye **siempre los assets**. La importación **siempre crea un
 mundo nuevo** y nunca modifica los mundos existentes.
+
+Además del archivo de un mundo, Ajustes → Datos ofrece **Exportar todos los
+datos**, que genera una **biblioteca** `world-craft-library` v1: un ZIP con un
+paquete de mundo por cada mundo vivo, un `settings.json` y una copia completa de
+SQLite. Se documenta en la sección 11 de este archivo.
 
 ## 2. Estructura del ZIP
 
@@ -501,12 +509,194 @@ El ratio 100:1 solo se aplica al leer un ZIP ajeno. La verificación de una
 exportación propia lo desactiva para no rechazar un mundo legítimamente muy
 comprimible.
 
-## 11. Documentos relacionados
+## 11. Biblioteca total (`world-craft-library` v1)
+
+La acción **Exportar todos los datos** de Ajustes genera un ZIP abierto con todo
+el contenido de la aplicación. No es una copia automática: es una biblioteca
+portable, inspeccionable sin World Craft y con una copia completa y verificada de
+la base de datos. La decisión está en el [ADR 0030](adr/0030-settings-data-and-full-deletion.md).
+
+### 11.1 Estructura
+
+```text
+manifest.json
+settings.json
+database/world-craft.sqlite
+worlds/<slug>.zip
+worlds/<slug>.zip
+...
+```
+
+| Entrada | Obligatoria | Contenido |
+|---|---|---|
+| `manifest.json` | Sí, exactamente una | Identidad de la biblioteca, versiones, fecha, metadatos de la base y de `settings.json`, lista de mundos con tamaño y SHA-256, recuentos y avisos agregados. No se lista a sí mismo. |
+| `settings.json` | Sí, exactamente una | Preferencias de apariencia y vista de ficha (sección 11.3). |
+| `database/world-craft.sqlite` | Sí, exactamente una | Copia completa y verificada de la base SQLite de la aplicación (sección 11.4). |
+| `worlds/<slug>.zip` | Una por mundo vivo | Paquete `world-craft-world` v1 de #78, con el contenido vivo del mundo y sus imágenes. |
+
+No hay entradas de directorio, archivos sueltos, miniaturas ni rutas fuera de
+esas cuatro formas. La lista blanca es cerrada: se rechazan rutas absolutas, `\`,
+`:`, NUL, segmentos `.` o `..`, nombres reservados de Windows, mayúsculas, barras
+finales y slugs fuera del patrón canónico. El límite es de **5.000 paquetes de
+mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**.
+
+### 11.2 `manifest.json`
+
+```json
+{
+  "format": "world-craft-library",
+  "formatVersion": 1,
+  "schemaVersion": 8,
+  "appVersion": "0.1.0",
+  "exportedAt": "2026-11-26T10:00:00.000Z",
+  "database": {
+    "path": "database/world-craft.sqlite",
+    "size": 4096,
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "integrity": "ok",
+    "schemaVersion": 8
+  },
+  "settings": {
+    "path": "settings.json",
+    "size": 512,
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "worlds": [
+    {
+      "slug": "puerto-sal",
+      "name": "Puerto Sal",
+      "path": "worlds/puerto-sal.zip",
+      "size": 20480,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "counts": {
+        "entities": 3,
+        "entityTypes": 1,
+        "relationTypes": 0,
+        "tags": 2,
+        "relations": 1,
+        "versions": 4,
+        "assets": 6
+      },
+      "warnings": []
+    }
+  ],
+  "counts": {
+    "entities": 3,
+    "entityTypes": 1,
+    "relationTypes": 0,
+    "tags": 2,
+    "relations": 1,
+    "versions": 4,
+    "assets": 6
+  },
+  "warnings": []
+}
+```
+
+- **`schemaVersion`** es el `user_version` de la base en el momento de exportar.
+  Debe coincidir con `database.schemaVersion`.
+- **`database.integrity`** es siempre `"ok"`: la copia se verificó antes de
+  publicar.
+- **`counts` y `warnings`** de la biblioteca son la suma y la fusión por código
+  de los de cada mundo; un desajuste invalida el manifiesto.
+- **`worlds[].path`** debe ser `worlds/<slug>.zip` y coincidir con el slug; no se
+  admiten rutas repetidas ni slugs repetidos.
+- Los avisos usan los mismos códigos que el formato de mundo y no se repiten por
+  código dentro de una lista.
+- **No hay campos opcionales ni bloques futuros.** Un campo desconocido se
+  rechaza.
+
+### 11.3 `settings.json`
+
+```json
+{
+  "format": "world-craft-library-settings",
+  "formatVersion": 1,
+  "theme": "light",
+  "density": "comfortable",
+  "fontScale": "normal",
+  "railCollapsed": false,
+  "entityView": {
+    "propertiesOpen": true,
+    "propertiesWidth": 320,
+    "sections": {
+      "description": true,
+      "attributes": false,
+      "relations": false,
+      "resources": false
+    }
+  }
+}
+```
+
+Solo guarda **apariencia y memoria de la vista de ficha**. `lastView` y
+`recentLocation` se quedan fuera a propósito porque apuntan a contenido concreto
+y no forman parte de una biblioteca portable; la copia de la base sí los incluye.
+
+### 11.4 `database/world-craft.sqlite`
+
+Es una **copia completa** de la base, no un subconjunto de los mundos:
+
+- Se obtiene con la API online de SQLite (`sqlite.backup`) sobre la conexión
+  viva, se escribe como archivo temporal, se comprueba con `integrity_check` y
+  `user_version`, y solo entonces se renombra a su nombre definitivo.
+- Incluye **todo**: mundos, fichas, tipos, etiquetas, relaciones, versiones,
+  papelera, actividad, índice de búsqueda y preferencias (`app_settings`,
+  incluidos `lastView` y `recentLocation`).
+- Los paquetes `worlds/*.zip` **no** incluyen papelera, actividad ni
+  preferencias; esas tres cosas solo están en esta copia.
+- Se puede abrir con cualquier herramienta SQLite y verificar con el SHA-256 del
+  manifiesto.
+
+### 11.5 Verificación
+
+Se aplican dos comprobaciones antes y una después de publicar:
+
+1. Antes de empaquetar, cada paquete de mundo se relee, se valida su
+   `manifest.json` interno y se comprueban sus recuentos, avisos y slug.
+2. El manifiesto se valida con Zod estricto y se exige que el conjunto real de
+   entradas —excepto el propio `manifest.json`— coincida exactamente con los
+   tamaños declarados.
+3. El ZIP final se relee entero: `settings.json` y la base se verifican por
+   tamaño y SHA-256; la base se vuelve a comprobar con `integrity_check` sobre el
+   staging; cada mundo se verifica por hash y por los recuentos y avisos de su
+   manifiesto interno.
+
+Un fallo en cualquier punto elimina el `.partial` y el staging, no publica nada y
+conserva el destino anterior. Si `settings.json` o el manifiesto no son válidos,
+el código es `DATA_LIBRARY_SETTINGS_INVALID` o `DATA_LIBRARY_MANIFEST_INVALID`;
+una discrepancia de contenido devuelve `DATA_LIBRARY_VERIFY_FAILED`.
+
+### 11.6 Exclusiones
+
+| Excluido | Motivo |
+|---|---|
+| Copias automáticas de `backups/` | Son locales de la instalación y pueden ser grandes; la copia de la base ya representa el estado actual. |
+| Imágenes huérfanas y `backups/orphans` | No están referenciadas por ninguna ficha. |
+| Temporales de `imports/.tmp`, `exports/.tmp` y `assets/.tmp` | Son trabajo en curso, no contenido. |
+| Registros de `logs/` | Diagnóstico de la instalación, no contenido del usuario. |
+| `lastView` y `recentLocation` en `settings.json` | Apuntan a contenido concreto; la base completa sí los conserva. |
+| La instalación y `.updaterId` | No son datos del usuario. |
+
+La biblioteca **no** sustituye a una copia de seguridad: es una exportación
+portable. Las copias automáticas siguen siendo la red de recuperación de la
+instalación.
+
+### 11.7 Importación
+
+**No hay importación de la biblioteca completa.** La importación sigue siendo
+**mundo a mundo** con `transfer:importWorld` (sección 9): se abre el paquete
+`worlds/<slug>.zip` que se quiera y se crea un mundo nuevo, con IDs regenerados y
+sin fusionar ni sobrescribir. La copia `database/world-craft.sqlite` se conserva
+como vía de recuperación manual, no como una restauración automática.
+
+## 12. Documentos relacionados
 
 - [ADR 0029](adr/0029-world-export-import.md)
-- [Persistencia](persistencia.md), sección 8
-- [Arquitectura](arquitectura.md), sección 2.17
+- [ADR 0030](adr/0030-settings-data-and-full-deletion.md)
+- [Persistencia](persistencia.md), secciones 8 y 8.5
+- [Arquitectura](arquitectura.md), secciones 2.17, 2.18 y 3.6
 - [Continuidad](continuidad.md), sección 3.4
 - [Esquema de base de datos](base-de-datos/esquema.md), sección 4.15
 - [Plan de pruebas](calidad/plan-de-pruebas.md), sección 3.20
-- [Manual de usuario](manual-de-usuario.md), sección 4.6
+- [Manual de usuario](manual-de-usuario.md), secciones 4.6 y 12.5

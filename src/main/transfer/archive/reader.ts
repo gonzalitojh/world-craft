@@ -55,20 +55,27 @@ export interface ArchiveReadOptions {
 }
 
 /** Entrada validada del índice central. */
-export interface ArchiveEntry {
+export interface ArchiveEntry<T = ParsedTransferEntry> {
   readonly path: string;
-  readonly parsed: ParsedTransferEntry;
+  readonly parsed: T;
   readonly compressedSize: number;
   readonly uncompressedSize: number;
   readonly crc32: number;
 }
 
 /** Índice de un ZIP ya validado. */
-export interface ArchiveIndex {
+export interface ArchiveIndex<T = ParsedTransferEntry> {
   readonly fileSize: number;
-  readonly entries: readonly ArchiveEntry[];
-  readonly entriesByPath: ReadonlyMap<string, ArchiveEntry>;
+  readonly entries: readonly ArchiveEntry<T>[];
+  readonly entriesByPath: ReadonlyMap<string, ArchiveEntry<T>>;
   readonly totalUncompressedBytes: number;
+}
+
+/** Política de nombres y límites por tipo para un índice genérico. */
+export interface ArchiveEntryPolicy<T extends { readonly kind: string }> {
+  readonly parsePath: (path: string) => T;
+  /** Límite de tamaño sin comprimir por tipo de entrada. */
+  readonly maxBytesByKind?: Readonly<Record<string, number>>;
 }
 
 /** Resultado de extraer una entrada a disco. */
@@ -85,22 +92,64 @@ const OPEN_OPTIONS = {
   strictFileNames: true,
 } as const;
 
-/** Abre un ZIP y valida su índice central. */
+/**
+ * Abre un ZIP y valida su índice central para el formato de un mundo.
+ *
+ * Es un envoltorio del núcleo genérico: aplica la lista blanca de
+ * `world-craft-world` y exige exactamente un manifiesto y un `world.json`.
+ */
 export async function readArchiveIndex(
   filePath: string,
   limits: ArchiveLimits = {},
   signal?: AbortSignal,
 ): Promise<ArchiveIndex> {
+  const index = await readArchiveIndexWithPolicy(
+    filePath,
+    {
+      parsePath: parseTransferEntryPath,
+      maxBytesByKind: {
+        manifest: limits.maxManifestBytes ?? TRANSFER_MANIFEST_MAX_BYTES,
+        world: limits.maxWorldBytes ?? TRANSFER_WORLD_JSON_MAX_BYTES,
+        asset: limits.maxAssetBytes ?? ASSET_MAX_FILE_BYTES,
+      },
+    },
+    limits,
+    signal,
+  );
+  const counts = countKinds(index.entries);
+
+  if (counts.manifest !== 1 || counts.world !== 1) {
+    throw new TransferError('TRANSFER_MANIFEST_INVALID');
+  }
+
+  if ((counts.asset ?? 0) > TRANSFER_MAX_ASSETS) {
+    throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
+  }
+
+  return index;
+}
+
+/**
+ * Núcleo genérico del índice central.
+ *
+ * Valida límites, compresión, duplicados y tamaños máximos por tipo. No impone
+ * el conjunto de entradas: cada formato lo comprueba en su envoltorio o en su
+ * verificación posterior.
+ */
+export async function readArchiveIndexWithPolicy<
+  T extends { readonly kind: string },
+>(
+  filePath: string,
+  policy: ArchiveEntryPolicy<T>,
+  limits: ArchiveLimits = {},
+  signal?: AbortSignal,
+): Promise<ArchiveIndex<T>> {
   throwIfAborted(signal);
 
   const maxZipBytes = limits.maxZipBytes ?? TRANSFER_MAX_ZIP_BYTES;
   const maxUncompressedBytes =
     limits.maxUncompressedBytes ?? TRANSFER_MAX_UNCOMPRESSED_BYTES;
   const maxEntries = limits.maxEntries ?? TRANSFER_MAX_ENTRIES;
-  const maxManifestBytes =
-    limits.maxManifestBytes ?? TRANSFER_MANIFEST_MAX_BYTES;
-  const maxWorldBytes = limits.maxWorldBytes ?? TRANSFER_WORLD_JSON_MAX_BYTES;
-  const maxAssetBytes = limits.maxAssetBytes ?? ASSET_MAX_FILE_BYTES;
   const maxCompressionRatio =
     limits.maxCompressionRatio ?? TRANSFER_MAX_COMPRESSION_RATIO;
 
@@ -111,12 +160,9 @@ export async function readArchiveIndex(
   }
 
   const zip = await openZip(filePath);
-  const entries: ArchiveEntry[] = [];
-  const entriesByPath = new Map<string, ArchiveEntry>();
+  const entries: ArchiveEntry<T>[] = [];
+  const entriesByPath = new Map<string, ArchiveEntry<T>>();
   let totalUncompressedBytes = 0;
-  let manifestCount = 0;
-  let worldCount = 0;
-  let assetCount = 0;
 
   try {
     for await (const entry of zip.eachEntry()) {
@@ -126,7 +172,7 @@ export async function readArchiveIndex(
         throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
       }
 
-      const normalized = toArchiveEntry(entry);
+      const normalized = toArchiveEntry(entry, policy.parsePath);
       const pathKey = normalized.path.toLowerCase();
 
       assertCompressionRatio(
@@ -145,31 +191,10 @@ export async function readArchiveIndex(
         throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
       }
 
-      switch (normalized.parsed.kind) {
-        case 'manifest':
-          manifestCount += 1;
+      const kindLimit = policy.maxBytesByKind?.[normalized.parsed.kind];
 
-          if (normalized.uncompressedSize > maxManifestBytes) {
-            throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
-          }
-
-          break;
-        case 'world':
-          worldCount += 1;
-
-          if (normalized.uncompressedSize > maxWorldBytes) {
-            throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
-          }
-
-          break;
-        case 'asset':
-          assetCount += 1;
-
-          if (normalized.uncompressedSize > maxAssetBytes) {
-            throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
-          }
-
-          break;
+      if (kindLimit !== undefined && normalized.uncompressedSize > kindLimit) {
+        throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
       }
 
       entries.push(normalized);
@@ -179,14 +204,6 @@ export async function readArchiveIndex(
     throw toArchiveError(error, 'TRANSFER_SOURCE_UNREADABLE');
   } finally {
     closeZip(zip);
-  }
-
-  if (manifestCount !== 1 || worldCount !== 1) {
-    throw new TransferError('TRANSFER_MANIFEST_INVALID');
-  }
-
-  if (assetCount > TRANSFER_MAX_ASSETS) {
-    throw new TransferError('TRANSFER_LIMIT_EXCEEDED');
   }
 
   return {
@@ -469,7 +486,10 @@ function assertCompressionRatio(
   }
 }
 
-function toArchiveEntry(entry: Entry): ArchiveEntry {
+function toArchiveEntry<T extends { readonly kind: string }>(
+  entry: Entry,
+  parsePath: (path: string) => T,
+): ArchiveEntry<T> {
   const externalMode = (entry.externalFileAttributes >>> 16) & 0xffff;
   const isSymlink = (externalMode & 0xf000) === 0xa000;
   const isDirectory =
@@ -484,7 +504,13 @@ function toArchiveEntry(entry: Entry): ArchiveEntry {
     throw new TransferError('TRANSFER_ENTRY_REJECTED');
   }
 
-  const parsed = parseTransferEntryPath(entry.fileName);
+  let parsed: T;
+
+  try {
+    parsed = parsePath(entry.fileName);
+  } catch {
+    throw new TransferError('TRANSFER_ENTRY_REJECTED');
+  }
 
   if (
     !Number.isSafeInteger(entry.compressedSize) ||
@@ -581,6 +607,18 @@ function toArchiveError(
   }
 
   return new TransferError(fallback, { cause: error });
+}
+
+function countKinds<T extends { readonly kind: string }>(
+  entries: readonly ArchiveEntry<T>[],
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+
+  for (const entry of entries) {
+    counts[entry.parsed.kind] = (counts[entry.parsed.kind] ?? 0) + 1;
+  }
+
+  return counts;
 }
 
 function isMissingError(error: unknown): boolean {

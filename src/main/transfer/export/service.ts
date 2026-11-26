@@ -11,7 +11,7 @@
  * en las pruebas de integración.
  */
 import { createHash } from 'node:crypto';
-import { rename, rm, stat } from 'node:fs/promises';
+import { rm, stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute } from 'node:path';
 
 import type { WorldCraftDatabase } from '../../db/client';
@@ -25,6 +25,7 @@ import {
   type TransferExportResult,
   type TransferWarning,
 } from '../../../shared/contracts/transfer';
+import { publishArchive } from '../archive/publish';
 import { createArchiveWriter, type ArchiveWriter } from '../archive/writer';
 import {
   hashArchiveEntry,
@@ -47,12 +48,7 @@ import {
 import { buildTransferAssetPath } from '../format/paths';
 import { toTransferError, TransferError } from '../errors';
 import { silentTransferLogger, type TransferLogger } from '../logger';
-import {
-  assertFreeSpace,
-  fingerprintFile,
-  pathExists,
-  type FreeSpaceProbe,
-} from '../fs';
+import { assertFreeSpace, fingerprintFile, type FreeSpaceProbe } from '../fs';
 import { TRANSFER_PARTIAL_SUFFIX } from '../constants';
 import { buildWorldDataset } from './dataset';
 import { readWorldSnapshot } from './snapshot';
@@ -406,36 +402,6 @@ async function verifyArchive(input: VerifyArchiveInput): Promise<void> {
       assetFiles.length + 1,
       input.warnings.length,
     );
-  }
-}
-
-async function publishArchive(
-  partialFile: string,
-  destinationFile: string,
-): Promise<void> {
-  const backupFile = `${partialFile}.replaced`;
-  let movedOriginal = false;
-
-  try {
-    if (await pathExists(destinationFile)) {
-      await rm(backupFile, { force: true });
-      await rename(destinationFile, backupFile);
-      movedOriginal = true;
-    }
-
-    await rename(partialFile, destinationFile);
-  } catch (error) {
-    if (movedOriginal) {
-      await rename(backupFile, destinationFile).catch(() => undefined);
-    }
-
-    throw new TransferError('TRANSFER_SAVE_FAILED', { cause: error });
-  }
-
-  // El destino ya es el ZIP nuevo. La copia antigua es un residuo temporal:
-  // un fallo al borrarla no invalida una exportación correcta.
-  if (movedOriginal) {
-    await rm(backupFile, { force: true }).catch(() => undefined);
   }
 }
 

@@ -28,8 +28,10 @@ import {
 } from './assets/service';
 import { createAssetRepository } from './assets/store';
 import { createPrePurgeBackup } from './backup/create';
+import { createDataComposition } from './data/composition';
+import { createUnavailableDataService } from './data/unavailable';
 import { readUserVersion } from './db/connection';
-import { resolveDataPaths } from './db/paths';
+import { resolveDataPaths, type DataPaths } from './db/paths';
 import {
   createEntitiesService,
   createUnavailableEntitiesService,
@@ -185,8 +187,16 @@ if (!hasSingleInstanceLock) {
       });
 
       const database = startup.status === 'ready' ? getDatabase() : null;
-      const dataPaths =
-        database === null ? null : resolveDataPaths(app.getPath('userData'));
+      // Incluso en modo seguro se pueden abrir carpetas si la ruta de
+      // `userData` es válida; no se toca la base.
+      const dataPaths: DataPaths | null = (() => {
+        try {
+          return resolveDataPaths(app.getPath('userData'));
+        } catch {
+          return null;
+        }
+      })();
+
       const transferCoordinator =
         database === null || dataPaths === null
           ? createUnavailableTransferCoordinator()
@@ -305,6 +315,27 @@ if (!hasSingleInstanceLock) {
                 entityTypes.copyFromWorld(sourceWorldId, targetWorldId, at),
             });
 
+      const data =
+        database === null || dataPaths === null
+          ? createUnavailableDataService({
+              paths: dataPaths,
+              openPath: (path) => shell.openPath(path),
+            })
+          : createDataComposition({
+              database: database.orm,
+              sqlite: database.sqlite,
+              paths: dataPaths,
+              assets: createAssetRepository(database.orm),
+              preferences,
+              worlds,
+              transfer: transferCoordinator,
+              updates,
+              closePersistence,
+              openPath: (path) => shell.openPath(path),
+              appVersion: app.getVersion(),
+              schemaVersion: readUserVersion(database.sqlite),
+            });
+
       registerIpcHandlers(
         ipcMain,
         createIpcHandlers({
@@ -320,6 +351,7 @@ if (!hasSingleInstanceLock) {
           trash,
           versions,
           transfer: transferCoordinator,
+          data,
           pickImages: pickImageFiles,
         }),
       );

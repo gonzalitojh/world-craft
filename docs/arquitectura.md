@@ -34,8 +34,9 @@ FTS5, y un ZIP abierto con manifiesto, contenido JSON y assets verificado con
 SHA-256. La dirección visual v2 ya cubre tokens, tipografía y primitivas (#125),
 el **shell v2 con navegación de producto y barra superior contextual** (#126) e
 **Inicio como mesa de trabajo con tarjetas de mundo** (#127). La galería visible
-está implementada desde #74; la interfaz de Ajustes y las copias manuales llegan
-en M1; la release pública y la actualización real contra GitHub Releases, en M5.
+está implementada desde #74 y la pantalla de Ajustes con la gestión de datos desde
+#79; las copias manuales y la restauración guiada desde Ajustes siguen previstas;
+la release pública y la actualización real contra GitHub Releases, en M5.
 Las secciones distinguen lo implementado de lo previsto.
 
 ## 1. Vista general
@@ -73,9 +74,10 @@ Las secciones distinguen lo implementado de lo previsto.
 | Búsqueda global y paleta de comandos | Implementado (M1-05, #76): FTS5 con prefijos, tolerancia tipográfica, filtros, resaltado, recientes y favoritos, reconstrucción del índice y paleta `Ctrl+K` | [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
 | Papelera y versiones de contenido | Implementado (M1-06, #77): vista global de papelera, restauración, purga con copia `pre-purge`, vaciado y historial de la descripción de las fichas | [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
 | Exportación e importación de mundos | Implementado (M1-07, #78): ZIP abierto `world-craft-world` v1 con `manifest.json`, `world.json` y assets; worker `utilityProcess`; importación transaccional siempre como mundo nuevo | [ADR 0029](adr/0029-world-export-import.md) |
-| Pruebas y calidad | Implementado: 671 unitarias (4 omitidas), 213 de componentes y 204 de integración (1 omitida) (#62-#78, #125-#133); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera y transferencia (#70, #72, #74, #75, #76, #77, #78, #125, #126, #127, #131, #132) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Ajustes y gestión de datos | Implementado (M1-08, #79): apariencia con densidad y tamaño, navegación `#/settings`, apertura de carpetas, uso de disco, biblioteca total `world-craft-library` v1 y borrado con copia `pre-delete` | [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
+| Pruebas y calidad | Implementado: 762 unitarias, 251 de componentes y 231 de integración (#62-#79, #125-#133); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera, transferencia y ajustes (#70, #72, #74, #75, #76, #77, #78, #79, #125, #126, #127, #131, #132) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
-| Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, pre-purga 10 (#77), verificación y restauración desde modo seguro; UI de Ajustes y copias manuales en M1 | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
+| Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, pre-purga 10 (#77), pre-delete sin poda (#79), verificación y restauración desde modo seguro; Ajustes abre copias y muestra su uso desde #79, pero las copias manuales y la restauración guiada siguen previstas | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md), [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Estructura y tooling | Vigente | [ADR 0014](adr/0014-repository-structure-tooling.md) |
 | Firma de código opcional | Diferida | [ADR 0015](adr/0015-optional-code-signing-smartscreen.md) |
@@ -86,9 +88,9 @@ Electron separa tres procesos con permisos distintos:
 
 | Proceso | Responsabilidad | Puede acceder a |
 |---|---|---|
-| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, servicio de fichas, etiquetas y galería, servicio de assets para el IPC, copias de seguridad con restauración, servicio de preferencias de interfaz, papelera con restauración y purga, historial de versiones, actualizador manual y coordinador de exportación e importación con su `utilityProcess`; la UI de Ajustes llegará con su issue. | Node, Electron, disco. |
-| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos, tipos de entidad, fichas, etiquetas, preferencias, assets, papelera, versiones y transferencia; nunca un `invoke` genérico. | API de Electron limitada. |
-| **Renderer** | Interfaz React, estado de UI, editor enriquecido reutilizable, diálogo de exportación e importación, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
+| **Main** | Ventana, ciclo de vida, instancia única, guards de seguridad, IPC con handlers tipados, persistencia local (SQLite, migraciones, copia previa y modo seguro), servicio de assets con protocolo `wc-asset://`, servicio de mundos con CRUD y actividad, servicio de tipos de entidad con catálogo, plantillas y transferencia, servicio de fichas, etiquetas y galería, servicio de assets para el IPC, copias de seguridad con restauración, servicio de preferencias de interfaz, papelera con restauración y purga, historial de versiones, actualizador manual, coordinador de exportación e importación con su `utilityProcess` y servicio de datos de Ajustes con biblioteca total y borrado. | Node, Electron, disco. |
+| **Preload** | Puente mínimo y tipado entre renderer y main: `appInfo`, `shell.openExternal`, actualizaciones, mundos, tipos de entidad, fichas, etiquetas, preferencias, assets, papelera, versiones, transferencia y datos; nunca un `invoke` genérico. | API de Electron limitada. |
+| **Renderer** | Interfaz React, estado de UI, editor enriquecido reutilizable, diálogo de exportación e importación, Ajustes con apariencia y datos, mapa y grafo. | DOM, API expuesta por preload. Nunca Node ni SQLite. |
 
 | Ruta | Responsabilidad | Puede importar |
 |---|---|---|
@@ -103,19 +105,21 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/trash/` | Papelera pura: listado por cursor de los tres grupos, restauración con motivos de dominio, purga física ordenada con copia previa obligatoria y vaciado serializado. No borra assets. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/versions/` | Historial de la descripción: repositorio Drizzle sobre `entity_versions`, servicio de listar, guardar manual y restaurar, y política pura de agrupación, retención y poda. Se engancha a la transacción de `entities.update`. No importa Electron. | Drizzle, `src/shared/` |
 | `src/main/transfer/` | Dominio de exportación e importación: contratos y límites, formato ZIP `world-craft-world` v1 (`format/`), lectura y escritura con `yauzl`/`yazl` (`archive/`), instantánea y dataset de exportación (`export/`), staging, plan, repositorio transaccional y servicio de importación (`import/`), protocolo del worker, coordinador, diálogos nativos, limpieza, log y contención de rutas. Es puro respecto a Electron salvo `composition.ts` y `dialogs.ts`; `worker-entry.ts` no importa Electron y se compila a `out/main/transfer-worker.cjs`. | Node, Drizzle, Zod, yauzl, yazl |
+| `src/main/data/` | Dominio de Ajustes → Datos: resumen, uso acotado, apertura de carpetas por enum, huérfanas, biblioteca `world-craft-library` v1 (`library/`), copia verificada de assets, borrado total con `pre-delete`, errores estables, diálogo nativo, composición y sustitución en modo seguro. Solo `composition.ts` y `dialogs.ts` conocen Electron. | Node, Drizzle, Zod, `src/shared/` |
 | `src/main/ipc/` | Router único, esquemas Zod de entrada, handlers por canal y errores estables. | `src/shared/`, Electron, Zod |
 | `src/main/security/` | CSP, guards de sesión y navegación, y política de enlaces externos. | Electron |
 | `src/main/updates/` | Máquina de estados del actualizador sin Electron, adaptador de electron-updater, allowlist de red y saneado de cabeceras, log JSONL y composición. | Node, electron-updater, `builder-util-runtime` |
 | `src/main/single-instance.ts` | Adquisición del lock de instancia única y foco de la ventana en `second-instance`; se prueba sin Electron. | — |
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
-| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search`, `preferences`, `assets`, `trash`, `versions` y `transfer`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
-| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74), el editor reutilizable con menciones (#131), la papelera (#77), el historial de versiones (#77) y la transferencia de mundos (#78) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace), los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`) y el diálogo de transferencia de #78 (`transfer/`: `world-transfer-dialog`, `transfer-progress` y `transfer-summary`); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search`, `preferences`, `assets`, `trash`, `versions`, `transfer` y `data`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
+| `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74), el editor reutilizable con menciones (#131), la papelera (#77), el historial de versiones (#77), la transferencia de mundos (#78) y Ajustes con apariencia y datos (#79) están implementados. | `src/shared/`, API de `window.worldCraft` |
+| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace), los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`), el diálogo de transferencia de #78 (`transfer/`: `world-transfer-dialog`, `transfer-progress` y `transfer-summary`) y los componentes de Ajustes de #79 (`settings/`: apariencia, idioma, atajos, actualizaciones, resumen, carpetas, uso, exportación, huérfanas, zona de peligro, reinicio y restablecer preferencias); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/transfer/` | Hook `use-world-transfer.ts` (máquina de estados, filtrado de eventos y cancelación), reducer puro `state.ts` y formateadores `format.ts` (bytes, progreso y plurales). Sin acceso a Node ni a rutas. | `src/shared/`, API tipada |
-| `src/renderer/updates/` | Textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. | `src/shared/` |
+| `src/renderer/updates/` | Hook compartido `use-updates.tsx` y textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. La barra superior y Ajustes consumen el mismo estado. | `src/shared/` |
 | `src/renderer/preferences/` | `use-ui-preferences.ts`: snapshot inicial desde el bootstrap de `main.tsx`, actualización optimista con secuencia, adopción de la respuesta canónica y descarte de respuestas tardías; sin `localStorage`. | `src/shared/`, tema, API tipada |
-| `src/renderer/shell/` | Shell v2 (`app-shell.tsx`): rail plegable con navegación Inicio/Mundos/Papelera, barra superior con título contextual, disparador de la paleta, una acción primaria, menú `⋯` y utilidades de actualizaciones y tema, y `main` enfocable. `views.ts` declara las vistas de producto y la acción primaria; `internal-views.ts` resuelve la vista interna de Muestras por hash. | Componentes, mensajes, tema |
-| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (mesa de trabajo con Continuar, mundos recientes y actividad, y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería, etiquetas e historial), `trash-page.tsx` (papelera global con tres grupos y diálogos destructivos), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos) y `samples-page.tsx` (banco interno de desarrollo, solo por `#/internal/samples`). | Componentes, mensajes |
+| `src/renderer/settings/` | `use-data-settings.ts` (resumen, uso, carpetas, huérfanas, exportación y borrado con secuencias y `DATA_BUSY`) y textos de error de datos. Sin acceso a Node ni a rutas. | `src/shared/`, API tipada |
+| `src/renderer/shell/` | Shell v2 (`app-shell.tsx`): rail plegable con navegación Inicio/Mundos/Papelera y Ajustes en el pie, barra superior con título contextual, disparador de la paleta, una acción primaria, menú `⋯` y utilidades de actualizaciones y tema, y `main` enfocable. `views.ts` declara las vistas de producto y la acción primaria; `routes.ts` resuelve `#/settings`; `internal-views.ts` resuelve la vista interna de Muestras por hash. | Componentes, mensajes, tema |
+| `src/renderer/pages/` | Vistas del shell: `home-page.tsx` (mesa de trabajo con Continuar, mundos recientes y actividad, y estado vacío), `worlds-page.tsx` (lista con búsqueda y filtros), `world-page.tsx` (ficha, progreso y actividad), `entities-page.tsx` (lista y filtros de fichas), `entity-detail-page.tsx` (ficha con autoguardado, galería, etiquetas e historial), `trash-page.tsx` (papelera global con tres grupos y diálogos destructivos), `search-page.tsx` (búsqueda global, filtros, recientes y favoritos), `settings-page.tsx` (Ajustes editorial con apariencia, idioma, atajos, actualizaciones, datos y restablecimiento) y `samples-page.tsx` (banco interno de desarrollo, solo por `#/internal/samples`). | Componentes, mensajes |
 | `src/renderer/theme.ts` | Tipo `ThemeMode`, tema por defecto y `applyTheme()` sobre `data-theme`; el tema inicial llega del bootstrap de preferencias (#132). | — |
 | `src/renderer/modules/` | Casos de uso de UI por dominio: worlds, entities, relations, maps, graph, writing, game, search. El de mundos aún vive en `App.tsx` y sus componentes; las carpetas de dominio llegarán con las pantallas de M1. | API tipada, shared |
 | `src/renderer/messages/` | Catálogo tipado del renderer: `es.ts` (fuente del tipo), `index.ts` (registro de idiomas) y `translator.ts` (claves y parámetros tipados). | — |
@@ -188,19 +192,19 @@ Reglas de dependencia:
   los ocho de mundos, los cinco de tipos de entidad, los seis de fichas, los dos
   de etiquetas, los cuatro de tipos de relación, los cuatro de relaciones, los
   tres de búsqueda, los tres de preferencias, los dos de assets, los siete de
-  papelera y versiones y los tres de transferencia), el resultado
-  discriminado `IpcResult` con los códigos `INVALID_INPUT`, `UNKNOWN_CHANNEL`,
-  `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y `createWorldCraftApi({ invoke })`, que
-  construye la API congelada del preload. Son módulos puros: no importan Electron,
-  Node ni Zod.
+  papelera y versiones, los tres de transferencia y los siete de datos), el
+  resultado discriminado `IpcResult` con los códigos `INVALID_INPUT`,
+  `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y
+  `createWorldCraftApi({ invoke })`, que construye la API congelada del preload.
+  Son módulos puros: no importan Electron, Node ni Zod.
 - **Preload nominativo.** Publica `appInfo`, `shell.openExternal(url)`, la API
   `updates` (desde #68), la API `worlds` (desde #72), la API `entityTypes`
   (desde #73), las APIs `entities`, `tags` y `assets` (desde #74), las APIs
   `relationTypes` y `relations` (desde #75), la API `search` (desde #76), la API
-  `preferences` (desde #132), las APIs `trash` y `versions` (desde #77) y la API
-  `transfer` (desde #78). No expone `ipcRenderer`, `require` ni un `invoke`
-  genérico; el renderer solo puede llamar a las funciones declaradas en el
-  contrato.
+  `preferences` (desde #132), las APIs `trash` y `versions` (desde #77), la API
+  `transfer` (desde #78) y la API `data` (desde #79). No expone `ipcRenderer`,
+  `require` ni un `invoke` genérico; el renderer solo puede llamar a las
+  funciones declaradas en el contrato.
 - **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
   canal de la allowlist, comprueba el remitente (`file:` empaquetado o loopback
   de desarrollo), valida la entrada con Zod (`zod@^4.6.7`, declarado en
@@ -261,8 +265,8 @@ Reglas de dependencia:
 - **Tema.** `src/renderer/theme.ts` aplica `data-theme` en `<html>`. El tema
   inicial llega del bootstrap de preferencias de `main.tsx`, que se resuelve antes
   de `createRoot` con un límite de 1.500 ms (#132); el icono de la barra superior
-  —sol o luna con etiqueta y tooltip— conmuta y persiste el cambio. La pantalla de
-  Ajustes sigue prevista.
+  —sol o luna con etiqueta y tooltip— conmuta y persiste el cambio. Ajustes
+  añade los radios de tema y los presets de densidad y tamaño (#79).
 - **Componentes.** `src/renderer/components/` tiene primitivas nativas (botón,
   botón de icono, menú `⋯`, campo, área, selector, casilla, radio, insignia,
   tarjeta, panel, esqueleto, estado vacío, diálogo, pestañas, toast y tooltip)
@@ -385,11 +389,12 @@ Reglas de dependencia:
 - **Rotación.** 7 diarias, 4 semanales, 12 mensuales y 5 pre-migración; nunca se
   borra la copia válida más reciente ni la última de un motivo; cada candidata
   se reverifica antes de borrarse; `pre-restore` no se poda.
-- **Restauración.** Se ofrece desde el diálogo nativo de modo seguro (la UI de
-  Ajustes llega en M1). Valida la carpeta con `realpath`/`relative` dentro de
-  `backups/`, verifica antes y después, crea `backups/pre-restore/`, usa
-  `.restore.lock` y `.restore.pending`, sustituye con `.restore.tmp` y
-  `.rollback*`, y relanza. Un fallo vuelve al modo seguro; nunca se ejecuta en
+- **Restauración.** Se ofrece desde el diálogo nativo de modo seguro; Ajustes
+  abre la carpeta de copias pero no restaura. Valida la carpeta con
+  `realpath`/`relative` dentro de `backups/`, verifica antes y después, crea
+  `backups/pre-restore/`, usa `.restore.lock` y `.restore.pending`, sustituye con
+  `.restore.tmp` y `.rollback*`, y relanza. Un fallo vuelve al modo seguro; nunca
+  se ejecuta en
   segundo plano.
 - **Logs.** `backup.schedule` y `backup.restore` registran resultado y códigos
   sin rutas, nombres, tamaños, SHA, identificadores ni contenido.
@@ -682,13 +687,14 @@ Reglas de dependencia:
   copias ni dependencias.
 - **Contrato puro.** Define los dos temas, las cuatro secciones de ficha, el ancho
   280–360 px con 320 por defecto, las vistas persistibles —`home`, `worlds`,
-  `search`, `world`, `entities`, `entity` y `trash`, sin `samples`— y el último
-  destino (mundo o ficha con nombre opcional). Incluye valores por defecto
-  congelados,
-  fusión de parches sin mutación, recorte del ancho y guardas estrictas de forma.
+  `search`, `world`, `entities`, `entity`, `trash` y `settings`, sin `samples`— y
+  el último destino (mundo o ficha con nombre opcional). Incluye valores por
+  defecto congelados, fusión de parches sin mutación, recorte del ancho y guardas
+  estrictas de forma. #79 añade `density` y `fontScale` (sección 2.18).
 - **Servicio y repositorio.** Una fila de `app_settings` por clave con prefijo
-  `ui.` y valor JSON: `ui.theme`, `ui.rail-collapsed`, `ui.entity-view`,
-  `ui.last-view` y `ui.recent-location`. La lectura es tolerante por clave: un JSON
+  `ui.` y valor JSON: `ui.theme`, `ui.density`, `ui.font-scale`,
+  `ui.rail-collapsed`, `ui.entity-view`, `ui.last-view` y
+  `ui.recent-location`. La lectura es tolerante por clave: un JSON
   roto o un valor inválido cae a su defecto sin contagiar al resto y no se
   reescribe. La escritura compara con lo almacenado, actualiza `updated_at` y
   agrupa todo en una transacción; `recentLocation: null` borra la fila. `reset`
@@ -843,6 +849,80 @@ Reglas de dependencia:
   en 671 unitarias (4 omitidas), 213 de componentes y 204 de integración
   (1 omitida).
 
+### 2.18 Estado implementado de Ajustes y datos (#79)
+
+- **Alcance.** Contrato `src/shared/contracts/data.ts`; dominio y composición en
+  `src/main/data/` (`constants`, `errors`, `counts`, `usage`, `folders`,
+  `orphans`, `library/`, `verified-copy`, `delete-all`, `service`, `dialogs`,
+  `composition` y `unavailable`); canales y esquemas `src/main/ipc/`; página
+  `settings-page.tsx`, componentes `components/settings/`, hook
+  `settings/use-data-settings.ts`, estilos `styles/settings.css` y textos en
+  `src/renderer/messages/es.ts`. Se añade `settings` a las vistas persistidas y
+  `routes.ts` resuelve `#/settings`. Sin migración: `user_version` sigue en 8.
+- **Apariencia.** `UiPreferences` gana `density` (`comfortable`/`compact`) y
+  `fontScale` (`small`/`normal`/`large`), con defectos y guardas en el contrato.
+  `applyAppearance` fija `data-theme`, `data-density` y `data-font-scale` antes de
+  `createRoot` y en cada cambio; `scales.css` redefine espaciado o tokens
+  `--text-*`, nunca el tamaño raíz, `zoom` ni `transform`. «Restablecer
+  apariencia» usa `update` con los valores por defecto y **no** `reset`;
+  «Restablecer preferencias» usa `reset` tras confirmación.
+- **Navegación.** Ajustes vive en `.wc-shell__rail-footer`, encima del botón de
+  plegar, con icono, tooltip y `aria-current="page"`. También se abre con el
+  comando **Abrir Ajustes** de la paleta, que usa la misma función de navegación,
+  y por `#/settings`; `lastView` admite `settings` pero el arranque sigue en
+  Inicio.
+- **Servicio de datos.** Siete canales (`data:getSummary`, `getUsage`,
+  `openFolder`, `exportAll`, `deleteAll`, `planOrphans` y `purgeOrphans`), Zod
+  estricto, literales de confirmación, guardas puras en el preload y API
+  congelada `window.worldCraft.data`. Los fallos de dominio viajan como
+  `{ status: 'failed', code }` con códigos `DATA_*`; una entrada inválida sigue
+  siendo `INVALID_INPUT`. Las lecturas no bloquean; exportar, purgar y borrar
+  comparten una única mutación y la segunda recibe `DATA_BUSY`. En modo seguro,
+  `unavailable` devuelve `DATA_UNAVAILABLE` para las operaciones y mantiene la
+  apertura de carpetas cuando la ruta es válida.
+- **Carpetas y uso.** El renderer envía un enum y recibe `{ opened: true }`; el
+  main crea la carpeta, valida cada componente con `lstat`, comprueba `realpath`
+  y no devuelve rutas. La interfaz solo muestra nombres y rutas relativas. La
+  medición de uso se detiene a las 100 000 entradas o 4 s, marca `partial` y
+  separa base, imágenes, copias, registros y temporales; `assets/.tmp` cuenta
+  como temporal, igual que en el borrado.
+- **Huérfanas.** El resumen agrega el plan de #66 (archivos sin referencia,
+  miniaturas, temporales, ausentes, enlaces y entradas desconocidas) y la purga
+  exige `purge-orphans`, crea copia verificable y no toca archivos
+  referenciados.
+- **Biblioteca total.** `world-craft-library` v1 con `manifest.json`,
+  `settings.json`, `database/world-craft.sqlite` y un paquete #78 por mundo en
+  `worlds/<slug>.zip`. La base se obtiene con `sqlite.backup`, se verifica con
+  `inspectBackupFile` y es completa (papelera, actividad y preferencias, también
+  `lastView` y `recentLocation`); `settings.json` omite esos dos últimos y los
+  paquetes de mundo excluyen papelera, actividad y preferencias. La exportación
+  usa staging en `exports/.tmp`, `.partial` junto al destino, comprobación de
+  espacio, verificación del ZIP completo y `rename`; es todo-o-nada y no incluye
+  copias automáticas ni huérfanas. El manifiesto se valida con Zod estricto y se
+  comprueba que el conjunto real de entradas coincida (corrección del MEDIUM de
+  seguridad). La importación sigue siendo mundo a mundo con #78.
+- **Borrado total.** `deleteAll` comprueba la confirmación y la transferencia
+  activa, valida las raíces antes y después de copiar y crea
+  `backups/pre-delete/<timestamp>/` con base v2 `pre-delete`, `assets/`
+  verificado con `assets-manifest.json` y `recovery.json`. Después cierra la
+  persistencia y borra temporales → base → assets → logs → copias, conservando
+  `pre-delete`, las entradas desconocidas de `userData`, `.updaterId` y la
+  instalación. La verificación final produce `deleted` o `partial`; cualquier
+  resultado exige reiniciar y la composición lanza `app.relaunch()`/`exit(0)` a
+  los 750 ms. La copia `pre-delete` queda fuera de la restauración guiada.
+  Exportar con una transferencia recién iniciada se rechaza con `DATA_BUSY`
+  (corrección del segundo MEDIUM).
+- **Privacidad y logs.** Ni los resultados ni los logs incluyen rutas, hashes,
+  IDs, nombres, tamaños ni contenido. El contrato `data.operation` solo admite
+  operación, resultado y código; en esta entrega no se conecta un sumidero nuevo.
+- **Pruebas.** Unitarias de contratos, guardas, uso, carpetas, huérfanas,
+  manifiesto, biblioteca, borrado y handlers; integración con SQLite y `userData`
+  temporales (pre-delete, preservación, sentinel de instalación, fallos
+  inyectados, importación de un paquete); componentes de Ajustes y datos; y E2E
+  de navegación, persistencia, carpetas, exportación/importación, huérfanas,
+  borrado con reinicio y matriz 1024/1280/1600 con ambos temas. La suite queda en
+  762 unitarias, 251 de componentes y 231 de integración.
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -895,10 +975,11 @@ de etiquetas (`tags:list` y `create`), los cuatro de tipos de relación
 (`search:query`, `suggestions` y `rebuild`), los tres de preferencias
 (`preferences:get`, `update` y `reset`), los dos de assets (`assets:list` e
 `import`), los siete de papelera y versiones (`trash:list`, `restore`, `purge` y
-`empty`; `versions:list`, `create` y `restore`) y los tres de transferencia
-(`transfer:exportWorld`, `transfer:importWorld` y `transfer:cancel`). El evento
-`transfer:event` va por `webContents.send` y no está en la allowlist de
-`invoke`. Una llamada a `shell:openExternal` recorre esta ruta:
+`empty`; `versions:list`, `create` y `restore`), los tres de transferencia
+(`transfer:exportWorld`, `transfer:importWorld` y `transfer:cancel`) y los siete
+de datos (`data:getSummary`, `getUsage`, `openFolder`, `exportAll`, `deleteAll`,
+`planOrphans` y `purgeOrphans`). El evento `transfer:event` va por
+`webContents.send` y no está en la allowlist de `invoke`. Una llamada a `shell:openExternal` recorre esta ruta:
 
 ```text
 Llamada IPC (implementado, #63)
@@ -1076,12 +1157,49 @@ cancelar; antes de esa fase, `transfer:cancel` aborta y limpia el staging. El
 detalle del formato está en
 [`formato-de-exportacion.md`](formato-de-exportacion.md).
 
+### 3.6 Ajustes, exportación total y borrado (implementado, #79)
+
+```text
+Abrir Ajustes
+  rail (pie) o paleta → navigate('settings') → hash #/settings
+    → SettingsPage: preferencias, apariencia, idioma, atajos, actualizaciones y datos
+    → applyAppearance(data-theme, data-density, data-font-scale) antes de createRoot
+    → preferences.update({ density, fontScale, theme }) → snapshot canónico
+
+Exportar todos los datos
+  renderer → window.worldCraft.data.exportAll()
+    → preload → data:exportAll → allowlist + strictObject({})
+    → main: mutación exclusiva → dialog.showSaveDialog (cancelar = cancelled)
+    → transferencia activa tras el diálogo = DATA_BUSY
+    → staging exports/.tmp/<operationId>: paquete #78 por mundo,
+      settings.json y database/world-craft.sqlite (sqlite.backup verificado)
+    → manifiesto con tamaños y SHA-256 → espacio libre → .partial → relectura
+      completa y verificación → rename al destino
+    → resultado { fileName, size, worlds, counts, warnings } o failed/cancelled
+
+Eliminar todos los datos
+  renderer: frase ELIMINAR TODO + keepBackups → data:deleteAll
+    → preload fija delete-all-data → Zod literal + boolean
+    → main: DATA_BUSY si hay transferencia → validar raíces
+    → backups/pre-delete/<timestamp>/: base v2 pre-delete + assets verificados
+      + recovery.json → volver a validar raíces → cerrar persistencia
+    → borrar temporales → data → assets → logs → copias (salvo keepBackups)
+    → verificación final → deleted/partial + restartRequired
+    → app.relaunch() + app.exit(0) a los 750 ms
+```
+
+El renderer nunca recibe rutas, nombres de archivo internos ni hashes; los
+resultados solo llevan recuentos, el nombre de la biblioteca elegido por el
+usuario y códigos estables. La copia `pre-delete` no se ofrece en la restauración
+guiada del modo seguro.
+
 ## 4. Persistencia y datos
 
 La persistencia local está implementada desde M0-04 (#64), el servicio de assets
-desde M0-06 (#66), las copias automáticas con restauración desde M0-07 (#67) y el
-empaquetado con actualización manual desde M0-08 (#68). La interfaz de Ajustes y
-las copias manuales siguen previstas para M1.
+desde M0-06 (#66), las copias automáticas con restauración desde M0-07 (#67), el
+empaquetado con actualización manual desde M0-08 (#68) y la pantalla de Ajustes
+con la gestión de datos desde M1-08 (#79). Las copias manuales y la restauración
+guiada desde Ajustes siguen previstas.
 
 - **SQLite** en `%APPDATA%\World Craft\data\world-craft.sqlite`, con una única
   conexión de escritura en el proceso principal.
@@ -1099,10 +1217,14 @@ las copias manuales siguen previstas para M1.
   índices de papelera. `PRAGMA user_version` guarda el número de migraciones
   aplicadas (hoy 8).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
-  `monthly` (12), `pre-migration` (5), `pre-purge` (10) y `pre-restore` (sin
-  poda). Cada copia lleva `manifest.json` v2, SHA-256 e integridad; solo contiene
-  SQLite, no assets. La restauración se ofrece desde el diálogo de modo seguro de
-  M0-07; la purga de la papelera exige una copia `pre-purge` verificable.
+  `monthly` (12), `pre-migration` (5), `pre-purge` (10), `pre-delete` (sin poda)
+  y `pre-restore` (sin poda). Cada copia lleva `manifest.json` v2, SHA-256 e
+  integridad; las automáticas solo contienen SQLite, no assets. `pre-delete` es
+  la excepción: copia también los assets y `recovery.json` porque el borrado
+  total los elimina. La restauración se ofrece desde el diálogo de modo seguro de
+  M0-07; Ajustes abre la carpeta de copias pero no restaura. La purga de la
+  papelera exige una copia `pre-purge` verificable y el borrado total, una
+  `pre-delete` verificable.
 - **FTS5** está disponible en el binario; `search_fts` indexa mundos, fichas y
   relaciones y se mantiene con triggers desde #76. Los tipos de mapa,
   manuscrito y escena se añadirán a las vistas y triggers con sus migraciones de
@@ -1117,11 +1239,12 @@ las copias manuales siguen previstas para M1.
   las copias y una restauración las recupera; lo purgado solo se recupera desde
   la copia `pre-purge`.
 - **Preferencias de interfaz** en `app_settings` con claves `ui.*` y valor JSON
-  (`ui.theme`, `ui.rail-collapsed`, `ui.entity-view`, `ui.last-view` y
-  `ui.recent-location`), sin migración nueva desde #132. La lectura es tolerante
-  por clave, la escritura es transaccional y el reset solo borra ese prefijo. Como
-  viven en la misma base, las copias automáticas las incluyen y la exportación de
-  un mundo no.
+  (`ui.theme`, `ui.density`, `ui.font-scale`, `ui.rail-collapsed`,
+  `ui.entity-view`, `ui.last-view` y `ui.recent-location`), sin migración nueva
+  desde #132/#79. La lectura es tolerante por clave, la escritura es
+  transaccional y el reset solo borra ese prefijo. Como viven en la misma base,
+  las copias automáticas las incluyen, la exportación de un mundo no y la
+  biblioteca total sí, dentro de su copia completa de SQLite.
 - **Exportación e importación** de mundo implementadas (#78): ZIP abierto
   `world-craft-world` v1 con `manifest.json`, `world.json` (incluye los bloques
   `entity-types.v1` y `relation-types.v1` con los tipos personalizados) y
@@ -1131,6 +1254,11 @@ las copias manuales siguen previstas para M1.
   `user_version` sigue en 8. El detalle está en
   [`persistencia.md`](persistencia.md) §8 y
   [`formato-de-exportacion.md`](formato-de-exportacion.md).
+- **Biblioteca total y borrado** implementados en #79: `world-craft-library` v1
+  con `manifest.json`, `settings.json`, un paquete #78 por mundo y
+  `database/world-craft.sqlite` (copia completa y verificada); borrado total con
+  `backups/pre-delete` de base y assets, confirmación tipada, verificación y
+  reinicio. Sin migración y sin dependencias nuevas.
 
 El detalle está en [`docs/persistencia.md`](persistencia.md),
 [`docs/base-de-datos/esquema.md`](base-de-datos/esquema.md) y
@@ -1142,9 +1270,9 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   `nodeIntegration: false`, `webSecurity: true` y `webviewTag: false`; además
   `app.enableSandbox()` antes de crear ventanas.
 - **Preload mínimo.** Implementado: publica un objeto congelado con `appInfo` y
-  las APIs nominativas de actualizaciones, mundos, tipos, fichas, etiquetas y
-  assets; nunca `ipcRenderer`, `require`, rutas del sistema ni un `invoke`
-  genérico.
+  las APIs nominativas de actualizaciones, mundos, tipos, fichas, etiquetas,
+  assets, preferencias, papelera, versiones, transferencia y datos; nunca
+  `ipcRenderer`, `require`, rutas del sistema ni un `invoke` genérico.
 - **CSP estricta.** Implementada: producción sin `unsafe-eval`, `unsafe-inline`
   ni orígenes remotos, inyectada antes de los scripts; desarrollo solo permite
   inline y loopback para Vite. `img-src` admite `wc-asset:` desde #66.
@@ -1167,6 +1295,14 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
   navega la ventana: el guard lo descarta y el canal lo devuelve como
   `INTERNAL_ERROR`. La política aprobada admite cualquier `https:` válido; la
   allowlist de dominios llegará con la pantalla de ayuda.
+- **Datos y Ajustes.** Implementado (#79): el renderer solo envía enums,
+  booleanos y tokens fijados en el preload; el main resuelve rutas, valida
+  contención con `lstat`/`realpath` sin seguir enlaces y no devuelve rutas. El
+  borrado valida todas las raíces antes y después de copiar y conserva
+  `userData`, `.updaterId` y la instalación. La biblioteca se lee entera para
+  verificar hashes antes de publicarse y el manifiesto se valida con Zod
+  estricto. Los canales están en la allowlist y las guardas del preload rechazan
+  formas inesperadas. Sin red ni telemetría.
 - **Base de datos.** Implementado (#64): vive solo en `userData`, el renderer no
   tiene acceso, `src/main/db/` no importa Electron y los errores usan códigos
   estables. El journal se valida con Zod, el checksum es SHA-256 y el SQL de
@@ -1176,7 +1312,8 @@ El detalle está en [`docs/persistencia.md`](persistencia.md),
 - **Modo seguro.** Implementado (#64, ampliado en #67): sin conexión de
   escritura, log JSONL con rotación y sin SQL, filas, rutas ni contenido, y
   diálogo nativo con rutas ya resueltas en `main`. Desde M0-07 el aviso permite
-  restaurar una copia verificada; no hay UI de Ajustes hasta M1.
+  restaurar una copia verificada; desde #79 Ajustes muestra los datos como no
+  disponibles, mantiene la apertura de carpetas y no permite exportar ni borrar.
 - **Copias y restauración.** Implementado (#67): la carpeta elegida se valida con
   `realpath`/`relative` dentro de `backups/`; cada copia se verifica por
   manifiesto, tamaño, SHA-256, `integrity_check` y `user_version`; se rechazan
@@ -1304,9 +1441,9 @@ El detalle está en el [ADR 0004](adr/0004-electron-security-typed-ipc.md) y en
   GitHub Releases con `latest.yml` y los checksums, y prueba la actualización
   real. La firma de código sigue siendo opcional (ADR 0015).
 - **Actualización.** Implementada (#68) como comprobación manual desde la barra
-  superior, descarga consentida y cancelable, e instalación solo con reinicio
-  consentido. El auto-check y su interruptor llegan con Ajustes (M1); la
-  actualización real contra GitHub Releases se prueba en M5.
+  superior y desde Ajustes, descarga consentida y cancelable, e instalación solo
+  con reinicio consentido. El auto-check y su interruptor siguen previstos para
+  M5-05; la actualización real contra GitHub Releases se prueba en M5.
 - **Datos.** El instalador por usuario y el desinstalador no tocan `userData`; la
   app migra con copia previa. La prueba real de 0.1.0→0.1.1 conservó 194 archivos.
 
@@ -1319,7 +1456,7 @@ El detalle está en el [ADR 0003](adr/0003-nsis-installer-electron-updater-data-
 | Fase | Qué añade a la arquitectura |
 |---|---|
 | **M0** | Baseline, ventana segura, SQLite/Drizzle, IPC, diseño, assets, backups, CI, instalador y actualizador manual. |
-| **M1** | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes (incluido el interruptor de actualizaciones), papelera y exportación e importación de mundos. |
+| **M1** | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, Ajustes con apariencia y datos, papelera, exportación e importación de mundos y biblioteca total. El interruptor de actualizaciones queda para M5-05. |
 | **M2** | Mapas vectoriales y grafo. |
 | **M3** | Editor de manuscritos, herramientas de escritura y exportadores. |
 | **M4** | Dados, tablas de inspiración y packs de contenido. |

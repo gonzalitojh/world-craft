@@ -205,6 +205,42 @@ describe('servicio de preferencias', () => {
     expect(timestamps).toEqual([{ updated_at: 1234 }]);
   });
 
+  it('persiste densidad y tamaño de texto solo cuando cambian', async () => {
+    const ctx = await createContext();
+
+    expect(ctx.service.get()).toMatchObject({
+      density: 'comfortable',
+      fontScale: 'normal',
+    });
+
+    ctx.setClock(4321);
+    ctx.service.update({ density: 'compact', fontScale: 'large' });
+
+    const rows = ctx.repository.readAll();
+
+    expect(JSON.parse(rows.get(UI_PREFERENCE_KEYS.density) ?? '')).toBe(
+      'compact',
+    );
+    expect(JSON.parse(rows.get(UI_PREFERENCE_KEYS.fontScale) ?? '')).toBe(
+      'large',
+    );
+    expect(rows.has(UI_PREFERENCE_KEYS.theme)).toBe(false);
+    expect(rows.has(UI_PREFERENCE_KEYS.railCollapsed)).toBe(false);
+
+    ctx.setClock(9999);
+    ctx.service.update({ density: 'compact' });
+
+    const densityRow = ctx.client.sqlite
+      .prepare('select updated_at from app_settings where key = ?')
+      .get(UI_PREFERENCE_KEYS.density) as { readonly updated_at: number };
+
+    expect(densityRow.updated_at).toBe(4321);
+    expect(ctx.service.reset()).toMatchObject({
+      density: 'comfortable',
+      fontScale: 'normal',
+    });
+  });
+
   it('fusiona la vista de ficha y conserva el resto', async () => {
     const ctx = await createContext();
 
@@ -271,6 +307,8 @@ describe('servicio de preferencias', () => {
 
     insert.run(UI_PREFERENCE_KEYS.theme, '"sepia"', NOW);
     insert.run(UI_PREFERENCE_KEYS.railCollapsed, '"yes"', NOW);
+    insert.run(UI_PREFERENCE_KEYS.density, '"amplia"', NOW);
+    insert.run(UI_PREFERENCE_KEYS.fontScale, '"gigante"', NOW);
     insert.run(
       UI_PREFERENCE_KEYS.entityView,
       JSON.stringify({ propertiesWidth: 999, sections: { relations: true } }),
@@ -282,6 +320,8 @@ describe('servicio de preferencias', () => {
 
     expect(preferences.theme).toBe('light');
     expect(preferences.railCollapsed).toBe(false);
+    expect(preferences.density).toBe('comfortable');
+    expect(preferences.fontScale).toBe('normal');
     expect(preferences.entityView.propertiesWidth).toBe(320);
     expect(preferences.entityView.sections.relations).toBe(true);
     expect(preferences.recentLocation).toBeNull();
