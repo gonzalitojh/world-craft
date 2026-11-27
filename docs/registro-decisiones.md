@@ -380,3 +380,28 @@ plano** en lugar de los 50.000 de las fichas; la issue pasó de `size: s` a
   `docs/formato-de-exportacion.md`, `docs/persistencia.md`,
   `docs/arquitectura.md`, `docs/diseno/sistema-de-diseno.md` y
   `docs/manual-de-usuario.md`.
+
+## 2026-11-27 — Portada del mundo: selector compartido y retención (#115)
+
+**Contexto.** Desde #72 la tabla `worlds` admite `cover_asset_id`, pero no había
+forma de elegirlo: el formulario anunciaba una función futura y la cabecera solo
+mostraba la portada si ya existía. La ficha sí tenía un selector de imágenes
+propio. #115 pedía elegir, cambiar y quitar la portada sin duplicar el selector y
+sin borrar imágenes del usuario. El contrato visual se aprobó en
+`docs/diseno/mundo-portada-issue-115.md`.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-055 | Portada del mundo, selector compartido y retención | **Una sola portada por mundo** en `worlds.cover_asset_id`, siempre una imagen del propio mundo (`world_id` y `kind = 'image'`), validada en el proceso principal; el renderer solo envía IDs y un asset ajeno, inexistente o que no sea imagen se rechaza con `INVALID_INPUT`. **Selector compartido** `AssetPickerDialog` extraído de la ficha: miniaturas `wc-asset://thumb`, `aria-pressed`, insignia **Portada** con check y estados de carga, vacío y error; la ficha y el mundo usan el mismo componente y los mismos textos. **Guardado por contexto:** en la página del mundo se persiste al elegir o quitar con `worlds:setCover` (respuesta `WorldDetail`, aviso global y refresco de biblioteca y actividad); en el formulario la portada es parte del formulario y solo se guarda con **Guardar cambios**, mientras **Cancelar** la descarta. En creación no hay control ni selector, solo la explicación. **Retención:** cambiar o quitar la portada no borra la fila ni los archivos del asset anterior; queda disponible para volver a elegirla y la purga de huérfanos no toca assets con fila. Quitar la portada no pide confirmación. **Encuadre 1:1 centrado** con recorte (`object-fit: cover`), sin zoom ni editor de recorte; todas las miniaturas usan `thumb`. **Importación inmediata:** las imágenes importadas desde el selector se guardan en el mundo aunque se cancele el formulario. **Sin migración ni dependencias nuevas:** la columna y su FK `RESTRICT` ya existían. **Diálogos anidados:** `Dialog` solo atiende `close` cuando el evento nace en su propio `<dialog>`, de modo que cerrar el selector de portada o el enlace del editor no cierra el formulario padre. | La portada deja de ser una función prevista y no duplica el selector de la ficha; la página refleja el cambio al instante y el formulario permite arrepentirse sin perder la portada anterior. Nada se borra al cambiar o quitar una portada, y la purga de imágenes respeta cualquier asset con fila. El encuadre es determinista y no hay recorte ajustable en #115. Un asset de otro mundo nunca se muestra mezclado. Las imágenes importadas desde el formulario sobreviven a la cancelación del mundo, comportamiento aprobado y documentado. El arreglo de `Dialog` beneficia también al diálogo de enlace del editor y no abre un bypass de `dismissible` ni de `defaultPrevented`. |
+
+- **Relación con D-042 y ADR 0019:** D-055 **completa** la portada nullable que
+  D-042 dejó preparada y usada solo como visualización; **no supersede** el CRUD,
+  la actividad, el borrado lógico ni el resto de reglas de mundos de ADR 0019.
+- **Relación con D-022, D-044 y ADR 0005:** la portada consume el servicio de
+  assets, el protocolo `wc-asset://` y la importación existentes; **no supersede**
+  el modelo de assets ni crea un canal nuevo de assets. La ficha conserva su
+  autoridad de portada en el panel y solo migra al selector compartido.
+- Referencias: ADR 0005, ADR 0019, ADR 0028, #66, #72, #74, #77, #79, #114, #115,
+  #116, `docs/diseno/mundo-portada-issue-115.md`,
+  `docs/diseno/sistema-de-diseno.md`, `docs/arquitectura.md`,
+  `docs/persistencia.md` y `docs/manual-de-usuario.md`.

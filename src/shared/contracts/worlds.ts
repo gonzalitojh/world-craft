@@ -101,6 +101,19 @@ export interface WorldCreateInput {
 /** Datos editables al actualizar un mundo. */
 export interface WorldUpdateInput extends WorldCreateInput {
   readonly id: string;
+  /**
+   * Portada del mundo: un asset de imagen propio o `null` para quitarla. Si se
+   * omite, se conserva la portada actual (importante para los formularios que
+   * no la editan).
+   */
+  readonly coverAssetId?: string | null | undefined;
+}
+
+/** Cambio de portada desde la página del mundo. */
+export interface WorldSetCoverInput {
+  readonly worldId: string;
+  /** Asset de imagen del mismo mundo; `null` quita la portada. */
+  readonly assetId: string | null;
 }
 
 /** Datos para duplicar un mundo. */
@@ -141,6 +154,9 @@ export interface WorldCraftWorldsApi {
   ) => Promise<IpcResult<WorldDetail | null>>;
   readonly setArchived: (
     input: WorldSetArchivedInput,
+  ) => Promise<IpcResult<WorldDetail | null>>;
+  readonly setCover: (
+    input: WorldSetCoverInput,
   ) => Promise<IpcResult<WorldDetail | null>>;
   readonly remove: (id: string) => Promise<IpcResult<WorldDeleteResult>>;
   readonly listActivity: (

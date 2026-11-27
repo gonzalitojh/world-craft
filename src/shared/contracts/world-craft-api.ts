@@ -147,6 +147,7 @@ import {
   type WorldDetail,
   type WorldDuplicateInput,
   type WorldSetArchivedInput,
+  type WorldSetCoverInput,
   type WorldUpdateInput,
 } from './worlds';
 
@@ -484,6 +485,12 @@ export function createWorldCraftApi(
     setArchived: (input: WorldSetArchivedInput) =>
       invokeWorldCommand(
         IPC_CHANNELS.worldsSetArchived,
+        input,
+        isNullableWorldDetail,
+      ),
+    setCover: (input: WorldSetCoverInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.worldsSetCover,
         input,
         isNullableWorldDetail,
       ),

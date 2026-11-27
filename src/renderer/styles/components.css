@@ -1627,6 +1627,20 @@
   align-self: start;
 }
 
+.wc-world-header__cover {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.wc-world-header__cover .wc-button {
+  max-inline-size: 100%;
+  white-space: normal;
+  text-align: start;
+}
+
 .wc-world-header__body {
   display: flex;
   flex-direction: column;
@@ -3208,6 +3222,7 @@
 }
 
 .wc-image-picker__item {
+  position: relative;
   inline-size: 100%;
   padding: 0;
   border: 2px solid transparent;
@@ -3225,11 +3240,132 @@
   outline-offset: 2px;
 }
 
+.wc-image-picker__item:disabled {
+  cursor: default;
+}
+
 .wc-image-picker__thumb {
   inline-size: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: var(--radius-sm);
+}
+
+.wc-image-picker__badge {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  color: var(--fg);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  pointer-events: none;
+}
+
+.wc-image-picker__badge svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.wc-image-picker__skeleton {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+}
+
+.wc-image-picker__state {
+  min-width: 0;
+}
+
+.wc-image-picker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+  margin-block-start: var(--space-3);
+}
+
+/* --- Portada del formulario de mundo ------------------------------------ */
+
+.wc-world-cover-field {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.wc-world-cover-field__label {
+  grid-column: 1 / -1;
+  margin-block-end: var(--space-1);
+}
+
+.wc-world-cover-field__preview {
+  display: block;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.wc-world-cover-field__preview > .wc-world-mark {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.wc-world-cover-field__preview--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-1);
+  color: var(--muted);
+  text-align: center;
+}
+
+.wc-world-cover-field__preview--empty svg {
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
+  flex: 0 0 auto;
+}
+
+.wc-world-cover-field__empty {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.wc-world-cover-field__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wc-world-cover-field__body .wc-field__hint {
+  max-inline-size: 60ch;
+}
+
+.wc-world-cover-field__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.wc-world-cover-field__actions > * {
+  min-width: 0;
 }
 
 /* --- Editor de descripción --------------------------------------------- */

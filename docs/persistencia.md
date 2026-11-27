@@ -260,8 +260,9 @@ consume y añade densidad y tamaño de texto sin almacenamiento paralelo
 **Implementado en M0-06 (#66).** El servicio es puro en `src/main/assets/`; la
 composición con Electron está en `composition.ts` y el protocolo en
 `protocol.ts`. Desde M1-03 (#74) hay IPC (`assets:list` y `assets:import`) y la
-galería de fichas importa con el diálogo nativo y muestra miniaturas; la purga
-de huérfanos sigue sin canal ni interfaz.
+galería de fichas importa con el diálogo nativo y muestra miniaturas; el selector
+de portada de #115 reutiliza esa lista y la purga de huérfanos se ofrece desde
+Ajustes (#79).
 
 ### 4.1 Archivos y metadatos
 
@@ -334,7 +335,9 @@ de huérfanos sigue sin canal ni interfaz.
   fallan, aborta sin tocar los originales.
 - Nunca borra archivos referenciados, entradas inesperadas ni enlaces. Un fallo
   de borrado se normaliza a `ASSET_STORAGE_FAILED` y queda registrado; lo ya
-  copiado se restaura desde la carpeta de la copia.
+  copiado se restaura desde la carpeta de la copia. Cualquier fila de `assets`
+  cuenta como referencia, aunque ya no sea la portada de un mundo: la purga no
+  distingue usos y **no toca assets con fila** (sección 4.7).
 - **La purga de la papelera no borra assets (M1-06, #77).** Al purgar una ficha o
   un mundo, las filas de `assets` y sus archivos permanecen: los assets son del
   mundo y pueden estar compartidos por contenido vivo. Las filas de un mundo
@@ -387,6 +390,32 @@ de huérfanos sigue sin canal ni interfaz.
 - El nombre dentro del ZIP es el UUIDv7 del asset de origen; la importación
   genera IDs nuevos y reconstruye `relative_path`, por lo que un paquete no
   puede imponer una ruta en disco.
+
+### 4.7 Portada del mundo (#115)
+
+- **Columna.** `worlds.cover_asset_id` es `TEXT` opcional con FK a `assets(id)`
+  `ON UPDATE no action ON DELETE RESTRICT` desde `0002_worlds`. **No hay
+  migración en #115**: la columna y su FK ya existían.
+- **Asociación validada.** El proceso principal solo acepta un asset que exista,
+  tenga `world_id` igual al mundo y `kind = 'image'`; `null` quita la portada. El
+  renderer no envía rutas ni contenido. `worlds:update` conserva la portada si
+  `coverAssetId` se omite, y `worlds:setCover` actualiza `cover_asset_id` y
+  `updated_at` en una transacción con `activity_log`.
+- **Retención.** Cambiar o quitar la portada **no borra la fila ni los archivos
+  del asset anterior**. Sigue en `assets` y en `assets/worlds/<worldId>/` y el
+  selector del mundo lo vuelve a ofrecer; quitar la portada no pide confirmación
+  porque no destruye nada. El original y la miniatura solo desaparecen con la
+  eliminación de todos los datos, que crea una copia previa; la purga de un mundo
+  **no** borra sus assets (sección 4.4).
+- **Purga de huérfanos.** `planOrphanCleanup` considera **referenciada cualquier
+  fila de `assets`**, se use o no como portada. Por eso ni la portada actual ni
+  las anteriores entran en `unreferencedFiles` mientras su fila exista, y la
+  purga de Ajustes no las copia ni las borra. Un archivo sin fila sí puede
+  purgarse, pero no es una portada en uso.
+- **Exportación, importación y duplicado.** La portada viaja en `world.json`
+  (`coverAssetId`) y el asset se incluye y se remapea al importar; duplicar un
+  mundo deja `coverAssetId = null` porque el asset pertenece al mundo original y
+  no se comparte. `user_version` sigue en 9.
 
 ## 5. Migraciones
 

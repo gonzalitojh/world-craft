@@ -398,6 +398,352 @@ describe('formulario de mundo', () => {
       );
     });
   });
+
+  it('en creación explica la portada sin controles enfocables', () => {
+    renderWithI18n(
+      <WorldFormDialog
+        open
+        mode="create"
+        pending={false}
+        onClose={noop}
+        onSubmit={vi.fn(async () => true)}
+      />,
+    );
+
+    expect(
+      screen.getByRole('group', { name: messages.worlds.cover.label }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(messages.worlds.cover.createHint),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: messages.worlds.cover.choose }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: messages.worlds.cover.change }),
+    ).toBeNull();
+  });
+
+  it('en edición elige la portada, la previsualiza y la guarda con el mundo', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld();
+    const onSubmit = vi.fn(async () => true);
+    const onClose = vi.fn();
+    const asset = {
+      id: 'asset-1',
+      worldId: world.id,
+      width: 320,
+      height: 320,
+      alt: null,
+      createdAt: BASE_TIME,
+    };
+
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        assets: { list: vi.fn(async () => ({ ok: true, data: [asset] })) },
+        entities: { list: vi.fn(async () => ({ ok: true, data: [] })) },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderWithI18n(
+      <WorldFormDialog
+        open
+        mode="edit"
+        world={world}
+        pending={false}
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.cover.choose }),
+    );
+
+    const picker = screen.getByRole('dialog', {
+      name: messages.components.assetPicker.title,
+    });
+    const option = await screen.findByRole('button', {
+      name: messages.components.assetPicker.option(1),
+    });
+
+    await user.click(option);
+    // Cierre nativo del selector anidado que React replica hacia el padre.
+    fireEvent(picker, new Event('close'));
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('dialog', {
+        name: messages.worlds.form.editTitle(world.name),
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('dialog', {
+        name: messages.components.assetPicker.title,
+      }),
+    ).toBeNull();
+    expect(
+      document.querySelector('.wc-world-cover-field__preview img'),
+    ).toHaveAttribute('src', `wc-asset://thumb/${asset.id}`);
+    expect(
+      screen.getByRole('button', { name: messages.worlds.cover.change }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.form.submitEdit }),
+    );
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ id: world.id, coverAssetId: asset.id }),
+      );
+    });
+  });
+
+  it('cancelar no envía la portada elegida', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld();
+    const onSubmit = vi.fn(async () => true);
+    const onClose = vi.fn();
+
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        assets: {
+          list: vi.fn(async () => ({
+            ok: true,
+            data: [
+              {
+                id: 'asset-1',
+                worldId: world.id,
+                width: 320,
+                height: 320,
+                alt: null,
+                createdAt: BASE_TIME,
+              },
+            ],
+          })),
+        },
+        entities: { list: vi.fn(async () => ({ ok: true, data: [] })) },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderWithI18n(
+      <WorldFormDialog
+        open
+        mode="edit"
+        world={world}
+        pending={false}
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.cover.choose }),
+    );
+    await user.click(
+      await screen.findByRole('button', {
+        name: messages.components.assetPicker.option(1),
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.form.cancel }),
+    );
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('quitar la portada en edición se previsualiza y se envía como null', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld({ coverAssetId: 'asset-1' });
+    const onSubmit = vi.fn(async () => true);
+
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        assets: { list: vi.fn(async () => ({ ok: true, data: [] })) },
+        entities: { list: vi.fn(async () => ({ ok: true, data: [] })) },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderWithI18n(
+      <WorldFormDialog
+        open
+        mode="edit"
+        world={world}
+        pending={false}
+        onClose={noop}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(
+      document.querySelector('.wc-world-cover-field__preview img'),
+    ).toHaveAttribute('src', 'wc-asset://thumb/asset-1');
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.cover.remove }),
+    );
+
+    expect(
+      document.querySelector('.wc-world-cover-field__preview img'),
+    ).toBeNull();
+    expect(screen.getByText(messages.worlds.cover.empty)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: messages.worlds.cover.choose }),
+    ).toHaveFocus();
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.form.submitEdit }),
+    );
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ id: world.id, coverAssetId: null }),
+      );
+    });
+  });
+
+  it('Escape en el selector mantiene abierto el formulario y devuelve el foco', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld({ coverAssetId: 'asset-1' });
+    const onClose = vi.fn();
+
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        assets: {
+          list: vi.fn(async () => ({
+            ok: true,
+            data: [
+              {
+                id: 'asset-1',
+                worldId: world.id,
+                width: 320,
+                height: 320,
+                alt: null,
+                createdAt: BASE_TIME,
+              },
+            ],
+          })),
+        },
+        entities: { list: vi.fn(async () => ({ ok: true, data: [] })) },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderWithI18n(
+      <WorldFormDialog
+        open
+        mode="edit"
+        world={world}
+        pending={false}
+        onClose={onClose}
+        onSubmit={vi.fn(async () => true)}
+      />,
+    );
+
+    const change = screen.getByRole('button', {
+      name: messages.worlds.cover.change,
+    });
+
+    await user.click(change);
+
+    const picker = screen.getByRole('dialog', {
+      name: messages.components.assetPicker.title,
+    });
+
+    fireEvent.keyDown(picker, { key: 'Escape' });
+    fireEvent(picker, new Event('close'));
+
+    expect(
+      screen.getByRole('dialog', {
+        name: messages.worlds.form.editTitle(world.name),
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('dialog', {
+        name: messages.components.assetPicker.title,
+      }),
+    ).toBeNull();
+    expect(change).toHaveFocus();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('quitar desde el selector mantiene abierto el formulario y guarda null', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld({ coverAssetId: 'asset-1' });
+    const onSubmit = vi.fn(async () => true);
+
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        assets: {
+          list: vi.fn(async () => ({
+            ok: true,
+            data: [
+              {
+                id: 'asset-1',
+                worldId: world.id,
+                width: 320,
+                height: 320,
+                alt: null,
+                createdAt: BASE_TIME,
+              },
+            ],
+          })),
+        },
+        entities: { list: vi.fn(async () => ({ ok: true, data: [] })) },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderWithI18n(
+      <WorldFormDialog
+        open
+        mode="edit"
+        world={world}
+        pending={false}
+        onClose={noop}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.cover.change }),
+    );
+
+    const picker = screen.getByRole('dialog', {
+      name: messages.components.assetPicker.title,
+    });
+
+    await user.click(
+      within(picker).getByRole('button', {
+        name: messages.components.assetPicker.clear,
+      }),
+    );
+    fireEvent(picker, new Event('close'));
+
+    expect(
+      screen.getByRole('dialog', {
+        name: messages.worlds.form.editTitle(world.name),
+      }),
+    ).toBeVisible();
+    expect(
+      document.querySelector('.wc-world-cover-field__preview img'),
+    ).toBeNull();
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.form.submitEdit }),
+    );
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ id: world.id, coverAssetId: null }),
+      );
+    });
+  });
 });
 
 describe('diálogo de duplicado', () => {
@@ -471,6 +817,7 @@ describe('página de mundo', () => {
         onRetry={noop}
         onRetryActivity={noop}
         onOpenEntities={noop}
+        onChangeCover={noop}
         {...overrides}
       />,
     );
@@ -721,6 +1068,159 @@ describe('página de mundo', () => {
     expect(screen.getByText(messages.worlds.detail.noDescription)).toHaveClass(
       'wc-world-description--empty',
     );
+  });
+
+  it('abre el selector, elige una portada y la persiste al instante', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld();
+    const onChangeCover = vi.fn();
+    const asset = {
+      id: 'asset-1',
+      worldId: world.id,
+      width: 320,
+      height: 320,
+      alt: null,
+      createdAt: BASE_TIME,
+    };
+
+    listEntities.mockResolvedValue({ ok: true, data: [] });
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        entities: { list: listEntities },
+        assets: {
+          list: vi.fn(async () => ({ ok: true, data: [asset] })),
+          import: vi.fn(async () => ({ ok: true, data: { imported: [] } })),
+        },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderPage({ world, onChangeCover });
+
+    const button = screen.getByRole('button', {
+      name: messages.worlds.cover.choose,
+    });
+
+    expect(
+      document.querySelector('.wc-world-header__cover .wc-world-mark'),
+    ).toHaveAttribute('aria-hidden', 'true');
+
+    await user.click(button);
+    await user.click(
+      await screen.findByRole('button', {
+        name: messages.components.assetPicker.option(1),
+      }),
+    );
+
+    expect(onChangeCover).toHaveBeenCalledWith(asset.id);
+    expect(button).toHaveTextContent(messages.worlds.cover.choose);
+  });
+
+  it('muestra la portada actual y permite cambiarla o quitarla', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld({ coverAssetId: 'asset-1' });
+    const onChangeCover = vi.fn();
+    const other = {
+      id: 'asset-2',
+      worldId: world.id,
+      width: 320,
+      height: 320,
+      alt: null,
+      createdAt: BASE_TIME,
+    };
+
+    listEntities.mockResolvedValue({ ok: true, data: [] });
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        entities: { list: listEntities },
+        assets: {
+          list: vi.fn(async () => ({ ok: true, data: [other] })),
+          import: vi.fn(async () => ({ ok: true, data: { imported: [] } })),
+        },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderPage({ world, onChangeCover });
+
+    expect(
+      screen.getByRole('button', { name: messages.worlds.cover.change }),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('.wc-world-header__cover img'),
+    ).toHaveAttribute('src', 'wc-asset://thumb/asset-1');
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.cover.change }),
+    );
+
+    const dialog = screen.getAllByRole('dialog').at(-1);
+
+    if (dialog === undefined) {
+      throw new Error('Se esperaba el diálogo del selector.');
+    }
+
+    expect(
+      within(dialog).getByRole('button', {
+        name: messages.components.assetPicker.clear,
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: messages.components.assetPicker.clear,
+      }),
+    );
+
+    expect(onChangeCover).toHaveBeenCalledWith(null);
+  });
+
+  it('mantiene la portada anterior si el cambio falla en el poseedor', async () => {
+    const user = userEvent.setup();
+    const world = makeWorld({ coverAssetId: 'asset-1' });
+    const onChangeCover = vi.fn();
+
+    listEntities.mockResolvedValue({ ok: true, data: [] });
+    Object.defineProperty(window, 'worldCraft', {
+      configurable: true,
+      value: {
+        entities: { list: listEntities },
+        assets: {
+          list: vi.fn(async () => ({
+            ok: true,
+            data: [
+              {
+                id: 'asset-2',
+                worldId: world.id,
+                width: 320,
+                height: 320,
+                alt: null,
+                createdAt: BASE_TIME,
+              },
+            ],
+          })),
+          import: vi.fn(async () => ({ ok: true, data: { imported: [] } })),
+        },
+      } as unknown as WorldCraftApi,
+    });
+
+    renderPage({ world, onChangeCover });
+
+    await user.click(
+      screen.getByRole('button', { name: messages.worlds.cover.change }),
+    );
+    await user.click(
+      await screen.findByRole('button', {
+        name: messages.components.assetPicker.option(1),
+      }),
+    );
+
+    expect(onChangeCover).toHaveBeenCalledWith('asset-2');
+
+    // El poseedor no aplica la respuesta (fallo): el mundo sigue con su portada.
+    expect(
+      document.querySelector('.wc-world-header__cover img'),
+    ).toHaveAttribute('src', 'wc-asset://thumb/asset-1');
   });
 });
 

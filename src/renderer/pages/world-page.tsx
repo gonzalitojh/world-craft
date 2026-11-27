@@ -1,10 +1,11 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 
 import type {
   WorldActivityEntry,
   WorldDetail,
 } from '../../shared/contracts/worlds';
 import { extractEntityDescriptionText } from '../../shared/entities/description';
+import { AssetPickerDialog } from '../components/assets/asset-picker-dialog';
 import { Badge } from '../components/badge';
 import { Button } from '../components/button';
 import {
@@ -15,6 +16,7 @@ import { WorldDescriptionView } from '../components/worlds/world-description-vie
 import { WorldMark } from '../components/worlds/world-mark';
 import { WorldModuleNav } from '../components/worlds/world-module-nav';
 import { useEntityCount } from '../hooks/use-entity-count';
+import { useWorldAssets } from '../hooks/use-world-assets';
 import { useI18n } from '../i18n/provider';
 import { cx } from '../lib/class-names';
 
@@ -28,6 +30,11 @@ export interface WorldPageProps {
   readonly onRetryActivity: () => void;
   readonly onOpenEntities: () => void;
   readonly onOpenEntity: (entityId: string) => void;
+  /**
+   * Persiste la portada elegida o quitada en la página. Un fallo lo comunica el
+   * poseedor con el aviso global; la cabecera conserva la portada anterior.
+   */
+  readonly onChangeCover: (assetId: string | null) => void;
 }
 
 /**
@@ -49,6 +56,7 @@ export function WorldPage({
   onRetryActivity,
   onOpenEntities,
   onOpenEntity,
+  onChangeCover,
 }: WorldPageProps) {
   const { messages, formats } = useI18n();
   const summaryId = useId();
@@ -56,6 +64,9 @@ export function WorldPage({
   const progressId = useId();
   const activityId = useId();
   const entityCount = useEntityCount(world?.id ?? null);
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
+  const [focusAssetId, setFocusAssetId] = useState<string | null>(null);
+  const coverAssets = useWorldAssets(world?.id ?? null, coverPickerOpen);
 
   if (state === 'loading') {
     return (
@@ -112,6 +123,14 @@ export function WorldPage({
   const completed = checks.filter((check) => check.done).length;
   const percent = Math.round((completed / checks.length) * 100);
   const percentLabel = formats.formatPercent(percent / 100);
+  const coverLabel =
+    world.coverAssetId === null
+      ? messages.worlds.cover.choose
+      : messages.worlds.cover.change;
+
+  const closeCoverPicker = (): void => {
+    setCoverPickerOpen(false);
+  };
 
   return (
     <div className="wc-page">
@@ -122,7 +141,18 @@ export function WorldPage({
       </div>
 
       <header className="wc-world-header">
-        <WorldMark worldId={world.id} coverAssetId={world.coverAssetId} />
+        <div className="wc-world-header__cover">
+          <WorldMark worldId={world.id} coverAssetId={world.coverAssetId} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setCoverPickerOpen(true);
+            }}
+          >
+            {coverLabel}
+          </Button>
+        </div>
 
         <div className="wc-world-header__body">
           <div className="wc-world-header__meta">
@@ -150,6 +180,40 @@ export function WorldPage({
           </ul>
         </div>
       </header>
+
+      <AssetPickerDialog
+        open={coverPickerOpen}
+        assets={coverAssets.assets}
+        state={coverAssets.state}
+        selectedAssetId={world.coverAssetId}
+        onSelect={(assetId) => {
+          closeCoverPicker();
+
+          if (assetId !== world.coverAssetId) {
+            onChangeCover(assetId);
+          }
+        }}
+        onClear={() => {
+          closeCoverPicker();
+          onChangeCover(null);
+        }}
+        onImport={() => {
+          void (async () => {
+            const imported = await coverAssets.importAssets(
+              messages.components.assetPicker.importError,
+            );
+            setFocusAssetId(imported[0] ?? null);
+          })();
+        }}
+        importing={coverAssets.importing}
+        importError={coverAssets.importError}
+        onRetry={coverAssets.retry}
+        onClose={closeCoverPicker}
+        focusAssetId={focusAssetId}
+        onFocusHandled={() => {
+          setFocusAssetId(null);
+        }}
+      />
 
       <WorldModuleNav
         entityCount={entityCount}

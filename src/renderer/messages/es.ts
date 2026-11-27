@@ -221,13 +221,26 @@ export const es = {
       genresInvalid:
         'Usa como máximo 8 géneros de 40 caracteres cada uno, separados por comas.',
       languageLabel: 'Idioma del mundo',
-      coverNote:
-        'La portada se podrá elegir cuando exista la galería de imágenes del mundo.',
       submitCreate: 'Crear mundo',
       submitEdit: 'Guardar cambios',
       cancel: 'Cancelar',
       formError:
         'No se pudo guardar el mundo. Tus cambios siguen en pantalla; vuelve a intentarlo.',
+    },
+    cover: {
+      label: 'Portada',
+      hint: 'Se muestra en la lista de mundos y en la cabecera del mundo.',
+      empty: 'Sin portada todavía.',
+      createHint: 'Guarda el mundo para poder elegir una portada.',
+      choose: 'Elegir portada',
+      change: 'Cambiar portada',
+      remove: 'Quitar portada',
+      selected: 'Portada elegida. El cambio se aplicará al guardar.',
+      cleared: 'Portada quitada. El cambio se aplicará al guardar.',
+      updated: 'Portada del mundo actualizada.',
+      removedNotice: 'Se ha quitado la portada del mundo.',
+      updateError: 'No se pudo cambiar la portada. Se mantiene la anterior.',
+      removeError: 'No se pudo quitar la portada. Se mantiene la actual.',
     },
     duplicate: {
       title: 'Duplicar mundo',
@@ -743,10 +756,6 @@ export const es = {
       changeCover: 'Cambiar portada',
       coverHintEmpty: 'Añade imágenes en Recursos y elige una como portada.',
       goToResources: 'Ir a Recursos',
-      coverPickerTitle: 'Elegir portada',
-      coverPickerLead: 'Elige una imagen de este mundo como portada.',
-      coverOption: (index: number): string =>
-        `Elegir la imagen ${index} como portada`,
       close: 'Cerrar',
       tagsTitle: 'Etiquetas',
       tagsAssignedLabel: 'Etiquetas de la ficha',
@@ -784,8 +793,6 @@ export const es = {
       notFound: 'La ficha ya no existe.',
       invalid: 'Revisa los campos marcados antes de guardar.',
       imageError: 'No se pudieron importar las imágenes.',
-      noImages:
-        'Todavía no hay imágenes en este mundo. Añade una para empezar.',
     },
     history: {
       title: 'Historial',
@@ -1500,6 +1507,22 @@ export const es = {
     },
     dialog: {
       close: 'Cerrar',
+    },
+    assetPicker: {
+      title: 'Elegir portada',
+      lead: 'Elige una imagen de este mundo como portada.',
+      loading: 'Cargando las imágenes del mundo…',
+      loadError: 'No se pudieron cargar las imágenes del mundo.',
+      retry: 'Volver a intentar',
+      empty: 'Este mundo todavía no tiene imágenes.',
+      addImage: 'Añadir imagen',
+      importing: 'Importando imágenes…',
+      importError: 'No se pudieron importar las imágenes.',
+      option: (index: number): string => `Usar la imagen ${index} como portada`,
+      selected: 'Portada',
+      clear: 'Quitar portada',
+      close: 'Cerrar',
+      saving: 'Guardando la portada…',
     },
     toast: {
       regionLabel: 'Avisos de la aplicación',

@@ -94,6 +94,29 @@ function seedEntity(
     );
 }
 
+/** Inserta una fila de asset sin pasar por la importación real. */
+function seedAsset(
+  fixture: WorldsFixture,
+  id: string,
+  worldId: string,
+  kind = 'image',
+): void {
+  fixture.sqlite
+    .prepare(
+      `INSERT INTO assets (id, world_id, kind, relative_path, mime, size, width, height, alt, hash, created_at)
+       VALUES (?, ?, ?, ?, ?, 10, 320, 240, NULL, ?, ?)`,
+    )
+    .run(
+      id,
+      worldId,
+      kind,
+      `worlds/${worldId}/${id}.webp`,
+      kind === 'image' ? 'image/webp' : 'application/octet-stream',
+      'a'.repeat(64),
+      BASE_TIME,
+    );
+}
+
 function linkedDescription(entityId: string): EntityRichTextDocument {
   return {
     type: 'doc',
@@ -484,6 +507,10 @@ describe('servicio de mundos', () => {
 
       expect(created.name).toBe('Mundo consistente');
 
+      const coverAssetId = '01900000-0000-7000-8000-000000000809';
+
+      seedAsset(fixture, coverAssetId, created.id);
+
       fixture.sqlite.exec(`
         CREATE TRIGGER fail_activity
         BEFORE INSERT ON activity_log
@@ -501,6 +528,16 @@ describe('servicio de mundos', () => {
       ).toThrow();
 
       expect(fixture.service.get(created.id)?.summary).toBeNull();
+
+      // La portada tampoco se escribe si falla su actividad.
+      expect(() =>
+        fixture.service.setCover({
+          worldId: created.id,
+          assetId: coverAssetId,
+        }),
+      ).toThrow();
+
+      expect(fixture.service.get(created.id)?.coverAssetId).toBeNull();
 
       fixture.sqlite.exec('DROP TRIGGER fail_activity');
     } finally {
@@ -690,6 +727,179 @@ describe('servicio de mundos', () => {
       expect(fixture.service.get(world.id)?.description).toEqual(
         plainTextToRichTextDocument('Texto visible'),
       );
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('asocia una portada propia, la quita y no reescribe la misma', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const world = fixture.service.create({ name: 'Con portada' });
+      const assetId = '01900000-0000-7000-8000-000000000801';
+      const before = fixture.service.listActivity({ worldId: world.id }).length;
+
+      seedAsset(fixture, assetId, world.id);
+
+      const covered = fixture.service.setCover({
+        worldId: world.id,
+        assetId,
+      });
+
+      expect(covered?.coverAssetId).toBe(assetId);
+      expect(covered?.updatedAt).toBeGreaterThan(world.updatedAt);
+      expect(covered?.name).toBe(world.name);
+      expect(covered?.genres).toEqual(world.genres);
+      expect(fixture.service.listActivity({ worldId: world.id })).toHaveLength(
+        before + 1,
+      );
+
+      const diff = fixture.sqlite
+        .prepare(
+          'SELECT diff FROM activity_log ORDER BY created_at DESC LIMIT 1',
+        )
+        .get() as { diff: string };
+
+      expect(JSON.parse(diff.diff)).toEqual({ fields: ['cover'] });
+
+      // Elegir la portada actual no escribe ni registra actividad.
+      const repeated = fixture.service.setCover({
+        worldId: world.id,
+        assetId,
+      });
+
+      expect(repeated?.updatedAt).toBe(covered?.updatedAt);
+      expect(fixture.service.listActivity({ worldId: world.id })).toHaveLength(
+        before + 1,
+      );
+
+      const cleared = fixture.service.setCover({
+        worldId: world.id,
+        assetId: null,
+      });
+
+      expect(cleared?.coverAssetId).toBeNull();
+      expect(cleared?.updatedAt).toBeGreaterThan(covered?.updatedAt ?? 0);
+
+      const row = fixture.sqlite
+        .prepare('SELECT id FROM assets WHERE id = ?')
+        .get(assetId);
+
+      expect(row).toEqual({ id: assetId });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('rechaza portadas ajenas, inexistentes o que no son imagen', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const world = fixture.service.create({ name: 'Mundo A' });
+      const other = fixture.service.create({ name: 'Mundo B' });
+      const ownAsset = '01900000-0000-7000-8000-000000000802';
+      const foreignAsset = '01900000-0000-7000-8000-000000000803';
+      const documentAsset = '01900000-0000-7000-8000-000000000804';
+
+      seedAsset(fixture, ownAsset, world.id);
+      seedAsset(fixture, foreignAsset, other.id);
+      seedAsset(fixture, documentAsset, world.id, 'document');
+
+      fixture.service.setCover({ worldId: world.id, assetId: ownAsset });
+      const activityCount = fixture.service.listActivity({
+        worldId: world.id,
+      }).length;
+
+      for (const assetId of [foreignAsset, documentAsset]) {
+        expect(() =>
+          fixture.service.setCover({ worldId: world.id, assetId }),
+        ).toThrow(WorldInputError);
+      }
+
+      expect(() =>
+        fixture.service.setCover({
+          worldId: world.id,
+          assetId: '01900000-0000-7000-8000-000000000899',
+        }),
+      ).toThrow(WorldInputError);
+
+      expect(fixture.service.get(world.id)?.coverAssetId).toBe(ownAsset);
+      expect(fixture.service.listActivity({ worldId: world.id })).toHaveLength(
+        activityCount,
+      );
+      expect(
+        fixture.service.setCover({
+          worldId: '01900000-0000-7000-8000-000000000898',
+          assetId: null,
+        }),
+      ).toBeNull();
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('guarda la portada con la actualización y conserva la actual si se omite', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const world = fixture.service.create({ name: 'Editable' });
+      const first = '01900000-0000-7000-8000-000000000805';
+      const second = '01900000-0000-7000-8000-000000000806';
+      const foreign = '01900000-0000-7000-8000-000000000807';
+      const other = fixture.service.create({ name: 'Otro' });
+
+      seedAsset(fixture, first, world.id);
+      seedAsset(fixture, second, world.id);
+      seedAsset(fixture, foreign, other.id);
+
+      const withCover = fixture.service.update({
+        id: world.id,
+        name: world.name,
+        coverAssetId: first,
+      });
+
+      expect(withCover?.coverAssetId).toBe(first);
+
+      const diff = fixture.sqlite
+        .prepare(
+          'SELECT diff FROM activity_log ORDER BY created_at DESC LIMIT 1',
+        )
+        .get() as { diff: string };
+
+      expect(JSON.parse(diff.diff)).toEqual({ fields: ['cover'] });
+
+      const preserved = fixture.service.update({
+        id: world.id,
+        name: world.name,
+      });
+
+      expect(preserved?.coverAssetId).toBe(first);
+      expect(preserved?.updatedAt).toBe(withCover?.updatedAt);
+
+      expect(() =>
+        fixture.service.update({
+          id: world.id,
+          name: world.name,
+          coverAssetId: foreign,
+        }),
+      ).toThrow(WorldInputError);
+
+      const changed = fixture.service.update({
+        id: world.id,
+        name: world.name,
+        coverAssetId: second,
+      });
+
+      expect(changed?.coverAssetId).toBe(second);
+
+      const cleared = fixture.service.update({
+        id: world.id,
+        name: world.name,
+        coverAssetId: null,
+      });
+
+      expect(cleared?.coverAssetId).toBeNull();
     } finally {
       await fixture.close();
     }

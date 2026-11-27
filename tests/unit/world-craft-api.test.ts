@@ -142,6 +142,7 @@ describe('world-craft-api', () => {
       'update',
       'duplicate',
       'setArchived',
+      'setCover',
       'remove',
       'listActivity',
     ]);
@@ -483,6 +484,15 @@ describe('world-craft-api', () => {
     ).resolves.toEqual({
       ok: true,
       data: null,
+    });
+
+    invoke.mockResolvedValueOnce({ ok: true, data: world });
+    await expect(
+      api.worlds.setCover({ worldId: world.id, assetId: null }),
+    ).resolves.toEqual({ ok: true, data: world });
+    expect(invoke).toHaveBeenLastCalledWith(IPC_CHANNELS.worldsSetCover, {
+      worldId: world.id,
+      assetId: null,
     });
 
     invoke.mockResolvedValueOnce({ ok: true, data: { deleted: true } });

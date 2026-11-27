@@ -26,6 +26,7 @@ export const IPC_CHANNELS = {
   worldsUpdate: 'worlds:update',
   worldsDuplicate: 'worlds:duplicate',
   worldsSetArchived: 'worlds:setArchived',
+  worldsSetCover: 'worlds:setCover',
   worldsRemove: 'worlds:remove',
   worldsListActivity: 'worlds:listActivity',
   entityTypesList: 'entityTypes:list',
