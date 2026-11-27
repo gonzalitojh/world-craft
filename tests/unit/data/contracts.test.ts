@@ -17,6 +17,7 @@ const counts: DataCounts = {
   entities: 2,
   assets: 3,
   backups: 4,
+  quarantine: { assets: 0, references: 0 },
 };
 
 const usage = {
@@ -56,6 +57,12 @@ const countsTransfer = {
 describe('contratos compartidos de datos', () => {
   it('acepta las formas completas sin claves extra', () => {
     expect(isDataCounts(counts)).toBe(true);
+    expect(
+      isDataCounts({
+        ...counts,
+        quarantine: { assets: 2, references: 1 },
+      }),
+    ).toBe(true);
     expect(isDataUsage(usage)).toBe(true);
     expect(isDataOrphanSummary(orphan)).toBe(true);
     expect(
@@ -78,6 +85,24 @@ describe('contratos compartidos de datos', () => {
   it('rechaza claves extra, negativos y estados incoherentes', () => {
     expect(isDataCounts({ ...counts, extra: true })).toBe(false);
     expect(isDataCounts({ ...counts, entities: -1 })).toBe(false);
+    expect(
+      isDataCounts({
+        ...counts,
+        quarantine: { assets: 0, references: 0, extra: 1 },
+      }),
+    ).toBe(false);
+    expect(
+      isDataCounts({
+        ...counts,
+        quarantine: { assets: -1, references: 0 },
+      }),
+    ).toBe(false);
+    expect(
+      isDataCounts({
+        ...counts,
+        quarantine: { assets: 0 },
+      }),
+    ).toBe(false);
     expect(isDataUsage({ ...usage, extra: true })).toBe(false);
     expect(
       isDataUsage({

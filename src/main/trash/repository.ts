@@ -5,11 +5,14 @@
  * incluyen el mundo de origen aunque esté en papelera para que la interfaz
  * pueda avisar del orden de restauración. El borrado definitivo respeta las
  * claves foráneas existentes: `activity_log` primero al purgar un mundo y los
- * assets nunca se tocan (D8).
+ * metadatos de los assets no usados se mueven a `assets_quarantine` antes de
+ * borrar el mundo. Los archivos de assets nunca se borran desde la papelera.
  */
 import { and, desc, eq, inArray, isNotNull, lt, or } from 'drizzle-orm';
 
 import type { WorldCraftDatabase } from '../db/client';
+import type { SqliteDatabase } from '../db/connection';
+import { quarantineWorldAssets } from '../assets/quarantine';
 import {
   entities,
   entityGallery,
@@ -21,6 +24,7 @@ import { relations } from '../db/schema/relations';
 import { entityVersions } from '../db/schema/versions';
 import { activityLog, worlds } from '../db/schema/worlds';
 
+import { countExternalAssetReferences } from './asset-references';
 import type { TrashCursor } from './validation';
 
 /** Mundo en papelera para el listado. */
@@ -100,12 +104,18 @@ export interface TrashRepository {
   restoreEntityType(id: string, updatedAt: number): boolean;
   purgeEntity(id: string): void;
   purgeEntityType(id: string): void;
-  purgeWorld(id: string): void;
+  clearWorldCover(id: string): void;
+  purgeWorld(
+    id: string,
+    at: number,
+    allowedWorldIds?: ReadonlySet<string>,
+  ): boolean;
 }
 
 /** Crea el repositorio sobre la conexión compartida del proceso principal. */
 export function createTrashRepository(
   database: WorldCraftDatabase,
+  sqlite: SqliteDatabase,
 ): TrashRepository {
   return {
     listWorlds(cursor, limit) {
@@ -387,7 +397,30 @@ export function createTrashRepository(
         .run();
     },
 
-    purgeWorld(id) {
+    clearWorldCover(id) {
+      database
+        .update(worlds)
+        .set({ coverAssetId: null })
+        .where(eq(worlds.id, id))
+        .run();
+    },
+
+    purgeWorld(id, at, allowedWorldIds) {
+      // Un asset está en uso si una fila que sobrevive a la purga lo
+      // referencia. El propio mundo y los demás mundos que se purgan en el
+      // mismo vaciado no bloquean.
+      if (countExternalAssetReferences(sqlite, id, allowedWorldIds) > 0) {
+        return false;
+      }
+
+      // La portada del mundo se retira antes de borrar sus assets: la FK
+      // `RESTRICT` impediría la purga y la referencia no debe sobrevivir.
+      database
+        .update(worlds)
+        .set({ coverAssetId: null })
+        .where(eq(worlds.id, id))
+        .run();
+
       // `activity_log` no tiene cascada y bloquearía el resto del borrado.
       database.delete(activityLog).where(eq(activityLog.worldId, id)).run();
       database.delete(relations).where(eq(relations.worldId, id)).run();
@@ -420,7 +453,14 @@ export function createTrashRepository(
         .where(and(eq(entityTypes.worldId, id), eq(entityTypes.isSystem, 0)))
         .run();
       database.delete(tags).where(eq(tags.worldId, id)).run();
+
+      // Los metadatos del asset se conservan en cuarentena; los archivos del
+      // equipo nunca se borran desde la papelera.
+      quarantineWorldAssets(sqlite, id, at);
+
       database.delete(worlds).where(eq(worlds.id, id)).run();
+
+      return true;
     },
   };
 }

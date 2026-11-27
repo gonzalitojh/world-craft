@@ -1,7 +1,7 @@
 # Esquema de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 26/11/2026 con #114. La migración
+> 27/11/2026 con #116 (integridad de assets). La migración
 > `0000_init` y las tablas `schema_migrations` y `app_settings` están
 > implementadas en M0-04 (#64); la tabla `assets` en `0001_assets` (M0-06, #66);
 > `worlds` y `activity_log` en `0002_worlds` (M1-01, #72); `entity_types` en
@@ -10,11 +10,13 @@
 > `relations` en `0005_relations` (M1-04, #75); el índice de búsqueda
 > `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
 > (M1-05, #76); `entity_versions` con los índices de papelera en
-> `0007_trash_versions` (M1-06, #77); y `worlds.description_text` con la vista
-> de búsqueda sobre texto plano en `0008_world_description` (#114). **La versión
-> vigente es 9**: #78 y #79 no cambiaron `user_version` y #114 lo sube al añadir
-> la descripción enriquecida. El resto de tablas de contenido llega en M2, M3 y
-> M4 con sus propias migraciones; hasta entonces figuran como previstas.
+> `0007_trash_versions` (M1-06, #77); `worlds.description_text` con la vista
+> de búsqueda sobre texto plano en `0008_world_description` (#114); y la FK
+> `assets.world_id`, las tablas de cuarentena y los índices de referencia en
+> `0009_assets_world_fk` (#116). **La versión vigente es 10**: #78 y #79 no
+> cambiaron `user_version`, #114 lo subió al añadir la descripción enriquecida y
+> #116 lo sube al reconstruir `assets`. El resto de tablas de contenido llega en
+> M2, M3 y M4 con sus propias migraciones; hasta entonces figuran como previstas.
 > **Motor:** SQLite 3 con better-sqlite3, Drizzle ORM y FTS5.
 > **Ámbito:** diccionario de tablas, columnas, índices, relaciones y reglas de
 > integridad. Las migraciones se documentan en
@@ -30,9 +32,11 @@
   esquema interno.
 - Borrado lógico con `deleted_at INTEGER NULL` en contenido; la papelera visible
   conserva el registro y sus assets, y la purga definitiva exige copia previa y
-  borra en orden sin tocar los archivos de assets. Las versiones de la
-  descripción se conservan mientras la fila exista y caen en cascada al purgar
-  la ficha.
+  borra en orden. Al purgar un mundo, los metadatos de sus assets no usados se
+  mueven a `assets_quarantine` y los archivos de assets **nunca se borran**; la
+  cuarentena no tiene FK a `worlds` porque registra mundos que ya no existen. Las
+  versiones de la descripción se conservan mientras la fila exista y caen en
+  cascada al purgar la ficha.
 - `world_id` obligatorio en todo el contenido de un mundo, directo o derivado
   mediante claves foráneas.
 - `ON DELETE CASCADE` en hijas de contenido; `RESTRICT` en referencias que no
@@ -53,7 +57,7 @@ worlds
   │                                ├─< entity_gallery >─ assets
   │                                ├─< entity_versions      (historial, desde #77)
   │                                └─ image_asset_id ──> assets
-  │      └─< assets                 (imagen principal y galería desde #74)
+  │      └─< assets                 (imagen principal y galería; FK desde #116)
   ├─< maps >─< map_entity_links
   ├─< manuscripts >─< books >─< chapters >─< scenes >─< scene_versions
   ├─< game_tables >─< game_table_entries
@@ -62,7 +66,8 @@ worlds
 
 game_content_packs >─ game_tables
 app_settings
-assets                      (implementada en 0001; FK a worlds en M1)
+assets_quarantine              (metadatos huérfanos, sin FK a worlds desde #116)
+  └─< assets_quarantine_references
 schema_migrations
 search_documents >─ search_fts (FTS5)
 ```
@@ -89,9 +94,10 @@ La migración inicial no crea tablas de dominio ni FTS5. `PRAGMA user_version`
 guarda el **número de migraciones aplicadas**: con `0000_init` vale 1, con
 `0001_assets` vale 2, con `0002_worlds` vale 3, con `0003_entity_types` vale 4,
 con `0004_entities` vale 5, con `0005_relations` vale 6, con `0006_search` vale 7,
-con `0007_trash_versions` vale 8 y con `0008_world_description` vale **9**; no es
-el prefijo de la etiqueta. El runner contrasta ese valor con
-`schema_migrations` y entra en modo seguro si no coinciden.
+con `0007_trash_versions` vale 8, con `0008_world_description` vale 9 y con
+`0009_assets_world_fk` vale **10**; no es el prefijo de la etiqueta. El runner
+contrasta ese valor con `schema_migrations` y entra en modo seguro si no
+coinciden.
 
 ### 3.1 `schema_migrations`
 
@@ -136,8 +142,9 @@ Las claves no-UI y las tablas de dominio no se tocan. El detalle está en
 `relation_types` y `relations` en `0005_relations` (M1-04, #75), el índice
 `search_documents`, `search_fts` y `search_vocabulary` en `0006_search`
 (M1-05, #76), `entity_versions` en `0007_trash_versions` (M1-06, #77),
-`worlds.description_text` en `0008_world_description` (#114) y `assets`
-en `0001_assets` (M0-06, #66). Las demás tablas de esta sección describen el
+`worlds.description_text` en `0008_world_description` (#114), `assets` en
+`0001_assets` (M0-06, #66) y su FK, cuarentena e índices en
+`0009_assets_world_fk` (#116). Las demás tablas de esta sección describen el
 modelo objetivo y todavía no existen; llegarán con sus issues de M2, M3 y M4.
 
 ### 4.1 `worlds`
@@ -193,8 +200,9 @@ ALTER TABLE `worlds` ADD `description_text` text;
 | `archived_at` | INTEGER | NULL | Archivo. |
 | `deleted_at` | INTEGER | NULL | Papelera lógica. |
 
-Índices: `worlds_slug_uq (slug)`, `worlds_status_idx (status, deleted_at)` y
-`worlds_deleted_updated_idx (deleted_at, updated_at DESC)`.
+Índices: `worlds_slug_uq (slug)`, `worlds_status_idx (status, deleted_at)`,
+`worlds_deleted_updated_idx (deleted_at, updated_at DESC)` y
+`worlds_cover_asset_idx (cover_asset_id)` (#116).
 
 Reglas de la issue M1-01:
 
@@ -209,7 +217,10 @@ Reglas de la issue M1-01:
   y Mundos y no restaura en cascada sus fichas o tipos que ya estuvieran en
   papelera. La purga definitiva borra la actividad, las relaciones, la galería,
   las etiquetas, las versiones, las fichas, los tipos y las etiquetas del mundo,
-  en ese orden, y nunca los assets (ADR 0028).
+  en ese orden, mueve a `assets_quarantine` los metadatos de sus assets no usados
+  y nunca borra los archivos de assets (ADR 0028 y ADR 0032). La FK
+  `cover_asset_id → assets(id) RESTRICT` impide que un asset usado como portada
+  desaparezca por otra vía.
 - Los géneros y el nombre se validan en el proceso principal además de en la
   interfaz; el `CHECK` de SQLite es la última barrera.
 - **Descripción enriquecida (#114).** `description` guarda un documento
@@ -320,8 +331,9 @@ Reglas de la issue M1-02:
 Índices: `entities_world_slug_uq (world_id, slug)`,
 `entities_world_type_idx (world_id, type_id, deleted_at)`,
 `entities_name_idx (world_id, name)`,
-`entities_favorite_idx (world_id, is_favorite)` y
-`entities_deleted_idx (deleted_at, world_id)` (M1-06, #77).
+`entities_favorite_idx (world_id, is_favorite)`,
+`entities_deleted_idx (deleted_at, world_id)` (M1-06, #77) y
+`entities_image_asset_idx (image_asset_id)` (#116).
 
 Reglas:
 
@@ -335,9 +347,10 @@ Reglas:
   conservan hasta la purga. La papelera la muestra con su mundo y tipo de origen;
   restaurarla exige el mundo vivo (`world-in-trash`) y un tipo disponible
   (`type-unavailable`). Al purgarla se borran sus relaciones, versiones,
-  etiquetas y galería, y después la ficha; los assets y sus archivos no se tocan
-  (#116 los pondrá en cuarentena). Una ficha en papelera no muestra ni genera
-  versiones (ADR 0028).
+  etiquetas y galería, y después la ficha; purgar una ficha **no toca** los
+  assets ni sus archivos. Purgar un mundo mueve a cuarentena los metadatos de sus
+  assets no usados y deja los archivos en el equipo (ADR 0032). Una ficha en
+  papelera no muestra ni genera versiones (ADR 0028).
 - La descripción sigue la lista cerrada de nodos y marcas de
   `src/shared/entities/description.ts`; el `CHECK` solo comprueba que es un JSON
   de objeto, la garantía de forma es de la aplicación.
@@ -444,7 +457,8 @@ siempre por `world_id`.
 
 ### 4.7 `assets`
 
-**Implementada en `0001_assets` (M0-06, #66).** SQL real:
+**Implementada en `0001_assets` (M0-06, #66) y reconstruida con FK en
+`0009_assets_world_fk` (#116).** SQL real vigente:
 
 ```sql
 CREATE TABLE `assets` (
@@ -459,19 +473,20 @@ CREATE TABLE `assets` (
   `alt` text,
   `hash` text NOT NULL,
   `created_at` integer NOT NULL,
-  CONSTRAINT "assets_kind_check" CHECK("assets"."kind" in ('image', 'map', 'document', 'other')),
-  CONSTRAINT "assets_size_check" CHECK("assets"."size" >= 0),
-  CONSTRAINT "assets_hash_check" CHECK(length("assets"."hash") = 64 AND "assets"."hash" NOT GLOB '*[^0-9a-f]*')
+  FOREIGN KEY (`world_id`) REFERENCES `worlds`(`id`) ON UPDATE no action ON DELETE restrict,
+  CONSTRAINT "assets_kind_check" CHECK("kind" in ('image', 'map', 'document', 'other')),
+  CONSTRAINT "assets_size_check" CHECK("size" >= 0),
+  CONSTRAINT "assets_hash_check" CHECK(length("hash") = 64 AND "hash" NOT GLOB '*[^0-9a-f]*')
 );
 ```
 
 | Columna | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `id` | TEXT | PK | UUIDv7. |
-| `world_id` | TEXT | NOT NULL | Mundo; **sin FK en M0**, se añade en M1. |
-| `kind` | TEXT | NOT NULL, CHECK | `image`, `map`, `document`, `other`. En M0 solo se inserta `image`. |
+| `world_id` | TEXT | NOT NULL, FK `worlds(id)` `RESTRICT` | Mundo; desde #116 la base impide dejarlo huérfano. |
+| `kind` | TEXT | NOT NULL, CHECK | `image`, `map`, `document`, `other`. Hoy solo se inserta `image`. |
 | `relative_path` | TEXT | NOT NULL | Ruta relativa a `assets/`; en M0 `worlds/<uuidv7>/<uuidv7>.webp`. |
-| `mime` | TEXT | NOT NULL | MIME real; en M0 siempre `image/webp`. |
+| `mime` | TEXT | NOT NULL | MIME real; hoy siempre `image/webp`. |
 | `size` | INTEGER | NOT NULL, CHECK >= 0 | Bytes del WebP servido. |
 | `width` | INTEGER | NULL | Ancho en píxeles. |
 | `height` | INTEGER | NULL | Alto en píxeles. |
@@ -479,7 +494,9 @@ CREATE TABLE `assets` (
 | `hash` | TEXT | NOT NULL, CHECK hexadecimal de 64 | SHA-256 del WebP publicado. |
 | `created_at` | INTEGER | NOT NULL | Creación en milisegundos UTC. |
 
-Índices: `assets_world_idx (world_id)`, `assets_hash_idx (hash)`.
+Índices: `assets_world_idx (world_id)`, `assets_hash_idx (hash)`,
+`worlds_cover_asset_idx (worlds.cover_asset_id)` y
+`entities_image_asset_idx (entities.image_asset_id)`.
 
 Reglas:
 
@@ -487,13 +504,80 @@ Reglas:
   `worlds/<uuidv7>/<uuidv7>.webp` o `…/<uuidv7>.thumb.webp`; la miniatura no
   tiene fila propia y se deriva del archivo principal.
 - `hash` cubre el archivo servido, no el original; por eso el índice sirve para
-  verificar y para una futura deduplicación, que en M0 no se aplica.
-- **FK diferida.** `worlds` ya existe desde `0002_worlds` y `worlds.cover_asset_id`
-  referencia `assets(id)` con `RESTRICT`, pero `assets.world_id` sigue sin clave
-  foránea. La issue M1-11 (#116) reconstruirá `assets` (tabla nueva, copia,
-  `DROP` y `RENAME`) para añadir `world_id → worlds(id) ON DELETE RESTRICT`,
-  dejando en cuarentena las filas sin mundo antes de activar la restricción. No
-  se edita `0001_assets`.
+  verificar y para una futura deduplicación, que no se aplica.
+- **FK activa desde #116.** `DELETE FROM worlds` falla si quedan assets del
+  mundo; el borrado lógico (`deleted_at`) no rompe la FK. La migración
+  `0009_assets_world_fk` copió solo las filas cuyo mundo existe, incluidas las de
+  mundos en papelera, y puso las demás en `assets_quarantine`. No se editó
+  `0001_assets`.
+- **Purga.** Purgar una ficha no toca sus assets. Purgar un mundo mueve sus
+  filas de assets a `assets_quarantine` (`reason = 'world-purged'`) y después las
+  elimina de `assets`; si otro mundo o una ficha superviviente referencia un
+  asset, la purga se rechaza con `assets-in-use`. Los archivos nunca se borran
+  desde la papelera (ADR 0032).
+
+### 4.7.1 `assets_quarantine` y `assets_quarantine_references`
+
+**Implementadas en `0009_assets_world_fk` (#116).** Guardan metadatos de assets
+cuyo mundo ya no existe o fue purgado, y la auditoría de los vínculos visibles
+que la migración tuvo que desvincular. **Los archivos no se mueven ni se
+borran**; `relative_path` conserva la ruta original.
+
+```sql
+CREATE TABLE `assets_quarantine` (
+  `id` text PRIMARY KEY NOT NULL,
+  `world_id` text NOT NULL,
+  `kind` text NOT NULL,
+  `relative_path` text NOT NULL,
+  `mime` text NOT NULL,
+  `size` integer NOT NULL,
+  `width` integer,
+  `height` integer,
+  `alt` text,
+  `hash` text NOT NULL,
+  `created_at` integer NOT NULL,
+  `reason` text NOT NULL,
+  `quarantined_at` integer NOT NULL,
+  CONSTRAINT "assets_quarantine_kind_check" CHECK("kind" in ('image', 'map', 'document', 'other')),
+  CONSTRAINT "assets_quarantine_size_check" CHECK("size" >= 0),
+  CONSTRAINT "assets_quarantine_hash_check" CHECK(length("hash") = 64 AND "hash" NOT GLOB '*[^0-9a-f]*'),
+  CONSTRAINT "assets_quarantine_reason_check" CHECK("reason" in ('world-missing', 'world-purged')),
+  CONSTRAINT "assets_quarantine_timestamp_check" CHECK("quarantined_at" >= 0)
+);
+
+CREATE TABLE `assets_quarantine_references` (
+  `id` integer PRIMARY KEY NOT NULL,
+  `asset_id` text NOT NULL,
+  `table_name` text NOT NULL,
+  `row_id` text NOT NULL,
+  `column_name` text NOT NULL,
+  `position` integer,
+  `created_at` integer NOT NULL,
+  FOREIGN KEY (`asset_id`) REFERENCES `assets_quarantine`(`id`) ON UPDATE no action ON DELETE cascade,
+  CONSTRAINT "assets_quarantine_references_table_check" CHECK("table_name" in ('worlds', 'entities', 'entity_gallery')),
+  CONSTRAINT "assets_quarantine_references_position_check" CHECK("position" is null or "position" >= 0)
+);
+```
+
+| Tabla | Columnas relevantes | Regla |
+|---|---|---|
+| `assets_quarantine` | `id`, `world_id`, `kind`, `relative_path`, `mime`, `size`, `width`, `height`, `alt`, `hash`, `created_at`, `reason`, `quarantined_at` | `world_id` **no tiene FK** porque el mundo puede no existir. `reason` distingue `world-missing` (migración) de `world-purged` (purga). |
+| `assets_quarantine_references` | `asset_id`, `table_name`, `row_id`, `column_name`, `position`, `created_at` | Audita los vínculos retirados de `worlds`, `entities` y `entity_gallery`; la FK a `assets_quarantine` cae en cascada. |
+
+Índices: `assets_quarantine_world_idx (world_id, quarantined_at)`,
+`assets_quarantine_hash_idx (hash)`,
+`assets_quarantine_references_asset_idx (asset_id)` y
+`assets_quarantine_references_row_idx (table_name, row_id)`.
+
+Reglas:
+
+- La cuarentena es **metadato histórico**: no se restaura desde la interfaz ni
+  se limpia automáticamente. Su archivo puede seguir en el equipo y aparecerá
+  como no referenciado en el análisis de imágenes huérfanas.
+- `countQuarantine` devuelve ceros si las tablas no existen, para que una base
+  antigua o una restauración parcial no rompan Ajustes.
+- El rollback de referencia devuelve las filas a `assets`, restaura las
+  referencias auditadas y deja `user_version` 9; no se ejecuta solo.
 
 ### 4.8 `maps`
 
@@ -757,7 +841,7 @@ Reglas (ADR 0028):
 **No hay migración adicional para importar.** La importación usa las tablas
 existentes —incluida `description_text`, que se recalcula al escribir el mundo—
 en **una única transacción** y respeta las claves foráneas con este orden de
-inserción. `user_version` vale **9** desde `0008_world_description`. Antes de
+inserción. `user_version` vale **10** desde `0009_assets_world_fk`. Antes de
 leer `world.json` o extraer assets, rechaza con `TRANSFER_FORMAT_UNSUPPORTED` un
 manifiesto cuyo `schemaVersion` supere el `user_version` instalado; los valores
 iguales o anteriores se aceptan.
@@ -786,21 +870,25 @@ El orden de inserción es:
 Después se confirma la transacción. Si algo falla antes del commit, la
 transacción revierte y el directorio publicado se elimina.
 
-> **Assets sin FK a `worlds` hasta #116.** La tabla `assets` conserva su
-> `world_id` sin clave foránea (sección 4.7). La importación siempre inserta un
-> `world_id` válido del mundo recién creado, pero la base no lo impone todavía;
-> la FK y la cuarentena de huérfanos llegan con #116. Un cierre abrupto entre el
-> renombrado y el commit puede dejar assets sin mundo, nunca un mundo parcial.
+> **FK de assets activa desde #116.** La tabla `assets` tiene
+> `world_id → worlds(id) ON DELETE RESTRICT` (sección 4.7). La importación ya
+> insertaba el mundo antes de los assets, así que el orden no cambia y la base
+> impone ahora esa garantía. Las filas en cuarentena no se exportan ni se
+> importan: el paquete solo lleva contenido vivo. Un cierre abrupto entre el
+> renombrado y el commit puede dejar assets sin fila, nunca un mundo parcial; la
+> limpieza de huérfanos los detecta (ADR 0032).
 
 ## 5. Reglas de integridad
 
 1. Borrar contenido es lógico (`deleted_at`) y la purga es una acción separada,
    confirmada y precedida de una copia verificable. La purga nunca acepta una
    fila viva y un mundo se elimina en orden explícito, empezando por
-   `activity_log`.
+   `activity_log`. Los metadatos de sus assets no usados pasan a
+   `assets_quarantine`; los archivos no se borran.
 2. Un asset referenciado por una entidad, mapa o escena no se purga hasta que
-   la referencia desaparece. #77 no borra filas ni archivos de `assets` al
-   purgar; los huérfanos y la FK `assets.world_id` llegan con #116.
+   la referencia desaparece. Purgar un mundo con un asset usado por otro mundo o
+   ficha se rechaza con `assets-in-use`. La FK `assets.world_id` impide que un
+   asset quede sin mundo; la cuarentena es la única excepción y no tiene FK.
 3. `entity_types` y `relation_types` del sistema (`world_id IS NULL`) no se
    editan ni se borran desde la app; se pueden duplicar por mundo.
 4. Las relaciones no admiten origen igual a destino.
@@ -810,7 +898,9 @@ transacción revierte y el directorio publicado se elimina.
    `description_text` son la versión plana para búsqueda y exportación.
 7. Los borrados lógicos no eliminan assets ni versiones; la purga es explícita.
    Purgar una ficha borra sus versiones en cascada y purgar un mundo borra el
-   historial de sus fichas, mientras los archivos de assets permanecen.
+   historial de sus fichas, mientras los archivos de assets permanecen. La
+   cuarentena conserva los metadatos de los assets sin mundo y no se limpia
+   automáticamente.
 8. Los triggers de `updated_at` se aplican en la aplicación y en SQLite para
    evitar filas con fecha vieja.
 
@@ -850,3 +940,4 @@ Cualquier cambio de tabla, columna, índice o trigger requiere:
 - [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
 - [ADR 0028](../adr/0028-trash-versions-and-pre-purge-backup.md)
 - [ADR 0029](../adr/0029-world-export-import.md)
+- [ADR 0032](../adr/0032-assets-world-fk-quarantine.md)

@@ -50,6 +50,11 @@ export function DataSettings({ onNotify }: DataSettingsProps) {
           state={data.orphans}
           busy={data.busy}
           unavailable={unavailable}
+          quarantine={
+            data.summary.status === 'ready'
+              ? data.summary.data.quarantine
+              : null
+          }
           onAnalyze={() => {
             void data.analyzeOrphans();
           }}

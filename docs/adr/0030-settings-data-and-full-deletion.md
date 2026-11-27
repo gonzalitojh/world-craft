@@ -241,11 +241,22 @@ contenida en la fase S4.
 No aplica ningún servicio de pago: la pantalla, la copia, la exportación y el
 borrado son locales y usan el stack existente.
 
+> **Implementación (M1-11, #116, 27/11/2026).** El resumen de datos añade
+> `quarantine: { assets, references }` y Ajustes → Datos → Imágenes huérfanas
+> muestra un aviso pasivo cuando `references > 0`. El aviso explica que la
+> actualización retiró vínculos a imágenes cuyo mundo ya no existía, que los
+> archivos no se borraron y que solo se eliminan con la purga de huérfanas, que
+> exige confirmación y copia previa. `planOrphanCleanup` no cambia: los archivos
+> de filas en cuarentena aparecen como no referenciados y siguen el flujo
+> recuperable de este ADR. El borrado total elimina la base y `assets/`, con la
+> cuarentena incluida en la copia `pre-delete`. El detalle está en el
+> [ADR 0032](0032-assets-world-fk-quarantine.md).
+
 ## Plan de revisión
 
-- **#116:** al añadir la FK `assets.world_id` y la cuarentena, revisar la purga
-  de huérfanas de Ajustes, la copia `pre-delete` de assets y el borrado total
-  para que sigan sin tocar archivos referenciados.
+- **#116:** atendido. La FK `assets.world_id` y la cuarentena añaden el recuento
+  y el aviso sin cambiar la purga de huérfanas, la copia `pre-delete` ni el
+  borrado total; los archivos referenciados siguen sin tocarse.
 - **M2 (mapas) y M3 (manuscritos y escenas):** la biblioteca debe incluir sus
   datos en la copia de SQLite y decidir si los paquetes de mundo los exportan;
   cualquier cambio de formato exige subir `formatVersion` y actualizar este ADR
@@ -275,3 +286,5 @@ borrado son locales y usan el stack existente.
   secciones 10.7 y 10.8
 - [`docs/manual-de-usuario.md`](../manual-de-usuario.md), secciones 12 y 13
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-053
+- [`docs/adr/0032-assets-world-fk-quarantine.md`](0032-assets-world-fk-quarantine.md),
+  cuarentena y aviso de imágenes desvinculadas

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
-import type { DataOrphanSummary } from '../../../shared/contracts/data';
+import type {
+  DataOrphanSummary,
+  DataQuarantineCounts,
+} from '../../../shared/contracts/data';
 import { useI18n } from '../../i18n/provider';
 import { formatMessage } from '../../messages/translator';
 import { dataErrorMessage } from '../../settings/data-errors';
@@ -12,6 +15,7 @@ export interface DataOrphansProps {
   readonly state: OrphansState;
   readonly busy: boolean;
   readonly unavailable: boolean;
+  readonly quarantine: DataQuarantineCounts | null;
   readonly onAnalyze: () => void;
   readonly onPurge: () => Promise<boolean>;
 }
@@ -31,6 +35,7 @@ export function DataOrphans({
   state,
   busy,
   unavailable,
+  quarantine,
   onAnalyze,
   onPurge,
 }: DataOrphansProps) {
@@ -73,6 +78,12 @@ export function DataOrphans({
       <h3 className="wc-settings__subheading">{copy.title}</h3>
       <p className="wc-settings__note">{copy.lead}</p>
       <p className="wc-settings__note">{copy.safety}</p>
+
+      {quarantine !== null && quarantine.references > 0 ? (
+        <p className="wc-settings__notice">
+          {i18n.formats.plural(quarantine.references, copy.quarantineNotice)}
+        </p>
+      ) : null}
 
       {state.status === 'planning' ? (
         <div aria-busy="true" className="wc-settings__loading">

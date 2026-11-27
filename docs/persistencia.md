@@ -1,7 +1,7 @@
 # Persistencia local de World Craft
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 26/11/2026 con la descripción enriquecida del mundo (#114). La base local, las migraciones, el modo
+> 27/11/2026 con la integridad de assets (#116). La base local, las migraciones, el modo
 > seguro, el servicio de assets con `wc-asset://`, las copias automáticas, la
 > rotación, la restauración desde el diálogo de modo seguro, el instalador por
 > usuario y la actualización manual están implementados en M0-04 (#64), M0-06
@@ -12,17 +12,18 @@
 > comandos, en M1-05 (#76); la papelera, el historial de versiones y la copia
 > `pre-purge`, en M1-06 (#77); la exportación e importación de un mundo
 > completo, en M1-07 (#78); la pantalla de Ajustes y la gestión de datos, en
-> M1-08 (#79); y la descripción enriquecida del mundo, con la migración `0008`,
-> en #114. La release pública con actualización real llega en M5. Las secciones
-> distinguen lo implementado de lo previsto.
+> M1-08 (#79); la descripción enriquecida del mundo, con la migración `0008`,
+> en #114; y la FK de assets, la cuarentena y la purga sin huérfanos, con la
+> migración `0009`, en #116. La release pública con actualización real llega en
+> M5. Las secciones distinguen lo implementado de lo previsto.
 > **Ámbito:** ubicación de datos, SQLite, assets, migraciones, copias,
 > exportación/importación y recuperación.
 > **Decisiones:** ADR 0002 (SQLite), ADR 0005 y ADR 0017 (assets locales),
 > ADR 0012 (copias y recuperación), ADR 0016 (migraciones y modo seguro),
 > ADR 0019 (mundos del MVP), ADR 0020 (tipos de entidad y campos
 > personalizados), ADR 0023 (búsqueda global FTS5), ADR 0028 (papelera,
-> versiones y copia previa a la purga) y ADR 0029 (exportación e importación de
-> mundos).
+> versiones y copia previa a la purga), ADR 0029 (exportación e importación de
+> mundos) y ADR 0032 (FK de assets, cuarentena y purga).
 
 ## 1. Principio
 
@@ -271,15 +272,19 @@ Ajustes (#79).
 - La base guarda solo la **ruta relativa** del archivo principal, el MIME real,
   el tamaño, las dimensiones, el `alt` y el SHA-256. La miniatura se deriva de la
   ruta y no tiene fila propia.
-- Tabla `assets` (migración `0001_assets`): `id`, `world_id`, `kind`,
-  `relative_path`, `mime`, `size`, `width`, `height`, `alt`, `hash` y
-  `created_at`, con `CHECK` de `kind` (`image`, `map`, `document`, `other`),
-  `size >= 0` y `hash` hexadecimal de 64 caracteres, e índices
-  `assets_world_idx` y `assets_hash_idx`. En M0 solo se importa `kind = 'image'`.
-- `world_id` **no tiene clave foránea todavía**: `worlds` ya existe desde
-  `0002_worlds`, pero la reconstrucción de `assets` con `worlds(id) ON DELETE
-  RESTRICT` y la cuarentena de filas sin mundo se abordan en la issue M1-11
-  (#116). Mientras tanto, la integridad se comprueba en el servicio.
+- Tabla `assets` (migración `0001_assets`, reconstruida en `0009_assets_world_fk`):
+  `id`, `world_id`, `kind`, `relative_path`, `mime`, `size`, `width`, `height`,
+  `alt`, `hash` y `created_at`, con `CHECK` de `kind` (`image`, `map`,
+  `document`, `other`), `size >= 0` y `hash` hexadecimal de 64 caracteres, FK
+  `world_id → worlds(id) ON DELETE RESTRICT` e índices `assets_world_idx`,
+  `assets_hash_idx`, `worlds_cover_asset_idx` y `entities_image_asset_idx`. Hoy
+  solo se importa `kind = 'image'`.
+- **La FK está activa desde #116.** La base impide crear un asset sin mundo o
+  borrar un mundo con assets; el borrado lógico (`deleted_at`) no la rompe. La
+  migración conservó todas las filas y archivos válidos y movió a
+  `assets_quarantine` las filas cuyo mundo ya no existía. Purgar una ficha no
+  toca sus assets; purgar un mundo mueve sus metadatos a cuarentena y deja los
+  archivos en su sitio (secciones 4.4 y 4.4.1).
 
 ### 4.2 Importación
 
@@ -338,14 +343,51 @@ Ajustes (#79).
   copiado se restaura desde la carpeta de la copia. Cualquier fila de `assets`
   cuenta como referencia, aunque ya no sea la portada de un mundo: la purga no
   distingue usos y **no toca assets con fila** (sección 4.7).
-- **La purga de la papelera no borra assets (M1-06, #77).** Al purgar una ficha o
-  un mundo, las filas de `assets` y sus archivos permanecen: los assets son del
-  mundo y pueden estar compartidos por contenido vivo. Las filas de un mundo
-  purgado quedan **huérfanas a propósito** hasta que #116 añada
-  `assets.world_id → worlds(id) ON DELETE RESTRICT` y la cuarentena de huérfanos.
-  Hasta entonces no hay limpieza guiada de esos archivos y no se deben borrar a
-  mano sin una copia. La purga sí deja una copia de la base en
+- **La purga de la papelera no borra archivos (M1-06, #77; M1-11, #116).** Los
+  assets son del mundo y pueden estar compartidos por contenido vivo. Purgar una
+  ficha no toca sus assets. Purgar un mundo:
+  1. comprueba si algún asset del mundo está referenciado por una fila que
+     sobrevive a la purga (portada de otro mundo, imagen de una ficha o galería
+     de una ficha de otro mundo) y, si es así, devuelve `assets-in-use` sin tocar
+     nada;
+  2. limpia la portada del propio mundo;
+  3. borra actividad, relaciones, galería, etiquetas, versiones, fichas, tipos y
+     etiquetas del mundo;
+  4. mueve sus filas de `assets` a `assets_quarantine` con
+     `reason = 'world-purged'` y las elimina de `assets`;
+  5. borra el mundo. **Los archivos siguen en `assets/worlds/<worldId>/`.**
+
+  La comprobación se repite antes de la copia y dentro de la transacción. El
+  vaciado calcula primero un **punto fijo** de mundos purgables: una referencia
+  entre dos mundos que también se van a vaciar no bloquea, pero la de cualquier
+  superviviente sí; el punto fijo resuelve cadenas y ciclos. Después limpia las
+  portadas de los mundos que se van a purgar, reintenta los bloqueados y los
+  cuenta en `skipped`. Si no se purga nada y `skipped > 0`, la interfaz no dice
+  «la papelera ya estaba vacía». La purga sigue creando una copia
   `backups/pre-purge/`.
+
+### 4.4.1 Cuarentena y archivos huérfanos (#116)
+
+- `assets_quarantine` guarda los metadatos de los assets cuyo mundo ya no existe
+  (`reason = 'world-missing'`, de la migración) o fue purgado
+  (`reason = 'world-purged'`). No tiene FK a `worlds`; conserva `relative_path`,
+  `hash`, `alt`, dimensiones y fechas, y **no mueve ni borra el archivo**.
+- `assets_quarantine_references` audita los vínculos visibles que la migración
+  retiró: portada de un mundo, imagen principal de una ficha y filas de galería
+  con su `position`. La FK a `assets_quarantine` cae en cascada.
+- La cuarentena **no se restaura ni se limpia desde la interfaz**. Es metadato
+  histórico: puede sobrevivir al archivo y no cuenta como asset para el análisis
+  de huérfanos.
+- `planOrphanCleanup` solo considera referenciadas las filas de `assets`. Por
+  eso los archivos y miniaturas de filas en cuarentena aparecen como
+  `unreferencedFiles` u `orphanThumbnails` y solo se eliminan con la purga de
+  imágenes huérfanas de Ajustes, que exige confirmación y una copia verificable
+  en `backups/orphans/`. Si el usuario ya purgó esos archivos, la cuarentena
+  sigue ahí, pero el aviso de Ajustes ya no promete que existan.
+- `countQuarantine` devuelve ceros si las tablas no existen, para que una base
+  antigua o una restauración parcial no rompan el resumen de Ajustes.
+- No hay recuento de archivos en cuarentena ni botón para vaciar sus filas en
+  esta entrega.
 
 ### 4.5 Dependencia de imagen y residuales
 
@@ -406,7 +448,7 @@ Ajustes (#79).
   selector del mundo lo vuelve a ofrecer; quitar la portada no pide confirmación
   porque no destruye nada. El original y la miniatura solo desaparecen con la
   eliminación de todos los datos, que crea una copia previa; la purga de un mundo
-  **no** borra sus assets (sección 4.4).
+  mueve sus metadatos a cuarentena y **no** borra sus archivos (sección 4.4).
 - **Purga de huérfanos.** `planOrphanCleanup` considera **referenciada cualquier
   fila de `assets`**, se use o no como portada. Por eso ni la portada actual ni
   las anteriores entran en `unreferencedFiles` mientras su fila exista, y la
@@ -415,7 +457,7 @@ Ajustes (#79).
 - **Exportación, importación y duplicado.** La portada viaja en `world.json`
   (`coverAssetId`) y el asset se incluye y se remapea al importar; duplicar un
   mundo deja `coverAssetId = null` porque el asset pertenece al mundo original y
-  no se comparte. `user_version` sigue en 9.
+  no se comparte. `user_version` sigue en 10 desde #116.
 
 ## 5. Migraciones
 
@@ -423,7 +465,10 @@ Ajustes (#79).
 - Se generan con `pnpm db:generate` y se validan con `pnpm db:check`. La
   aplicación **no** usa `drizzle-kit migrate` ni `drizzle-kit push`: un runner
   propio lee el journal de Drizzle validado con Zod y aplica el lote pendiente
-  dentro de una única transacción.
+  dentro de una única transacción. El runner exige `foreign_keys = ON`, las
+  desactiva **fuera** de la transacción, ejecuta `PRAGMA foreign_key_check` antes
+  del commit y las restaura y verifica en el `finally`; una violación revierte el
+  lote completo y entra en modo seguro.
 - Antes de migrar una base existente se crea una copia online verificable en
   `backups/pre-migration/<timestamp>/`, con manifiesto v2, SHA-256 e
   `integrity_check` en solo lectura. Si la copia falla, no se migra. Una base
@@ -434,7 +479,8 @@ Ajustes (#79).
   migraciones aplicadas** y en la tabla `schema_migrations`, con checksum
   SHA-256 del SQL normalizado. Con `0000_init`, `0001_assets`, `0002_worlds`,
   `0003_entity_types`, `0004_entities`, `0005_relations`, `0006_search`,
-  `0007_trash_versions` y `0008_world_description`, vale 9.
+  `0007_trash_versions`, `0008_world_description` y `0009_assets_world_fk`,
+  vale 10.
 - `0001_assets` es aditiva: crea la tabla `assets` con sus `CHECK` e índices y no
   toca `app_settings` ni las tablas del sistema. Su rollback de referencia está
   en `drizzle/rollback/0001_assets.down.sql`; las pruebas cubren la actualización
@@ -491,6 +537,18 @@ Ajustes (#79).
   prueba de preservación migra una base en `0007` con textos planos variados
   (`CRLF`, `CR`, líneas vacías, solo espacios, orden no alfabético y más de 2.000
   líneas).
+- `0009_assets_world_fk` reconstruye `assets` con `world_id → worlds(id) ON
+  DELETE RESTRICT`, crea `assets_quarantine` y `assets_quarantine_references`,
+  mueve a cuarentena las filas sin mundo con `reason = 'world-missing'`, audita
+  las referencias visibles antes de desvincularlas y añade
+  `worlds_cover_asset_idx` y `entities_image_asset_idx`; los archivos no se
+  mueven ni se borran. Deja `user_version` 10. Su rollback está en
+  `drizzle/rollback/0009_assets_world_fk.down.sql`: deshace la FK, devuelve las
+  filas en cuarentena, restaura las referencias auditadas si el asset y la fila
+  destino existen, elimina las tablas e índices nuevos y deja `user_version` 9;
+  se ejecuta fuera de una transacción y la migración puede reaplicarse. La
+  prueba de migración parte de una base en `0008` con dos mundos, portada,
+  imagen de ficha, galería, assets válidos, huérfanos y archivos reales.
 - Si una migración falla, se revierte el lote, se conserva la copia y la app
   arranca en **modo seguro** sin conexión de escritura. El aviso permite
   **restaurar una copia**, abrir la carpeta de copias, continuar en modo seguro o
@@ -744,20 +802,23 @@ ni sin confirmación.
 - El inventario de copias y la rotación listan las carpetas sin `realpath` ni
   comprobación de contención; la carpeta elegida en el diálogo sí se valida.
   Endurecerlos y añadir una prueba de junction queda para antes de M1.
-- Los assets existentes **no se sustituyen** al restaurar solo la base; las
-  referencias huérfanas y la cuarentena de assets se abordan en #116, igual que
-  los assets que quedan tras purgar un mundo en la papelera.
+- Los assets existentes **no se sustituyen** al restaurar solo la base. Si la
+  copia restaurada es anterior a `0009`, al relanzar se aplica la migración y los
+  assets sin mundo quedan en cuarentena; si es de esquema 10, la cuarentena
+  viaja con la base. Purgar un mundo deja sus archivos en el equipo y el análisis
+  de huérfanos de Ajustes es la vía recuperable para eliminarlos (sección 4.4.1).
 
 ## 8. Exportación e importación
 
-**Implementado en M1-07 (#78), ampliado en M1-08 (#79) y evolucionado en #114.**
-El formato está versionado y documentado en
+**Implementado en M1-07 (#78), ampliado en M1-08 (#79) y evolucionado en #114 y
+#116.** El formato está versionado y documentado en
 [`docs/formato-de-exportacion.md`](formato-de-exportacion.md); las decisiones
 están en el [ADR 0029](adr/0029-world-export-import.md), el
-[ADR 0030](adr/0030-settings-data-and-full-deletion.md) y el
-[ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md). La
-migración `0008_world_description` deja `user_version` en **9**, y el formato de
-mundo pasa a **v2** con lectura de v1.
+[ADR 0030](adr/0030-settings-data-and-full-deletion.md), el
+[ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) y el
+[ADR 0032](adr/0032-assets-world-fk-quarantine.md). La migración
+`0009_assets_world_fk` deja `user_version` en **10**, y el formato de mundo sigue
+en **v2** con lectura de v1.
 
 ### 8.1 Exportación de un mundo
 
@@ -769,7 +830,7 @@ Windows y termina en `.zip`. La exportación no se guarda en una carpeta
 El archivo es un ZIP con:
 
 - `manifest.json`: `format: "world-craft-world"`, `formatVersion: 2`,
-  `schemaVersion` igual a `user_version` (9), `appVersion`, `exportedAt`,
+  `schemaVersion` igual a `user_version` (10), `appVersion`, `exportedAt`,
   `assetsIncluded: true`, mundo de origen, recuentos, avisos y `files` con
   `path`, `size` y `sha256`. El manifiesto no se lista a sí mismo.
 - `world.json`: mundo con su **descripción como documento de ProseMirror o
@@ -786,11 +847,11 @@ los que no se resuelven se quitan conservando el texto y se cuentan como
 **Solo viaja contenido vivo de mundos vivos:** fichas, tipos, etiquetas y
 relaciones con `deleted_at IS NULL`, y un mundo que no esté en la papelera. Las
 versiones de las fichas exportadas se incluyen completas; las de fichas en
-papelera no existen en la instantánea. **La papelera, lo purgado, `activity_log`,
-el índice FTS5, las preferencias y las miniaturas no se exportan.** Tampoco hay
-bloques de mapas, manuscritos, escenas o juego, porque aún no están
-implementados. Esta regla no se duplica en la interfaz más allá del aviso del
-diálogo (ADR 0028).
+papelera no existen en la instantánea. **La papelera, lo purgado, las filas en
+cuarentena, `activity_log`, el índice FTS5, las preferencias y las miniaturas no
+se exportan.** Tampoco hay bloques de mapas, manuscritos, escenas o juego, porque
+aún no están implementados. Esta regla no se duplica en la interfaz más allá del
+aviso del diálogo (ADR 0028 y ADR 0032).
 
 La exportación se ejecuta en el utility process con una conexión SQLite de solo
 lectura. El orden del contenido es determinista; cada asset se verifica contra
@@ -914,7 +975,10 @@ en M1-08 (#79), sigue este orden:
 3. **Borrado ordenado.** Temporales (`imports/.tmp`, `exports/.tmp`,
    `assets/.tmp`), base (`data/`), assets, logs y, si no se conservan, las
    copias. La copia `pre-delete` se conserva siempre. `userData`, sus entradas
-   desconocidas, `.updaterId` y la instalación **no se tocan**.
+   desconocidas, `.updaterId` y la instalación **no se tocan**. La cuarentena
+   (`assets_quarantine` y `assets_quarantine_references`) vive en la base y
+   desaparece con ella; no hay una limpieza separada de sus filas, y sus archivos
+   se eliminan con `assets/` como cualquier otro asset.
 4. **Verificación y reinicio.** La comprobación final sobre disco produce
    `deleted` o `partial` con las categorías restantes. Como la base ya está
    cerrada, cualquier resultado exige reiniciar; la composición lanza
@@ -943,7 +1007,8 @@ worlds/<slug>.zip
 - `settings.json` guarda tema, densidad, tamaño de texto, rail y memoria de la
   vista de ficha; **no** guarda `lastView` ni `recentLocation`.
 - `database/world-craft.sqlite` es una **copia completa** de la base obtenida con
-  `sqlite.backup` y verificada. Incluye papelera, actividad y preferencias,
+  `sqlite.backup` y verificada. Incluye papelera, actividad, preferencias y las
+  tablas de cuarentena `assets_quarantine` y `assets_quarantine_references`,
   también `lastView` y `recentLocation`.
 - El manifiesto lista cada entrada con tamaño y SHA-256, más recuentos y avisos
   agregados. La exportación es todo-o-nada: staging en `exports/.tmp`, `.partial`
@@ -1064,9 +1129,10 @@ en la carpeta de datos del usuario.
   borrar: necesita espacio libre equivalente al tamaño de la base y no es
   instantánea. La interfaz deshabilita las acciones y muestra un estado de espera
   mientras se crea la copia.
-- Tras purgar un mundo, sus filas de `assets` y sus archivos quedan huérfanos
-  hasta #116 (sección 4.4). `VACUUM` tras una purga grande no forma parte de #77:
-  llegará como acción confirmada de Ajustes.
+- Tras purgar un mundo, sus metadatos pasan a `assets_quarantine` y sus archivos
+  siguen en el equipo hasta que el usuario los elimine desde el análisis de
+  huérfanas (sección 4.4.1). La cuarentena no se limpia sola. `VACUUM` tras una
+  purga grande no forma parte de #77: llegará como acción confirmada de Ajustes.
 - `VACUUM` solo tras borrados grandes y con confirmación; nunca en cada
   arranque.
 
@@ -1096,3 +1162,4 @@ en la carpeta de datos del usuario.
 - [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)
 - [ADR 0029](adr/0029-world-export-import.md)
 - [ADR 0030](adr/0030-settings-data-and-full-deletion.md)
+- [ADR 0032](adr/0032-assets-world-fk-quarantine.md)

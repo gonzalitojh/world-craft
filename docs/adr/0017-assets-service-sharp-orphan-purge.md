@@ -188,14 +188,25 @@ alcance; deben revisarse al abrir la importación y la purga en M1.
 > un mundo con assets, rutas relativas, SHA-256 y miniaturas regeneradas se
 > completó en el [ADR 0029](0029-world-export-import.md); la fila de impacto de
 > este ADR describe el estado de #66 y no se reescribe.
+>
+> **Implementación (M1-11, #116, 27/11/2026).** Se añade la FK
+> `assets.world_id → worlds(id) ON DELETE RESTRICT` mediante la reconstrucción
+> de `assets` en la migración `0009_assets_world_fk` y se estrena la cuarentena
+> `assets_quarantine` / `assets_quarantine_references`. La purga de la papelera
+> mueve a cuarentena los metadatos de los assets no usados antes de borrar el
+> mundo; los archivos siguen intactos y el flujo de huérfanos de este ADR
+> (`planOrphanCleanup` y `purgeOrphans`) es la única vía para eliminarlos, con
+> confirmación y copia verificada. El detalle está en el
+> [ADR 0032](0032-assets-world-fk-quarantine.md).
 
 ## Plan de revisión
 
-Se revisa al abrir la importación y la purga por IPC en M1, con la migración que
-reconstruye `assets` para añadir la FK y con la posible deduplicación por hash.
-También se reabre si cambia el formato servible, si sharp o libvips cambian de
-licencia o de prebuild; el empaquetado y los avisos se cerraron en #68.
-Cualquier cambio de protocolo, formato o límites exige un ADR nuevo.
+Se revisó al abrir la importación y la purga por IPC en M1 y con la migración
+`0009_assets_world_fk`, que reconstruyó `assets` para añadir la FK y la
+cuarentena; se revisa con la posible deduplicación por hash. También se reabre
+si cambia el formato servible, si sharp o libvips cambian de licencia o de
+prebuild; el empaquetado y los avisos se cerraron en #68. Cualquier cambio de
+protocolo, formato o límites exige un ADR nuevo.
 
 ## Referencias
 
@@ -206,6 +217,7 @@ Cualquier cambio de protocolo, formato o límites exige un ADR nuevo.
 - [`docs/base-de-datos/migraciones.md`](../base-de-datos/migraciones.md), migración `0001_assets`
 - [`docs/arquitectura.md`](../arquitectura.md), módulo y protocolo
 - [`docs/calidad/plan-de-pruebas.md`](../calidad/plan-de-pruebas.md), pruebas de assets
+- [`docs/adr/0032-assets-world-fk-quarantine.md`](0032-assets-world-fk-quarantine.md), FK, cuarentena y purga
 - [`THIRD-PARTY-NOTICES.md`](../../THIRD-PARTY-NOTICES.md), licencias de sharp y libvips
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-022
 - Documentación de sharp y libvips consultada el 19/11/2026.

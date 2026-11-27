@@ -11,6 +11,7 @@ import { createUuidv7Generator } from '@/main/db/ids';
 
 import {
   createAssetFixture,
+  insertTestWorld,
   writeAssetFile,
   type AssetFixture,
 } from '../helpers/temp-assets';
@@ -27,6 +28,8 @@ const fixtures: AssetFixture[] = [];
 
 async function createFixture(): Promise<AssetFixture> {
   const fixture = await createAssetFixture();
+
+  insertTestWorld(fixture.sqlite, WORLD_ID);
   fixtures.push(fixture);
 
   return fixture;

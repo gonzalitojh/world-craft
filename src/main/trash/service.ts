@@ -7,7 +7,8 @@
  * se solapen dos copias ni dos borrados.
  *
  * El borrado físico de un mundo respeta `activity_log` y el resto de claves
- * foráneas; los assets no se tocan en ningún caso (D8).
+ * foráneas; los metadatos de sus assets no usados se mueven a
+ * `assets_quarantine` y los archivos nunca se borran desde la papelera.
  */
 import type {
   TrashEmptyInput,
@@ -24,6 +25,10 @@ import type {
 } from '../../shared/contracts/trash';
 import type { WorldCraftDatabase } from '../db/client';
 import type { SqliteDatabase } from '../db/connection';
+import {
+  countExternalAssetReferences,
+  resolvePurgeableWorlds,
+} from './asset-references';
 import {
   createTrashRepository,
   type TrashEntityTypeTarget,
@@ -58,7 +63,7 @@ export interface TrashServiceOptions {
 
 /** Crea el servicio sobre la base compartida del proceso principal. */
 export function createTrashService(options: TrashServiceOptions): TrashService {
-  const repository = createTrashRepository(options.database);
+  const repository = createTrashRepository(options.database, options.sqlite);
   const now = options.now ?? Date.now;
   const createSafetyCopy: SafetyCopyCreator =
     options.createSafetyCopy ?? (async () => false);
@@ -147,8 +152,14 @@ export function createTrashService(options: TrashServiceOptions): TrashService {
           return { purged: false, reason: 'not-found' };
         }
 
-        return target.deletedAt === null
-          ? { purged: false, reason: 'already-purged' }
+        if (target.deletedAt === null) {
+          return { purged: false, reason: 'already-purged' };
+        }
+
+        // El precheck evita crear una copia si el mundo no se puede purgar;
+        // el servicio repite la comprobación dentro de la transacción.
+        return countExternalAssetReferences(options.sqlite, id) > 0
+          ? { purged: false, reason: 'assets-in-use' }
           : null;
       }
       case 'entity': {
@@ -183,11 +194,13 @@ export function createTrashService(options: TrashServiceOptions): TrashService {
   const applyPurge = (
     kind: TrashPurgeInput['kind'],
     id: string,
+    at: number,
   ): TrashPurgeResult => {
     switch (kind) {
       case 'world':
-        repository.purgeWorld(id);
-        break;
+        return repository.purgeWorld(id, at)
+          ? { purged: true }
+          : { purged: false, reason: 'assets-in-use' };
       case 'entity':
         repository.purgeEntity(id);
         break;
@@ -302,7 +315,7 @@ export function createTrashService(options: TrashServiceOptions): TrashService {
         return write(() => {
           const recheck = precheckPurge(input.kind, input.id);
 
-          return recheck ?? applyPurge(input.kind, input.id);
+          return recheck ?? applyPurge(input.kind, input.id, at);
         });
       });
     },
@@ -330,10 +343,41 @@ export function createTrashService(options: TrashServiceOptions): TrashService {
             entities += 1;
           }
 
-          for (const id of repository.listDeletedWorldIds()) {
-            repository.purgeWorld(id);
-            worlds += 1;
+          // Se decide el conjunto antes de tocar las portadas: una referencia
+          // entre dos mundos que se vacían no bloquea, pero la de cualquier
+          // superviviente sí. El punto fijo resuelve cadenas y ciclos.
+          const worldIds = repository.listDeletedWorldIds();
+          const worldPlan = resolvePurgeableWorlds(options.sqlite, worldIds);
+          const purgeable = new Set(worldPlan.purgeable);
+
+          for (const id of worldPlan.purgeable) {
+            repository.clearWorldCover(id);
           }
+
+          let remaining = [...worldPlan.purgeable];
+
+          while (remaining.length > 0) {
+            const retry: string[] = [];
+            let progressed = false;
+
+            for (const id of remaining) {
+              if (repository.purgeWorld(id, at, purgeable)) {
+                worlds += 1;
+                progressed = true;
+              } else {
+                retry.push(id);
+              }
+            }
+
+            if (!progressed) {
+              skipped += retry.length;
+              break;
+            }
+
+            remaining = retry;
+          }
+
+          skipped += worldPlan.blocked.length;
 
           for (const id of repository.listDeletedEntityTypeIds()) {
             if (repository.countEntitiesByType(id) > 0) {

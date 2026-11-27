@@ -1,7 +1,7 @@
 # Continuidad y recuperación
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 26/11/2026 con M1-08 (#79). El modo seguro, la
+> 27/11/2026 con la integridad de assets (#116). El modo seguro, la
 > comprobación de integridad y la copia pre-migración se implementaron en M0-04
 > (#64); las copias automáticas con retención y la restauración desde el diálogo
 > de modo seguro, en M0-07 (#67); el instalador por usuario, la actualización
@@ -15,16 +15,16 @@
 > total y el borrado con copia `pre-delete`, en M1-08 (#79). La dirección visual
 > v2 llegó con M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con
 > la auditoría visual de todas las pantallas en ambos temas y tres anchos, sin
-> cambios de datos ni de copias. Quedan previstos los mapas y el grafo (M2, #83),
-> la escritura (M3), las copias manuales y la restauración guiada desde Ajustes,
-> la FK de assets y la cuarentena de huérfanos (#116), los avisos en la top layer
-> de los diálogos modales (#144), el módulo actual no interactivo de la página de
-> mundo (#93) y la release pública con actualización real contra GitHub Releases
-> (M5).
+> cambios de datos ni de copias. #116 añadió la FK de assets, la cuarentena y la
+> purga sin huérfanos. Quedan previstos los mapas y el grafo (M2, #83), la
+> escritura (M3), las copias manuales y la restauración guiada desde Ajustes, los
+> avisos en la top layer de los diálogos modales (#144), el módulo actual no
+> interactivo de la página de mundo (#93) y la release pública con actualización
+> real contra GitHub Releases (M5).
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
 > **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020, ADR 0021,
-> ADR 0028, ADR 0029 y ADR 0030.
+> ADR 0028, ADR 0029, ADR 0030 y ADR 0032.
 > La
 > estructura de datos está en [`persistencia.md`](persistencia.md).
 
@@ -51,7 +51,8 @@ quiere, en una unidad externa.
 | Segunda instancia | Lock de instancia única | El proceso nuevo sale y la instancia existente enfoca su ventana (M0-08) | Todos |
 | Sin conexión al actualizar | Comprobación manual | Error controlado; la app sigue funcionando con la versión instalada (M0-08) | Todos |
 | Borrado accidental de un mundo | Borrado lógico con confirmación | La fila conserva `deleted_at` y desaparece de las vistas; se restaura desde la Papelera (M1-01, #72; M1-06, #77) | Mundo y assets |
-| Borrado definitivo | Confirmación en la Papelera | Copia `pre-purge` verificable antes de borrar; si falla, no se borra (M1-06, #77) | Copia previa; los assets no se borran |
+| Borrado definitivo | Confirmación en la Papelera | Copia `pre-purge` verificable antes de borrar; si falla, no se borra (M1-06, #77). Purgar un mundo mueve los metadatos de sus assets a cuarentena y deja los archivos; si otro mundo o ficha usa un asset, se rechaza con `assets-in-use` (M1-11, #116) | Copia previa; los archivos de assets no se borran |
+| Actualización con assets huérfanos | Migración `0009` al arrancar | Copia pre-migración verificable, cuarentena de las filas sin mundo, auditoría de las referencias visibles desvinculadas y aviso en Ajustes → Datos → Imágenes huérfanas cuando se retiraron vínculos (M1-11, #116) | Filas y archivos válidos; los huérfanos quedan auditados y sus archivos siguen en el equipo |
 | Borrado total | Confirmación escrita y copia previa | Frase **ELIMINAR TODO**, copia `pre-delete` de base y assets verificada; si falla, no se borra nada; reinicio y recuperación manual (M1-08, #79) | Copia `pre-delete`, instalación y `.updaterId` |
 | Pérdida de la carpeta de datos o del equipo | Manual | La exportación de un mundo en ZIP incluye sus assets y se importa en otra instalación como mundo nuevo (M1-07, #78); la biblioteca total de Ajustes añade una copia completa de la base y un paquete por mundo (M1-08, #79); las copias automáticas solo contienen SQLite | El mundo exportado o la biblioteca; el resto depende de las copias |
 | Disco lleno | Error de escritura | Aviso, modo lectura, liberar espacio (previsto) | Hasta la última escritura |
@@ -194,9 +195,11 @@ manual y está descrita en [`persistencia.md`](persistencia.md), sección 7.4. L
 copia `pre-delete` del borrado total tampoco se ofrece: su recuperación manual
 está en el manual, sección 12.7.
 
-Los assets existentes quedan intactos porque la copia solo contiene la base; las
-referencias huérfanas se pueden revisar y purgar desde Ajustes (#79), y la
-cuarentena automática de assets llega con #116.
+Los assets existentes quedan intactos porque la copia solo contiene la base. Si
+la copia restaurada es anterior a `0009`, al relanzar se aplica la migración y los
+assets sin mundo pasan a `assets_quarantine`; si es de esquema 10, la cuarentena
+viaja con la base. Los archivos de filas en cuarentena siguen en el equipo y se
+revisan o purgan desde Ajustes con confirmación y copia (ADR 0032).
 
 ## 5. Modo seguro
 
@@ -262,10 +265,12 @@ cerrar la app y borrar ese archivo a mano; no es un archivo con datos.
   restaurar el mundo primero, y si su tipo personalizado ya no existe, se avisa
   con `type-unavailable`.
 - Vaciar la papelera exige confirmación, crea una copia verificable de la base y
-  purga los registros en orden. Los assets y sus archivos no se borran.
-- La cuarentena de la carpeta de assets de un mundo borrado y la clave foránea
-  `assets.world_id` llegan con #116; hasta entonces, purgar un mundo deja sus
-  filas y archivos huérfanos a propósito.
+  purga los registros en orden. Los archivos de assets **no se borran**: los
+  metadatos de los assets no usados de un mundo purgado pasan a
+  `assets_quarantine` con `reason = 'world-purged'` y, si otro mundo o una ficha
+  superviviente usa un asset, la purga de ese mundo se rechaza con
+  `assets-in-use`. El vaciado conserva los mundos bloqueados y los cuenta en
+  `skipped` (ADR 0032).
 
 **Implementado en M1-06 (#77):** la **Papelera** es una vista global del rail con
 tres grupos (mundos, fichas y tipos personalizados), listado por cursor,
@@ -278,6 +283,17 @@ explícito —`activity_log` primero al purgar un mundo— y el vaciado usa una 
 copia y devuelve contadores. Las versiones de la descripción de una ficha se
 conservan al moverla a papelera y se borran en cascada al purgarla; la copia
 previa es la única red para recuperar lo purgado (ADR 0028).
+
+**Implementado en M1-11 (#116):** la migración `0009_assets_world_fk` añade la FK
+`assets.world_id → worlds(id) ON DELETE RESTRICT` y mueve a `assets_quarantine`
+las filas cuyo mundo ya no existía. Antes de desvincularlas, audita en
+`assets_quarantine_references` la portada, la imagen principal y las filas de
+galería afectadas; la copia pre-migración y el rollback de referencia permiten
+recuperar el estado. Purgar un mundo mueve sus metadatos a cuarentena, rechaza
+`assets-in-use` si un asset está en uso y **no borra ningún archivo**. Los
+archivos en cuarentena aparecen como no referenciados en Ajustes y solo se
+eliminan con la purga de imágenes huérfanas, que exige confirmación y copia
+verificada. No hay UI para restaurar filas de cuarentena: es metadato histórico.
 
 **Implementado en M1-01 (#72):** borrar un mundo es un borrado lógico con
 `deleted_at`; deja de aparecer en Inicio, Mundos y la actividad, y la fila se
@@ -320,8 +336,8 @@ cerradas. La papelera visible, la restauración, la purga con copia y el histori
 de versiones están implementados (párrafo anterior). Restaurar una ficha exige el
 mundo vivo y un tipo disponible; las aristas hacia fichas en papelera se ocultan
 y solo desaparecen al purgar la ficha. Los tipos personalizados en uso no se
-purgan. Los assets no se borran en ninguna purga: su cuarentena y la FK
-`assets.world_id` son de #116.
+purgan. Los archivos de assets no se borran en ninguna purga; la cuarentena y la
+FK `assets.world_id` se implementaron en #116 (párrafo «Implementado en M1-11»).
 
 **Implementado en M1.5-04 (#127):** Inicio y las tarjetas de mundo son solo
 renderer y estilos; no cambian datos, migraciones, copias ni persistencia. El
@@ -420,6 +436,7 @@ comprobando los hashes de `data`, `assets` y `backups`.
 | Restauración desde modo seguro | M0-07 | Datos restaurados, assets intactos, rollback y relanzamiento (integración) |
 | Restauración interrumpida | M0-07 | Marcador, lock, restos preservados y arranque sin base vacía (integración) |
 | Preservación entre instalaciones | M0-08 | Integración con SQLite, assets y copias temporales; migración de fixture y reinstalación simulada |
+| Integridad de assets y cuarentena | M1-11 (#116) | Migración desde `0008` con mundos, portada, ficha, galería, assets válidos y huérfanos; filas y archivos preservados, referencias auditadas, FK activa, `foreign_key_check` vacío, rollback y reaplicación; purga con cuarentena, `assets-in-use` y archivos intactos (integración y E2E) |
 | Instalación, actualización y desinstalación reales | M0-08 y cada release | `scripts/verify-install.ps1` con hashes de `data`, `assets` y `backups`; 194 archivos intactos |
 | Actualizador sin auto-check | M0-08 | Comprobación manual, descarga consentida, cancelación real e instalación solo desde `downloaded` (unitarias) |
 | Actualización real contra GitHub Releases | M5 | Primera release pública; pendiente |
@@ -467,4 +484,5 @@ del desarrollador. Las de integración usan `os.tmpdir()`.
 - [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md)
 - [ADR 0029](adr/0029-world-export-import.md)
 - [ADR 0030](adr/0030-settings-data-and-full-deletion.md)
+- [ADR 0032](adr/0032-assets-world-fk-quarantine.md)
 - [Formato de exportación](formato-de-exportacion.md)

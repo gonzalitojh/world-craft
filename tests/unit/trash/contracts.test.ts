@@ -85,6 +85,9 @@ describe('contrato de papelera', () => {
     expect(isTrashPurgeResult({ purged: false, reason: 'backup-failed' })).toBe(
       true,
     );
+    expect(isTrashPurgeResult({ purged: false, reason: 'assets-in-use' })).toBe(
+      true,
+    );
     expect(isTrashPurgeResult({ purged: false, reason: 'nope' })).toBe(false);
     expect(
       isTrashEmptyResult({

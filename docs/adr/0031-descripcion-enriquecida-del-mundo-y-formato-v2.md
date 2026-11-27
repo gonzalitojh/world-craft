@@ -216,12 +216,20 @@ Restricciones que condicionan la decisión:
 No aplica ningún servicio de pago: el editor, el almacenamiento, la búsqueda y la
 transferencia son locales y usan el stack existente.
 
+> **Implementación (M1-11, #116, 27/11/2026).** La reconstrucción de `assets` no
+> cambia la tabla raíz `worlds` ni obliga a añadir el `CHECK` JSON que este ADR
+> descartó. El formato portable sigue en `world-craft-world` v2 con lectura de
+> v1; solo sube el `schemaVersion` del manifiesto a 10. Las filas en cuarentena
+> no se exportan. El detalle está en el
+> [ADR 0032](0032-assets-world-fk-quarantine.md).
+
 ## Plan de revisión
 
 - **#115:** al añadir la portada del mundo, revisar la composición de la cabecera
   y del formulario para que la descripción rica y la portada no compitan.
-- **#116:** si la reconstrucción de `assets` cambia la tabla raíz, revisar la
-  decisión de no añadir `CHECK` a `worlds` y valorar un `CHECK` conjunto.
+- **#116:** revisado. La reconstrucción de `assets` no cambia `worlds` ni exige
+  un `CHECK` conjunto; el formato v2 se mantiene y el manifiesto usa
+  `schemaVersion` 10.
 - **M3 (manuscritos y escenas):** si el editor compartido se usa en documentos
   largos, revisar el límite de 4.000 del mundo frente al de las fichas y el
   rendimiento de documentos anidados.
@@ -247,6 +255,8 @@ transferencia son locales y usan el stack existente.
 - [`docs/base-de-datos/esquema.md`](../base-de-datos/esquema.md), sección 4.1
 - [`docs/formato-de-exportacion.md`](../formato-de-exportacion.md), secciones 3,
   4, 7, 8 y 10
+- [ADR 0032](0032-assets-world-fk-quarantine.md), integridad de assets y
+  `schemaVersion` 10
 - [`docs/persistencia.md`](../persistencia.md), sección 5
 - [`docs/arquitectura.md`](../arquitectura.md), secciones 2.8 y 2.10
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-054

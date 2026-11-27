@@ -94,6 +94,18 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 > ventana, con `second-instance` enfocando la instancia existente. La base y el
 > modo seguro no cambian. El detalle está en el
 > [ADR 0018](0018-nsis-packaging-and-update-service.md).
+>
+> **Implementación (M1-11, #116, 27/11/2026).** El runner amplía el contrato sin
+> cambiar la decisión de este ADR: exige `foreign_keys = ON`, rechaza una llamada
+> dentro de una transacción activa, desactiva las FKs **fuera** de la transacción
+> del lote, ejecuta `PRAGMA foreign_key_check` antes del commit y restaura
+> `foreign_keys = ON` en el `finally`, verificando que quedó activo. Cualquier
+> violación revierte el lote completo y el arranque entra en modo seguro con
+> `DB_MIGRATION_FAILED`. La comprobación vive en `checkForeignKeys`
+> (`src/main/db/integrity.ts`) y no registra tablas, `rowid` ni identificadores.
+> Esta ampliación es necesaria para reconstruir `assets` con su FK sin que
+> `DROP TABLE` dispare `RESTRICT`, `SET NULL` o `CASCADE`. El detalle está en el
+> [ADR 0032](0032-assets-world-fk-quarantine.md).
 
 ## Alternativas consideradas
 
@@ -162,10 +174,12 @@ de copias pertenecen a M0-07, así que el arranque debía ser seguro por sí sol
 
 ## Plan de revisión
 
-Se revisó al cerrar M0-07 (restauración guiada y retención de copias) y al
-implementar #68 (empaquetado, asar e instancia única); se revisa al añadir las
-tablas de dominio de M1 y si Drizzle Kit cambia el formato del journal. Cualquier cambio de motor, de
-formato de migración o de estrategia de copia exige un ADR nuevo.
+Se revisó al cerrar M0-07 (restauración guiada y retención de copias), al
+implementar #68 (empaquetado, asar e instancia única) y al implementar #116
+(FKs desactivadas alrededor del lote y `foreign_key_check` antes del commit); se
+revisa al añadir las tablas de dominio de M1 y si Drizzle Kit cambia el formato
+del journal. Cualquier cambio de motor, de formato de migración o de estrategia
+de copia exige un ADR nuevo.
 
 ## Referencias
 
@@ -176,6 +190,7 @@ formato de migración o de estrategia de copia exige un ADR nuevo.
 - [`docs/registro-decisiones.md`](../registro-decisiones.md), D-040.
 - [`docs/persistencia.md`](../persistencia.md).
 - [`docs/base-de-datos/migraciones.md`](../base-de-datos/migraciones.md).
+- [ADR 0032](0032-assets-world-fk-quarantine.md), FK de assets y `foreign_key_check`.
 - [ADR 0002](0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0004](0004-electron-security-typed-ipc.md)
   y [ADR 0012](0012-backup-restore-recovery.md).
 - Documentación de better-sqlite3, Drizzle y SQLite consultada el 18/11/2026.

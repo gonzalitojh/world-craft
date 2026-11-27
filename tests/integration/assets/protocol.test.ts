@@ -11,6 +11,7 @@ import { createUuidv7Generator } from '@/main/db/ids';
 
 import {
   createAssetFixture,
+  insertTestWorld,
   writeAssetFile,
   type AssetFixture,
 } from '../helpers/temp-assets';
@@ -26,6 +27,8 @@ const fixtures: AssetFixture[] = [];
 
 async function createFixture(): Promise<AssetFixture> {
   const fixture = await createAssetFixture();
+
+  insertTestWorld(fixture.sqlite, WORLD_ID);
   fixtures.push(fixture);
 
   return fixture;
@@ -159,7 +162,8 @@ describe('protocolo de assets con base de datos', { timeout: 60_000 }, () => {
        VALUES (?, ?, 'image', ?, 'image/webp', 10, ?, 1760000000000)`,
     );
     const traversalId = generator.generate();
-    const otherWorldId = generator.generate();
+    const foreignWorldId = generator.generate();
+    const foreignAssetId = generator.generate();
     const mismatchedId = generator.generate();
 
     insert.run(
@@ -168,10 +172,11 @@ describe('protocolo de assets con base de datos', { timeout: 60_000 }, () => {
       `worlds/../../${traversalId}.webp`,
       'f'.repeat(64),
     );
+    insertTestWorld(fixture.sqlite, foreignWorldId);
     insert.run(
-      otherWorldId,
-      generator.generate(),
-      `worlds/${WORLD_ID}/${otherWorldId}.webp`,
+      foreignAssetId,
+      foreignWorldId,
+      `worlds/${WORLD_ID}/${foreignAssetId}.webp`,
       'f'.repeat(64),
     );
     // Fila con id propio y la ruta del asset real: la ruta no le pertenece.
@@ -182,7 +187,7 @@ describe('protocolo de assets con base de datos', { timeout: 60_000 }, () => {
       repository: fixture.repository,
     };
 
-    for (const id of [traversalId, otherWorldId, mismatchedId]) {
+    for (const id of [traversalId, foreignAssetId, mismatchedId]) {
       const response = await handleAssetRequest(
         dependencies,
         `wc-asset://asset/${id}`,

@@ -14,6 +14,14 @@ export interface IntegrityCheckResult {
   readonly messages: readonly string[];
 }
 
+/** Violación de clave foránea normalizada. */
+export interface ForeignKeyViolation {
+  readonly table: string;
+  readonly rowId: number;
+  readonly parent: string;
+  readonly foreignKeyId: number;
+}
+
 /** Ejecuta `PRAGMA integrity_check` y normaliza su resultado. */
 export function checkIntegrity(database: SqliteDatabase): IntegrityCheckResult {
   try {
@@ -46,6 +54,53 @@ export function checkIntegrityReadonly(file: string): IntegrityCheckResult {
 export function assertIntegrity(database: SqliteDatabase): void {
   if (!checkIntegrity(database).ok) {
     throw new DatabaseError('DB_INTEGRITY_FAILED');
+  }
+}
+
+/**
+ * Ejecuta `PRAGMA foreign_key_check` y normaliza las violaciones.
+ *
+ * Devuelve solo filas con forma conocida. El llamador no debe registrar ni
+ * mostrar tablas, rowids o identificadores: el detalle es para diagnóstico en
+ * memoria y la decisión pública es un código estable.
+ */
+export function checkForeignKeys(
+  database: SqliteDatabase,
+): readonly ForeignKeyViolation[] {
+  try {
+    const rows = database.pragma('foreign_key_check');
+
+    if (!Array.isArray(rows)) {
+      return [];
+    }
+
+    return rows.map((row) => {
+      if (row === null || typeof row !== 'object') {
+        throw new DatabaseError('DB_INTEGRITY_FAILED');
+      }
+
+      const record = row as Record<string, unknown>;
+      const { table, rowid, parent, fkid } = record;
+
+      if (
+        typeof table !== 'string' ||
+        typeof rowid !== 'number' ||
+        !Number.isInteger(rowid) ||
+        typeof parent !== 'string' ||
+        typeof fkid !== 'number' ||
+        !Number.isInteger(fkid)
+      ) {
+        throw new DatabaseError('DB_INTEGRITY_FAILED');
+      }
+
+      return { table, rowId: rowid, parent, foreignKeyId: fkid };
+    });
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error;
+    }
+
+    throw toDatabaseError(error, 'DB_INTEGRITY_FAILED');
   }
 }
 

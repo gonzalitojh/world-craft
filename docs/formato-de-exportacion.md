@@ -2,13 +2,15 @@
 
 > **Estado:** implementado en #78 (M1-07) para el formato
 > `world-craft-world` **versión 1**; en #79 (M1-08) para la biblioteca
-> `world-craft-library` **versión 1**; y en #114 para el formato de mundo
-> **versión 2**, que mantiene la lectura de paquetes v1. La exportación y la
-> importación de mundos usan el mismo contrato; el detalle de las decisiones está
-> en el [ADR 0029](adr/0029-world-export-import.md) (D-052), el
-> [ADR 0030](adr/0030-settings-data-and-full-deletion.md) (D-053) y el
+> `world-craft-library` **versión 1**; en #114 para el formato de mundo
+> **versión 2**, que mantiene la lectura de paquetes v1; y actualizado en #116
+> con `schemaVersion` 10 y la exclusión de las filas en cuarentena. La
+> exportación y la importación de mundos usan el mismo contrato; el detalle de
+> las decisiones está en el [ADR 0029](adr/0029-world-export-import.md) (D-052),
+> el [ADR 0030](adr/0030-settings-data-and-full-deletion.md) (D-053), el
 > [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) (D-054)
-> del [registro](registro-decisiones.md).
+> y el [ADR 0032](adr/0032-assets-world-fk-quarantine.md) (D-056) del
+> [registro](registro-decisiones.md).
 > **Ámbito:** estructura del ZIP de mundo y de la biblioteca total, campos de
 > `manifest.json`, `world.json` y `settings.json`, checksums, compatibilidad,
 > exclusiones y política de importación.
@@ -79,7 +81,7 @@ la política o un recuento incoherente invalidan el paquete entero.
 |---|---|---|
 | `format` | string | Literal `world-craft-world`. |
 | `formatVersion` | number | `1` o `2`; la escritura usa siempre `2`. El lector acepta `1` para los paquetes anteriores con la descripción del mundo en texto plano. |
-| `schemaVersion` | number | `PRAGMA user_version` de la base de origen (hoy **9**); entero ≥ 1. Si supera el `user_version` instalado, la importación lo rechaza con `TRANSFER_FORMAT_UNSUPPORTED` antes de leer `world.json` o extraer assets. |
+| `schemaVersion` | number | `PRAGMA user_version` de la base de origen (hoy **10**); entero ≥ 1. Si supera el `user_version` instalado, la importación lo rechaza con `TRANSFER_FORMAT_UNSUPPORTED` antes de leer `world.json` o extraer assets. |
 | `appVersion` | string | Versión de World Craft que exportó, de 1 a 40 caracteres. |
 | `exportedAt` | string | Fecha ISO 8601 en UTC, de 20 a 40 caracteres y parseable. |
 | `assetsIncluded` | boolean | Siempre `true`. |
@@ -141,7 +143,7 @@ real debe contener el SHA-256 verdadero de sus bytes descomprimidos.
 {
   "format": "world-craft-world",
   "formatVersion": 2,
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "appVersion": "0.1.0",
   "exportedAt": "2026-11-25T10:00:00.000Z",
   "assetsIncluded": true,
@@ -460,7 +462,9 @@ sobre una carpeta extraída ni muevas archivos a `assets/worlds` a mano.
   `world.json` o extraer assets. La versión instalada se compara con la del
   manifiesto; los valores iguales o anteriores se aceptan y su contenido se
   valida con Zod estricto. Un cambio de esquema que altere el contenido exigirá
-  además un `formatVersion` nuevo.
+  además un `formatVersion` nuevo. **`schemaVersion` 10** corresponde a la FK de
+  assets y a la cuarentena de #116; el formato v2 no cambia porque las filas en
+  cuarentena no forman parte de ningún mundo.
 - **Campos desconocidos:** se rechazan. No hay campos opcionales fuera de los
   documentados.
 - **Bloques futuros:** mapas, manuscritos, escenas y juego no existen en v2 y no
@@ -473,6 +477,8 @@ sobre una carpeta extraída ni muevas archivos a `assets/worlds` a mano.
 | Excluido | Motivo |
 |---|---|
 | Papelera y contenido purgado | Solo viaja contenido vivo de mundos vivos; lo purgado ya no existe. |
+| Filas en cuarentena (`assets_quarantine` y sus referencias) | Son metadatos de assets sin mundo; ningún mundo del paquete las referencia y no se exportan. |
+| `assets_quarantine_references` | Auditoría interna de la migración; no es contenido portable del mundo. |
 | `activity_log` | Historial local de la instalación, no contenido del mundo. |
 | Índice FTS5 y `search_documents` | Es reconstruible; los triggers lo repueblan al importar. |
 | Preferencias de aplicación (`app_settings`, claves `ui.*`) | Son de la aplicación, no del mundo. |
@@ -590,7 +596,7 @@ mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**
 {
   "format": "world-craft-library",
   "formatVersion": 1,
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "appVersion": "0.1.0",
   "exportedAt": "2026-11-26T10:00:00.000Z",
   "database": {
@@ -598,7 +604,7 @@ mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**
     "size": 4096,
     "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "integrity": "ok",
-    "schemaVersion": 9
+    "schemaVersion": 10
   },
   "settings": {
     "path": "settings.json",
@@ -638,7 +644,7 @@ mundo**, el manifiesto no puede superar **16 MiB** y `settings.json`, **64 KiB**
 ```
 
 - **`schemaVersion`** es el `user_version` de la base en el momento de exportar.
-  Debe coincidir con `database.schemaVersion`; hoy es 9.
+  Debe coincidir con `database.schemaVersion`; hoy es 10.
 - **La biblioteca sigue en `formatVersion: 1`.** No cambia su manifiesto, pero
   cada `worlds/<slug>.zip` se escribe con `world-craft-world` v2; la validación
   del manifiesto interno de cada paquete acepta v1 y v2.
@@ -688,8 +694,9 @@ Es una **copia completa** de la base, no un subconjunto de los mundos:
   viva, se escribe como archivo temporal, se comprueba con `integrity_check` y
   `user_version`, y solo entonces se renombra a su nombre definitivo.
 - Incluye **todo**: mundos, fichas, tipos, etiquetas, relaciones, versiones,
-  papelera, actividad, índice de búsqueda y preferencias (`app_settings`,
-  incluidos `lastView` y `recentLocation`).
+  papelera, actividad, índice de búsqueda, preferencias (`app_settings`,
+  incluidos `lastView` y `recentLocation`) y las tablas de cuarentena
+  `assets_quarantine` y `assets_quarantine_references`.
 - Los paquetes `worlds/*.zip` **no** incluyen papelera, actividad ni
   preferencias; esas tres cosas solo están en esta copia.
 - Se puede abrir con cualquier herramienta SQLite y verificar con el SHA-256 del

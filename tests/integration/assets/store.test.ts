@@ -6,7 +6,11 @@ import { closeDatabase } from '@/main/db/connection';
 import { createUuidv7Generator } from '@/main/db/ids';
 import { initializeDatabase } from '@/main/db/startup';
 
-import { createAssetFixture, type AssetFixture } from '../helpers/temp-assets';
+import {
+  createAssetFixture,
+  insertTestWorld,
+  type AssetFixture,
+} from '../helpers/temp-assets';
 
 const generator = createUuidv7Generator({
   now: () => 1_760_000_000_000,
@@ -19,6 +23,8 @@ const fixtures: AssetFixture[] = [];
 
 async function createFixture(): Promise<AssetFixture> {
   const fixture = await createAssetFixture();
+
+  insertTestWorld(fixture.sqlite, WORLD_ID);
   fixtures.push(fixture);
 
   return fixture;
@@ -111,7 +117,7 @@ describe('repositorio de assets', () => {
       const repository = createAssetRepository(reopened.client.orm);
 
       expect(repository.findById(record.id)).toEqual(record);
-      expect(reopened.schemaVersion).toBe(9);
+      expect(reopened.schemaVersion).toBe(10);
     } finally {
       closeDatabase(reopened.client.sqlite);
     }

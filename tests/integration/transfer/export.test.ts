@@ -255,7 +255,7 @@ describe('exportación de un mundo', () => {
     expect(JSON.stringify(world)).not.toContain('activity_log');
     expect(JSON.stringify(world)).not.toContain('"world.updated"');
 
-    expect(readUserVersion(fixture.sqlite)).toBe(9);
+    expect(readUserVersion(fixture.sqlite)).toBe(10);
   });
 
   it('sanea enlaces y referencias rotas con avisos', async () => {

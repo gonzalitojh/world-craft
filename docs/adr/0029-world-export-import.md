@@ -261,11 +261,21 @@ según las recomendaciones.
 No aplica ningún servicio de pago: el formato, el worker, la validación y la
 transacción son locales y usan librerías MIT.
 
+> **Implementación (M1-11, #116, 27/11/2026).** El manifiesto de mundo pasa a
+> `schemaVersion` 10 por la migración `0009_assets_world_fk`, pero el formato
+> sigue en `world-craft-world` v2 y la importación acepta versiones menores o
+> iguales, incluida v1. Las filas de `assets_quarantine` no se exportan: ningún
+> mundo las referencia y el paquete solo lleva contenido vivo. El renombrado de
+> `assets/.tmp/<operationId>/<worldId>` y su limpieza tras un cierre abrupto no
+> cambian con la FK; la importación inserta el mundo antes de los assets. El
+> detalle está en el [ADR 0032](0032-assets-world-fk-quarantine.md).
+
 ## Plan de revisión
 
-- **#116:** al añadir la FK `assets.world_id` y la cuarentena, revisar el
-  renombrado de `assets/.tmp/<operationId>/<worldId>` y la recuperación de un
-  directorio huérfano tras un crash.
+- **#116:** revisado. La FK `assets.world_id` y la cuarentena no cambian el
+  renombrado de `assets/.tmp/<operationId>/<worldId>` ni la recuperación de un
+  directorio huérfano tras un cierre abrupto; el manifiesto pasa a
+  `schemaVersion` 10 sin cambiar el formato v2.
 - **M2 (mapas) y M3 (manuscritos y escenas):** añadir sus bloques exige subir
   `formatVersion` y actualizar el lector, el escritor, el formato documentado y
   las pruebas de round-trip. No se añaden bloques vacíos en v1.
@@ -281,6 +291,8 @@ transacción son locales y usan librerías MIT.
 - Issue: #78
 - Issues relacionadas: #66 (assets locales), #72–#77 (mundos, tipos, fichas,
   relaciones, búsqueda, papelera y versiones) y #116 (FK de assets y cuarentena)
+- [`docs/adr/0032-assets-world-fk-quarantine.md`](0032-assets-world-fk-quarantine.md),
+  integridad de assets y cuarentena
 - [`docs/plan-desarrollo.md`](../plan-desarrollo.md), M1-07
 - [`docs/formato-de-exportacion.md`](../formato-de-exportacion.md)
 - [`docs/persistencia.md`](../persistencia.md), sección 8

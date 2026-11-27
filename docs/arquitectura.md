@@ -1,9 +1,10 @@
 # Arquitectura de World Craft
 
 > **Estado:** vigente desde el 18/11/2026, tras el pivote a aplicación de
-> escritorio. Actualizado el 25/11/2026 con la exportación e importación de
-> mundos (#78); la dirección visual v2 llegó con tokens, tipografía y primitivas
-> (#125) y shell, navegación y barra superior (#126).
+> escritorio. Actualizado el 27/11/2026 con la integridad de assets (#116); la
+> exportación e importación de mundos llegó con #78 y la dirección visual v2 con
+> tokens, tipografía y primitivas (#125) y shell, navegación y barra superior
+> (#126).
 > Sustituye por completo la arquitectura web anterior.
 > **Ámbito:** procesos, módulos, flujos, datos y límites de confianza.
 > **Fuentes:** [`docs/plan-desarrollo.md`](plan-desarrollo.md) §3,
@@ -25,7 +26,8 @@ favoritos y editor enriquecido** (#74), las **relaciones tipadas con backlinks**
 versiones de contenido** (#77), la **exportación e importación de mundos**
 (#78), la **pantalla de Ajustes y datos** (#79), la **descripción enriquecida
 del mundo con el editor compartido** (#114) y la **portada del mundo con selector
-de imágenes compartido** (#115): ventana Electron segura, preload
+de imágenes compartido** (#115), y la **integridad de assets con FK, cuarentena
+y purga sin huérfanos** (#116): ventana Electron segura, preload
 nominativo, renderer React con tokens,
 componentes base y navegación, base SQLite con migraciones, comprobación de
 integridad y modo seguro, servicio de imágenes con protocolo propio, miniaturas
@@ -66,7 +68,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | SQLite + better-sqlite3 + Drizzle + FTS5 | Implementado (M0-04, #64): base, migraciones y modo seguro; FTS5 implementado en #76 con `search_fts` y sus triggers | [ADR 0002](adr/0002-sqlite-better-sqlite3-drizzle-fts5.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0023](adr/0023-global-search-fts5-command-palette.md) |
 | Instalador NSIS, actualizaciones y preservación de datos | Implementado (M0-08, #68): instalador local 0.1.0 y actualizador manual; release pública y actualización real en M5 | [ADR 0003](adr/0003-nsis-installer-electron-updater-data-preservation.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Seguridad Electron e IPC tipado | Implementado: ventana segura (#62) e IPC con allowlist y Zod (#63) | [ADR 0004](adr/0004-electron-security-typed-ipc.md) |
-| Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md) |
+| Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74; FK a mundos, cuarentena y purga sin huérfanos desde #116 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md), [ADR 0032](adr/0032-assets-world-fk-quarantine.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125), shell v2 con navegación Inicio/Mundos/Papelera y barra superior contextual (#126, #77) y preferencias de interfaz persistidas desde #132 | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md), [ADR 0027](adr/0027-ui-preferences-persistence.md) |
 | Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74) y convertido en editor reutilizable con barra mínima y menciones `@` / `[[ ]]` (#131); desde #114 también edita la descripción del mundo | [ADR 0007](adr/0007-tiptap-editor-exporters.md), [ADR 0026](adr/0026-minimal-editor-mentions.md), [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) |
 | MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
@@ -78,7 +80,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | Papelera y versiones de contenido | Implementado (M1-06, #77): vista global de papelera, restauración, purga con copia `pre-purge`, vaciado y historial de la descripción de las fichas | [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
 | Exportación e importación de mundos | Implementado (M1-07, #78) y formato v2 desde #114: ZIP abierto `world-craft-world` con `manifest.json`, `world.json` y assets; worker `utilityProcess`; importación transaccional siempre como mundo nuevo y lectura de paquetes v1 | [ADR 0029](adr/0029-world-export-import.md), [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) |
 | Ajustes y gestión de datos | Implementado (M1-08, #79): apariencia con densidad y tamaño, navegación `#/settings`, apertura de carpetas, uso de disco, biblioteca total `world-craft-library` v1 y borrado con copia `pre-delete` | [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
-| Pruebas y calidad | Implementado: 762 unitarias, 251 de componentes y 231 de integración (#62-#79, #125-#133); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera, transferencia y ajustes (#70, #72, #74, #75, #76, #77, #78, #79, #125, #126, #127, #131, #132) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 779 unitarias (5 omitidas), 295 de componentes y 261 de integración (1 omitida), más 76 E2E (#62-#79, #114-#116, #125-#133); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera, transferencia, ajustes y cuarentena (#70, #72, #74, #75, #76, #77, #78, #79, #114, #125, #126, #127, #131, #132, #133, #116) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, pre-purga 10 (#77), pre-delete sin poda (#79), verificación y restauración desde modo seguro; Ajustes abre copias y muestra su uso desde #79, pero las copias manuales y la restauración guiada siguen previstas | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md), [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -250,8 +252,10 @@ Reglas de dependencia:
   conexión de escritura; WAL, `synchronous = NORMAL`, `foreign_keys = ON` y
   `busy_timeout = 5000`.
 - **Arranque.** Integridad antes de WAL, copia online si la base existía y hay
-  migraciones pendientes, lote transaccional y comprobación posterior. Si algo
-  falla, se cierra la conexión y se entra en modo seguro sin escritura.
+  migraciones pendientes, lote transaccional con FKs desactivadas fuera de la
+  transacción y `PRAGMA foreign_key_check` antes del commit, y comprobación
+  posterior. Si algo falla, se cierra la conexión y se entra en modo seguro sin
+  escritura.
 - **Build.** `better-sqlite3` y `drizzle-orm` se externalizan (y `sharp` desde
   #66, sección 2.5); `drizzle/` se copia a `out/main/drizzle`. `pnpm verify:build`
   valida las migraciones copiadas y la externalización. El desempaquetado del
@@ -338,8 +342,9 @@ Reglas de dependencia:
   y, si falla, los archivos se borran. Sin deduplicación en M0.
 - **Metadatos.** `src/main/db/schema/assets.ts` y la migración `0001_assets`
   definen la tabla `assets` con `CHECK` de `kind`, `size` y `hash` hexadecimal e
-  índices por mundo y hash. `world_id` no tiene FK hasta M1, cuando se
-  reconstruirá la tabla con `ON DELETE RESTRICT`.
+  índices por mundo y hash. Desde `0009_assets_world_fk` (#116) tiene
+  `world_id → worlds(id) ON DELETE RESTRICT`, cuarentena de huérfanos y los
+  índices `worlds_cover_asset_idx` y `entities_image_asset_idx` (sección 2.21).
 - **Protocolo.** `wc-asset://asset/<uuidv7>` y `wc-asset://thumb/<uuidv7>` con
   gramática cerrada; la ruta relativa sale de SQLite, se exige coincidencia de
   ID y mundo y se valida contra `worlds/<uuid>/<uuid>.webp`. Se rechazan `..`,
@@ -471,8 +476,8 @@ Reglas de dependencia:
 - **Decisiones pendientes.** La portada se integra en el formulario y en la
   página del mundo desde #115 (sección 2.20); su selector consume las imágenes
   del propio mundo. La descripción enriquecida llegó con #114 (sección 2.19). La
-  papelera y la purga con copia llegaron con #77 y la FK `assets.world_id` se
-  completará con #116.
+  papelera y la purga con copia llegaron con #77, y la FK `assets.world_id` con
+  su cuarentena se completó en #116 (sección 2.21).
 
 ### 2.9 Estado implementado de los tipos de entidad (#73)
 
@@ -765,8 +770,10 @@ Reglas de dependencia:
   en una transacción: ficha → relaciones, versiones, etiquetas y galería; mundo →
   `activity_log`, relaciones, galería, etiquetas, versiones, fichas, tipos,
   etiquetas del mundo y mundo. Vaciado: una copia, una transacción, contadores y
-  tipos en uso omitidos. Una cola serializa purgas y vaciado. Los assets no se
-  tocan (D8; #116).
+  tipos en uso omitidos. Una cola serializa purgas y vaciado. Los archivos de
+  assets no se borran; desde #116 los metadatos de los assets no usados se mueven
+  a cuarentena y los usados por otro mundo o ficha se rechazan con
+  `assets-in-use` (sección 2.21).
 - **Versiones.** `entities.update` llama al registrador dentro de su misma
   transacción y guarda el estado saliente solo si la descripción cambia y la
   última automática está fuera de 5 minutos. Se conservan 20 automáticas por
@@ -805,20 +812,20 @@ Reglas de dependencia:
   `transfer:event` fuera de la allowlist; API `transfer` en el preload; hook,
   reducer, diálogo y estilos en el renderer; pruebas; y
   `out/main/transfer-worker.cjs` en el build. La migración de #114 sube
-  `user_version` a 9 y el formato a v2; se mantienen las dos dependencias MIT
-  (`yauzl` y `yazl`).
+  `user_version` a 9 y la de #116 a 10; el formato de mundo sigue en v2 y se
+  mantienen las dos dependencias MIT (`yauzl` y `yazl`).
 - **Formato.** ZIP abierto `world-craft-world` v2 desde #114, con
   `manifest.json`, `world.json` y `assets/<uuidv7>.webp`; `formatVersion: 2`
-  (lectura de 1), `schemaVersion` = `user_version` (9), `assetsIncluded: true`,
+  (lectura de 1), `schemaVersion` = `user_version` (10), `assetsIncluded: true`,
   recuentos, avisos y `files` con `path`, `size` y `sha256`; `world.json` con
   mundo y su descripción como documento ProseMirror, tipos personalizados, tipos
   de relación personalizados, etiquetas, assets, fichas con versiones, galería,
   imagen principal, atributos y etiquetas, relaciones y portada. Solo contenido
-  vivo de mundos vivos y siempre con assets; fuera papelera, `activity_log`,
-  FTS5, preferencias, `description_text`, miniaturas y bloques futuros. Los
-  paquetes v1 se convierten al leerlos. El detalle está en
-  [`formato-de-exportacion.md`](formato-de-exportacion.md), el ADR 0029 y el ADR
-  0031.
+  vivo de mundos vivos y siempre con assets; fuera papelera, filas en
+  cuarentena, `activity_log`, FTS5, preferencias, `description_text`, miniaturas
+  y bloques futuros. Los paquetes v1 se convierten al leerlos. El detalle está en
+  [`formato-de-exportacion.md`](formato-de-exportacion.md), el ADR 0029, el ADR
+  0031 y el ADR 0032.
 - **Exportación.** `transfer:exportWorld` valida el UUID, resuelve el mundo vivo
   y abre el diálogo nativo de guardado. El worker abre SQLite en solo lectura,
   lee una instantánea diferida, construye un `world.json` determinista, verifica
@@ -869,7 +876,8 @@ Reglas de dependencia:
   `settings/use-data-settings.ts`, estilos `styles/settings.css` y textos en
   `src/renderer/messages/es.ts`. Se añade `settings` a las vistas persistidas y
   `routes.ts` resuelve `#/settings`. #79 no añade migración: `user_version` se
-  quedó en 8 hasta `0008_world_description` (#114), que lo sube a 9.
+  quedó en 8 hasta `0008_world_description` (#114), que lo sube a 9, y
+  `0009_assets_world_fk` (#116), que lo sube a 10.
 - **Apariencia.** `UiPreferences` gana `density` (`comfortable`/`compact`) y
   `fontScale` (`small`/`normal`/`large`), con defectos y guardas en el contrato.
   `applyAppearance` fija `data-theme`, `data-density` y `data-font-scale` antes de
@@ -900,7 +908,9 @@ Reglas de dependencia:
 - **Huérfanas.** El resumen agrega el plan de #66 (archivos sin referencia,
   miniaturas, temporales, ausentes, enlaces y entradas desconocidas) y la purga
   exige `purge-orphans`, crea copia verificable y no toca archivos
-  referenciados.
+  referenciados. Desde #116 el resumen incluye `quarantine: { assets, references }`
+  y muestra un aviso pasivo cuando hay vínculos desvinculados; los archivos de
+  filas en cuarentena aparecen como no referenciados.
 - **Biblioteca total.** `world-craft-library` v1 con `manifest.json`,
   `settings.json`, `database/world-craft.sqlite` y un paquete #78 por mundo en
   `worlds/<slug>.zip`. La base se obtiene con `sqlite.backup`, se verifica con
@@ -969,9 +979,9 @@ Reglas de dependencia:
 - **Migración.** `0008_world_description` añade `description_text`, convierte el
   texto plano párrafo a párrafo (`json_object`, `json_group_array` y
   `group_concat` con orden), recrea `search_world_documents` sobre texto plano,
-  repuebla `search_documents` y reconstruye FTS5. `user_version` pasa a 9. El
-  runner crea la copia pre-migración y el rollback de referencia degrada a texto
-  plano y restaura la vista y los triggers de `0006`.
+  repuebla `search_documents` y reconstruye FTS5. `user_version` pasa a 9 y #116
+  lo sube a 10. El runner crea la copia pre-migración y el rollback de referencia
+  degrada a texto plano y restaura la vista y los triggers de `0006`.
 - **Búsqueda.** La búsqueda global no cambia de canal: `search:query` sigue
   leyendo `search_documents`, que ahora recibe el texto visible del mundo desde
   `description_text`. El JSON nunca se indexa.
@@ -1038,6 +1048,50 @@ Reglas de dependencia:
   decisión está en D-055 y el contrato visual en
   [`diseno/mundo-portada-issue-115.md`](diseno/mundo-portada-issue-115.md).
 
+### 2.21 Estado implementado de la integridad de assets (#116)
+
+- **Alcance.** Migración `0009_assets_world_fk`; runner de migraciones e
+  `checkForeignKeys`; módulo `src/main/assets/quarantine.ts`; referencias y purga
+  en `src/main/trash/asset-references.ts`, `repository.ts` y `service.ts`;
+  contratos `trash.ts` y `data.ts`; UI de papelera y Ajustes; textos y estilos;
+  pruebas. **Sin dependencias nuevas ni canales IPC nuevos.**
+- **Datos.** `assets` se reconstruye con `world_id → worlds(id) ON DELETE
+  RESTRICT` y conserva sus columnas, `CHECK` e índices. `assets_quarantine`
+  guarda los metadatos de filas sin mundo (`world-missing`) o de mundos purgados
+  (`world-purged`) sin FK a `worlds`; `assets_quarantine_references` audita
+  portada, imagen de ficha y galería antes de desvincularlas. Se añaden
+  `worlds_cover_asset_idx` y `entities_image_asset_idx`. `user_version` pasa a
+  **10**; el rollback de referencia deja 9 y la migración puede reaplicarse.
+- **Runner.** Exige `foreign_keys = ON`, rechaza una transacción activa,
+  desactiva las FKs fuera de la transacción del lote, ejecuta
+  `PRAGMA foreign_key_check` antes del commit y restaura y verifica
+  `foreign_keys = ON` en el `finally`. Cualquier violación revierte el lote con
+  `DB_MIGRATION_FAILED` y el arranque entra en modo seguro. `checkForeignKeys`
+  normaliza `table`, `rowId`, `parent` y `foreignKeyId` sin registrar detalles.
+- **Purga.** `countExternalAssetReferences` cuenta portadas, imágenes de ficha y
+  galería de filas supervivientes; `purgeWorld` comprueba antes de la copia y
+  dentro de la transacción, rechaza `assets-in-use`, limpia la portada del
+  propio mundo y mueve sus assets a cuarentena antes de borrarlo.
+  `resolvePurgeableWorlds` calcula un punto fijo para resolver cadenas y ciclos y
+  el vaciado reintenta los bloqueados y los cuenta en `skipped`. Los archivos no
+  se borran nunca desde la papelera.
+- **Ajustes.** `DataCounts` añade `quarantine: { assets, references }`; el aviso
+  pasivo de Imágenes huérfanas solo aparece con `references > 0` y no promete
+  recuperar una imagen concreta. `planOrphanCleanup` sigue considerando
+  referenciadas solo las filas de `assets`, por lo que los archivos en cuarentena
+  se pueden purgar con confirmación y copia.
+- **Interfaz.** Error `assets-in-use` con `role="alert"` dentro del diálogo de
+  purga; el vaciado distingue todo, parcial, nada por elementos en uso y papelera
+  vacía; el aviso de Ajustes usa `.wc-settings__notice` y tokens de aviso. Sin
+  pantallas nuevas y con contraste AA en ambos temas.
+- **Pruebas.** Migración y preservación desde `0008`, rollback y reaplicación,
+  runner con FKs desactivadas, cuarentena, referencias externas, purga con
+  cuarentena y `assets-in-use`, vaciado con punto fijo, huérfanos, recuentos,
+  componentes de papelera y Ajustes y E2E de cuarentena y purga. El detalle está
+  en [`docs/calidad/plan-de-pruebas.md`](calidad/plan-de-pruebas.md) §3.21 y el
+  contrato visual en
+  [`diseno/assets-cuarentena-issue-116.md`](diseno/assets-cuarentena-issue-116.md).
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -1053,7 +1107,9 @@ requestSingleInstanceLock()               (antes de whenReady; si falla, salir)
     → user_version + schema_migrations
     → copia pre-migración si la base existía y hay pendientes
     → WAL + synchronous = NORMAL
-    → migraciones en una transacción
+    → FKs OFF fuera de la transacción
+    → migraciones en una transacción + foreign_key_check antes del commit
+    → FKs ON restauradas y verificadas (si falla, modo seguro)
     → integrity_check posterior
     → copias automáticas del periodo en curso y rotación 7/4/12/5 más 10 pre-purga
     → ready: registrar protocolo de assets, componer actualizador, registrar IPC
@@ -1154,7 +1210,7 @@ Importación (servicio; IPC y UI desde #74)
     → assets/.tmp/<assetId>/ → rename a worlds/<worldId>/
     → INSERT en assets → compensación si falla
 
-Purga (servicio; sin IPC ni UI todavía)
+Purga de huérfanos (servicio; IPC y UI desde #79)
   purgeOrphans({ confirmation: 'purge-orphans' })
     → plan de solo lectura → revalidar → copia en backups/orphans/
     → SHA-256 + manifiesto → borrar solo entonces
@@ -1164,7 +1220,9 @@ Cada canal nuevo se declara en `src/shared/contracts/channels.ts`, añade su
 esquema Zod y su handler en `src/main/ipc/` y su función nominativa en el
 contrato del preload. Los errores nunca cruzan IPC como excepciones crudas: se
 convierten en `{ ok: false, error: { code } }`. `assets:list` e `assets:import`
-están implementados desde #74; `assets:purgeOrphans` sigue sin IPC ni UI.
+están implementados desde #74; la purga de huérfanos se expone como
+`data:planOrphans` y `data:purgeOrphans` desde #79. La cuarentena de #116 no
+añade canales: reutiliza `trash:purge`, `trash:empty` y `data:getSummary`.
 
 ### 3.4 Flujos de dominio
 
@@ -1350,9 +1408,12 @@ guiada desde Ajustes siguen previstas.
   `entity_gallery`; `0005_relations` crea `relation_types` y `relations` y
   siembra los tipos de relación del sistema; `0006_search` crea el índice FTS5,
   sus vistas y triggers; `0007_trash_versions` crea `entity_versions` y los
-  índices de papelera; y `0008_world_description` añade `worlds.description_text`,
-  convierte las descripciones planas y redirige la vista del mundo al texto plano.
-  `PRAGMA user_version` guarda el número de migraciones aplicadas (hoy 9).
+  índices de papelera; `0008_world_description` añade `worlds.description_text`,
+  convierte las descripciones planas y redirige la vista del mundo al texto plano;
+  y `0009_assets_world_fk` reconstruye `assets` con FK, crea
+  `assets_quarantine` y `assets_quarantine_references` y añade los índices de
+  referencia. `PRAGMA user_version` guarda el número de migraciones aplicadas
+  (hoy 10).
 - **Copias** en `%APPDATA%\World Craft\backups\`: `daily` (7), `weekly` (4),
   `monthly` (12), `pre-migration` (5), `pre-purge` (10), `pre-delete` (sin poda)
   y `pre-restore` (sin poda). Cada copia lleva `manifest.json` v2, SHA-256 e
@@ -1369,8 +1430,11 @@ guiada desde Ajustes siguen previstas.
 - **Assets** en `%APPDATA%\World Craft\assets\worlds\<worldId>\<assetId>.webp`
   con miniatura `.thumb.webp`, `.tmp/` para escrituras y `backups/orphans/` para
   la purga recuperable (implementado, #66). La purga de la papelera **no borra
-  assets**: las filas de un mundo purgado quedan huérfanas hasta que #116 añada
-  la FK `assets.world_id` y su cuarentena.
+  archivos**: los metadatos de los assets no usados de un mundo purgado pasan a
+  `assets_quarantine` y la FK `assets.world_id → worlds(id) ON DELETE RESTRICT`
+  impide dejar un asset sin mundo (implementado, #116). Los archivos en
+  cuarentena se eliminan solo con la purga de huérfanas, con confirmación y
+  copia.
 - **Papelera y versiones** viven en la base: `deleted_at` en mundos, fichas y
   tipos, y `entity_versions` con el estado saliente de la descripción. Entran en
   las copias y una restauración las recupera; lo purgado solo se recupera desde
@@ -1386,10 +1450,11 @@ guiada desde Ajustes siguen previstas.
   desde #114: ZIP abierto `world-craft-world` con `manifest.json`, `world.json`
   (incluye la descripción del mundo como documento y los bloques
   `entity-types.v1` y `relation-types.v1` con los tipos personalizados) y
-  `assets/<uuidv7>.webp`. La exportación se publica en el destino elegido por el
-  usuario; el staging vive en `imports/.tmp` y `assets/.tmp` y se limpia al
-  arrancar. La importación siempre crea un mundo nuevo con IDs regenerados y
-  acepta paquetes v1. El detalle está en
+  `assets/<uuidv7>.webp`. El manifiesto usa `schemaVersion` 10 desde #116 y las
+  filas en cuarentena no se exportan. La exportación se publica en el destino
+  elegido por el usuario; el staging vive en `imports/.tmp` y `assets/.tmp` y se
+  limpia al arrancar. La importación siempre crea un mundo nuevo con IDs
+  regenerados y acepta paquetes v1. El detalle está en
   [`persistencia.md`](persistencia.md) §8 y
   [`formato-de-exportacion.md`](formato-de-exportacion.md).
 - **Biblioteca total y borrado** implementados en #79: `world-craft-library` v1
@@ -1627,6 +1692,7 @@ decisiones está en [`docs/registro-decisiones.md`](registro-decisiones.md).
 - [ADR 0027: Preferencias de interfaz persistentes](adr/0027-ui-preferences-persistence.md)
 - [ADR 0028: Papelera, versiones y copia previa a la purga](adr/0028-trash-versions-and-pre-purge-backup.md)
 - [ADR 0029: Exportación e importación de mundos](adr/0029-world-export-import.md)
+- [ADR 0032: Integridad de assets, FK y cuarentena](adr/0032-assets-world-fk-quarantine.md)
 - [Formato de exportación](formato-de-exportacion.md)
 - [Continuidad y copias](continuidad.md)
 - [Plan de pruebas](calidad/plan-de-pruebas.md)

@@ -57,6 +57,7 @@ export const worlds = sqliteTable(
   (table) => [
     uniqueIndex('worlds_slug_uq').on(table.slug),
     index('worlds_status_idx').on(table.status, table.deletedAt),
+    index('worlds_cover_asset_idx').on(table.coverAssetId),
     index('worlds_deleted_updated_idx').on(
       table.deletedAt,
       desc(table.updatedAt),

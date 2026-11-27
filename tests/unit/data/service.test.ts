@@ -13,6 +13,7 @@ const counts: DataCounts = {
   entities: 4,
   assets: 3,
   backups: 2,
+  quarantine: { assets: 1, references: 1 },
 };
 
 const usage: DataUsage = {

@@ -65,11 +65,13 @@ export function TrashEmptyDialog({
             messages.trash.emptyDialog.entityTypes,
           ),
         ];
-  const emptySummary =
-    result !== null &&
-    result.purged.worlds === 0 &&
-    result.purged.entities === 0 &&
-    result.purged.entityTypes === 0;
+  const total =
+    result === null
+      ? 0
+      : result.purged.worlds +
+        result.purged.entities +
+        result.purged.entityTypes;
+  const hasSkipped = result !== null && result.skipped > 0;
 
   return (
     <Dialog
@@ -139,23 +141,45 @@ export function TrashEmptyDialog({
         </>
       ) : (
         <div className="wc-trash-summary" role="status">
-          {emptySummary ? (
+          {total === 0 && !hasSkipped ? (
             <p className="wc-dialog__lead">
               {messages.trash.emptyDialog.alreadyEmpty}
             </p>
+          ) : total === 0 ? (
+            <>
+              <p className="wc-dialog__lead">
+                {messages.trash.emptyDialog.nonePurged}
+              </p>
+              <p>
+                {formats.plural(
+                  result.skipped,
+                  messages.trash.emptyDialog.skipped,
+                )}
+              </p>
+              <p className="wc-dialog__note">
+                {messages.trash.emptyDialog.skippedHint}
+              </p>
+            </>
           ) : (
             <>
               <p className="wc-dialog__lead">
-                {messages.trash.emptyDialog.summaryLead}
+                {hasSkipped
+                  ? messages.trash.emptyDialog.summaryLeadPartial
+                  : messages.trash.emptyDialog.summaryLead}
               </p>
               <p>{summary?.join(' · ')}</p>
-              {result.skipped > 0 ? (
-                <p>
-                  {formats.plural(
-                    result.skipped,
-                    messages.trash.emptyDialog.skipped,
-                  )}
-                </p>
+              {hasSkipped ? (
+                <>
+                  <p>
+                    {formats.plural(
+                      result.skipped,
+                      messages.trash.emptyDialog.skipped,
+                    )}
+                  </p>
+                  <p className="wc-dialog__note">
+                    {messages.trash.emptyDialog.skippedHint}
+                  </p>
+                </>
               ) : null}
             </>
           )}

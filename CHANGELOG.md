@@ -516,6 +516,32 @@ primera versión estable.
   integración de asociación, aislamiento entre mundos, rechazo de assets ajenos,
   retención y actividad; componentes del selector, del bloque de portada y del
   cierre anidado; E2E de elegir, cambiar, quitar, importar, ventana, temas y axe.
+- Migración `0009_assets_world_fk` (#116): reconstruye `assets` con
+  `world_id → worlds(id) ON DELETE RESTRICT`, conserva filas, archivos y `CHECK`,
+  crea `assets_quarantine` y `assets_quarantine_references`, audita las
+  referencias visibles antes de desvincularlas, añade
+  `worlds_cover_asset_idx` y `entities_image_asset_idx` y deja `user_version`
+  en 10. Incluye copia previa y rollback de referencia probado.
+- Cuarentena de assets (#116): las filas cuyo mundo ya no existe pasan a
+  `assets_quarantine` con `reason = 'world-missing'` y la purga de un mundo las
+  mueve con `reason = 'world-purged'`. **Los archivos no se mueven ni se borran**;
+  los archivos en cuarentena aparecen en el análisis de imágenes huérfanas y solo
+  se eliminan con confirmación y copia.
+- Purga de la papelera sin huérfanos (#116): un asset en uso por una portada,
+  una imagen de ficha o una galería de otro mundo se rechaza con
+  `assets-in-use`; el vaciado calcula un punto fijo, reintenta cadenas y ciclos
+  y cuenta los elementos conservados en `skipped` sin decir «la papelera ya
+  estaba vacía».
+- Aviso de imágenes desvinculadas (#116): Ajustes → Datos → Imágenes huérfanas
+  muestra un aviso pasivo con el número de vínculos retirados al actualizar, sin
+  rutas, nombres ni IDs, y explica que los archivos no se borraron y que solo se
+  eliminan con confirmación y copia.
+- Pruebas de la integridad de assets (#116): migración y preservación desde
+  `0008`, cuarentena, auditoría de referencias, FK y `foreign_key_check`, runner
+  con FKs desactivadas, rollback y reaplicación, purga con `assets-in-use`,
+  vaciado con punto fijo, huérfanos, recuentos, componentes de papelera y Ajustes
+  y E2E de cuarentena y purga. La suite queda en 779 unitarias (5 omitidas), 295
+  de componentes, 261 de integración (1 omitida) y 76/76 E2E.
 
 ### Cambiado
 
@@ -645,6 +671,17 @@ primera versión estable.
   sus enlaces a fichas en texto.
 - El formato de mundo sube a `formatVersion 2` (#114) manteniendo la lectura de
   paquetes v1; el manifiesto acepta ambas versiones y la escritura usa siempre 2.
+- Las claves foráneas se desactivan alrededor del lote de migraciones y se
+  comprueban con `PRAGMA foreign_key_check` antes del commit; si hay cualquier
+  violación, el lote se revierte y la app entra en modo seguro (#116). La
+  restauración de `foreign_keys = ON` se verifica siempre.
+- Purgar un mundo deja de ser «no toca assets» (#116): sus metadatos de imagen
+  pasan a cuarentena, los archivos siguen intactos y la operación se rechaza si
+  una imagen se usa en otro mundo. El vaciado distingue «no había nada» de «se
+  conservaron elementos en uso».
+- El manifiesto de exportación usa `schemaVersion` 10 (#116); el formato de mundo
+  sigue en v2 con lectura de v1 y las filas en cuarentena no se exportan. La
+  biblioteca total conserva la cuarentena en su copia completa de SQLite.
 
 ### Eliminado
 
@@ -720,6 +757,12 @@ primera versión estable.
   servicio; contención con `lstat`/`realpath` y rechazo de junctions; worker sin
   Electron, red, `eval` ni `child_process`; logs sin rutas, IDs, nombres ni
   contenido.
+- Integridad de assets (#116): `assets.world_id` tiene FK `RESTRICT`; el runner
+  desactiva FKs fuera de la transacción, ejecuta `foreign_key_check` antes del
+  commit y restaura y verifica `foreign_keys = ON`; cualquier violación revierte
+  y entra en modo seguro. La cuarentena guarda rutas relativas y `alt` que nunca
+  se exponen al renderer; los resultados solo añaden enums y números y no hay
+  canales IPC nuevos.
 
 ## Cómo se escribe una entrada
 

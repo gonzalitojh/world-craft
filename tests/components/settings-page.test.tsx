@@ -53,6 +53,7 @@ beforeEach(() => {
               entities: 2,
               assets: 3,
               backups: 1,
+              quarantine: { assets: 0, references: 0 },
             },
           },
         }),

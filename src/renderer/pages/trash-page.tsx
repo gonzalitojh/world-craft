@@ -411,6 +411,9 @@ export function TrashPage({ onNotify, onLibraryChanged }: TrashPageProps) {
       case 'type-in-use':
         setPurgeError(messages.trash.purgeDialog.typeInUse);
         return;
+      case 'assets-in-use':
+        setPurgeError(messages.trash.purgeDialog.assetsInUse);
+        return;
       case 'not-found':
       case 'already-purged':
         setPurgeError(messages.trash.purgeDialog.missing);
@@ -445,12 +448,17 @@ export function TrashPage({ onNotify, onLibraryChanged }: TrashPageProps) {
       result.data.purged.worlds +
       result.data.purged.entities +
       result.data.purged.entityTypes;
+    const skipped = result.data.skipped;
 
     onNotify(
       total === 0 ? 'info' : 'success',
       total === 0
-        ? messages.trash.emptyDialog.alreadyEmpty
-        : messages.trash.emptyDialog.summaryLead,
+        ? skipped > 0
+          ? messages.trash.emptyDialog.nonePurged
+          : messages.trash.emptyDialog.alreadyEmpty
+        : skipped > 0
+          ? messages.trash.emptyDialog.summaryLeadPartial
+          : messages.trash.emptyDialog.summaryLead,
     );
     await reloadGroups(TRASH_GROUPS);
     await onLibraryChanged();

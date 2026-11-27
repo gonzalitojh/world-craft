@@ -15,6 +15,7 @@ import {
   type SqliteDatabase,
 } from './connection';
 import { DatabaseError, toDatabaseError } from './errors';
+import { checkForeignKeys } from './integrity';
 import { loadMigrations, type LoadedMigration } from './journal';
 
 const appliedMigrationRowSchema = z.object({
@@ -115,6 +116,13 @@ export function readTargetSchemaVersion(migrationsDir: string): number {
 /**
  * Aplica todas las migraciones pendientes en una sola transacción.
  *
+ * Las claves foráneas se desactivan **fuera** de la transacción: una migración
+ * que reconstruye una tabla referenciada (por ejemplo `assets`) no puede
+ * disparar `RESTRICT`, `SET NULL` ni `CASCADE` al hacer `DROP TABLE`. Antes del
+ * commit se ejecuta `PRAGMA foreign_key_check`; cualquier violación revierte el
+ * lote completo. En el `finally` se restaura siempre `foreign_keys = ON` y se
+ * verifica que quedó activo; si no, el arranque entra en modo seguro.
+ *
  * Devuelve cuántas se aplicaron. Si una falla, SQLite revierte el lote entero
  * y se lanza `DB_MIGRATION_FAILED` sin SQL ni mensajes internos.
  */
@@ -127,9 +135,23 @@ export function applyPendingMigrations(
     return 0;
   }
 
+  if (database.inTransaction) {
+    throw new DatabaseError('DB_MIGRATION_FAILED');
+  }
+
   const now = options?.now ?? Date.now;
+  let failure: unknown = null;
 
   try {
+    // El pragma no se puede cambiar dentro de una transacción y el runner
+    // necesita desactivarlo antes de abrirla. Una conexión sin FKs activas es
+    // un estado incoherente para migrar.
+    if (database.pragma('foreign_keys', { simple: true }) !== 1) {
+      throw new DatabaseError('DB_MIGRATION_FAILED');
+    }
+
+    database.pragma('foreign_keys = OFF');
+
     const applyBatch = database.transaction(() => {
       for (const migration of plan.pending) {
         database.exec(migration.sql);
@@ -144,14 +166,35 @@ export function applyPendingMigrations(
       }
 
       writeUserVersion(database, plan.targetVersion);
+
+      // Se comprueba antes del commit: si una migración con FKs desactivadas
+      // dejó huérfanos, el lote completo se revierte. No se registran tablas
+      // ni identificadores.
+      if (checkForeignKeys(database).length > 0) {
+        throw new DatabaseError('DB_MIGRATION_FAILED');
+      }
     });
 
     applyBatch();
-
-    return plan.pending.length;
   } catch (error) {
-    throw toDatabaseError(error, 'DB_MIGRATION_FAILED');
+    failure = error;
+  } finally {
+    try {
+      database.pragma('foreign_keys = ON');
+
+      if (database.pragma('foreign_keys', { simple: true }) !== 1) {
+        failure ??= new DatabaseError('DB_MIGRATION_FAILED');
+      }
+    } catch (error) {
+      failure ??= error;
+    }
   }
+
+  if (failure !== null) {
+    throw toDatabaseError(failure, 'DB_MIGRATION_FAILED');
+  }
+
+  return plan.pending.length;
 }
 
 function hasSchemaMigrationsTable(database: SqliteDatabase): boolean {
