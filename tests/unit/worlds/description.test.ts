@@ -38,9 +38,9 @@ describe('texto plano a documento', () => {
     );
 
     expect(document).not.toBeNull();
-    expect(extractEntityDescriptionText(document as EntityRichTextDocument)).toBe(
-      'Primera línea\nSegunda línea\nTercera',
-    );
+    expect(
+      extractEntityDescriptionText(document as EntityRichTextDocument),
+    ).toBe('Primera línea\nSegunda línea\nTercera');
   });
 
   it('devuelve null cuando no queda texto visible', () => {
@@ -106,9 +106,7 @@ describe('validación de la descripción del mundo', () => {
     const result = validateWorldDescription(linkedDocument);
 
     expect(result.ok).toBe(true);
-    expect(result.ok ? result.text : '').toBe(
-      'Conoce a Aria desde siempre.',
-    );
+    expect(result.ok ? result.text : '').toBe('Conoce a Aria desde siempre.');
     expect(result.ok ? result.json : '').toContain('"type":"doc"');
   });
 
@@ -120,7 +118,10 @@ describe('validación de la descripción del mundo', () => {
       json: null,
     });
     expect(
-      validateWorldDescription({ type: 'doc', content: [{ type: 'paragraph' }] }),
+      validateWorldDescription({
+        type: 'doc',
+        content: [{ type: 'paragraph' }],
+      }),
     ).toMatchObject({ ok: true, document: null, text: null, json: null });
   });
 
@@ -163,8 +164,10 @@ describe('validación de la descripción del mundo', () => {
     expect(parseWorldDescription(null)).toEqual({ ok: true, document: null });
     expect(parseWorldDescription('')).toEqual({ ok: true, document: null });
     expect(parseWorldDescription('{')).toEqual({ ok: false });
-    expect(parseWorldDescription(JSON.stringify(linkedDocument))).toMatchObject({
-      ok: true,
-    });
+    expect(parseWorldDescription(JSON.stringify(linkedDocument))).toMatchObject(
+      {
+        ok: true,
+      },
+    );
   });
 });

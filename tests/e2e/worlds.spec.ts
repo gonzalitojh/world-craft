@@ -582,7 +582,11 @@ test('crea y lee una descripción enriquecida con formato', async ({ page }) => 
     .click();
 
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Crónica del faro', exact: true }),
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Crónica del faro',
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(page.locator('.wc-world-description h3')).toHaveText('Crónica');
   await expect(page.locator('.wc-world-description strong')).toHaveText(

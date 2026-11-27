@@ -135,12 +135,10 @@ export function WorldFormDialog({
     open,
   );
   const candidates = mentionCandidates ?? candidatesFallback.candidates;
-  const candidatesState =
-    mentionCandidatesState ?? candidatesFallback.state;
+  const candidatesState = mentionCandidatesState ?? candidatesFallback.state;
   const candidatesComplete =
     mentionCandidatesComplete ?? candidatesFallback.complete;
-  const retryCandidates =
-    onRetryMentionCandidates ?? candidatesFallback.retry;
+  const retryCandidates = onRetryMentionCandidates ?? candidatesFallback.retry;
 
   useEffect(() => {
     if (errors.form !== undefined) {
@@ -201,8 +199,7 @@ export function WorldFormDialog({
           mode === 'create' ||
           (canValidate && linkedIds.some((id) => !candidateIds.has(id)))
         ) {
-          nextErrors.description =
-            messages.worlds.form.descriptionLinkInvalid;
+          nextErrors.description = messages.worlds.form.descriptionLinkInvalid;
         }
       }
     }

@@ -71,7 +71,10 @@ import {
   WORLD_SLUG_PATTERN,
   WORLD_SUMMARY_MAX_LENGTH,
 } from '../../../shared/contracts/worlds';
-import { entityDescriptionDocumentSchema, plainTextToRichTextDocument } from '../../../shared/entities/description';
+import {
+  entityDescriptionDocumentSchema,
+  plainTextToRichTextDocument,
+} from '../../../shared/entities/description';
 import { validateWorldDescription } from '../../../shared/worlds/description';
 import { isSystemEntityTypeKey } from '../../../shared/entity-types/catalog';
 import { entityTypeTransferEntrySchema } from '../../entity-types/transfer';
@@ -270,11 +273,7 @@ const relationTypesSchema = z
 
 const worldFieldsShape = {
   name: z.string().trim().min(1).max(WORLD_NAME_MAX_LENGTH),
-  slug: z
-    .string()
-    .min(1)
-    .max(WORLD_SLUG_MAX_LENGTH)
-    .regex(WORLD_SLUG_PATTERN),
+  slug: z.string().min(1).max(WORLD_SLUG_MAX_LENGTH).regex(WORLD_SLUG_PATTERN),
   summary: z.string().max(WORLD_SUMMARY_MAX_LENGTH).nullable(),
   genres: z
     .array(z.string().trim().min(1).max(WORLD_GENRE_MAX_LENGTH))

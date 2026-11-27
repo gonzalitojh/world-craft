@@ -45,7 +45,9 @@ export function worldDescriptionText(
 export function isWorldDescriptionTooLong(
   document: WorldRichTextDocument | null,
 ): boolean {
-  return worldDescriptionText(document).length > WORLD_DESCRIPTION_TEXT_MAX_LENGTH;
+  return (
+    worldDescriptionText(document).length > WORLD_DESCRIPTION_TEXT_MAX_LENGTH
+  );
 }
 
 /** Campo de formulario de la descripción enriquecida del mundo. */
@@ -142,11 +144,7 @@ export function WorldDescriptionField({
       </p>
 
       {candidatesState === 'loading' ? (
-        <div
-          className="wc-editor-field__status"
-          id={statusId}
-          role="status"
-        >
+        <div className="wc-editor-field__status" id={statusId} role="status">
           {messages.worlds.form.mentionsLoading}
         </div>
       ) : candidatesState === 'error' ? (

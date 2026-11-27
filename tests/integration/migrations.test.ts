@@ -575,20 +575,35 @@ describe('migraciones', () => {
             deletedAt,
           );
       };
-      const longText = Array.from(
-        { length: 2_000 },
-        (_, index) => String(index % 10),
+      const longText = Array.from({ length: 2_000 }, (_, index) =>
+        String(index % 10),
       ).join('\n');
       const rows = [
         ['01900000-0000-7000-8000-000000001001', 'Nulo', null],
         ['01900000-0000-7000-8000-000000001002', 'LF', 'Línea uno\nLínea dos'],
-        ['01900000-0000-7000-8000-000000001003', 'CRLF', 'CRLF uno\r\nCRLF dos'],
+        [
+          '01900000-0000-7000-8000-000000001003',
+          'CRLF',
+          'CRLF uno\r\nCRLF dos',
+        ],
         ['01900000-0000-7000-8000-000000001004', 'CR', 'CR uno\rCR dos'],
         ['01900000-0000-7000-8000-000000001005', 'Espacios', '  \n\t  '],
-        ['01900000-0000-7000-8000-000000001006', 'Vacías', 'Uno\n\nDos\n   \nTres'],
-        ['01900000-0000-7000-8000-000000001007', 'Repetidos', '  con   espacios   repetidos  '],
+        [
+          '01900000-0000-7000-8000-000000001006',
+          'Vacías',
+          'Uno\n\nDos\n   \nTres',
+        ],
+        [
+          '01900000-0000-7000-8000-000000001007',
+          'Repetidos',
+          '  con   espacios   repetidos  ',
+        ],
         ['01900000-0000-7000-8000-000000001008', 'Largo', longText],
-        ['01900000-0000-7000-8000-000000001009', 'Archivado', 'Mundo archivado'],
+        [
+          '01900000-0000-7000-8000-000000001009',
+          'Archivado',
+          'Mundo archivado',
+        ],
         ['01900000-0000-7000-8000-000000001010', 'Borrado', 'Mundo borrado'],
         [
           '01900000-0000-7000-8000-000000001011',
@@ -626,7 +641,9 @@ describe('migraciones', () => {
         expect(migrated.pragma('user_version', { simple: true })).toBe(9);
         expect(migrated.pragma('integrity_check', { simple: true })).toBe('ok');
 
-        const read = (id: string): {
+        const read = (
+          id: string,
+        ): {
           description: string | null;
           description_text: string | null;
         } =>
@@ -698,9 +715,7 @@ describe('migraciones', () => {
         ).toEqual({ paragraphs: 2_000 });
 
         const worldBodies = migrated
-          .prepare(
-            "SELECT body FROM search_documents WHERE kind = 'world'",
-          )
+          .prepare("SELECT body FROM search_documents WHERE kind = 'world'")
           .all() as { body: string }[];
 
         expect(worldBodies.length).toBeGreaterThan(0);

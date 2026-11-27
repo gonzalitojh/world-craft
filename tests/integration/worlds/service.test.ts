@@ -627,16 +627,16 @@ describe('servicio de mundos', () => {
       });
 
       expect(
-        extractEntityDescriptionText(copy?.description as EntityRichTextDocument),
+        extractEntityDescriptionText(
+          copy?.description as EntityRichTextDocument,
+        ),
       ).toBe('Visita a Aria.');
       expect(
         collectEntityLinkIds(copy?.description as EntityRichTextDocument),
       ).toEqual([]);
 
       const row = fixture.sqlite
-        .prepare(
-          'SELECT description_text FROM worlds WHERE id = ?',
-        )
+        .prepare('SELECT description_text FROM worlds WHERE id = ?')
         .get(copy?.id) as { description_text: string };
 
       expect(row.description_text).toBe('Visita a Aria.');
@@ -665,7 +665,9 @@ describe('servicio de mundos', () => {
 
       expect(copy?.description).not.toBeNull();
       expect(
-        extractEntityDescriptionText(copy?.description as EntityRichTextDocument),
+        extractEntityDescriptionText(
+          copy?.description as EntityRichTextDocument,
+        ),
       ).toBe(text);
     } finally {
       await fixture.close();

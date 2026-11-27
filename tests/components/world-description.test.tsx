@@ -47,8 +47,9 @@ describe('campo de descripción del mundo', () => {
       />,
     );
 
-    expect(screen.getByRole('toolbar', { name: messages.entities.editor.label }))
-      .toBeInTheDocument();
+    expect(
+      screen.getByRole('toolbar', { name: messages.entities.editor.label }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: messages.entities.editor.bold }),
     ).toBeInTheDocument();
@@ -222,8 +223,7 @@ describe('campo de descripción del mundo', () => {
     fireEvent.paste(content, {
       clipboardData: {
         types: ['text/html'],
-        getData: (type: string) =>
-          type === 'text/html' ? html : '',
+        getData: (type: string) => (type === 'text/html' ? html : ''),
       },
     });
 
@@ -286,9 +286,9 @@ describe('lectura de la descripción del mundo', () => {
       <WorldDescriptionView document={null} onOpenEntity={noop} />,
     );
 
-    expect(
-      screen.getByText(messages.worlds.detail.noDescription),
-    ).toHaveClass('wc-world-description--empty');
+    expect(screen.getByText(messages.worlds.detail.noDescription)).toHaveClass(
+      'wc-world-description--empty',
+    );
     expect(document.querySelector('.ProseMirror')).toBeNull();
   });
 });

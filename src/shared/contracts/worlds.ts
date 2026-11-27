@@ -244,19 +244,13 @@ function isRichTextNode(value: unknown): value is EntityRichTextNode {
   }
 
   if (value.marks !== undefined) {
-    if (
-      !Array.isArray(value.marks) ||
-      !value.marks.every(isRichTextMark)
-    ) {
+    if (!Array.isArray(value.marks) || !value.marks.every(isRichTextMark)) {
       return false;
     }
   }
 
   if (value.content !== undefined) {
-    if (
-      !Array.isArray(value.content) ||
-      !value.content.every(isRichTextNode)
-    ) {
+    if (!Array.isArray(value.content) || !value.content.every(isRichTextNode)) {
       return false;
     }
   }

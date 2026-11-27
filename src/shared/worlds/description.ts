@@ -25,7 +25,10 @@ export type WorldDescriptionResult =
       readonly text: string | null;
       readonly json: string | null;
     }
-  | { readonly ok: false; readonly error: { readonly code: 'invalid-description' } };
+  | {
+      readonly ok: false;
+      readonly error: { readonly code: 'invalid-description' };
+    };
 
 /**
  * Valida un documento de descripción de mundo y calcula su texto plano.
@@ -33,9 +36,7 @@ export type WorldDescriptionResult =
  * `null` y `undefined` representan una descripción vacía. Un documento con solo
  * párrafos vacíos también se normaliza a `null`.
  */
-export function validateWorldDescription(
-  raw: unknown,
-): WorldDescriptionResult {
+export function validateWorldDescription(raw: unknown): WorldDescriptionResult {
   const result = validateEntityDescription(raw);
 
   if (!result.ok) {
@@ -91,7 +92,5 @@ export function parseWorldDescription(
 
   const result = validateWorldDescription(value);
 
-  return result.ok
-    ? { ok: true, document: result.document }
-    : { ok: false };
+  return result.ok ? { ok: true, document: result.document } : { ok: false };
 }

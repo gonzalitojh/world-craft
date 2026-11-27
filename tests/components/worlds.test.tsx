@@ -566,9 +566,7 @@ describe('página de mundo', () => {
     ).toBeVisible();
 
     // Descripción y datos del mundo.
-    expect(
-      screen.getByText('Descripción del mundo.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Descripción del mundo.')).toBeInTheDocument();
     expect(screen.getByText(world.slug)).toBeInTheDocument();
     expect(screen.getAllByRole('term')).toHaveLength(4);
     expect(screen.getAllByRole('definition')).toHaveLength(4);

@@ -47,9 +47,7 @@ describe('validación de campos del mundo', () => {
       normalizeWorldDescription(plainTextToRichTextDocument('   ')).text,
     ).toBeNull();
     expect(() =>
-      normalizeWorldDescription(
-        plainTextToRichTextDocument('a'.repeat(4_001)),
-      ),
+      normalizeWorldDescription(plainTextToRichTextDocument('a'.repeat(4_001))),
     ).toThrow(WorldInputError);
   });
 

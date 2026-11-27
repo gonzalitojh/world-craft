@@ -125,7 +125,10 @@ export function createWorldsService(
     }
 
     for (const entityId of collectEntityLinkIds(document)) {
-      if (worldId === null || repository.findLiveEntity(worldId, entityId) === null) {
+      if (
+        worldId === null ||
+        repository.findLiveEntity(worldId, entityId) === null
+      ) {
         throw new WorldInputError(
           'La descripción enlaza a una ficha que no está disponible en este mundo.',
         );

@@ -58,7 +58,10 @@ export interface WorldRepository {
   findById(id: string): WorldRecord | null;
   findBySlug(slug: string): WorldRecord | null;
   /** Devuelve la ficha viva del mundo o `null` si no existe o está en papelera. */
-  findLiveEntity(worldId: string, entityId: string): { readonly id: string } | null;
+  findLiveEntity(
+    worldId: string,
+    entityId: string,
+  ): { readonly id: string } | null;
   insert(record: WorldRecord): void;
   update(record: WorldRecord): void;
   softDelete(id: string, deletedAt: number): boolean;
