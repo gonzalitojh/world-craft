@@ -542,6 +542,19 @@ primera versión estable.
   vaciado con punto fijo, huérfanos, recuentos, componentes de papelera y Ajustes
   y E2E de cuarentena y purga. La suite queda en 779 unitarias (5 omitidas), 295
   de componentes, 261 de integración (1 omitida) y 76/76 E2E.
+- **Spike interno de mapas M2-01 (#80), no es una función de producto:**
+  laboratorio oculto en `#/internal/maps-spike` para validar MapLibre GL
+  `6.20.0` (BSD-3), Terra Draw `1.40.0` y su adaptador `1.5.0` (MIT) con worker
+  local, CSP `worker-src 'self'` e `img-src ... blob:` y sin red ni tiles
+  remotos. Incluye tres capas `regions`/`paths`/`places`, cinco geometrías,
+  edición de vértices, importación/exportación GeoJSON atómica (5 MiB y 2.000
+  features), SVG propio y PNG, métricas e informe JSON/Markdown, y el canal
+  acotado `mapsSpike:saveExport` en `userData/data/spike-maps`. Se añaden las
+  licencias de MapLibre y Terra Draw a `resources/licenses/` y a
+  `THIRD-PARTY-NOTICES.md`. El veredicto es GO con límites
+  ([ADR 0033](docs/adr/0033-spike-mapas-m2-01.md)); el editor de mapas sigue
+  pendiente en M2-02. La suite queda en 852 unitarias (5 omitidas), 308 de
+  componentes y 265 de integración (1 omitida), más 6 E2E del laboratorio.
 
 ### Cambiado
 

@@ -40,7 +40,7 @@ indicados arriba.
 ### Textos incluidos en el instalador
 
 `pnpm licenses:sync` copia a `resources/licenses/` y el empaquetado publica en
-`licenses/` junto al ejecutable estos **11 textos completos**:
+`licenses/` junto al ejecutable estos **14 textos completos**:
 
 - `sharp-LICENSE.txt` — Apache-2.0 de sharp.
 - `img-sharp-win32-LICENSE.txt` — Apache-2.0 del paquete de plataforma de sharp;
@@ -54,6 +54,9 @@ indicados arriba.
 - `yazl-LICENSE.txt` — MIT de yazl.
 - `pend-LICENSE.txt` — MIT de pend (dependencia de yauzl).
 - `buffer-crc32-LICENSE.txt` — MIT de buffer-crc32 (dependencia de yazl).
+- `maplibre-gl-LICENSE.txt` — BSD-3-Clause de MapLibre GL JS.
+- `terra-draw-LICENSE.txt` — MIT de Terra Draw.
+- `terra-draw-maplibre-gl-adapter-LICENSE.txt` — MIT del adaptador de Terra Draw para MapLibre.
 
 `pnpm verify:package` comprueba que los textos existen en el paquete.
 
@@ -114,6 +117,25 @@ la licencia MIT. El texto completo se copia con `pnpm licenses:sync` en
 `resources/licenses/tiptap-LICENSE.txt` y se publica en `licenses/` junto al
 ejecutable. No se usan extensiones Pro ni servicios de colaboración.
 
+## Mapas: MapLibre GL, Terra Draw y su adaptador
+
+| Componente | Versión | Licencia | Origen |
+|---|---|---|---|
+| `maplibre-gl` | 6.20.0 | BSD-3-Clause | https://github.com/maplibre/maplibre-gl-js |
+| `terra-draw` | 1.40.0 | MIT | https://github.com/JamesLMilner/terra-draw |
+| `terra-draw-maplibre-gl-adapter` | 1.5.0 | MIT | https://github.com/JamesLMilner/terra-draw |
+
+MapLibre y Terra Draw se empaquetan dentro del renderer con Vite para el spike
+interno de mapas (#80). Aunque se declaran como dependencias de desarrollo
+(igual que React), su código viaja en `out/renderer` y se distribuye con la
+aplicación. MapLibre conserva su aviso BSD-3-Clause en
+`resources/licenses/maplibre-gl-LICENSE.txt`; Terra Draw y su adaptador usan MIT
+y sus textos curados viajan en `resources/licenses/terra-draw-LICENSE.txt` y
+`resources/licenses/terra-draw-maplibre-gl-adapter-LICENSE.txt`, publicados en
+`licenses/` junto al ejecutable. El prototipo no carga tiles, glifos, sprites ni
+estilos remotos: el estilo del mapa es local y el worker se emite junto al
+renderer.
+
 ## Resto de dependencias
 
 El resto de dependencias de ejecución (`better-sqlite3`, `drizzle-orm`, `zod`,
@@ -128,5 +150,5 @@ desarrollo no se distribuyen con la aplicación.
 Este archivo se actualiza cuando cambia una dependencia de ejecución, cuando se
 actualiza sharp o libvips, cuando cambia la fuente empaquetada o cuando se
 incorpora un binario nuevo al instalador. El empaquetado incluye este archivo y
-los 11 textos de `resources/licenses/` junto a la aplicación; los cambios de
+los 14 textos de `resources/licenses/` junto a la aplicación; los cambios de
 versión deben reflejarse en ambos sitios en la misma tarea.

@@ -29,5 +29,15 @@ supportedArchitectures:
 # `electron` se fija a una versión recién publicada que la política local de
 # antigüedad de pnpm aún no considera madura; se excluye solo esa versión para
 # que la instalación con el lockfile sea reproducible.
+#
+# `maplibre-gl@6.20.0` es la versión aprobada y validada de extremo a extremo en
+# el spike de mapas M2-01 (#80, ADR 0033): worker local, CSP estricta, build
+# file:// y exportación SVG/PNG. `6.19.0` ya incluye los arreglos de `file://` y
+# CJS, pero no se revalidó con Terra Draw, la CSP ni el worker, así que se
+# mantiene 6.20.0 con lockfile e integridad exactos (riesgo MEDIUM aceptado).
+# Retirar la exclusión cuando la política de antigüedad considere madura la
+# versión o, como muy tarde, al abrir M2-02, donde se evalúa bajar a 6.19.0 si
+# 6.20.0 no aporta un arreglo imprescindible; si se baja, se revalida el spike.
 minimumReleaseAgeExclude:
   - electron@45.3.4
+  - maplibre-gl@6.20.0

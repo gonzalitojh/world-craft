@@ -11,14 +11,29 @@ import type { AppView } from './views';
 export const INTERNAL_SAMPLES_HASH = '#/internal/samples';
 
 /**
+ * Vista interna del laboratorio de mapas (#80).
+ *
+ * Valida MapLibre GL 6, Terra Draw y el worker en el build real antes de abrir
+ * el editor de mapas de M2. Igual que Muestras, solo se llega por hash: no
+ * aparece en el rail, la paleta ni `lastView`, y el manual no la presenta como
+ * funcionalidad disponible.
+ */
+export const INTERNAL_MAPS_SPIKE_HASH = '#/internal/maps-spike';
+
+const INTERNAL_VIEWS: Readonly<Record<string, AppView>> = {
+  [INTERNAL_SAMPLES_HASH]: 'samples',
+  [INTERNAL_MAPS_SPIKE_HASH]: 'maps-spike',
+};
+
+/**
  * Resuelve una vista interna a partir del hash de la ventana.
  *
  * El hash se compara sin distinguir mayúsculas y sin espacios sobrantes para
  * tolerar enlaces escritos a mano. Cualquier otro hash devuelve `null`: el
- * consumidor decide la vista de respaldo (Inicio), nunca Muestras.
+ * consumidor decide la vista de respaldo (Inicio), nunca una vista interna.
  */
 export function resolveInternalView(hash: string): AppView | null {
   const normalized = hash.trim().toLowerCase();
 
-  return normalized === INTERNAL_SAMPLES_HASH ? 'samples' : null;
+  return INTERNAL_VIEWS[normalized] ?? null;
 }

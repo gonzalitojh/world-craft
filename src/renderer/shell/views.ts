@@ -13,7 +13,8 @@ export type AppView =
   | 'entity'
   | 'trash'
   | 'settings'
-  | 'samples';
+  | 'samples'
+  | 'maps-spike';
 
 /** Vistas con entrada propia en la navegación del rail. */
 export type AppNavView = 'home' | 'worlds' | 'trash' | 'settings';

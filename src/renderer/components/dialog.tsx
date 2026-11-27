@@ -34,6 +34,8 @@ export interface DialogProps {
    */
   readonly dismissible?: boolean;
   readonly className?: string;
+  /** Marca el diálogo como ocupado mientras dura una operación. */
+  readonly busy?: boolean;
   /**
    * Clave que fuerza a devolver el foco a `[data-autofocus]` cuando cambia.
    * Permite que el diálogo abierto mueva el foco al botón o mensaje de la
@@ -57,6 +59,7 @@ export function Dialog({
   actions,
   dismissible = true,
   className,
+  busy = false,
   focusKey,
 }: DialogProps) {
   const messages = useMessages();
@@ -146,6 +149,7 @@ export function Dialog({
       ref={dialogRef}
       className={cx('wc-dialog', className)}
       aria-labelledby={titleId}
+      aria-busy={busy ? true : undefined}
       onCancel={(event) => {
         // Escape se gestiona en `onKeyDown` para que un tooltip o un menú
         // abiertos consuman el primer Escape sin cerrar el diálogo.

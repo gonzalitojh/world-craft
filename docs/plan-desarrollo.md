@@ -443,6 +443,13 @@ GeoJSON; PNG con el canvas de MapLibre. Riesgo: el estilo de mapas fantásticos 
 la exportación SVG requieren trabajo; se valida en un **spike** antes de
 comprometer el editor completo.
 
+El spike M2-01 (#80) se cerró el 28/11/2026 con **GO con límites** y el
+[ADR 0033](adr/0033-spike-mapas-m2-01.md): el motor funciona con worker local,
+CSP estricta y sin red, y los umbrales de 500 elementos se cumplen. Siguen
+pendientes las etiquetas en el SVG v1, la edición de `Multi*` y agujeros, el
+dibujo por teclado, la medición de 2.000 y la persistencia de producto. El
+editor de mapas no está implementado: se abre en M2-02.
+
 #### D8. Grafo: React Flow + ELK.js
 
 | Criterio | React Flow | Cytoscape.js | Sigma.js | D3 |
@@ -900,7 +907,7 @@ issues posteriores se consultan en GitHub. Resumen:
 | **M0** | Base técnica y proceso | Pivote documental, scaffold Electron, SQLite/Drizzle, IPC, sistema de diseño, assets, backups, CI, instalador. |
 | **M1** | Núcleo local | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, ajustes, papelera y versiones. |
 | **M1.5** | Rediseño visual | Dirección v2, tokens y primitivas, shell, Inicio, mundo, ficha, relaciones, editor, preferencias y auditoría. |
-| **M2** | Mapas y grafo | Spike MapLibre/Terra Draw, editor de mapas, marcadores, grafo. |
+| **M2** | Mapas y grafo | Spike MapLibre/Terra Draw validado con límites (#80); editor de mapas pendiente (M2-02), marcadores y grafo. |
 | **M3** | Escritura | Editor Tiptap, diálogos y enfoque, exportación/importación. |
 | **M4** | Juego | Dados y tablas, contenido inicial, tablas personalizadas y packs. |
 | **M5** | Calidad y distribución | Auditoría a11y/temas/rendimiento, release y auto-update, manual, pruebas de datos, beta 1.0. |
@@ -972,7 +979,7 @@ El detalle y las comprobaciones están en
 | Corrupción de SQLite | Alto | WAL, integridad al arrancar, copias rotativas y restauración guiada. |
 | Instalador sin firma y SmartScreen | Medio | Documentar el aviso, publicar checksums y valorar firma con ADR. |
 | Tamaño y consumo de Electron | Medio | `asar`, sin dependencias innecesarias, carga diferida y medición. |
-| Complejidad de mapas/exportación SVG | Medio | Spike temprano y plan B con editor SVG propio. |
+| Complejidad de mapas/exportación SVG | Medio | Spike M2-01 (#80) validado con GO y límites; plan B con editor SVG propio no activado. Quedan etiquetas, 2.000 y edición de `Multi*` para M2-02. |
 | Migración de datos web (si hubiera) | Bajo | La etapa web no llegó a producto; no hay datos reales que migrar. |
 | Dependencia de GitHub Releases | Bajo | Los datos y la app funcionan sin actualizaciones; el instalador se conserva. |
 | Fuga de datos por logs o exportaciones | Medio | Logs sin contenido, exportaciones locales, borrado seguro y revisión de seguridad. |

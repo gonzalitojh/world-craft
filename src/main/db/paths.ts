@@ -33,6 +33,9 @@ export const TRANSFER_TEMP_DIR_NAME = '.tmp';
 /** Carpeta de escrituras temporales de exportación. */
 export const EXPORTS_DIR_NAME = 'exports';
 
+/** Subcarpeta de exportaciones del laboratorio de mapas (#80). */
+export const SPIKE_EXPORTS_DIR_NAME = 'spike-maps';
+
 /** Carpeta de assets con rutas relativas a ella. */
 export const ASSETS_DIR_NAME = 'assets';
 
@@ -72,6 +75,7 @@ export interface DataPaths {
   readonly importsTempDir: string;
   readonly exportsDir: string;
   readonly exportsTempDir: string;
+  readonly spikeExportsDir: string;
   readonly transferLogFile: string;
 }
 
@@ -105,6 +109,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
   const importsTempDir = resolve(importsDir, TRANSFER_TEMP_DIR_NAME);
   const exportsDir = resolve(root, EXPORTS_DIR_NAME);
   const exportsTempDir = resolve(exportsDir, TRANSFER_TEMP_DIR_NAME);
+  const spikeExportsDir = resolve(dataDir, SPIKE_EXPORTS_DIR_NAME);
   const databaseFile = resolve(dataDir, DATABASE_FILE_NAME);
   const startupLogFile = resolve(logsDir, STARTUP_LOG_FILE_NAME);
   const assetsLogFile = resolve(logsDir, ASSETS_LOG_FILE_NAME);
@@ -129,6 +134,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     importsTempDir,
     exportsDir,
     exportsTempDir,
+    spikeExportsDir,
     databaseFile,
     startupLogFile,
     assetsLogFile,
@@ -160,6 +166,7 @@ export function resolveDataPaths(userDataDir: string): DataPaths {
     importsTempDir,
     exportsDir,
     exportsTempDir,
+    spikeExportsDir,
     transferLogFile,
   };
 }

@@ -62,6 +62,9 @@ describe('rutas de datos', () => {
     expect(paths.preDeleteBackupsDir).toBe(
       join(resolve(userDataDir), 'backups', 'pre-delete'),
     );
+    expect(paths.spikeExportsDir).toBe(
+      join(resolve(userDataDir), 'data', 'spike-maps'),
+    );
   });
 
   it('deriva las rutas de assets y del log de assets dentro de userData', () => {
@@ -120,6 +123,7 @@ describe('rutas de datos', () => {
       paths.assetsTempDir,
       paths.assetsLogFile,
       paths.orphanBackupsDir,
+      paths.spikeExportsDir,
     ]) {
       const relation = relative(normalizedRoot, candidate);
 

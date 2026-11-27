@@ -38,6 +38,7 @@
     "src/renderer/lib/entity-view-memory.ts",
     "src/renderer/lib/relation-groups.ts",
     "src/renderer/lib/floating-panel.ts",
+    "src/renderer/maps-spike/**/*.ts",
     "src/renderer/transfer/state.ts",
     "src/renderer/transfer/format.ts",
     "src/renderer/components/editor/mention-query.ts",
@@ -53,5 +54,12 @@
     "vitest.components.config.ts",
     "vitest.integration.config.ts"
   ],
-  "exclude": ["node_modules", "out"]
+  "exclude": [
+    "node_modules",
+    "out",
+    "src/renderer/maps-spike/palette.ts",
+    "src/renderer/maps-spike/webgl.ts",
+    "src/renderer/maps-spike/state.ts",
+    "src/renderer/maps-spike/use-spike-map.ts"
+  ]
 }

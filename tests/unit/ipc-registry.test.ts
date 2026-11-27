@@ -250,6 +250,26 @@ describe('createIpcHandlers', () => {
     ).resolves.toEqual({ ok: false, error: { code: 'INVALID_INPUT' } });
   });
 
+  it('en modo seguro el laboratorio de mapas no escribe', async () => {
+    const route = createIpcRouter(createHandlers());
+
+    await expect(
+      route(IPC_CHANNELS.mapsSpikeSaveExport, {
+        kind: 'svg',
+        content: new Uint8Array([1]),
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' },
+    });
+    await expect(
+      route(IPC_CHANNELS.mapsSpikeSaveExport, {
+        kind: 'svg',
+        content: new Uint8Array(),
+      }),
+    ).resolves.toEqual({ ok: false, error: { code: 'INVALID_INPUT' } });
+  });
+
   it('atiende los canales de datos y valida tokens y payloads', async () => {
     const route = createIpcRouter(createHandlers());
 
