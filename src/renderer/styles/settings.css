@@ -334,6 +334,19 @@
   overflow-wrap: anywhere;
 }
 
+/* Aviso pasivo de imágenes desvinculadas al actualizar. No es un error:
+ * usa la familia de aviso, nunca `--danger` ni `--danger-surface`. */
+.wc-settings__notice {
+  min-width: 0;
+  max-inline-size: 68ch;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  background-color: var(--warning-surface);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
 .wc-settings__table--numeric td,
 .wc-settings__table--numeric .wc-settings__number {
   text-align: end;

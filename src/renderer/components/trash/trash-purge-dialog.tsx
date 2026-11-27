@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import type { TrashItem } from '../../../shared/contracts/trash';
 import { useI18n } from '../../i18n/provider';
 import { Button } from '../button';
@@ -22,6 +24,15 @@ export function TrashPurgeDialog({
   onConfirm,
 }: TrashPurgeDialogProps) {
   const { messages } = useI18n();
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    // Si deshabilitar el botón durante `pending` sacó el foco del diálogo, se
+    // devuelve a «Cancelar», la opción segura. No se enfoca el error.
+    if (open && error !== null && !pending) {
+      cancelRef.current?.focus();
+    }
+  }, [error, open, pending]);
 
   if (item === null) {
     return null;
@@ -43,6 +54,7 @@ export function TrashPurgeDialog({
       actions={
         <>
           <Button
+            ref={cancelRef}
             variant="ghost"
             data-autofocus
             disabled={pending}

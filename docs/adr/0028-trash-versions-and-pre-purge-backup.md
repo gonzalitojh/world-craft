@@ -206,13 +206,27 @@ las manuales a 50 sin caducidad.
 No hay riesgos de free tier: la decisión no añade servicios, cuentas ni
 dependencias de pago.
 
+> **Implementación (M1-11, #116, 27/11/2026).** La deuda de assets queda
+> cerrada. La migración `0009_assets_world_fk` reconstruye `assets` con
+> `world_id → worlds(id) ON DELETE RESTRICT`, pone en cuarentena las filas sin
+> mundo y audita las referencias visibles que desvincula. La purga de un mundo
+> mueve sus filas de assets no usadas a `assets_quarantine` con
+> `reason = 'world-purged'` antes de borrar el mundo, rechaza con
+> `assets-in-use` si otro mundo o una ficha superviviente los referencia y el
+> vaciado conserva los bloqueados en `skipped`. **Los archivos siguen sin
+> borrarse desde la papelera**; solo la purga de huérfanas de Ajustes, con
+> confirmación y copia verificada, puede eliminarlos. La regla D8 se mantiene
+> para el alcance de #77 y este ADR no se reescribe. El detalle está en el
+> [ADR 0032](0032-assets-world-fk-quarantine.md).
+
 ## Plan de revisión
 
-- Se revisa cuando #116 añada la FK `assets.world_id` y la cuarentena: habrá que
-  decidir si la purga de un mundo mueve sus assets a la cuarentena y si el orden
-  de borrado cambia.
+- Se revisó cuando #116 añadió la FK `assets.world_id` y la cuarentena; la purga
+  de un mundo mueve sus assets no usados a la cuarentena y los archivos siguen
+  intactos.
 - Se revisa cuando #78 implemente la exportación: la regla de «solo vivo» y la
-  inclusión de versiones no deben redecidirse en la interfaz.
+  inclusión de versiones no deben redecidirse en la interfaz. #78 ya está
+  implementado y no cambió las reglas de este ADR.
 - Se revisa cuando M2 (mapas) y M3 (escenas) reutilicen el patrón: si aparece una
   segunda forma de contenido versionado, se valorará una tabla común en un ADR
   nuevo que superseda a este.
@@ -238,3 +252,5 @@ dependencias de pago.
 - [`docs/adr/0017-assets-service-sharp-orphan-purge.md`](0017-assets-service-sharp-orphan-purge.md)
 - [`docs/adr/0021-entities-crud-gallery-tags-editor.md`](0021-entities-crud-gallery-tags-editor.md)
 - [`docs/adr/0027-ui-preferences-persistence.md`](0027-ui-preferences-persistence.md)
+- [`docs/adr/0032-assets-world-fk-quarantine.md`](0032-assets-world-fk-quarantine.md),
+  cierre de la deuda de assets anunciada en este ADR

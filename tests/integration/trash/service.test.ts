@@ -40,6 +40,7 @@ interface Fixture {
   readonly versions: VersionsService;
   readonly relations: RelationsService;
   readonly trash: TrashService;
+  readonly safetyCopy: ReturnType<typeof vi.fn>;
   readonly insertAsset: (worldId: string) => Promise<string>;
   close(): Promise<void>;
 }
@@ -98,6 +99,7 @@ async function createFixture(options?: {
   const assetRepository = createAssetRepository(database);
 
   const copyWorks = options?.copyWorks ?? true;
+  const safetyCopy = vi.fn(async () => copyWorks);
 
   return {
     test,
@@ -112,8 +114,9 @@ async function createFixture(options?: {
       database,
       sqlite,
       now,
-      createSafetyCopy: vi.fn(async () => copyWorks),
+      createSafetyCopy: safetyCopy,
     }),
+    safetyCopy,
     async insertAsset(worldId) {
       const id = generateId();
       const relativePath = `worlds/${worldId}/${id}.webp`;
@@ -431,12 +434,27 @@ describe('servicio de papelera', () => {
       expect(
         fixture.sqlite.prepare('SELECT count(*) AS total FROM relations').get(),
       ).toEqual({ total: 0 });
-      // D8: la fila y el archivo del asset siguen existiendo.
+      // Los metadatos del asset pasan a cuarentena; el archivo sigue en disco.
       expect(
         fixture.sqlite
           .prepare('SELECT count(*) AS total FROM assets WHERE id = ?')
           .get(assetId),
-      ).toEqual({ total: 1 });
+      ).toEqual({ total: 0 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT id, reason FROM assets_quarantine WHERE id = ?')
+          .get(assetId),
+      ).toEqual({ id: assetId, reason: 'world-purged' });
+      expect(
+        await stat(
+          join(
+            fixture.test.paths.assetsDir,
+            'worlds',
+            world.id,
+            `${assetId}.webp`,
+          ),
+        ),
+      ).toBeTruthy();
 
       // Vaciado: mundos, fichas y tipos restantes con una sola copia.
       const secondWorld = fixture.worlds.create({ name: 'Otro mundo' });
@@ -516,6 +534,446 @@ describe('servicio de papelera', () => {
       expect(
         new Set([...first.items, ...second.items].map((item) => item.id)),
       ).toEqual(new Set(ids));
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('purga un mundo con assets propios y los deja en cuarentena sin tocar archivos', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const world = fixture.worlds.create({ name: 'Mundo con imágenes' });
+      const assetId = await fixture.insertAsset(world.id);
+
+      fixture.worlds.remove(world.id);
+
+      await expect(
+        fixture.trash.purge({
+          kind: 'world',
+          id: world.id,
+          confirm: 'delete-forever',
+        }),
+      ).resolves.toEqual({ purged: true });
+
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM worlds WHERE id = ?')
+          .get(world.id),
+      ).toEqual({ total: 0 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets WHERE id = ?')
+          .get(assetId),
+      ).toEqual({ total: 0 });
+      expect(
+        fixture.sqlite
+          .prepare(
+            'SELECT world_id, reason FROM assets_quarantine WHERE id = ?',
+          )
+          .get(assetId),
+      ).toEqual({ world_id: world.id, reason: 'world-purged' });
+      expect(
+        await stat(
+          join(
+            fixture.test.paths.assetsDir,
+            'worlds',
+            world.id,
+            `${assetId}.webp`,
+          ),
+        ),
+      ).toBeTruthy();
+      expect(fixture.sqlite.pragma('foreign_key_check')).toEqual([]);
+      expect(fixture.safetyCopy).toHaveBeenCalledTimes(1);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('rechaza la purga con assets-in-use desde portada, imagen o galería externas', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const owner = fixture.worlds.create({ name: 'Mundo dueño' });
+      const other = fixture.worlds.create({ name: 'Mundo vivo' });
+      const type = fixture.entityTypes
+        .list(other.id)
+        .find((item) => item.key === 'character');
+
+      if (type === undefined) {
+        throw new Error('Falta el tipo de personaje.');
+      }
+
+      const coverAsset = await fixture.insertAsset(owner.id);
+      const imageAsset = await fixture.insertAsset(owner.id);
+      const galleryAsset = await fixture.insertAsset(owner.id);
+      const entity = fixture.entities.create({
+        worldId: other.id,
+        typeId: type.id,
+        name: 'Lectora',
+      });
+
+      fixture.sqlite
+        .prepare('UPDATE worlds SET cover_asset_id = ? WHERE id = ?')
+        .run(coverAsset, other.id);
+      fixture.sqlite
+        .prepare('UPDATE entities SET image_asset_id = ? WHERE id = ?')
+        .run(imageAsset, entity.id);
+      fixture.sqlite
+        .prepare(
+          'INSERT INTO entity_gallery (entity_id, asset_id, position) VALUES (?, ?, 0)',
+        )
+        .run(entity.id, galleryAsset);
+
+      fixture.worlds.remove(owner.id);
+
+      await expect(
+        fixture.trash.purge({
+          kind: 'world',
+          id: owner.id,
+          confirm: 'delete-forever',
+        }),
+      ).resolves.toEqual({ purged: false, reason: 'assets-in-use' });
+
+      // El precheck ocurre antes de la copia: no se toca nada.
+      expect(fixture.safetyCopy).not.toHaveBeenCalled();
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets WHERE world_id = ?')
+          .get(owner.id),
+      ).toEqual({ total: 3 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 0 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT deleted_at FROM worlds WHERE id = ?')
+          .get(owner.id),
+      ).not.toBeUndefined();
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('detecta por separado portada, imagen y galería externas', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const coverOwner = fixture.worlds.create({ name: 'Dueño portada' });
+      const imageOwner = fixture.worlds.create({ name: 'Dueño imagen' });
+      const galleryOwner = fixture.worlds.create({ name: 'Dueño galería' });
+      const coverLive = fixture.worlds.create({ name: 'Vivo portada' });
+      const imageLive = fixture.worlds.create({ name: 'Vivo imagen' });
+      const galleryLive = fixture.worlds.create({ name: 'Vivo galería' });
+      const type = fixture.entityTypes
+        .list(imageLive.id)
+        .find((item) => item.key === 'character');
+
+      if (type === undefined) {
+        throw new Error('Falta el tipo de personaje.');
+      }
+
+      const coverAsset = await fixture.insertAsset(coverOwner.id);
+      const imageAsset = await fixture.insertAsset(imageOwner.id);
+      const galleryAsset = await fixture.insertAsset(galleryOwner.id);
+      const imageEntity = fixture.entities.create({
+        worldId: imageLive.id,
+        typeId: type.id,
+        name: 'Lectora de imagen',
+      });
+      const galleryEntity = fixture.entities.create({
+        worldId: galleryLive.id,
+        typeId: type.id,
+        name: 'Lectora de galería',
+      });
+
+      fixture.sqlite
+        .prepare('UPDATE worlds SET cover_asset_id = ? WHERE id = ?')
+        .run(coverAsset, coverLive.id);
+      fixture.sqlite
+        .prepare('UPDATE entities SET image_asset_id = ? WHERE id = ?')
+        .run(imageAsset, imageEntity.id);
+      fixture.sqlite
+        .prepare(
+          'INSERT INTO entity_gallery (entity_id, asset_id, position) VALUES (?, ?, 0)',
+        )
+        .run(galleryEntity.id, galleryAsset);
+
+      for (const world of [coverOwner, imageOwner, galleryOwner]) {
+        fixture.worlds.remove(world.id);
+
+        await expect(
+          fixture.trash.purge({
+            kind: 'world',
+            id: world.id,
+            confirm: 'delete-forever',
+          }),
+        ).resolves.toEqual({ purged: false, reason: 'assets-in-use' });
+        expect(
+          fixture.sqlite
+            .prepare('SELECT count(*) AS total FROM worlds WHERE id = ?')
+            .get(world.id),
+        ).toEqual({ total: 1 });
+      }
+
+      expect(fixture.safetyCopy).not.toHaveBeenCalled();
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 0 });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('las referencias del propio mundo no bloquean su purga', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const world = fixture.worlds.create({ name: 'Mundo autosuficiente' });
+      const type = fixture.entityTypes
+        .list(world.id)
+        .find((item) => item.key === 'character');
+
+      if (type === undefined) {
+        throw new Error('Falta el tipo de personaje.');
+      }
+
+      const coverAsset = await fixture.insertAsset(world.id);
+      const imageAsset = await fixture.insertAsset(world.id);
+      const galleryAsset = await fixture.insertAsset(world.id);
+      const entity = fixture.entities.create({
+        worldId: world.id,
+        typeId: type.id,
+        name: 'Habitante',
+      });
+
+      fixture.sqlite
+        .prepare('UPDATE worlds SET cover_asset_id = ? WHERE id = ?')
+        .run(coverAsset, world.id);
+      fixture.sqlite
+        .prepare('UPDATE entities SET image_asset_id = ? WHERE id = ?')
+        .run(imageAsset, entity.id);
+      fixture.sqlite
+        .prepare(
+          'INSERT INTO entity_gallery (entity_id, asset_id, position) VALUES (?, ?, 0)',
+        )
+        .run(entity.id, galleryAsset);
+
+      fixture.worlds.remove(world.id);
+
+      await expect(
+        fixture.trash.purge({
+          kind: 'world',
+          id: world.id,
+          confirm: 'delete-forever',
+        }),
+      ).resolves.toEqual({ purged: true });
+
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 3 });
+      expect(fixture.sqlite.pragma('foreign_key_check')).toEqual([]);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('el vaciado purga los mundos libres, conserva los bloqueados y cuenta skipped', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const free = fixture.worlds.create({ name: 'Mundo libre' });
+      const blocked = fixture.worlds.create({ name: 'Mundo bloqueado' });
+      const live = fixture.worlds.create({ name: 'Mundo vivo' });
+      const blockedAsset = await fixture.insertAsset(blocked.id);
+
+      fixture.sqlite
+        .prepare('UPDATE worlds SET cover_asset_id = ? WHERE id = ?')
+        .run(blockedAsset, live.id);
+      fixture.worlds.remove(free.id);
+      fixture.worlds.remove(blocked.id);
+
+      const result = await fixture.trash.empty({ confirm: 'empty-trash' });
+
+      expect(result.backup).toBe('created');
+      expect(result.purged.worlds).toBe(1);
+      expect(result.skipped).toBe(1);
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM worlds WHERE id = ?')
+          .get(free.id),
+      ).toEqual({ total: 0 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM worlds WHERE id = ?')
+          .get(blocked.id),
+      ).toEqual({ total: 1 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT cover_asset_id FROM worlds WHERE id = ?')
+          .get(live.id),
+      ).toEqual({ cover_asset_id: blockedAsset });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 0 });
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('el vaciado resuelve dos mundos que se referencian como portada', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const first = fixture.worlds.create({ name: 'Mundo A' });
+      const second = fixture.worlds.create({ name: 'Mundo B' });
+      const firstAsset = await fixture.insertAsset(first.id);
+      const secondAsset = await fixture.insertAsset(second.id);
+
+      fixture.sqlite
+        .prepare('UPDATE worlds SET cover_asset_id = ? WHERE id = ?')
+        .run(secondAsset, first.id);
+      fixture.sqlite
+        .prepare('UPDATE worlds SET cover_asset_id = ? WHERE id = ?')
+        .run(firstAsset, second.id);
+      fixture.worlds.remove(first.id);
+      fixture.worlds.remove(second.id);
+
+      const result = await fixture.trash.empty({ confirm: 'empty-trash' });
+
+      expect(result.purged.worlds).toBe(2);
+      expect(result.skipped).toBe(0);
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM worlds WHERE id IN (?, ?)')
+          .get(first.id, second.id),
+      ).toEqual({ total: 0 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 2 });
+      expect(fixture.sqlite.pragma('foreign_key_check')).toEqual([]);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('si falla el borrado del mundo, la purga revierte mundo, assets y cuarentena', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const world = fixture.worlds.create({ name: 'Mundo con trigger' });
+      const assetId = await fixture.insertAsset(world.id);
+
+      fixture.worlds.remove(world.id);
+      fixture.sqlite.exec(
+        `CREATE TRIGGER block_world_delete
+         BEFORE DELETE ON worlds
+         BEGIN
+           SELECT RAISE(ABORT, 'bloqueado');
+         END;`,
+      );
+
+      try {
+        await expect(
+          fixture.trash.purge({
+            kind: 'world',
+            id: world.id,
+            confirm: 'delete-forever',
+          }),
+        ).rejects.toThrow();
+      } finally {
+        fixture.sqlite.exec('DROP TRIGGER block_world_delete;');
+      }
+
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM worlds WHERE id = ?')
+          .get(world.id),
+      ).toEqual({ total: 1 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets WHERE id = ?')
+          .get(assetId),
+      ).toEqual({ total: 1 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 0 });
+      expect(
+        await stat(
+          join(
+            fixture.test.paths.assetsDir,
+            'worlds',
+            world.id,
+            `${assetId}.webp`,
+          ),
+        ),
+      ).toBeTruthy();
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('purga fichas y tipos sin tocar assets ni cuarentena', async () => {
+    const fixture = await createFixture();
+
+    try {
+      const world = fixture.worlds.create({ name: 'Mundo' });
+      const type = fixture.entityTypes.create({
+        worldId: world.id,
+        name: 'Reliquia',
+        icon: 'gem',
+        color: 'ochre',
+        fields: [],
+      });
+      const entity = fixture.entities.create({
+        worldId: world.id,
+        typeId: type.id,
+        name: 'Faro',
+      });
+      const assetId = await fixture.insertAsset(world.id);
+
+      fixture.entities.remove({ worldId: world.id, id: entity.id });
+
+      await expect(
+        fixture.trash.purge({
+          kind: 'entity',
+          id: entity.id,
+          confirm: 'delete-forever',
+        }),
+      ).resolves.toEqual({ purged: true });
+
+      fixture.entityTypes.remove({ worldId: world.id, id: type.id });
+
+      await expect(
+        fixture.trash.purge({
+          kind: 'entityType',
+          id: type.id,
+          confirm: 'delete-forever',
+        }),
+      ).resolves.toEqual({ purged: true });
+
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets WHERE id = ?')
+          .get(assetId),
+      ).toEqual({ total: 1 });
+      expect(
+        fixture.sqlite
+          .prepare('SELECT count(*) AS total FROM assets_quarantine')
+          .get(),
+      ).toEqual({ total: 0 });
     } finally {
       await fixture.close();
     }

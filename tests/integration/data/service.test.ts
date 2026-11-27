@@ -1,10 +1,11 @@
-import { access, mkdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createDataService } from '@/main/data/service';
 import { createAssetRepository } from '@/main/assets/store';
 import { initializeDatabase } from '@/main/db/startup';
+import type { SqliteDatabase } from '@/main/db/connection';
 import { createTestDatabase, type TempDatabase } from '../helpers/temp-db';
 
 const NOW = 1_760_000_000_000;
@@ -19,6 +20,7 @@ const ORPHAN_ID = '01900000-0000-7000-8000-000000000007';
 interface Context {
   readonly temp: TempDatabase;
   readonly service: ReturnType<typeof createDataService>;
+  readonly sqlite: SqliteDatabase;
   readonly openPath: ReturnType<typeof vi.fn>;
   readonly referencedFile: string;
   readonly orphanFile: string;
@@ -172,6 +174,7 @@ async function createContext(): Promise<Context> {
   const current: Context = {
     temp,
     service,
+    sqlite,
     openPath,
     referencedFile,
     orphanFile,
@@ -196,6 +199,7 @@ describe('servicio de datos con base temporal', () => {
       entities: 1,
       assets: 1,
       backups: 2,
+      quarantine: { assets: 0, references: 0 },
     });
     expect(JSON.stringify(summary)).not.toContain(current.temp.userDataDir);
   });
@@ -257,5 +261,60 @@ describe('servicio de datos con base temporal', () => {
     });
     await expect(access(current.referencedFile)).resolves.toBeUndefined();
     await expect(access(current.orphanFile)).rejects.toThrow();
+  });
+
+  it('cuenta la cuarentena y la trata como huérfana sin borrar sus metadatos', async () => {
+    const current = await createContext();
+    const quarantinedId = '01900000-0000-7000-8000-000000000008';
+    const quarantinedRelativePath = `worlds/${ACTIVE_WORLD_ID}/${quarantinedId}.webp`;
+    const quarantinedFile = join(
+      current.temp.paths.assetsDir,
+      ...quarantinedRelativePath.split('/'),
+    );
+
+    await writeFile(quarantinedFile, 'cuarentena', 'utf8');
+    current.sqlite
+      .prepare(
+        `INSERT INTO assets_quarantine (id, world_id, kind, relative_path, mime, size, width, height, alt, hash, created_at, reason, quarantined_at)
+         VALUES (?, ?, 'image', ?, 'image/webp', 10, 10, 10, NULL, ?, ?, 'world-missing', ?)`,
+      )
+      .run(
+        quarantinedId,
+        '01900000-0000-7000-8000-000000000099',
+        quarantinedRelativePath,
+        'b'.repeat(64),
+        NOW,
+        NOW,
+      );
+    current.sqlite
+      .prepare(
+        `INSERT INTO assets_quarantine_references (asset_id, table_name, row_id, column_name, position, created_at)
+         VALUES (?, 'worlds', ?, 'cover_asset_id', NULL, ?)`,
+      )
+      .run(quarantinedId, '01900000-0000-7000-8000-000000000098', NOW);
+
+    expect(current.service.summary()).toEqual({
+      worlds: { active: 1, archived: 1, trash: 1 },
+      entities: 1,
+      assets: 1,
+      backups: 2,
+      quarantine: { assets: 1, references: 1 },
+    });
+
+    const plan = current.service.planOrphans();
+
+    expect(plan.unreferencedFiles).toBe(2);
+    expect(plan.purgeableFiles).toBe(3);
+    expect(await readFile(quarantinedFile, 'utf8')).toBe('cuarentena');
+
+    await expect(
+      current.service.purgeOrphans('purge-orphans'),
+    ).resolves.toMatchObject({ purgedFiles: 3, backupCreated: true });
+    await expect(access(quarantinedFile)).rejects.toThrow();
+    expect(
+      current.sqlite
+        .prepare('SELECT count(*) AS total FROM assets_quarantine')
+        .get(),
+    ).toEqual({ total: 1 });
   });
 });

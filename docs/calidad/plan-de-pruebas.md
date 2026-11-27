@@ -11,7 +11,8 @@
 > comandos), ADR 0025 (dirección visual v2), ADR 0026 (editor mínimo y menciones),
 > ADR 0027 (preferencias de interfaz persistentes) y ADR 0028 (papelera,
 > versiones y copia previa a la purga), y ADR 0029 (exportación e importación
-> de mundos).
+> de mundos), ADR 0030 (Ajustes y datos), ADR 0031 (formato v2) y ADR 0032
+> (integridad de assets, cuarentena y purga).
 
 ## 1. Principios
 
@@ -55,15 +56,18 @@ Library, Playwright Electron y axe se incorporaron con el arranque de pruebas
 ### 3.2 Migraciones, copias y preservación (implementado)
 
 - Base nueva → `0000_init` + `0001_assets` + `0002_worlds` + `0003_entity_types`
-  + `0004_entities` + `0005_relations` + `0006_search` → `user_version` 7,
+  + `0004_entities` + `0005_relations` + `0006_search` + `0007_trash_versions`
+  + `0008_world_description` + `0009_assets_world_fk` → `user_version` 10,
   tablas del sistema, `assets`, `worlds`, `activity_log`, `entity_types`,
   `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`,
-  `relations` y `search_documents`, y sin copia previa (justificado: no hay
-  datos que preservar).
+  `relations`, `search_documents`, `entity_versions`, `assets_quarantine` y
+  `assets_quarantine_references`, y sin copia previa (justificado: no hay datos
+  que preservar).
 - Base existente en `0000` → esquema actual → `app_settings` intacto y tablas
   `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`,
-  `entity_tags`, `entity_gallery`, `relation_types`, `relations` y
-  `search_documents` creadas.
+  `entity_tags`, `entity_gallery`, `relation_types`, `relations`,
+  `search_documents`, `entity_versions`, `assets_quarantine` y
+  `assets_quarantine_references` creadas.
 - Base existente en `0002` con mundos y actividad → `0003` a `0006`
   conservan sus filas, siembran los 18 tipos del sistema y crean las tablas de
   fichas, relaciones e índice de búsqueda.
@@ -74,6 +78,9 @@ Library, Playwright Electron y axe se incorporaron con el arranque de pruebas
   conservan sus filas, crean las tablas de relaciones, siembran los 18 tipos del
   sistema y crean el índice de búsqueda.
 - Base existente → migración → mismos datos y copia previa verificable.
+- Base en `0008` con assets válidos y huérfanos → `0009`: filas y archivos
+  válidos conservados, huérfanos en cuarentena, referencias auditadas, FK activa,
+  `foreign_key_check` vacío y `user_version` 10; rollback y reaplicación.
 - Journal válido, secuencia sin huecos, etiqueta sin traversal y checksum
   SHA-256 normalizado.
 - Migración fallida → rollback del lote completo y modo seguro.
@@ -842,6 +849,70 @@ igual que la aplicación. El recuento vigente tras #132 está en §3.18.
   componentes, 204 de integración (1 omitida) y E2E de transferencia 1/1;
   typecheck, lint, `db:check`, build, `verify:build` y `verify:worker` en verde.
 
+### 3.21 Integridad de assets, cuarentena y purga (implementado, #116)
+
+- **Migración y preservación.** `tests/integration/migrations/assets-world-fk.test.ts`
+  siembra una base en `0008` con dos mundos (uno en papelera), portada, imagen de
+  ficha, galería, assets válidos, assets huérfanos y archivos y miniaturas
+  reales. Aplica `0009` con el journal real y comprueba: copia previa
+  verificable; `user_version` 10; conservación columna a columna de las filas
+  válidas; cuarentena de los huérfanos con `reason = 'world-missing'` y todos sus
+  metadatos; referencias auditadas exactas (`worlds`, `entities` y
+  `entity_gallery` con `position`); limpieza de portada, imagen y galería;
+  `foreign_key_check` vacío; `integrity_check = ok`; FK e índices; `DELETE FROM
+  worlds` bloqueado; borrado lógico permitido; `CHECK` de assets; y SHA-256 de
+  todos los archivos intacto.
+- **Runner.** `tests/integration/migrations/runner.test.ts` cubre lote válido con
+  `foreign_keys = 1`, huérfano detectado antes del commit con reversión,
+  migración que lanza con reversión y restauración de FKs, llamada dentro de una
+  transacción rechazada y `0009` sobre base nueva sin cuarentena.
+  `tests/unit/db/integrity.test.ts` prueba `checkForeignKeys` directo: lista
+  vacía, normalización de una violación y rechazo de una fila malformada sin
+  filtrar detalles.
+- **Rollback y reaplicación.** El archivo
+  `drizzle/rollback/0009_assets_world_fk.down.sql` se ejecuta sobre la base
+  temporal: restaura las filas y las referencias auditadas, elimina las tablas e
+  índices nuevos, deja `user_version` 9 y `foreign_keys = 1`; después `0009` se
+  reaplica con el runner y vuelve a 10.
+- **Cuarentena.** `tests/integration/assets/quarantine.test.ts` comprueba que
+  `quarantineWorldAssets` mueve las filas del mundo con
+  `reason = 'world-purged'` sin tocar metadatos y devuelve el recuento, y que
+  `countQuarantine` devuelve ceros si faltan las tablas.
+- **Referencias y FK.** `tests/integration/trash/asset-references.test.ts`
+  enumera con `pragma_foreign_key_list` las tres FKs conocidas cuyo padre es
+  `assets` y comprueba `countExternalAssetReferences` con varios mundos
+  permitidos y el bloqueo correcto.
+- **Purga.** `tests/integration/trash/service.test.ts` cubre purga de mundo con
+  assets propios (cuarentena, archivos intactos, `foreign_key_check` vacío),
+  `assets-in-use` desde portada, imagen de ficha y galería de otro mundo,
+  referencias del propio mundo que no bloquean, vaciado con un mundo bloqueado y
+  otro libre, dos mundos que se referencian entre sí (punto fijo), reversión por
+  trigger y `purgeEntity`/`purgeEntityType` que no tocan assets ni cuarentena.
+- **Huérfanos y recuentos.** Tras purgar un mundo, `planOrphanCleanup` clasifica
+  el archivo y la miniatura en cuarentena como no referenciados y `purgeOrphans`
+  solo los copia y borra con confirmación; `readDataCounts` devuelve
+  `quarantine.assets` y `quarantine.references` correctos y ceros sin tablas.
+- **Contratos.** `tests/unit/trash/contracts.test.ts` valida `assets-in-use` y
+  rechaza motivos desconocidos; `tests/unit/data/contracts.test.ts` valida
+  `DataCounts` con `quarantine`, claves exactas y números no negativos; los
+  fixtures de API, handlers y servicio incluyen `quarantine`.
+- **Componentes, temas y accesibilidad.** `tests/components/trash.test.tsx`
+  cubre el error `assets-in-use`, el vaciado con `skipped > 0` sin «ya estaba
+  vacía», el plural, el foco y `aria-live`; `data-settings.test.tsx` cubre el
+  aviso con `references > 0` y su ausencia con 0, sin rutas. Ambos temas,
+  1024/1280/1600, contraste AA, axe sin errores críticos y
+  `prefers-reduced-motion`.
+- **E2E.** `tests/e2e/assets-quarantine.spec.ts` siembra un perfil en esquema 9
+  con un mundo en papelera, assets y archivos; arranca Electron, comprueba que
+  abre con esquema 10, purga el mundo desde la Papelera, cierra y verifica que el
+  mundo ya no existe, el asset está en cuarentena y el archivo sigue. La suite
+  E2E de papelera se ejecuta sin regresiones; el cierre de #116 deja 76/76 E2E en
+  verde.
+- **Fixtures.** Los helpers que insertan assets siembran antes el mundo
+  (`temp-assets.ts`, `store.test.ts`, `protocol.test.ts`,
+  `preservation.test.ts` y las expectativas de versión actual); los fixtures
+  históricos que se detienen antes de `0009` conservan `user_version` 9.
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -869,7 +940,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 671 unitarias (4 omitidas), 213 de componentes y 204 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 779 unitarias (5 omitidas), 295 de componentes y 261 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |
@@ -974,3 +1045,5 @@ toca pantallas, estilos o textos visibles, y antes de una release.
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
 - [ADR 0018](../adr/0018-nsis-packaging-and-update-service.md)
+- [ADR 0028](../adr/0028-trash-versions-and-pre-purge-backup.md)
+- [ADR 0032](../adr/0032-assets-world-fk-quarantine.md)

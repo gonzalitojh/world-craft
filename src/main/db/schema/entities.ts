@@ -67,6 +67,7 @@ export const entities = sqliteTable(
       table.deletedAt,
     ),
     index('entities_name_idx').on(table.worldId, table.name),
+    index('entities_image_asset_idx').on(table.imageAssetId),
     index('entities_favorite_idx').on(table.worldId, table.isFavorite),
     check(
       'entities_status_check',

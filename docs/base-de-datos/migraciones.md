@@ -1,8 +1,8 @@
 # Migraciones de base de datos
 
 > **Estado:** vigente desde el 18/11/2026 (pivote a escritorio); actualizado el
-> 26/11/2026 con #114: descripción enriquecida del mundo, conversión de texto a
-> párrafos, vista de búsqueda sobre texto plano y `user_version` 9.
+> 27/11/2026 con #116: reconstrucción de `assets` con FK a `worlds`, cuarentena,
+> auditoría de referencias y `user_version` 10.
 > **Ámbito:** creación, aplicación, verificación y reversión de migraciones
 > SQLite. El esquema vigente está en [`esquema.md`](esquema.md).
 
@@ -55,8 +55,15 @@ La migración `0007_trash_versions` (M1-06, #77) crea `entity_versions` con su
 índice, añade `entities_deleted_idx` y `entity_types_deleted_idx`, y deja
 `user_version` en 8. La migración `0008_world_description` (#114) añade
 `worlds.description_text`, convierte la descripción plana de cada mundo en un
-documento de ProseMirror párrafo a párrafo y deja `user_version` en 9. El resto
-de tablas de contenido llega en M2, M3 y M4 con migraciones `0009` y siguientes.
+documento de ProseMirror párrafo a párrafo y deja `user_version` en 9. La
+migración `0009_assets_world_fk` (#116) reconstruye `assets` con
+`world_id → worlds(id) ON DELETE RESTRICT`, crea `assets_quarantine` y
+`assets_quarantine_references`, audita las referencias a huérfanos, añade
+`worlds_cover_asset_idx` y `entities_image_asset_idx` y deja `user_version` en
+**10**. El runner desactiva las FKs fuera de la transacción, comprueba
+`PRAGMA foreign_key_check` antes del commit y las restaura siempre (sección
+3.3). El resto de tablas de contenido llega en M2, M3 y M4 con migraciones
+`0010` y siguientes.
 
 ## 3. Flujo de una migración
 
@@ -107,18 +114,30 @@ ejecuta el arranque **antes de crear la ventana**:
    b. Verificar manifiesto, tamaño, SHA-256, integridad y versión en solo
       lectura. Si falla: DB_BACKUP_FAILED y no se migra.
 7. Activar WAL y synchronous = NORMAL.
-8. Si hay pendientes, abrir una transacción:
+8. Si hay pendientes, comprobar que `foreign_keys = 1` y desactivarlas **fuera**
+   de la transacción.
+9. Abrir una transacción:
    a. Ejecutar el SQL de cada migración en orden.
    b. Insertar su fila en schema_migrations.
    c. Fijar user_version al número total de migraciones.
-   d. Commit. Si algo falla, SQLite revierte el lote completo.
-9. Ejecutar integrity_check posterior.
-10. Volver a inspeccionar el estado y devolver ready, o modo seguro.
-11. Si es ready, crear las copias automáticas del periodo en curso y podar las
+   d. Ejecutar PRAGMA foreign_key_check; si hay cualquier violación, revertir el
+      lote completo con DB_MIGRATION_FAILED.
+   e. Commit.
+10. En un finally, restaurar foreign_keys = ON y verificar que quedó activo; si
+    no, entrar en modo seguro.
+11. Ejecutar integrity_check posterior.
+12. Volver a inspeccionar el estado y devolver ready, o modo seguro.
+13. Si es ready, crear las copias automáticas del periodo en curso y podar las
     sobrantes (7 diarias, 4 semanales, 12 mensuales, 5 pre-migración y 10
     pre-purga) antes de crear la ventana. Un fallo de copia no bloquea el
     arranque.
 ```
+
+Las claves foráneas se desactivan **fuera** de la transacción porque
+`PRAGMA foreign_keys` no se puede cambiar dentro de ella. La comprobación previa
+al commit es obligatoria: con FKs desactivadas, una migración futura que confíe
+en cascadas dejaría huérfanos y el lote se revertiría. `checkForeignKeys`
+normaliza las violaciones y no registra tablas, `rowid` ni identificadores.
 
 La poda conserva las **5 copias pre-migración válidas más recientes** y las **10
 copias `pre-purge` válidas más recientes** (M1-06, #77); se ejecuta al arrancar y
@@ -144,7 +163,10 @@ el arranque falla, se cierra la conexión y se muestra el aviso de modo seguro
   pre-migración válidas más recientes.
 - **Rollback de esquema:** los archivos de `drizzle/rollback/` son documentación
   y SQL de referencia; no se ejecutan automáticamente. La vía segura es
-  restaurar la copia.
+  restaurar la copia. El rollback de `0009_assets_world_fk` debe ejecutarse
+  fuera de una transacción, desactiva las FKs, devuelve las filas en cuarentena,
+  restaura las referencias auditadas y deja `user_version` 9; la migración puede
+  reaplicarse después con el runner.
 - Nunca se hace downgrade de la app con una base migrada sin copia: la app
   detecta una versión de esquema superior y se niega a escribir.
 - Ninguna migración aplicada se edita: si cambia su SQL, el checksum no coincide
@@ -186,6 +208,7 @@ drizzle/
   0006_search.sql
   0007_trash_versions.sql
   0008_world_description.sql
+  0009_assets_world_fk.sql
   meta/
     _journal.json
   rollback/
@@ -198,6 +221,7 @@ drizzle/
     0006_search.down.sql
     0007_trash_versions.down.sql
     0008_world_description.down.sql
+    0009_assets_world_fk.down.sql
 ```
 
 - Cuatro dígitos, secuencia sin huecos y etiqueta en `snake_case` e inglés.
@@ -208,9 +232,10 @@ drizzle/
   entidad con su seed, `0004_entities` las fichas, etiquetas y galería,
   `0005_relations` los tipos de relación y las aristas, `0006_search` el índice
   de búsqueda, `0007_trash_versions` el historial de versiones y los índices de
-  papelera, y `0008_world_description` la descripción enriquecida del mundo. Las
-  siguientes (`0009` en adelante) son previstas para M2, M3 y M4 y no se reservan
-  nombres de antemano.
+  papelera, `0008_world_description` la descripción enriquecida del mundo y
+  `0009_assets_world_fk` la FK de assets, la cuarentena y los índices de
+  referencia. Las siguientes (`0010` en adelante) son previstas para M2, M3 y M4
+  y no se reservan nombres de antemano.
 - `0002_worlds` crea `worlds` antes que `activity_log` para que la clave foránea
   de la actividad siempre encuentre su tabla. Su rollback deshace primero
   `activity_log`, después `worlds` y deja `user_version` en 2.
@@ -281,6 +306,43 @@ drizzle/
   estado original. La prueba de preservación migra una base en `0007` con mundos
   de texto plano, `CRLF`, `CR`, líneas vacías, solo espacios, orden no
   alfabético, más de 2.000 líneas y un JSON ya migrado.
+- `0009_assets_world_fk` **reconstruye** una tabla con datos. Orden exacto:
+  1. Crea `assets_quarantine` con los metadatos de `assets` más `reason`
+     (`world-missing` o `world-purged`) y `quarantined_at`, sus `CHECK` de
+     `kind`, tamaño, hash, motivo y marca, y los índices por mundo/fecha y hash.
+  2. Crea `assets_quarantine_references` con FK en cascada a
+     `assets_quarantine`, `table_name` cerrado (`worlds`, `entities`,
+     `entity_gallery`), `row_id`, `column_name`, `position` y sus dos índices.
+  3. Inserta en cuarentena las filas cuyo `world_id` no existe, con
+     `reason = 'world-missing'` y `quarantined_at` calculado con
+     `strftime('%s','now') * 1000` de SQLite (sin reloj del proceso).
+  4. Audita las referencias visibles a esos assets **antes** de limpiarlas:
+     portada de mundo, imagen de ficha y galería con su `position`.
+  5. Pone a `NULL` `worlds.cover_asset_id` y `entities.image_asset_id` y borra
+     las filas de `entity_gallery` afectadas.
+  6. Crea `assets_new` con las mismas columnas, `CHECK`, FK
+     `world_id → worlds(id) ON UPDATE no action ON DELETE restrict` e índices;
+     copia solo las filas cuyo mundo existe, **incluidas las de mundos en
+     papelera**.
+  7. `DROP TABLE assets`, `ALTER TABLE assets_new RENAME TO assets` y recrea
+     `assets_world_idx` y `assets_hash_idx`.
+  8. Crea `worlds_cover_asset_idx` y `entities_image_asset_idx`.
+  9. El runner desactiva FKs fuera de la transacción y ejecuta
+     `PRAGMA foreign_key_check` antes del commit; cualquier violación revierte el
+     lote.
+
+  Los archivos no se mueven ni se borran: la cuarentena conserva
+  `relative_path`. El SQL no contiene `PRAGMA foreign_keys` y no se edita
+  `0001_assets`. `user_version` pasa de 9 a **10**. El rollback de referencia
+  (`drizzle/rollback/0009_assets_world_fk.down.sql`) deshace la FK, devuelve a
+  `assets` las filas `world-missing` y `world-purged`, restaura las referencias
+  auditadas solo si el asset y la fila destino existen, elimina las tablas e
+  índices nuevos, retira la fila de `schema_migrations`, deja `user_version` 9 y
+  reactiva las FKs. Se ejecuta fuera de una transacción; la vía segura sigue
+  siendo restaurar la copia. La prueba migra una base en `0009` con dos mundos,
+  portada, imagen de ficha, galería, assets válidos, huérfanos y archivos reales,
+  y otra base nueva sin cuarentena; después ejecuta el rollback y reaplica
+  `0009`.
 
 ## 5. Pruebas
 
@@ -289,23 +351,28 @@ drizzle/
 | `journal` | Journal válido, secuencia sin huecos, etiquetas sin traversal y checksum normalizado. | Implementada (unitaria) |
 | `migrations` | Una base vacía llega a la última versión sin errores y es idempotente al reabrir. | Implementada (integración) |
 | `upgrade-0001` | Una base en `0000` migra a `0001_assets` conservando `app_settings` y creando `assets`, con `user_version` 2. | Implementada (integración) |
-| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`, `relations`, `search_documents` y `entity_versions`, con `user_version` 9. | Implementada (integración) |
+| `upgrade-0002` | Una base en `0000` migra al esquema actual conservando `app_settings`, creando `assets`, `worlds`, `activity_log`, `entity_types`, `entities`, `tags`, `entity_tags`, `entity_gallery`, `relation_types`, `relations`, `search_documents`, `entity_versions` y `assets_quarantine`, con `user_version` 10. | Implementada (integración) |
 | `upgrade-0003` | Una base en `0002` con mundos y actividad migra a `0003`, `0004` y `0005` sin perder filas y con los 18 tipos del sistema. | Implementada (integración) |
 | `upgrade-0004` | Una base en `0003` con mundos y tipos personalizados migra a `0004` y `0005` sin perder filas y crea las tablas de fichas, etiquetas, galería, tipos de relación y relaciones. | Implementada (integración) |
 | `upgrade-0005` | Una base en `0004` con mundos, tipos y fichas migra a `0005` sin perder filas, crea `relation_types` y `relations` y siembra los 18 tipos de relación del sistema. | Implementada (integración) |
 | `upgrade-0006` | Una base en `0005` con mundos, fichas, etiquetas y relaciones migra a `0006` sin perder filas, crea el índice y lo repuebla desde las vistas. | Implementada (integración) |
 | `upgrade-0007` | Una base en `0006` con mundos, tipos, fichas, etiquetas, galería, relaciones y búsqueda migra a `0007` sin perder filas; crea `entity_versions` y los índices de papelera, conserva los assets y deja `user_version` 8. | Implementada (integración) |
 | `upgrade-0008` | Una base en `0007` con descripciones planas migra a `0008` conservando el texto y el orden de los párrafos, convierte `CRLF`/`CR`, líneas vacías, solo espacios y más de 2.000 líneas, rellena `description_text`, deja la vista de búsqueda sin JSON y deja `user_version` 9. | Implementada (integración) |
-| `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo; incluye la descripción y `description_text` de `0008`. | Implementada (integración) |
+| `assets-world-fk` | Una base en `0008` con dos mundos (uno en papelera), portada, imagen de ficha, galería, assets válidos y huérfanos con archivos reales migra a `0009_assets_world_fk`: conserva las filas válidas columna a columna, mueve los huérfanos a `assets_quarantine` con `world-missing`, audita las referencias exactas antes de desvincularlas, conserva los archivos con su SHA-256, deja `foreign_key_check` vacío y `user_version` 10. Una base nueva aplica `0009` sin cuarentena. | Implementada (integración) |
+| `preservation` | Los datos existentes siguen ahí tras migrar y tras un fallo; incluye la descripción y `description_text` de `0008`, y las filas y archivos válidos de `0009`. | Implementada (integración) |
 | `backup` | Copia previa con manifiesto, tamaño, SHA-256 e integridad; fallo de copia no migra. | Implementada (integración) |
 | `integrity` | `PRAGMA integrity_check` detecta corrupción y el arranque no escribe. | Implementada (integración) |
 | `foreign-db` | Una base con tablas propias sin `schema_migrations` se rechaza. | Implementada (integración) |
 | `version-ahead` | Una base de versión superior no se migra ni se escribe. | Implementada (integración) |
-| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0008_world_description` deja `user_version` 8 y convierte el documento a texto plano, `0007_trash_versions` deja `user_version` 7, `0006_search` 6, `0005_relations` 5, `0004_entities` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
+| `rollback` | El SQL de referencia de `rollback/` es válido sobre una base temporal; `0009_assets_world_fk` deshace la FK, restaura los huérfanos y las referencias auditadas, elimina las tablas e índices nuevos y deja `user_version` 9 y `foreign_keys = 1`; la migración se reaplica con el runner. `0008_world_description` deja `user_version` 8 y convierte el documento a texto plano, `0007_trash_versions` deja `user_version` 7, `0006_search` 6, `0005_relations` 5, `0004_entities` 4, `0003_entity_types` 3, `0002_worlds` 2, `0001_assets` 1 y `0000_init` 0. | Implementada (integración) |
+| `runner` | Aplica un lote válido y deja `foreign_keys = 1`; revierte si `foreign_key_check` detecta un huérfano antes del commit; revierte y restaura `foreign_keys` si una migración lanza; rechaza una llamada dentro de una transacción activa; aplica `0009` sobre una base nueva sin cuarentena. | Implementada (integración) |
+| `checkForeignKeys` | `checkForeignKeys` devuelve lista vacía sin violaciones, normaliza una violación a `table`/`rowId`/`parent`/`foreignKeyId` y rechaza una fila malformada sin filtrar detalles. | Implementada (unitaria) |
+| `quarantine` | `quarantineWorldAssets` mueve las filas del mundo con `reason = 'world-purged'` sin tocar los metadatos y devuelve el recuento; `countQuarantine` devuelve ceros si faltan las tablas. | Implementada (integración) |
+| `asset-references` | Solo existen las tres FKs conocidas cuyo padre es `assets`; `countExternalAssetReferences` cuenta referencias externas con varios mundos permitidos y bloquea el mundo correcto. | Implementada (integración) |
 | `safe-mode` | Una migración rota deja la app en modo seguro y conserva la copia. | Implementada (integración) |
 | `backup-schedule` | Copias diaria, semanal y mensual al arrancar, sin duplicar el bucket, y rotación 7/4/12/5 sin podar pre-restore. | Implementada (unitaria e integración) |
 | `backup-prepurge` | La copia previa a la purga escribe manifiestos `pre-purge` verificables, rota a 10 sin borrar la más reciente y no deja una copia parcial si falla la escritura. | Implementada (integración) |
-| `trash` | Listado por cursor, restauración, motivos de dominio, purga ordenada, vaciado con contadores y assets intactos. | Implementada (unitarias e integración) |
+| `trash` | Listado por cursor, restauración, motivos de dominio, purga ordenada, vaciado con contadores y assets intactos; purgar un mundo mueve sus metadatos a cuarentena, rechaza `assets-in-use` y conserva los archivos. | Implementada (unitarias e integración) |
 | `versions` | Ventana de 5 min, 20 automáticas/90 días, 50 manuales, origen `restore` protegido y cascade al purgar. | Implementada (unitarias e integración) |
 | `backup-restore` | Restauración verificada con copia pre-restore, rechazo de copia corrupta o futura, rollback y assets intactos. | Implementada (integración) |
 | `restore-interrupted` | Lock, `.restore.pending`, restos preservados y arranque sin base vacía tras un fallo. | Implementada (unitaria e integración) |
@@ -382,3 +449,4 @@ instantáneas antes del build.
 - [ADR 0016](../adr/0016-sqlite-migrations-safe-mode.md)
 - [ADR 0017](../adr/0017-assets-service-sharp-orphan-purge.md)
 - [ADR 0028](../adr/0028-trash-versions-and-pre-purge-backup.md)
+- [ADR 0032](../adr/0032-assets-world-fk-quarantine.md)

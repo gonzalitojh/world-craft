@@ -125,12 +125,19 @@ export interface DataWorldCounts {
   readonly trash: number;
 }
 
+/** Metadatos de assets en cuarentena y vínculos visibles desvinculados. */
+export interface DataQuarantineCounts {
+  readonly assets: number;
+  readonly references: number;
+}
+
 /** Resumen cuantitativo sin rutas ni nombres. */
 export interface DataCounts {
   readonly worlds: DataWorldCounts;
   readonly entities: number;
   readonly assets: number;
   readonly backups: number;
+  readonly quarantine: DataQuarantineCounts;
 }
 
 /** Medición de una categoría. */
@@ -259,15 +266,31 @@ function isDataWorldCounts(value: unknown): value is DataWorldCounts {
   );
 }
 
+function isDataQuarantineCounts(value: unknown): value is DataQuarantineCounts {
+  return (
+    isRecord(value) &&
+    hasExactKeys(value, ['assets', 'references']) &&
+    isNonNegativeInteger(value.assets) &&
+    isNonNegativeInteger(value.references)
+  );
+}
+
 /** Guarda estricta del resumen. */
 export function isDataCounts(value: unknown): value is DataCounts {
   return (
     isRecord(value) &&
-    hasExactKeys(value, ['worlds', 'entities', 'assets', 'backups']) &&
+    hasExactKeys(value, [
+      'worlds',
+      'entities',
+      'assets',
+      'backups',
+      'quarantine',
+    ]) &&
     isDataWorldCounts(value.worlds) &&
     isNonNegativeInteger(value.entities) &&
     isNonNegativeInteger(value.assets) &&
-    isNonNegativeInteger(value.backups)
+    isNonNegativeInteger(value.backups) &&
+    isDataQuarantineCounts(value.quarantine)
   );
 }
 

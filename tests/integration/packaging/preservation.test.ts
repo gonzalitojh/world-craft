@@ -89,7 +89,7 @@ describe('preservación de datos entre instalaciones', () => {
         throw new Error('Se esperaba una base migrada.');
       }
 
-      expect(migrated.appliedMigrations).toBe(8);
+      expect(migrated.appliedMigrations).toBe(9);
       expect(migrated.backup).not.toBeNull();
 
       const assetRelativePath =
@@ -99,6 +99,18 @@ describe('preservación de datos entre instalaciones', () => {
       await mkdir(join(assetFile, '..'), { recursive: true });
       await writeFile(assetFile, Buffer.from('imagen de prueba'), 'binary');
 
+      migrated.client.sqlite
+        .prepare(
+          `INSERT INTO worlds (id, name, slug, genres, status, language, settings, created_at, updated_at)
+           VALUES (?, ?, ?, '[]', 'active', 'es', '{}', ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000002',
+          'Mundo de preservación',
+          'mundo-de-preservacion',
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
       migrated.client.sqlite
         .prepare(
           `INSERT INTO assets (id, world_id, kind, relative_path, mime, size, hash, created_at)
@@ -164,7 +176,7 @@ describe('preservación de datos entre instalaciones', () => {
             .prepare('SELECT relative_path FROM assets WHERE id = ?')
             .get('01900000-0000-7000-8000-000000000001'),
         ).toEqual({ relative_path: assetRelativePath });
-        expect(database.pragma('user_version', { simple: true })).toBe(9);
+        expect(database.pragma('user_version', { simple: true })).toBe(10);
       } finally {
         closeDatabase(database);
       }

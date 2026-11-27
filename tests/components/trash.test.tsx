@@ -270,6 +270,203 @@ describe('página de la papelera', () => {
     expect(screen.getByRole('dialog')).toBe(dialog);
   });
 
+  it('muestra assets-in-use sin cerrar el diálogo y mantiene el foco dentro', async () => {
+    const user = userEvent.setup();
+    const { purge } = renderPage({ worlds: [worldItem] });
+    purge.mockResolvedValueOnce({
+      ok: true,
+      data: { purged: false, reason: 'assets-in-use' },
+    } as never);
+
+    const trigger = await screen.findByRole('button', {
+      name: messages.trash.row.purgeNamed(worldItem.name),
+    });
+
+    await user.click(trigger);
+
+    const dialog = screen.getByRole('dialog');
+    const cancel = within(dialog).getByRole('button', {
+      name: messages.trash.purgeDialog.cancel,
+    });
+
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: messages.trash.purgeDialog.submit,
+      }),
+    );
+
+    expect(
+      await within(dialog).findByText(messages.trash.purgeDialog.assetsInUse),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText(messages.trash.purgeDialog.error),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBe(dialog);
+    await waitFor(() => {
+      expect(cancel).toHaveFocus();
+    });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    await user.click(cancel);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+    expect(trigger).toHaveFocus();
+  });
+
+  it('no dice que la papelera estaba vacía cuando solo hubo elementos en uso', async () => {
+    const user = userEvent.setup();
+    const { empty, onNotify } = renderPage({ worlds: [worldItem] });
+    empty.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        backup: 'created',
+        purged: { worlds: 0, entities: 0, entityTypes: 0 },
+        skipped: 2,
+      },
+    } as never);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: messages.trash.emptyAction,
+      }),
+    );
+
+    const dialog = screen.getByRole('dialog');
+
+    await user.click(
+      within(dialog).getByRole('checkbox', {
+        name: messages.trash.emptyDialog.checkbox,
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: messages.trash.emptyDialog.submit,
+      }),
+    );
+
+    expect(
+      await within(dialog).findByText(messages.trash.emptyDialog.nonePurged),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText(messages.trash.emptyDialog.alreadyEmpty),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        messages.trash.emptyDialog.skipped.other.replace('{count}', '2'),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(messages.trash.emptyDialog.skippedHint),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/0 mundo/)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(onNotify).toHaveBeenCalledWith(
+        'info',
+        messages.trash.emptyDialog.nonePurged,
+      );
+    });
+  });
+
+  it('distingue un vaciado parcial y conserva el resumen de recuentos', async () => {
+    const user = userEvent.setup();
+    const { empty, onNotify } = renderPage({
+      worlds: [worldItem],
+      entities: [entityItem],
+    });
+    empty.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        backup: 'created',
+        purged: { worlds: 1, entities: 1, entityTypes: 0 },
+        skipped: 1,
+      },
+    } as never);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: messages.trash.emptyAction,
+      }),
+    );
+
+    const dialog = screen.getByRole('dialog');
+
+    await user.click(
+      within(dialog).getByRole('checkbox', {
+        name: messages.trash.emptyDialog.checkbox,
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: messages.trash.emptyDialog.submit,
+      }),
+    );
+
+    expect(
+      await within(dialog).findByText(
+        messages.trash.emptyDialog.summaryLeadPartial,
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText(/1 mundo/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/1 ficha/)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        messages.trash.emptyDialog.skipped.one.replace('{count}', '1'),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(messages.trash.emptyDialog.skippedHint),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(onNotify).toHaveBeenCalledWith(
+        'success',
+        messages.trash.emptyDialog.summaryLeadPartial,
+      );
+    });
+  });
+
+  it('conserva el texto de papelera vacía cuando no había nada', async () => {
+    const user = userEvent.setup();
+    const { empty, onNotify } = renderPage();
+    empty.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        backup: 'created',
+        purged: { worlds: 0, entities: 0, entityTypes: 0 },
+        skipped: 0,
+      },
+    } as never);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: messages.trash.emptyAction,
+      }),
+    );
+
+    const dialog = screen.getByRole('dialog');
+
+    await user.click(
+      within(dialog).getByRole('checkbox', {
+        name: messages.trash.emptyDialog.checkbox,
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: messages.trash.emptyDialog.submit,
+      }),
+    );
+
+    expect(
+      await within(dialog).findByText(messages.trash.emptyDialog.alreadyEmpty),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(onNotify).toHaveBeenCalledWith(
+        'info',
+        messages.trash.emptyDialog.alreadyEmpty,
+      );
+    });
+  });
+
   it('exige la casilla para vaciar y muestra el resumen final', async () => {
     const user = userEvent.setup();
     const { empty, onLibraryChanged } = renderPage({

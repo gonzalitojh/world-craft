@@ -108,7 +108,11 @@ export interface TrashPurgeInput {
 
 /** Motivos de dominio por los que una purga no se aplica. */
 export type TrashPurgeFailure =
-  'not-found' | 'already-purged' | 'type-in-use' | 'backup-failed';
+  | 'not-found'
+  | 'already-purged'
+  | 'type-in-use'
+  | 'assets-in-use'
+  | 'backup-failed';
 
 /** Resultado de purgar: o se purgó, o el motivo es explícito. */
 export type TrashPurgeResult =
@@ -128,7 +132,10 @@ export interface TrashEmptyResult {
     readonly entities: number;
     readonly entityTypes: number;
   };
-  /** Tipos en uso que no se pudieron purgar y se conservan. */
+  /**
+   * Elementos en uso que no se pudieron purgar y se conservan: tipos con
+   * fichas y mundos cuyas imágenes usan otros mundos o fichas.
+   */
   readonly skipped: number;
 }
 
@@ -242,6 +249,7 @@ export function isTrashPurgeResult(value: unknown): value is TrashPurgeResult {
     value.reason === 'not-found' ||
     value.reason === 'already-purged' ||
     value.reason === 'type-in-use' ||
+    value.reason === 'assets-in-use' ||
     value.reason === 'backup-failed'
   );
 }

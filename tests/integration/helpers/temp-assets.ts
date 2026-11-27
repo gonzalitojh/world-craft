@@ -74,6 +74,34 @@ export async function writeAssetFile(
   return absolutePath;
 }
 
+/**
+ * Siembra un mundo mínimo para que las filas de `assets` cumplan la FK.
+ *
+ * Desde la migración 0009 no se puede insertar un asset con un `world_id` que
+ * no exista. Las pruebas que no ejercitan el servicio de mundos usan esta fila.
+ */
+export function insertTestWorld(
+  sqlite: SqliteDatabase,
+  id: string,
+  overrides: { readonly deletedAt?: number | null } = {},
+): void {
+  const slug = id.replaceAll('-', '').slice(-40).toLowerCase();
+
+  sqlite
+    .prepare(
+      `INSERT INTO worlds (id, name, slug, genres, status, language, settings, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, '[]', 'active', 'es', '{}', ?, ?, ?)`,
+    )
+    .run(
+      id,
+      `Mundo ${slug}`,
+      slug,
+      1_760_000_000_000,
+      1_760_000_000_000,
+      overrides.deletedAt ?? null,
+    );
+}
+
 /** Elimina una carpeta temporal con reintentos para Windows. */
 export async function cleanup(directory: string): Promise<void> {
   await rm(directory, {

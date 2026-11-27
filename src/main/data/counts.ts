@@ -9,6 +9,7 @@ import { readdirSync } from 'node:fs';
 
 import type { DataCounts } from '../../shared/contracts/data';
 import type { SqliteDatabase } from '../db/connection';
+import { countQuarantine } from '../assets/quarantine';
 import { toDataError } from './errors';
 
 export type { DataCounts, DataWorldCounts } from '../../shared/contracts/data';
@@ -62,6 +63,7 @@ export function readDataCounts(options: DataCountsOptions): DataCounts {
       entities: entities?.total ?? 0,
       assets: assets?.total ?? 0,
       backups: countBackupDirectories(options.backupDirectories),
+      quarantine: countQuarantine(options.sqlite),
     };
   } catch (error) {
     throw toDataError(error, 'DATA_COUNTS_FAILED');

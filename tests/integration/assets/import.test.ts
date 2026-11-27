@@ -12,6 +12,7 @@ import { initializeDatabase } from '@/main/db/startup';
 
 import {
   createAssetFixture,
+  insertTestWorld,
   writeAssetFile,
   type AssetFixture,
 } from '../helpers/temp-assets';
@@ -27,6 +28,8 @@ const fixtures: AssetFixture[] = [];
 
 async function createFixture(): Promise<AssetFixture> {
   const fixture = await createAssetFixture();
+
+  insertTestWorld(fixture.sqlite, WORLD_ID);
   fixtures.push(fixture);
 
   return fixture;

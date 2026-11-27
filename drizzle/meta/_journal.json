@@ -64,6 +64,13 @@
       "when": 1795712935922,
       "tag": "0008_world_description",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1795790447985,
+      "tag": "0009_assets_world_fk",
+      "breakpoints": true
     }
   ]
 }

@@ -40,6 +40,7 @@ const counts: DataCounts = {
   entities: 8,
   assets: 7,
   backups: 5,
+  quarantine: { assets: 0, references: 0 },
 };
 
 const usage: DataUsage = {
@@ -224,6 +225,119 @@ describe('sección Datos', () => {
       await within(dataSection()).findByText(copy.summary.worldsActive),
     ).toBeInTheDocument();
     expect(within(dataSection()).getByText('8')).toBeInTheDocument();
+  });
+
+  it('muestra el aviso de cuarentena con el plural y sin rol de alerta', async () => {
+    installApi(
+      createApi({
+        getSummary: vi.fn(async () => ({
+          ok: true as const,
+          data: {
+            status: 'completed' as const,
+            data: {
+              ...counts,
+              quarantine: { assets: 3, references: 2 },
+            },
+          },
+        })),
+      }),
+    );
+
+    renderData();
+
+    const notice = await within(dataSection()).findByText(
+      copy.orphans.quarantineNotice.other.replace('{count}', '2'),
+    );
+
+    expect(notice).toHaveClass('wc-settings__notice');
+    expect(notice).not.toHaveAttribute('role');
+    expect(notice).not.toHaveAttribute('aria-live');
+    expect(notice).not.toHaveAttribute('tabindex');
+    expect(
+      within(dataSection()).queryByRole('alert', {
+        name: copy.orphans.quarantineNotice.other.replace('{count}', '2'),
+      }),
+    ).not.toBeInTheDocument();
+
+    const safety = within(dataSection()).getByText(copy.orphans.safety);
+    expect(safety.nextElementSibling).toBe(notice);
+    expect(
+      within(dataSection()).getByRole('button', { name: copy.orphans.analyze }),
+    ).toBeEnabled();
+  });
+
+  it('usa el singular del aviso de cuarentena', async () => {
+    installApi(
+      createApi({
+        getSummary: vi.fn(async () => ({
+          ok: true as const,
+          data: {
+            status: 'completed' as const,
+            data: {
+              ...counts,
+              quarantine: { assets: 1, references: 1 },
+            },
+          },
+        })),
+      }),
+    );
+
+    renderData();
+
+    expect(
+      await within(dataSection()).findByText(
+        copy.orphans.quarantineNotice.one.replace('{count}', '1'),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('no muestra el aviso de cuarentena sin referencias', async () => {
+    installApi(
+      createApi({
+        getSummary: vi.fn(async () => ({
+          ok: true as const,
+          data: {
+            status: 'completed' as const,
+            data: {
+              ...counts,
+              assets: 9,
+              quarantine: { assets: 4, references: 0 },
+            },
+          },
+        })),
+      }),
+    );
+
+    renderData();
+
+    await within(dataSection()).findByText(copy.summary.worldsActive);
+
+    expect(
+      within(dataSection()).queryByText(
+        copy.orphans.quarantineNotice.other.replace('{count}', '4'),
+      ),
+    ).toBeNull();
+    expect(dataSection().querySelector('.wc-settings__notice')).toBeNull();
+  });
+
+  it('no muestra el aviso de cuarentena si el resumen falla', async () => {
+    installApi(
+      createApi({
+        getSummary: vi.fn(async () => ({
+          ok: true as const,
+          data: {
+            status: 'failed' as const,
+            code: 'DATA_COUNTS_FAILED',
+          },
+        })),
+      }),
+    );
+
+    renderData();
+
+    await within(dataSection()).findByRole('alert');
+
+    expect(dataSection().querySelector('.wc-settings__notice')).toBeNull();
   });
 
   it('muestra error de resumen y reintenta', async () => {

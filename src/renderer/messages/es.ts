@@ -590,6 +590,8 @@ export const es = {
         'No se ha borrado nada porque no se pudo crear la copia de seguridad. Revisa el espacio libre del disco e inténtalo de nuevo.',
       typeInUse:
         'Todavía quedan fichas asociadas a este tipo. Elimina o cambia esas fichas antes de purgarlo.',
+      assetsInUse:
+        'No se ha eliminado nada: una de las imágenes de este mundo se usa en otro mundo como portada o como imagen de una ficha. Cambia esa imagen en el mundo que la usa y vuelve a intentarlo.',
       missing:
         'El elemento ya no está en la papelera. La lista se actualizará.',
       error: 'No se pudo eliminar el elemento. La lista se actualizará.',
@@ -609,16 +611,21 @@ export const es = {
       backupFailed:
         'No se ha borrado nada porque no se pudo crear la copia de seguridad. Revisa el espacio libre del disco e inténtalo de nuevo.',
       alreadyEmpty: 'La papelera ya estaba vacía.',
+      nonePurged:
+        'No se ha eliminado nada porque todo lo que quedaba sigue en uso.',
       summaryTitle: 'Papelera vaciada',
       summaryLead:
         'Se ha eliminado definitivamente el contenido de la papelera.',
+      summaryLeadPartial: 'Se ha eliminado parte del contenido de la papelera.',
       worlds: { one: '{count} mundo', other: '{count} mundos' },
       entities: { one: '{count} ficha', other: '{count} fichas' },
       entityTypes: { one: '{count} tipo', other: '{count} tipos' },
       skipped: {
-        one: 'Se conservó {count} tipo porque todavía tiene fichas.',
-        other: 'Se conservaron {count} tipos porque todavía tienen fichas.',
+        one: 'Se conservó {count} elemento que todavía está en uso.',
+        other: 'Se conservaron {count} elementos que todavía están en uso.',
       },
+      skippedHint:
+        'Los tipos personalizados con fichas y los mundos con imágenes usadas en otros mundos no se pueden eliminar todavía.',
       close: 'Cerrar',
       error: 'No se pudo vaciar la papelera. La lista se actualizará.',
     },
@@ -1708,6 +1715,11 @@ export const es = {
         lead: 'Solo se eliminan las imágenes que ninguna ficha usa y los archivos temporales de assets.',
         safety:
           'Antes de borrar se guarda una copia verificable. Las imágenes que usa alguna ficha no se tocan.',
+        quarantineNotice: {
+          one: 'Al actualizar World Craft se retiró {count} vínculo a una imagen porque el mundo al que pertenecía ya no existía. El archivo no se borró al actualizar: si todavía está en el equipo, aparece en el análisis de imágenes huérfanas y solo se elimina si lo confirmas con una copia de seguridad previa.',
+          other:
+            'Al actualizar World Craft se retiraron {count} vínculos a imágenes porque el mundo al que pertenecían ya no existía. Los archivos no se borraron al actualizar: si todavía están en el equipo, aparecen en el análisis de imágenes huérfanas y solo se eliminan si lo confirmas con una copia de seguridad previa.',
+        },
         analyze: 'Analizar',
         analyzing: 'Analizando imágenes huérfanas…',
         purge: 'Purgar…',

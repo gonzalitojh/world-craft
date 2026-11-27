@@ -405,3 +405,35 @@ sin borrar imágenes del usuario. El contrato visual se aprobó en
   #116, `docs/diseno/mundo-portada-issue-115.md`,
   `docs/diseno/sistema-de-diseno.md`, `docs/arquitectura.md`,
   `docs/persistencia.md` y `docs/manual-de-usuario.md`.
+
+## 2026-11-27 — Integridad de assets: FK a mundos y cuarentena (#116, M1-11)
+
+**Contexto.** Desde #66, `assets.world_id` no tenía clave foránea porque `worlds`
+aún no existía; #72 creó la tabla raíz y la FK inversa de la portada, pero dejó
+la relación assets → mundos sin restricción. #77 purgaba mundos sin tocar los
+assets, de modo que cada purga dejaba filas y archivos huérfanos que ninguna
+vista mostraba. SQLite no podía reconstruir `assets` con FKs activas sin que
+`DROP TABLE` disparara `RESTRICT`, `SET NULL` y `CASCADE`; el runner aplicaba
+el lote con FKs activas dentro de una transacción y el pragma no se puede
+cambiar dentro de ella. El usuario aprobó las decisiones B1–B5: cuarentena con
+auditoría, rechazo `assets-in-use`, FKs desactivadas con `foreign_key_check`,
+aviso condicional en Ajustes y cuarentena al purgar un mundo.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-056 | Integridad de assets: FK, cuarentena y purga | **Migración `0009_assets_world_fk`:** reconstruye `assets` con `world_id → worlds(id) ON UPDATE no action ON DELETE restrict`, conserva columnas, `CHECK` e índices, copia solo las filas cuyo mundo existe (incluidos mundos en papelera) y mueve a `assets_quarantine` las huérfanas con `reason = 'world-missing'`; audita en `assets_quarantine_references` las referencias visibles (`worlds.cover_asset_id`, `entities.image_asset_id` y `entity_gallery.asset_id` con su `position`) antes de poner portadas e imágenes a `NULL` y borrar las filas de galería; añade `worlds_cover_asset_idx` y `entities_image_asset_idx`; `user_version` pasa a **10**. **Runner:** exige `foreign_keys = ON`, rechaza llamadas dentro de una transacción, desactiva las FKs **fuera** de la transacción, ejecuta `PRAGMA foreign_key_check` antes del commit y restaura y verifica `foreign_keys = ON` en el `finally`; cualquier violación revierte el lote con `DB_MIGRATION_FAILED`. **Cuarentena:** `assets_quarantine` guarda metadatos (incluidos `reason` y `quarantined_at`) sin FK a `worlds`; `assets_quarantine_references` guarda la auditoría con FK en cascada. Los archivos no se mueven ni se borran y la ruta relativa se conserva. **Purga:** un asset está en uso si una fila superviviente lo referencia; `purgeWorld` comprueba antes de la copia y dentro de la transacción, rechaza con `assets-in-use`, limpia la portada del propio mundo y mueve sus filas a cuarentena con `reason = 'world-purged'` antes de borrar el mundo; el vaciado calcula un punto fijo de mundos purgables, resuelve cadenas y ciclos y cuenta los bloqueados en `skipped`; si no se purga nada y hay `skipped`, la interfaz no dice «la papelera ya estaba vacía». **Huérfanos:** `planOrphanCleanup` solo considera referenciadas las filas de `assets`, así que los archivos en cuarentena aparecen como no referenciados y solo se eliminan con la purga de imágenes huérfanas, con confirmación y copia verificada. **Contratos y UI:** `assets-in-use` en `TrashPurgeFailure`; `DataCounts.quarantine { assets, references }`; aviso pasivo en Ajustes → Datos → Imágenes huérfanas solo con `references > 0`, que habla de «vínculos» y no promete recuperación; sin canales IPC nuevos. **Formato:** `schemaVersion` 10, `world-craft-world` v2 con lectura de v1; las filas en cuarentena no se exportan y la copia completa de SQLite de la biblioteca sí las incluye. **Rollback:** archivo de referencia que deshace la FK, devuelve las filas de cuarentena, restaura referencias auditadas, elimina tablas e índices y deja `user_version` 9; la vía segura sigue siendo la copia pre-migración. | La base impide assets sin mundo y mundos con assets referenciados; el borrado lógico sigue funcionando. Filas y archivos válidos se conservan y cada huérfano queda auditado. La purga nunca elimina un asset en uso y distingue «no había nada» de «se conservaron elementos en uso». Los archivos de un mundo purgado siguen en el equipo y solo se eliminan desde el análisis de huérfanos con copia. El runner no puede confirmar un lote con violaciones ni dejar las FKs desactivadas. La cuarentena crece sin límite y no se limpia en esta entrega; el aviso es histórico y `references` cuenta vínculos, no imágenes distintas. Sin dependencias nuevas, red ni servicios de pago. ADR 0032. |
+
+- **Relación con D-022, D-042 y D-051:** D-056 **completa** la FK que D-022 y
+  D-042 dejaron pendiente, y **desarrolla** la cuarentena y la purga que D-051
+  anunció; no supersede el servicio de assets, el modelo de mundos, la papelera
+  ni las copias.
+- **Relación con D-052, D-053 y D-054:** el formato de mundo sigue en v2 con
+  lectura de v1 y solo cambia `schemaVersion` a 10; la biblioteca total conserva
+  `world-craft-library` v1 y su copia completa de SQLite incluye la cuarentena.
+- Referencias: ADR 0032, ADR 0005, ADR 0016, ADR 0017, ADR 0019, ADR 0028,
+  ADR 0029, ADR 0030, ADR 0031, #66, #72, #77, #78, #79, #114, #115, #116,
+  `docs/diseno/assets-cuarentena-issue-116.md`,
+  `docs/base-de-datos/esquema.md`, `docs/base-de-datos/migraciones.md`,
+  `docs/persistencia.md`, `docs/continuidad.md`, `docs/arquitectura.md`,
+  `docs/formato-de-exportacion.md`, `docs/calidad/plan-de-pruebas.md` y
+  `docs/manual-de-usuario.md`.

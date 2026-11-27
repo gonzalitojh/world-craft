@@ -9,7 +9,7 @@
  */
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import { assets } from './assets';
+import { assets, assetsQuarantine, assetsQuarantineReferences } from './assets';
 import { entities, entityGallery, entityTags, tags } from './entities';
 import { entityTypes } from './entity-types';
 import { relationTypes, relations } from './relations';
@@ -20,6 +20,8 @@ import { activityLog, worlds } from './worlds';
 export {
   activityLog,
   assets,
+  assetsQuarantine,
+  assetsQuarantineReferences,
   entities,
   entityGallery,
   entityTags,
@@ -51,6 +53,8 @@ export const schema = {
   schemaMigrations,
   appSettings,
   assets,
+  assetsQuarantine,
+  assetsQuarantineReferences,
   worlds,
   activityLog,
   entityTypes,

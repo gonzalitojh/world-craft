@@ -951,14 +951,26 @@ aplicación:
 El diálogo explica qué se va a borrar, avisa de que **la acción no se puede
 deshacer desde la papelera** y deja **Cancelar** como opción inicial. Si el
 elemento ya no estaba o el tipo sigue en uso, el diálogo lo dice y la lista se
-actualiza. Las **imágenes y los archivos del equipo no se borran**.
+actualiza.
+
+Si el mundo tiene una imagen que se usa como **portada o imagen de una ficha de
+otro mundo**, la aplicación **no elimina nada** y te lo explica: cambia esa
+imagen en el mundo que la usa y vuelve a intentarlo. Es una protección para no
+romper contenido que sigue visible en otro sitio.
+
+**Las imágenes y los archivos del equipo no se borran.** Al eliminar un mundo,
+los datos de sus imágenes pasan a una **cuarentena interna** y los archivos
+siguen en el equipo; aparecerán en el análisis de imágenes huérfanas, donde
+puedes revisarlos y eliminarlos con confirmación y copia previa (sección 12.5).
 
 **Vaciar la papelera** está en la parte superior de la pantalla y elimina todo de
 una vez. Exige marcar una casilla —**Entiendo que se eliminará definitivamente
 todo el contenido de la papelera**— antes de habilitar el botón. Crea **una sola
 copia previa** y muestra un resumen con cuántos mundos, fichas y tipos se han
-eliminado. Los tipos que todavía tengan fichas se conservan y se cuentan en el
-resumen.
+eliminado. Los tipos que todavía tengan fichas y los mundos con imágenes usadas
+en otros mundos **se conservan** y se cuentan en el resumen; el mensaje distingue
+«se eliminó parte» de «no se eliminó nada porque todo sigue en uso» y de «la
+papelera ya estaba vacía».
 
 ### 6.4 La copia previa y cómo recuperar una purga
 
@@ -973,19 +985,21 @@ sean válidas; las dañadas no se borran solas y no cuentan para ese límite.
   (secciones 13.3 y 13.4). Ajustes → Datos permite abrir la carpeta de copias,
   pero **todavía no restaura** desde ahí: la restauración guiada desde Ajustes
   sigue prevista.
-- La copia contiene la base de datos, no las imágenes ni los archivos. Como la
-  purga tampoco borra assets, los archivos siguen en el equipo; las filas que
-  quedan sin mundo se pondrán en cuarentena en una actualización posterior.
+- La copia contiene la base de datos, no las imágenes ni los archivos. La purga
+  **tampoco borra las imágenes**: al eliminar un mundo, sus datos de imagen pasan
+  a una cuarentena interna y los archivos siguen en el equipo. Aparecerán en el
+  análisis de imágenes huérfanas, donde solo se eliminan si lo confirmas y con
+  una copia previa (sección 12.5).
 
 ### 6.5 Lo que llegará después
 
 - **Restaurar una copia desde Ajustes** sin pasar por el aviso de modo seguro.
   Hoy Ajustes solo abre la carpeta de copias y muestra su uso; crear, verificar
   y restaurar copias manuales desde ahí sigue previsto.
-- **Cuarentena de imágenes y archivos huérfanos** tras purgar un mundo, con su
-  propia copia recuperable.
 - **Papelera de mapas y escenas** cuando existan esos módulos, reutilizando esta
   misma pantalla.
+- **Recuperar o limpiar las filas de la cuarentena de imágenes** con una pantalla
+  propia; hoy es información histórica y no se restaura desde la interfaz.
 
 ## 7. Relaciones y grafo
 
@@ -1332,13 +1346,24 @@ referencia. Pulsa **Analizar** para ver el resumen: archivos que se pueden
 purgar, imágenes sin referencia, miniaturas huérfanas, temporales, archivos
 ausentes, enlaces no seguidos, entradas no reconocidas y espacio recuperable.
 
+Si al actualizar World Craft se retiraron vínculos a imágenes porque el mundo al
+que pertenecían ya no existía, esta sección muestra un **aviso informativo** con
+el número de vínculos retirados; si no se retiró ninguno, el aviso no aparece.
+**Los archivos no se borraron al actualizar**: si todavía están en el equipo,
+aparecen en el análisis y solo se eliminan si lo confirmas con una copia de
+seguridad previa. El aviso no bloquea **Analizar** ni el resto de Ajustes, no se
+puede cerrar y no promete recuperar una imagen concreta; es información histórica
+de la actualización.
+
 Si hay algo que purgar, **Purgar…** abre una confirmación con el número de
 archivos y su tamaño. Marca la casilla de confirmación y pulsa **Purgar
 imágenes**. Antes de borrar se guarda una **copia verificable** en
 `backups/orphans`; si la copia falla, no se borra nada. **Las imágenes que tienen
 ficha en la base de datos no se tocan**, incluidas las que son portada de un
 mundo o de una ficha y las que se usaron como portada antes; aunque ya no se
-muestren, siguen disponibles para volver a elegirlas.
+muestren, siguen disponibles para volver a elegirlas. Los archivos de un mundo
+purgado tampoco están referenciados: si quieres liberar su espacio, este es el
+lugar, con confirmación y copia.
 
 **Eliminar todos los datos**
 
@@ -1380,7 +1405,7 @@ densidad y tamaño del texto.
 |---|---|---|---|
 | **Restablecer preferencias** | Devuelve tema, rail, panel, secciones y último destino a sus valores iniciales. | No borra contenido, copias ni registros. | No hace falta: se puede volver a configurar a mano. |
 | **Exportar todos los datos** | Crea una biblioteca con un paquete por mundo, `settings.json` y una copia completa de la base. | No incluye copias automáticas, imágenes huérfanas ni la instalación. | Importa cada mundo con **Importar mundo**; la copia completa de la base se puede abrir con una herramienta SQLite o copiar con la aplicación cerrada, sin restauración guiada. |
-| **Purgar imágenes huérfanas** | Borra imágenes y miniaturas que la base ya no referencia, tras copiarlas. | No toca imágenes con ficha en la base (incluidas las portadas) ni fichas. | Copia los archivos desde `backups/orphans` con la aplicación cerrada. |
+| **Purgar imágenes huérfanas** | Borra imágenes y miniaturas que la base ya no referencia, tras copiarlas. | No toca imágenes con ficha en la base (incluidas las portadas) ni fichas. Incluye los archivos de imágenes en cuarentena que ya no estén referenciados. | Copia los archivos desde `backups/orphans` con la aplicación cerrada. |
 | **Eliminar todos los datos** | Borra el contenido, las imágenes, los registros y las copias según tu elección, y reinicia. | No desinstala ni toca la carpeta de instalación. | Restaura a mano la copia `backups/pre-delete` (sección 12.7). |
 
 ### 12.7 Recuperar la copia previa al borrado total
@@ -1552,6 +1577,13 @@ pueden recuperar a mano:
 - Si no te sientes cómodo moviendo archivos, **no borres nada**: conserva la
   carpeta de datos y la de copias y pide ayuda antes de tocar los archivos.
 
+La copia **pre-purga** recupera la base tal como estaba **antes** de la
+eliminación definitiva, incluidos los datos de los mundos y de sus imágenes. No
+incluye los archivos de imagen, que siguen en la carpeta de assets. Si la base
+restaurada es anterior a la actualización que añadió la cuarentena, al abrir la
+aplicación se aplica la migración y los assets sin mundo quedan en cuarentena;
+los archivos se pueden revisar con el análisis de imágenes huérfanas.
+
 La copia **pre-delete** del borrado total vive en `backups/pre-delete` y es
 distinta: incluye la base **y** las imágenes, y **no se ofrece en el aviso de
 modo seguro**. Su recuperación es siempre manual y está explicada paso a paso en
@@ -1691,14 +1723,15 @@ las funciones correspondientes.
 | Las actualizaciones están desactivadas | El diálogo explica el motivo: estás en desarrollo, en modo seguro o falta la configuración de la instalación. No es un fallo de tus datos. |
 | He desinstalado y no sé dónde están mis datos | Se conservan en `%APPDATA%\World Craft` (sección 13.6). La desinstalación no los borra; solo desaparecen si borras esa carpeta manualmente. |
 | No encuentro una ficha | Abre **Papelera** y busca en el grupo **Fichas**; también puedes revisar los filtros de la lista y reconstruir la búsqueda. Si estaba en un mundo que borraste, restaura primero el mundo (sección 6.2). |
-| Una imagen no se ve | Comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. Si purgaste un mundo, sus imágenes siguen en el equipo hasta la cuarentena de una actualización posterior. |
+| Una imagen no se ve | Comprueba que el archivo sigue en la carpeta de assets. La restauración de la base no sustituye las imágenes. Si purgaste un mundo, sus datos de imagen quedan en cuarentena y los archivos siguen en el equipo; revisa **Ajustes → Datos → Imágenes huérfanas** y elimínalos solo si lo confirmas con copia. |
 | He borrado un mundo | Abre **Papelera**, grupo **Mundos**, y pulsa **Restaurar**; vuelve a Inicio y Mundos con su contenido. Si ya lo eliminaste definitivamente, usa la copia `pre-purge` (sección 6.4). |
+| No se elimina un mundo y avisa de una imagen en uso | Ese mundo tiene una imagen que se usa como portada o imagen de una ficha de otro mundo. Cambia esa imagen en el mundo que la usa y vuelve a intentarlo. No se ha borrado nada. |
+| La eliminación definitiva no se realiza | La aplicación no habrá podido crear o verificar la copia previa, normalmente por falta de espacio; no se ha borrado nada. Libera espacio e inténtalo de nuevo. Si el aviso habla de una imagen en uso, cambia esa imagen en el otro mundo (fila anterior). |
 | La exportación falla | Comprueba que el destino existe, que tienes permisos y espacio libre, y que el mundo sigue vivo (no está en la papelera). Si cancelaste, el archivo de destino no se ha modificado. Vuelve a intentarlo. |
 | El archivo de mundo no se importa | Comprueba que es el `.zip` correcto y que no está truncado. Si se creó con una versión más reciente, actualiza World Craft. Si supera los límites, reduce el mundo. No edites el ZIP a mano. |
 | La importación termina con avisos | Es normal si el archivo traía enlaces, referencias, imágenes, etiquetas o tipos ausentes. El resumen indica cuántos elementos se han quitado o normalizado; el mundo se ha importado con el resto. |
 | El mundo importado tiene otro identificador | Ya existía un mundo con ese identificador y la aplicación añadió `-2`, `-3`… No se ha sobrescrito nada; puedes cambiar el identificador en **Editar**. |
 | No puedo restaurar una ficha o un tipo | Si su mundo está en la papelera, restaura primero el mundo. Si el tipo personalizado ya no existe, restaura el tipo o cambia la ficha de tipo (sección 6.2). |
-| La eliminación definitiva no se realiza | La aplicación no habrá podido crear o verificar la copia previa, normalmente por falta de espacio; no se ha borrado nada. Libera espacio e inténtalo de nuevo. |
 | Quiero deshacer una eliminación definitiva | No hay un botón de deshacer en la papelera. La copia de `backups/pre-purge` es la red de recuperación: se restaura desde el aviso de modo seguro o a mano (secciones 13.3 y 13.4). |
 
 ## 17. Glosario
@@ -1720,6 +1753,10 @@ las funciones correspondientes.
   origen. No caduca sola; eliminar de la papelera es una acción aparte.
 - **Purga o eliminación definitiva:** borrado real de un elemento de la papelera
   y de su contenido dependiente, siempre con copia previa y confirmación.
+- **Cuarentena de imágenes:** registro interno de los datos de imágenes cuyo
+  mundo ya no existe o fue eliminado definitivamente. No borra ni mueve los
+  archivos; sirve para auditarlos y para que el análisis de huérfanas los
+  encuentre. No se restaura desde la interfaz.
 - **Versión:** copia del estado anterior de la descripción de una ficha.
   Automática, manual con etiqueta o de seguridad antes de restaurar.
 - **Modo seguro:** arranque sin escritura para diagnosticar el problema, abrir la
@@ -1767,7 +1804,7 @@ las funciones correspondientes.
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
 | Copias automáticas diarias, semanales y mensuales | Implementadas (en desarrollo); retención 7/4/12, 5 pre-migración y 10 pre-purga |
 | Restauración desde el aviso de modo seguro | Implementada (en desarrollo); Ajustes no restaura copias todavía |
-| Datos en Ajustes: resumen, carpetas, uso de disco e imágenes huérfanas | Implementados (en desarrollo); rutas relativas, medición acotada y purga con copia |
+| Datos en Ajustes: resumen, carpetas, uso de disco e imágenes huérfanas | Implementados (en desarrollo); rutas relativas, medición acotada, aviso de cuarentena y purga con copia |
 | Exportar todos los datos como biblioteca `world-craft-library` v1 | Implementado (en desarrollo); paquete por mundo, `settings.json` y copia completa de SQLite verificada |
 | Eliminar todos los datos con copia `pre-delete` y reinicio | Implementado (en desarrollo); frase **ELIMINAR TODO**, copia de base y assets, conserva la instalación y la copia |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
@@ -1777,7 +1814,8 @@ las funciones correspondientes.
 | Editor de la descripción con barra mínima y menciones `@` / `[[` | Implementado (en desarrollo); barra de cinco acciones, menú Formato, selector de fichas con teclado y enlaces internos; el manuscrito sigue previsto |
 | Gestión visual de tipos personalizados | Implementada (en desarrollo) |
 | Papelera global de mundos, fichas y tipos personalizados, con restauración | Implementada (en desarrollo); tres grupos, paginación por cursor y motivos claros si el mundo o el tipo no están disponibles |
-| Eliminación definitiva y vaciado de la papelera con copia previa | Implementados (en desarrollo); confirmación explícita, copia `pre-purge` verificable y los assets no se borran |
+| Eliminación definitiva y vaciado de la papelera con copia previa | Implementados (en desarrollo); confirmación explícita, copia `pre-purge` verificable, metadatos de imágenes a cuarentena, rechazo si una imagen se usa en otro mundo y archivos intactos |
+| Integridad de imágenes: relación con su mundo y cuarentena | Implementada (en desarrollo) (#116); un mundo con imágenes no se borra por accidente, las imágenes sin mundo quedan auditadas y sus archivos no se borran |
 | Historial de versiones de la descripción de una ficha | Implementado (en desarrollo); automáticas 5 min/20/90 días, manuales con etiqueta hasta 50 y restauración que conserva el estado actual |
 | Exportación de un mundo a un ZIP abierto con imágenes | Implementada (en desarrollo); desde el menú del mundo, con progreso y cancelación |
 | Importación de un mundo como mundo nuevo | Implementada (en desarrollo); validación, avisos, progreso y cancelación; nunca sobrescribe |

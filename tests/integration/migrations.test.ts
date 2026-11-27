@@ -635,10 +635,10 @@ describe('migraciones', () => {
       try {
         const migrated = upgraded.client.sqlite;
 
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(1);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(2);
         expect(upgraded.backup).not.toBeNull();
-        expect(migrated.pragma('user_version', { simple: true })).toBe(9);
+        expect(migrated.pragma('user_version', { simple: true })).toBe(10);
         expect(migrated.pragma('integrity_check', { simple: true })).toBe('ok');
 
         const read = (
@@ -760,6 +760,14 @@ describe('migraciones', () => {
       closeDatabase(idempotent.client.sqlite);
 
       const database = openDatabase({ file: test.paths.databaseFile });
+      const rollbackAssetsWorldFkSql = await readFile(
+        join(
+          REPOSITORY_MIGRATIONS_DIR,
+          'rollback',
+          '0009_assets_world_fk.down.sql',
+        ),
+        'utf8',
+      );
       const rollbackSql = await readFile(
         join(
           REPOSITORY_MIGRATIONS_DIR,
@@ -770,6 +778,10 @@ describe('migraciones', () => {
       );
 
       try {
+        database.exec(rollbackAssetsWorldFkSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(9);
+
         database.exec(rollbackSql);
 
         expect(database.pragma('user_version', { simple: true })).toBe(8);
@@ -806,6 +818,14 @@ describe('migraciones', () => {
       );
       closeDatabase(first.client.sqlite);
 
+      const rollbackAssetsWorldFkSql = await readFile(
+        join(
+          REPOSITORY_MIGRATIONS_DIR,
+          'rollback',
+          '0009_assets_world_fk.down.sql',
+        ),
+        'utf8',
+      );
       const rollbackSearchSql = await readFile(
         join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0006_search.down.sql'),
         'utf8',
@@ -857,6 +877,17 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
+        database.exec(rollbackAssetsWorldFkSql);
+
+        expect(database.pragma('user_version', { simple: true })).toBe(9);
+        expect(
+          (
+            database
+              .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+              .all() as { name: string }[]
+          ).map((row) => row.name),
+        ).not.toContain('assets_quarantine');
+
         database.exec(rollbackWorldDescriptionSql);
 
         expect(database.pragma('user_version', { simple: true })).toBe(8);
@@ -1017,12 +1048,12 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(8);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(9);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite.pragma('user_version', { simple: true }),
-        ).toBe(9);
+        ).toBe(10);
         expect(
           upgraded.client.sqlite
             .prepare('SELECT value FROM app_settings WHERE key = ?')
@@ -1032,7 +1063,7 @@ describe('migraciones', () => {
           upgraded.client.sqlite
             .prepare('SELECT count(*) AS total FROM schema_migrations')
             .get(),
-        ).toEqual({ total: 9 });
+        ).toEqual({ total: 10 });
 
         expect(
           upgraded.client.sqlite
@@ -1053,6 +1084,19 @@ describe('migraciones', () => {
         expect(indexes).toEqual(
           expect.arrayContaining(['assets_world_idx', 'assets_hash_idx']),
         );
+
+        upgraded.client.sqlite
+          .prepare(
+            `INSERT INTO worlds (id, name, slug, genres, status, language, settings, created_at, updated_at)
+             VALUES (?, ?, ?, '[]', 'active', 'es', '{}', ?, ?)`,
+          )
+          .run(
+            '01900000-0000-7000-8000-000000000002',
+            'Mundo de assets',
+            'mundo-de-assets',
+            1_760_000_000_000,
+            1_760_000_000_000,
+          );
 
         const insert = upgraded.client.sqlite.prepare(
           `INSERT INTO assets (id, world_id, kind, relative_path, mime, size, width, height, alt, hash, created_at)
@@ -1172,8 +1216,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(6);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(7);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1279,8 +1323,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(5);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(6);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1408,8 +1452,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(4);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(5);
         expect(upgraded.backup).not.toBeNull();
         expect(
           upgraded.client.sqlite
@@ -1588,8 +1632,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(3);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(4);
         expect(upgraded.backup).not.toBeNull();
 
         const upgradedSqlite = upgraded.client.sqlite;
@@ -1869,10 +1913,10 @@ describe('migraciones', () => {
       try {
         const migrated = upgraded.client.sqlite;
 
-        expect(upgraded.schemaVersion).toBe(9);
-        expect(upgraded.appliedMigrations).toBe(2);
+        expect(upgraded.schemaVersion).toBe(10);
+        expect(upgraded.appliedMigrations).toBe(3);
         expect(upgraded.backup).not.toBeNull();
-        expect(migrated.pragma('user_version', { simple: true })).toBe(9);
+        expect(migrated.pragma('user_version', { simple: true })).toBe(10);
 
         expect(
           migrated
@@ -2006,6 +2050,18 @@ describe('migraciones', () => {
         .run('locale', '"es-ES"', 1_760_000_000_000);
       first.client.sqlite
         .prepare(
+          `INSERT INTO worlds (id, name, slug, genres, status, language, settings, created_at, updated_at)
+           VALUES (?, ?, ?, '[]', 'active', 'es', '{}', ?, ?)`,
+        )
+        .run(
+          '01900000-0000-7000-8000-000000000002',
+          'Mundo de rollback',
+          'mundo-de-rollback',
+          1_760_000_000_000,
+          1_760_000_000_000,
+        );
+      first.client.sqlite
+        .prepare(
           `INSERT INTO assets (id, world_id, kind, relative_path, mime, size, hash, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         )
@@ -2021,6 +2077,14 @@ describe('migraciones', () => {
         );
       closeDatabase(first.client.sqlite);
 
+      const rollbackAssetsWorldFkSql = await readFile(
+        join(
+          REPOSITORY_MIGRATIONS_DIR,
+          'rollback',
+          '0009_assets_world_fk.down.sql',
+        ),
+        'utf8',
+      );
       const rollbackSearchSql = await readFile(
         join(REPOSITORY_MIGRATIONS_DIR, 'rollback', '0006_search.down.sql'),
         'utf8',
@@ -2068,10 +2132,11 @@ describe('migraciones', () => {
       const database = openDatabase({ file: test.paths.databaseFile });
 
       try {
-        // El rollback de 0001 solo es válido después de deshacer 0008, 0007,
-        // 0006, 0005, 0004, 0003 y 0002, porque las relaciones, las fichas,
-        // `entity_types`, `worlds` y las versiones referencian tablas
+        // El rollback de 0001 solo es válido después de deshacer 0009, 0008,
+        // 0007, 0006, 0005, 0004, 0003 y 0002, porque las relaciones, las
+        // fichas, `entity_types`, `worlds` y las versiones referencian tablas
         // anteriores.
+        database.exec(rollbackAssetsWorldFkSql);
         database.exec(rollbackWorldDescriptionSql);
         database.exec(rollbackTrashVersionsSql);
         database.exec(rollbackSearchSql);
@@ -2113,8 +2178,8 @@ describe('migraciones', () => {
       );
 
       try {
-        expect(reapplied.schemaVersion).toBe(9);
-        expect(reapplied.appliedMigrations).toBe(8);
+        expect(reapplied.schemaVersion).toBe(10);
+        expect(reapplied.appliedMigrations).toBe(9);
         expect(reapplied.backup).not.toBeNull();
       } finally {
         closeDatabase(reapplied.client.sqlite);

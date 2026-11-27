@@ -288,7 +288,7 @@ describe('importación de un mundo', () => {
 
     expect(activity).toBeDefined();
 
-    expect(readUserVersion(fixture.sqlite)).toBe(9);
+    expect(readUserVersion(fixture.sqlite)).toBe(10);
     await expect(readdir(fixture.importsTempDir)).resolves.toEqual([]);
     expect((await readdir(fixture.assetsTempDir)).length).toBe(0);
   });
