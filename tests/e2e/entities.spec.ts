@@ -477,7 +477,7 @@ test('crea, edita, autoguarda, etiqueta, marca favorita y filtra fichas', async 
   await page
     .getByRole('dialog')
     .getByRole('button', {
-      name: messages.entities.detail.coverOption(1),
+      name: messages.components.assetPicker.option(1),
     })
     .click();
   await expect(page.locator('.wc-entity-cover__picture')).toHaveAttribute(

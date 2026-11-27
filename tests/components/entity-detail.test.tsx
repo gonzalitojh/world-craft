@@ -808,6 +808,57 @@ describe('ficha como documento vivo', () => {
     expect(panel.querySelector('.wc-gallery')).toBeNull();
   });
 
+  it('elige la portada con el selector compartido sin importar imágenes', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitForEntity();
+
+    const panel = screen.getByRole('complementary', {
+      name: messages.entities.detail.propertiesTitle,
+    });
+
+    await user.click(
+      await within(panel).findByRole('button', {
+        name: messages.entities.detail.changeCover,
+      }),
+    );
+
+    expect(
+      screen.getByRole('dialog', {
+        name: messages.components.assetPicker.title,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(messages.components.assetPicker.lead),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: messages.components.assetPicker.addImage,
+      }),
+    ).toBeNull();
+
+    const option = screen.getByRole('button', {
+      name: messages.components.assetPicker.option(1),
+    });
+
+    expect(option).toHaveAttribute('aria-pressed', 'true');
+    expect(option.querySelector('.wc-image-picker__badge')).toHaveTextContent(
+      messages.components.assetPicker.selected,
+    );
+    await user.click(option);
+
+    expect(
+      screen.queryByRole('dialog', {
+        name: messages.components.assetPicker.title,
+      }),
+    ).toBeNull();
+    expect(
+      within(panel).getByRole('button', {
+        name: messages.entities.detail.changeCover,
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('ocultar y mostrar el panel recuerda el estado durante la sesión', async () => {
     const user = userEvent.setup();
     const first = renderPage();

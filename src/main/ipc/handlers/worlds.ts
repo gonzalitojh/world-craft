@@ -17,6 +17,7 @@ import {
   worldListActivityPayloadSchema,
   worldRemovePayloadSchema,
   worldSetArchivedPayloadSchema,
+  worldSetCoverPayloadSchema,
   worldUpdatePayloadSchema,
   worldsListPayloadSchema,
   type WorldCreatePayload,
@@ -25,6 +26,7 @@ import {
   type WorldListActivityPayload,
   type WorldRemovePayload,
   type WorldSetArchivedPayload,
+  type WorldSetCoverPayload,
   type WorldUpdatePayload,
   type WorldsListPayload,
 } from '../schemas/worlds';
@@ -38,6 +40,7 @@ export type WorldsIpcHandlers = Pick<
   | typeof IPC_CHANNELS.worldsUpdate
   | typeof IPC_CHANNELS.worldsDuplicate
   | typeof IPC_CHANNELS.worldsSetArchived
+  | typeof IPC_CHANNELS.worldsSetCover
   | typeof IPC_CHANNELS.worldsRemove
   | typeof IPC_CHANNELS.worldsListActivity
 >;
@@ -97,6 +100,11 @@ export function createWorldIpcHandlers(
           runWorldOperation(() => service.setArchived(payload)),
       },
     ),
+
+    [IPC_CHANNELS.worldsSetCover]: defineIpcHandler<WorldSetCoverPayload>({
+      schema: worldSetCoverPayloadSchema,
+      handle: (payload) => runWorldOperation(() => service.setCover(payload)),
+    }),
 
     [IPC_CHANNELS.worldsRemove]: defineIpcHandler<WorldRemovePayload>({
       schema: worldRemovePayloadSchema,

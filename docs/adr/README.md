@@ -19,7 +19,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0002](0002-sqlite-better-sqlite3-drizzle-fts5.md) | SQLite + better-sqlite3 + Drizzle + FTS5 | Aceptado | D-021 |
 | [0003](0003-nsis-installer-electron-updater-data-preservation.md) | Instalador NSIS, electron-updater y preservación | Aceptado | D-023, D-031 |
 | [0004](0004-electron-security-typed-ipc.md) | Seguridad Electron e IPC tipado | Aceptado | D-024, D-025 |
-| [0005](0005-local-assets-custom-protocol.md) | Assets locales y protocolo `wc-asset://` | Aceptado | D-022 |
+| [0005](0005-local-assets-custom-protocol.md) | Assets locales y protocolo `wc-asset://` | Aceptado | D-022; consumido por D-055 |
 | [0006](0006-two-themes-desktop-design-system.md) | Dos temas y sistema de diseño de escritorio | Aceptado | D-026; revisado en D-048/0025 y D-050/0027 |
 | [0007](0007-tiptap-editor-exporters.md) | Editor Tiptap y exportadores | Aceptado | D-027 |
 | [0008](0008-maplibre-terra-draw-react-flow-elk.md) | MapLibre/Terra Draw y React Flow/ELK | Aceptado | D-028 |
@@ -33,7 +33,7 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | [0016](0016-sqlite-migrations-safe-mode.md) | SQLite, migraciones propias y modo seguro | Aceptado | D-040 |
 | [0017](0017-assets-service-sharp-orphan-purge.md) | Servicio de assets locales, sharp, miniatura y purga recuperable (#66) | Aceptado | D-022 |
 | [0018](0018-nsis-packaging-and-update-service.md) | Empaquetado NSIS, actualizador manual y preservación (#68) | Aceptado | D-041 |
-| [0019](0019-worlds-crud-mvp.md) | Mundos del MVP: CRUD, actividad y borrado lógico (#72) | Aceptado | D-042 |
+| [0019](0019-worlds-crud-mvp.md) | Mundos del MVP: CRUD, actividad y borrado lógico (#72) | Aceptado | D-042; completado en D-055 |
 | [0020](0020-entity-types-custom-fields.md) | Tipos de entidad del sistema y campos personalizados (#73) | Aceptado | D-043 |
 | [0021](0021-entities-crud-gallery-tags-editor.md) | Fichas: modelo, galería, etiquetas y editor enriquecido (#74) | Aceptado | D-044 |
 | [0022](0022-relations-backlinks-graph-api.md) | Relaciones tipadas, etiquetas inversas y API del grafo (#75) | Aceptado | D-045 |
@@ -100,3 +100,4 @@ para cambiar la decisión: se crea otro que lo supersede. La plantilla está en
 | 2026-11-25 | Se añade el ADR 0029 (exportación e importación de mundos en ZIP v1, #78), con la decisión D-052, y se enlaza el formato en [`formato-de-exportacion.md`](../formato-de-exportacion.md). |
 | 2026-11-26 | Se añade el ADR 0030 (Ajustes, datos, biblioteca total y borrado con copia previa, #79), con la decisión D-053, y se anota que consume la API de preferencias del ADR 0027 y la exportación de mundo del ADR 0029 sin supersederlas. |
 | 2026-11-26 | Se añade el ADR 0031 (descripción enriquecida del mundo y formato portable v2, #114), con la decisión D-054, y se anota que evoluciona el formato de mundo del ADR 0029 a `formatVersion 2` con lectura de v1 sin supersederlo. |
+| 2026-11-27 | Se registra D-055 (portada del mundo: selector compartido con la ficha, guardado por contexto y retención de la imagen anterior, #115) y se anota que consume los ADR 0005 y 0019 sin supersederlos. No se crea un ADR nuevo. |

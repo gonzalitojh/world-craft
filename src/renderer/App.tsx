@@ -490,6 +490,57 @@ export function App({ initialPreferences }: AppProps) {
     }
   }, [api, selectedWorldId]);
 
+  /**
+   * Persiste la portada desde la página del mundo.
+   *
+   * El proceso principal devuelve el mundo actualizado: la cabecera se repinta
+   * sin esperar otra lectura y la biblioteca y la actividad se refrescan. Un
+   * fallo no cambia la portada anterior; solo se anuncia el error.
+   */
+  const setWorldCover = useCallback(
+    async (assetId: string | null) => {
+      if (selectedWorldId === null) {
+        return;
+      }
+
+      const request = openRequest.current;
+      const result = await api.setCover({ worldId: selectedWorldId, assetId });
+
+      if (request !== openRequest.current) {
+        return;
+      }
+
+      if (!result.ok || result.data === null) {
+        notify(
+          'error',
+          assetId === null
+            ? messages.worlds.cover.removeError
+            : messages.worlds.cover.updateError,
+        );
+        return;
+      }
+
+      setSelectedWorld(result.data);
+      setSelectedState('ready');
+      notify(
+        'success',
+        assetId === null
+          ? messages.worlds.cover.removedNotice
+          : messages.worlds.cover.updated,
+      );
+      await refreshLibrary();
+      await refreshSelectedActivity();
+    },
+    [
+      api,
+      messages,
+      notify,
+      refreshLibrary,
+      refreshSelectedActivity,
+      selectedWorldId,
+    ],
+  );
+
   const openEntities = useCallback(() => {
     goToView('entities');
   }, [goToView]);
@@ -1287,6 +1338,9 @@ export function App({ initialPreferences }: AppProps) {
             onOpenEntities={openEntities}
             onOpenEntity={(entityId) => {
               void openWorldDescriptionEntity(entityId);
+            }}
+            onChangeCover={(assetId) => {
+              void setWorldCover(assetId);
             }}
           />
         ) : view === 'entities' && selectedWorld !== null ? (

@@ -43,6 +43,7 @@ import {
   validateEntityDescription,
 } from '../../shared/entities/description';
 import { Button } from '../components/button';
+import { AssetPickerDialog } from '../components/assets/asset-picker-dialog';
 import { Dialog } from '../components/dialog';
 import { IconButton } from '../components/icon-button';
 import { Skeleton, SkeletonText } from '../components/skeleton';
@@ -66,7 +67,6 @@ import { EntityResourcesSection } from '../components/entities/entity-resources-
 import { EntityTagDialog } from '../components/entities/entity-tag-dialog';
 import { RelationTypeManager } from '../components/entities/relation-type-manager';
 import { useI18n } from '../i18n/provider';
-import { assetUrl } from '../lib/asset-url';
 import {
   PROPERTIES_WIDTH_DEFAULT,
   PROPERTIES_WIDTH_MAX,
@@ -1658,54 +1658,19 @@ export function EntityDetailPage({
         />
       </div>
 
-      <Dialog
+      <AssetPickerDialog
         open={coverPickerOpen}
+        assets={assets}
+        state="ready"
+        selectedAssetId={draft.imageAssetId}
+        onSelect={(assetId) => {
+          setMainImage(assetId);
+          setCoverPickerOpen(false);
+        }}
         onClose={() => {
           setCoverPickerOpen(false);
         }}
-        title={messages.entities.detail.coverPickerTitle}
-        actions={
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setCoverPickerOpen(false);
-            }}
-          >
-            {messages.entities.detail.close}
-          </Button>
-        }
-      >
-        <p className="wc-dialog__lead">
-          {messages.entities.detail.coverPickerLead}
-        </p>
-        {assets.length === 0 ? (
-          <p className="wc-dialog__lead">{messages.entities.detail.noImages}</p>
-        ) : (
-          <ul className="wc-image-picker">
-            {assets.map((asset, index) => (
-              <li key={asset.id}>
-                <button
-                  type="button"
-                  className="wc-image-picker__item"
-                  aria-pressed={draft.imageAssetId === asset.id}
-                  aria-label={messages.entities.detail.coverOption(index + 1)}
-                  onClick={() => {
-                    setMainImage(asset.id);
-                    setCoverPickerOpen(false);
-                  }}
-                >
-                  <img
-                    className="wc-image-picker__thumb"
-                    src={assetUrl(asset.id, 'thumb')}
-                    alt=""
-                    loading="lazy"
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Dialog>
+      />
 
       <EntityTagDialog
         key={tagKey}

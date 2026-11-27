@@ -42,6 +42,8 @@ const worldGenresSchema = z
 
 const worldLanguageSchema = z.enum(WORLD_LANGUAGES).optional();
 
+const assetIdSchema = z.string().regex(UUID_V7_PATTERN);
+
 /** Payload vacío de `worlds:list`. */
 export const worldsListPayloadSchema = z.strictObject({});
 
@@ -61,6 +63,7 @@ export const worldCreatePayloadSchema = z.strictObject({
 /** Payload de `worlds:update`. */
 export const worldUpdatePayloadSchema = worldCreatePayloadSchema.extend({
   id: worldIdSchema,
+  coverAssetId: assetIdSchema.nullable().optional(),
 });
 
 /** Payload de `worlds:duplicate`. */
@@ -73,6 +76,12 @@ export const worldDuplicatePayloadSchema = z.strictObject({
 export const worldSetArchivedPayloadSchema = z.strictObject({
   id: worldIdSchema,
   archived: z.boolean(),
+});
+
+/** Payload de `worlds:setCover`; `null` quita la portada. */
+export const worldSetCoverPayloadSchema = z.strictObject({
+  worldId: worldIdSchema,
+  assetId: assetIdSchema.nullable(),
 });
 
 /** Payload de `worlds:remove`. */
@@ -92,6 +101,7 @@ export type WorldDuplicatePayload = z.infer<typeof worldDuplicatePayloadSchema>;
 export type WorldSetArchivedPayload = z.infer<
   typeof worldSetArchivedPayloadSchema
 >;
+export type WorldSetCoverPayload = z.infer<typeof worldSetCoverPayloadSchema>;
 export type WorldRemovePayload = z.infer<typeof worldRemovePayloadSchema>;
 export type WorldListActivityPayload = z.infer<
   typeof worldListActivityPayloadSchema

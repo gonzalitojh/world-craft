@@ -502,6 +502,20 @@ primera versión estable.
   exceso, pegado saneado, vacío y lectura; integración de `0007 → 0008`,
   preservación, rollback, guardado, duplicado y transferencia v1/v2; E2E del flujo
   de edición con ventana, temas, axe y movimiento reducido.
+- Portada del mundo (#115): se puede elegir, cambiar y quitar desde la página del
+  mundo, bajo la miniatura de la cabecera, y desde el bloque **Portada** del
+  formulario de edición. El selector es el mismo de la ficha, muestra miniaturas
+  del mundo, marca la portada actual con `aria-pressed` y la insignia **Portada**
+  y permite importar una imagen cuando el mundo aún no tiene ninguna. En la
+  página el cambio se guarda al elegir; en el formulario, al pulsar **Guardar
+  cambios**. Quitar la portada no borra la imagen ni pide confirmación, y el
+  encuadre es 1:1 centrado sin editor de recorte. En creación no hay control
+  hasta guardar el mundo y no se aceptan direcciones web ni imágenes de otro
+  mundo.
+- Pruebas de la portada del mundo (#115): unitarias de esquemas, handlers y API;
+  integración de asociación, aislamiento entre mundos, rechazo de assets ajenos,
+  retención y actividad; componentes del selector, del bloque de portada y del
+  cierre anidado; E2E de elegir, cambiar, quitar, importar, ventana, temas y axe.
 
 ### Cambiado
 
@@ -653,6 +667,10 @@ primera versión estable.
   oculto detrás del diálogo modal (#133).
 - El botón de quitar un campo incluye su nombre visible («Quitar campo Etiqueta»),
   de modo que el texto coincide con la etiqueta accesible (#133).
+- Cerrar un diálogo anidado, como el selector de portada o el diálogo de enlace
+  del editor, ya no cierra también el formulario que lo contiene. `Dialog` solo
+  atiende el cierre de su propio elemento y sigue respetando `dismissible`, la
+  capa de Escape y el retorno de foco (#115).
 
 ### Seguridad
 

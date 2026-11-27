@@ -183,7 +183,7 @@ ALTER TABLE `worlds` ADD `description_text` text;
 | `summary` | TEXT | NULL | Sinopsis breve de una línea. |
 | `description` | TEXT | NULL | Documento de ProseMirror validado con Zod; nunca HTML. Máximo 200.000 caracteres de JSON. |
 | `description_text` | TEXT | NULL | Texto plano derivado de `description` para la búsqueda; máximo 4.000 caracteres. Se recalcula en el proceso principal y no se exporta. |
-| `cover_asset_id` | TEXT | FK `assets(id)` `RESTRICT`, NULL | Portada; el selector llega con #115. |
+| `cover_asset_id` | TEXT | FK `assets(id)` `RESTRICT`, NULL | Portada del mundo; debe ser una imagen del propio mundo (#115). |
 | `genres` | TEXT | NOT NULL DEFAULT `'[]'`, CHECK JSON array | Géneros como JSON; máximo 8, validado por la app. |
 | `status` | TEXT | NOT NULL DEFAULT `'active'`, CHECK | `active`, `archived`. |
 | `language` | TEXT | NOT NULL DEFAULT `'es'`, CHECK | Idioma del contenido: `es`, `en`, `it`. |
@@ -202,7 +202,8 @@ Reglas de la issue M1-01:
   papelera; la aplicación añade `-2`, `-3`… si hace falta y nunca reutiliza un
   identificador.
 - La portada es una referencia opcional a un asset; la copia de un mundo no
-  comparte portada. La galería y su selector llegan con #115.
+  comparte portada. Se elige entre las imágenes del mundo con el selector
+  compartido de #115; no hay una galería propia del mundo fuera de ese selector.
 - El borrado es lógico (`deleted_at`); la papelera visible con restauración y
   purga está implementada en M1-06 (#77). Restaurar un mundo lo devuelve a Inicio
   y Mundos y no restaura en cascada sus fichas o tipos que ya estuvieran en

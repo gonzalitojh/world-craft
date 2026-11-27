@@ -1,4 +1,6 @@
 import type { ElectronApplication, Page } from '@playwright/test';
+import { join } from 'node:path';
+import sharp from 'sharp';
 
 import { es as messages } from '../../src/renderer/messages/es';
 
@@ -820,4 +822,369 @@ test('Inicio envuelve el contenido largo sin scroll horizontal con el rail expan
 
   // Se deja el rail expandido para no contaminar la ventana de la prueba.
   await setRail(page, false);
+});
+
+async function stubImageDialog(
+  electronApp: ElectronApplication,
+  filePath: string,
+): Promise<void> {
+  await electronApp.evaluate(({ dialog }, next) => {
+    dialog.showOpenDialog = (async () => ({
+      canceled: false,
+      filePaths: [next],
+    })) as unknown as typeof dialog.showOpenDialog;
+  }, filePath);
+}
+
+async function createPng(
+  userDataDir: string,
+  name: string,
+  background: string,
+): Promise<string> {
+  const path = join(userDataDir, name);
+
+  await sharp({
+    create: { width: 96, height: 96, channels: 3, background },
+  })
+    .png()
+    .toFile(path);
+
+  return path;
+}
+
+function coverPicker(page: Page) {
+  return page.getByRole('dialog', {
+    name: messages.components.assetPicker.title,
+  });
+}
+
+test('elige, persiste, cambia y quita la portada del mundo', async ({
+  page,
+  electronApp,
+  userDataDir,
+}) => {
+  await createWorld(page, { name: WORLD_NAME });
+  await dismissToasts(page);
+
+  const headerCover = page.locator('.wc-world-header__cover');
+
+  await expect(
+    headerCover.getByRole('button', { name: messages.worlds.cover.choose }),
+  ).toBeVisible();
+
+  const firstImage = await createPng(userDataDir, 'portada-a.png', '#5a7a55');
+
+  await stubImageDialog(electronApp, firstImage);
+  await headerCover
+    .getByRole('button', { name: messages.worlds.cover.choose })
+    .click();
+
+  const picker = coverPicker(page);
+
+  await expect(picker).toBeVisible();
+  await picker
+    .getByRole('button', { name: messages.components.assetPicker.addImage })
+    .click();
+
+  const firstOption = picker.getByRole('button', {
+    name: messages.components.assetPicker.option(1),
+  });
+
+  await expect(firstOption.locator('img')).toHaveAttribute(
+    'src',
+    /^wc-asset:\/\/thumb\//,
+  );
+  await firstOption.click();
+
+  const coverImage = page.locator('.wc-world-header__cover img');
+
+  await expect(coverImage).toHaveAttribute('src', /^wc-asset:\/\/thumb\//);
+  await expect(page.getByText(messages.worlds.cover.updated)).toBeVisible();
+
+  const coverSrc = await coverImage.getAttribute('src');
+
+  await dismissToasts(page);
+
+  // La portada persiste al recargar y se recupera con «Continuar».
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.shell.views.home }),
+  ).toBeVisible();
+  await page
+    .getByRole('region', { name: messages.home.continueTitle })
+    .getByRole('button', { name: messages.home.continueWorldAction })
+    .click();
+  await expect(coverImage).toHaveAttribute('src', coverSrc ?? '');
+
+  // Cambiar la portada por una segunda imagen importada.
+  const secondImage = await createPng(userDataDir, 'portada-b.png', '#7a5a2f');
+
+  await stubImageDialog(electronApp, secondImage);
+  await page
+    .getByRole('button', { name: messages.worlds.cover.change })
+    .click();
+  await coverPicker(page)
+    .getByRole('button', { name: messages.components.assetPicker.addImage })
+    .click();
+
+  // La nueva imagen se añade al principio; se espera a que termine la
+  // importación antes de elegirla.
+  await expect(coverPicker(page).locator('.wc-image-picker__item')).toHaveCount(
+    2,
+  );
+  await coverPicker(page)
+    .getByRole('button', { name: messages.components.assetPicker.option(1) })
+    .click();
+
+  await expect(coverImage).not.toHaveAttribute('src', coverSrc ?? '');
+  await expect(page.getByText(messages.worlds.cover.updated)).toBeVisible();
+  await dismissToasts(page);
+
+  // Teclado: Escape cierra solo el selector y devuelve el foco al botón.
+  const changeButton = page.getByRole('button', {
+    name: messages.worlds.cover.change,
+  });
+
+  await changeButton.click();
+  await expect(coverPicker(page)).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(coverPicker(page)).toBeHidden();
+  await expect(changeButton).toBeFocused();
+
+  // Ventana y temas con la portada visible.
+  for (const theme of ['light', 'dark'] as const) {
+    await setTheme(page, theme);
+
+    for (const width of [1024, 1280, 1600] as const) {
+      await setContentWidth(electronApp, page, width);
+
+      const metrics = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        bodyWidth: document.body.scrollWidth,
+      }));
+
+      expect(
+        metrics.documentWidth,
+        `${width}px, tema ${theme}: ${JSON.stringify(metrics)}`,
+      ).toBeLessThanOrEqual(metrics.clientWidth);
+      expect(metrics.bodyWidth).toBeLessThanOrEqual(metrics.clientWidth);
+    }
+  }
+
+  const results = await analyzeWithAxe(page, {
+    runOnly: {
+      type: 'tag',
+      values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+    },
+  });
+
+  expect(
+    results.violations
+      .filter(
+        (violation) =>
+          violation.impact === 'critical' || violation.impact === 'serious',
+      )
+      .map((violation) => ({ id: violation.id, help: violation.help })),
+  ).toEqual([]);
+
+  // Quitar la portada no borra la imagen: vuelve la marca procedural.
+  await page
+    .getByRole('button', { name: messages.worlds.cover.change })
+    .click();
+  await coverPicker(page)
+    .getByRole('button', { name: messages.components.assetPicker.clear })
+    .click();
+
+  await expect(page.locator('.wc-world-header__cover img')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: messages.worlds.cover.choose }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(messages.worlds.cover.removedNotice),
+  ).toBeVisible();
+
+  // Tras recargar sigue sin portada y la imagen se conserva en el selector.
+  await page.reload();
+  await page
+    .getByRole('region', { name: messages.home.continueTitle })
+    .getByRole('button', { name: messages.home.continueWorldAction })
+    .click();
+  await expect(page.locator('.wc-world-header__cover img')).toHaveCount(0);
+
+  await page
+    .getByRole('button', { name: messages.worlds.cover.choose })
+    .click();
+  await expect(
+    coverPicker(page).getByRole('button', {
+      name: messages.components.assetPicker.option(1),
+    }),
+  ).toBeVisible();
+});
+
+test('la portada de un mundo no mezcla imágenes de otro mundo', async ({
+  page,
+  electronApp,
+  userDataDir,
+}) => {
+  const otherWorld = 'Crónica del Faro';
+
+  await createWorld(page, { name: WORLD_NAME });
+  await dismissToasts(page);
+  await goHome(page);
+
+  // Segundo mundo con una imagen propia y portada.
+  await page
+    .getByRole('button', { name: messages.worlds.actions.create })
+    .click();
+  await fillWorldForm(page, { name: otherWorld });
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: messages.worlds.form.submitCreate })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: otherWorld, exact: true }),
+  ).toBeVisible();
+  await dismissToasts(page);
+
+  const image = await createPng(userDataDir, 'faro.png', '#3f5a7a');
+
+  await stubImageDialog(electronApp, image);
+  await page
+    .getByRole('button', { name: messages.worlds.cover.choose })
+    .click();
+  await coverPicker(page)
+    .getByRole('button', { name: messages.components.assetPicker.addImage })
+    .click();
+  await coverPicker(page)
+    .getByRole('button', { name: messages.components.assetPicker.option(1) })
+    .click();
+  await expect(page.locator('.wc-world-header__cover img')).toHaveAttribute(
+    'src',
+    /^wc-asset:\/\/thumb\//,
+  );
+  await dismissToasts(page);
+
+  // El primer mundo no tiene imágenes y su selector está vacío.
+  await goWorlds(page);
+  await page
+    .getByRole('button', { name: messages.worlds.card.openNamed(WORLD_NAME) })
+    .click();
+  await page
+    .getByRole('button', { name: messages.worlds.cover.choose })
+    .click();
+
+  const picker = coverPicker(page);
+
+  await expect(
+    picker.getByText(messages.components.assetPicker.empty),
+  ).toBeVisible();
+  await expect(
+    picker.getByRole('button', { name: /Usar la imagen/ }),
+  ).toHaveCount(0);
+});
+
+test('edita la portada desde el formulario sin cerrarlo', async ({
+  page,
+  electronApp,
+  userDataDir,
+}) => {
+  await createWorld(page, { name: WORLD_NAME });
+  await dismissToasts(page);
+
+  const openEdit = async () => {
+    await page
+      .getByRole('button', { name: messages.shell.viewMenuLabel })
+      .click();
+    await page
+      .getByRole('menuitem', { name: messages.worlds.card.edit })
+      .click();
+
+    const form = page.getByRole('dialog', {
+      name: messages.worlds.form.editTitle(WORLD_NAME),
+    });
+
+    await expect(form).toBeVisible();
+    return form;
+  };
+
+  let form = await openEdit();
+  const image = await createPng(userDataDir, 'form-portada.png', '#5a7a55');
+
+  await stubImageDialog(electronApp, image);
+  await form
+    .getByRole('button', { name: messages.worlds.cover.choose })
+    .click();
+
+  const picker = coverPicker(page);
+
+  await expect(picker).toBeVisible();
+  await picker
+    .getByRole('button', { name: messages.components.assetPicker.addImage })
+    .click();
+
+  const option = picker.getByRole('button', {
+    name: messages.components.assetPicker.option(1),
+  });
+
+  await expect(option.locator('img')).toHaveAttribute(
+    'src',
+    /^wc-asset:\/\/thumb\//,
+  );
+  await option.click();
+
+  // El selector se cierra, pero el formulario sigue abierto y la vista previa
+  // ya muestra la imagen elegida.
+  await expect(picker).toBeHidden();
+  await expect(form).toBeVisible();
+  await expect(
+    form.locator('.wc-world-cover-field__preview img'),
+  ).toHaveAttribute('src', /^wc-asset:\/\/thumb\//);
+
+  await form
+    .getByRole('button', { name: messages.worlds.form.submitEdit })
+    .click();
+
+  await expect(form).toBeHidden();
+  await expect(page.locator('.wc-world-header__cover img')).toHaveAttribute(
+    'src',
+    /^wc-asset:\/\/thumb\//,
+  );
+  await expect(
+    page.getByText(messages.worlds.notices.updated(WORLD_NAME)),
+  ).toBeVisible();
+  await dismissToasts(page);
+
+  // Persistencia al reabrir el formulario.
+  form = await openEdit();
+  await expect(
+    form.locator('.wc-world-cover-field__preview img'),
+  ).toHaveAttribute('src', /^wc-asset:\/\/thumb\//);
+
+  // Escape cierra solo el selector; el formulario y su portada siguen.
+  await form
+    .getByRole('button', { name: messages.worlds.cover.change })
+    .click();
+  await expect(coverPicker(page)).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(coverPicker(page)).toBeHidden();
+  await expect(form).toBeVisible();
+
+  // Quitar portada y guardar.
+  await form
+    .getByRole('button', { name: messages.worlds.cover.remove })
+    .click();
+  await expect(form.locator('.wc-world-cover-field__preview img')).toHaveCount(
+    0,
+  );
+
+  await form
+    .getByRole('button', { name: messages.worlds.form.submitEdit })
+    .click();
+
+  await expect(form).toBeHidden();
+  await expect(page.locator('.wc-world-header__cover img')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: messages.worlds.cover.choose }),
+  ).toBeVisible();
 });

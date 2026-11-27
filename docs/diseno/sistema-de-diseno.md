@@ -441,7 +441,9 @@ como existente lo que aún no lo está.
 | Tarjeta | Sin contorno ni sombra por defecto; título y contenido primero. Una acción visible y las secundarias en `⋯`; portada o marca procedural, sin iniciales gigantes. La misma tarjeta sirve a la fila de Inicio y a la rejilla de Mundos. | Implementada | #125, #127 |
 | Marca procedural de mundo | Portada si existe; si no, sello determinista por `id` con 4 tramas × 4 tonos resueltos con `--entity-*`. Decorativa (`aria-hidden`), estática y legible en ambos temas. | Implementada | #127 |
 | Navegación modular de mundo | Lista de módulos con el actual en `aria-current="page"`; los previstos son texto con insignia, sin enlace ni foco. El recuento de fichas es secundario y se omite si no está disponible. | Implementada | #128 |
-| Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. | Adaptado v2 | #125 |
+| Diálogo | `<dialog>` nativo, velo, foco atrapado, Escape y acciones claras. En capas anidadas, el `close` del diálogo hijo no se propaga al padre: solo se atiende el cierre del propio `<dialog>`. | Adaptado v2 | #125, #115 |
+| Selector de imágenes de portada | `AssetPickerDialog`: rejilla 1:1 de miniaturas del mundo con `aria-pressed`, insignia **Portada** con check y borde de acento; estados de carga, vacío y error; **Añadir imagen** solo en el vacío y **Quitar portada** solo si hay portada. No persiste: el poseedor decide si escribe al elegir (página) o al guardar (formulario). | Implementado | #115 |
+| Bloque de portada del formulario | Grupo `role="group"` con título «Portada», vista previa 1:1 de 4,5 rem, ayuda y **Elegir/Cambiar portada** y **Quitar portada**. En creación solo hay pozo y explicación, sin control enfocable; en edición el cambio se aplica con **Guardar cambios**. | Implementado | #115 |
 | Diálogo de transferencia | `<Dialog>` de hasta 40rem con insignia de estado, fase anunciada, barra de progreso, resumen de recuentos, lista de avisos y error con `role="alert"`. Estados `running`, `cancelling`, `exported`, `imported` y `failed`; `Escape` bloqueado mientras está en curso. Sin tokens nuevos. | Implementado | #78 |
 | Barra de progreso indeterminada | Variante de `.wc-progress` sin porcentaje conocido: barra al 35 % con animación de 1,6 s y `role="progressbar"` con `aria-valuetext` y sin `aria-valuenow`; se detiene con `prefers-reduced-motion`. | Implementada | #78 |
 | Menú `⋯` | Acciones secundarias; teclado, foco y cierre con Escape. Se posiciona respecto al viewport, elige el lado con más espacio, limita su altura y desplaza su contenido sin cerrar el menú. | Implementado | #125 |
@@ -548,11 +550,21 @@ documento apilado. La descripción rica del módulo «Resumen» llega con #114.
   mundo». El orden es fijo y la vista no tiene paneles plegables.
   No hay hero con inicial gigante, ni rejilla de «Accesos rápidos» con
   descripciones, ni párrafo de presentación.
-- **Cabecera de identidad:** portada o `WorldMark` (4,5 rem) y un bloque con la
-  insignia de estado, el resumen —con texto de reserva si falta— y los géneros
-  como insignias de acento. No repite el nombre: el `h1` vive en la barra
-  superior desde #126. Tampoco declara acciones: **Nueva ficha** y el menú `⋯`
-  con editar, duplicar, archivar/restaurar y eliminar siguen solo en la barra.
+- **Cabecera de identidad:** portada o `WorldMark` (4,5 rem), con la acción
+  **Elegir portada** o **Cambiar portada** debajo de la miniatura, y un bloque
+  con la insignia de estado, el resumen —con texto de reserva si falta— y los
+  géneros como insignias de acento. No repite el nombre: el `h1` vive en la barra
+  superior desde #126. **Excepción deliberada a la regla «la cabecera no declara
+  acciones»:** el botón de portada pertenece al bloque de portada, no es una
+  acción de página y no compite con **Nueva ficha**; el resto de acciones sigue
+  solo en la barra.
+- **Portada del mundo (#115):** se elige entre las imágenes del mundo con el
+  selector compartido. En la página se guarda al elegir y se anuncia con el aviso
+  global; en el formulario se guarda con **Guardar cambios**. El encuadre es 1:1
+  centrado con recorte (`object-fit: cover`), sin zoom ni editor de recorte, y
+  todas las miniaturas usan `wc-asset://thumb`. Quitar la portada no borra la
+  imagen ni pide confirmación. Contrato en
+  [`mundo-portada-issue-115.md`](mundo-portada-issue-115.md).
 - **Navegación modular:** `nav` con la etiqueta «Módulos del mundo» y una lista de
   cinco piezas. **Resumen** es el módulo actual (`aria-current="page"`) y
   **Fichas** es el único módulo implementado al que se navega. **Mapas**,
@@ -1068,6 +1080,7 @@ Reglas de migración:
 | Shell, navegación y barra superior v2 | Implementado | #126 |
 | Inicio y tarjetas de mundo | Implementado | #127 |
 | Vista de mundo modular | Implementado | #128 |
+| Portada del mundo y selector de imágenes compartido | Implementado | #115 |
 | Ficha como documento y panel de propiedades | Implementado | #129 |
 | Relaciones legibles y grafo contextual | Implementado (relaciones); grafo previsto en #83 | #130 |
 | Editor mínimo y menciones | Implementado | #131 |
@@ -1166,6 +1179,7 @@ previstos el grafo completo (#83) y la auditoría final de accesibilidad de M5
   1024/1280/1600 px × rail expandido y plegado × ambos temas con una descripción
   de 4.000 caracteres, ocho géneros y un identificador largo, sin scroll
   horizontal y con axe WCAG 2.1 A/AA sin violaciones críticas ni graves.
+- La portada del mundo se cubre desde #115. `tests/components/asset-picker-dialog.test.tsx` verifica estados, selección, insignia, foco e importación; `tests/components/dialog.test.tsx` fija que el `close` de un diálogo anidado no propaga al padre; `tests/components/worlds.test.tsx` cubre el bloque de portada, el guardado por contexto y la corrección del foco; `tests/e2e/worlds.spec.ts` recorre elegir, cambiar y quitar en la ventana real, con ambos temas y sin scroll horizontal.
 - `scripts/check-build.mjs` verifica que los dos woff2 viajan en `out/renderer`,
   que el CSS construido los referencia con rutas relativas y que no hay hosts
   remotos de fuentes.
@@ -1261,6 +1275,7 @@ y manual actualizado.
 - [ADR 0030: Ajustes, datos y borrado total](../adr/0030-settings-data-and-full-deletion.md)
 - [Contrato de la ficha #129](ficha-issue-129.md)
 - [Contrato del editor mínimo #131](editor-issue-131.md)
+- [Contrato de la portada del mundo #115](mundo-portada-issue-115.md)
 - [Contrato y auditoría visual #133](auditoria-visual-issue-133.md)
 - [Plan de desarrollo](../plan-desarrollo.md)
 - [Arquitectura](../arquitectura.md)

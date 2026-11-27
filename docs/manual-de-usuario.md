@@ -126,10 +126,11 @@ restaurar. También puedes **exportar un mundo completo** a un archivo y
 descripción del mundo, sus fichas, los tipos personalizados, las etiquetas, las
 relaciones, las versiones y las imágenes (sección 4.6). La **descripción del
 mundo** se escribe con el mismo editor que las fichas: formato básico, menciones
-a fichas del mundo y enlaces internos (sección 4.7). Todavía no hay ventanas de
-mapas, manuscritos ni grafo, y la portada del mundo llegará en una actualización
-posterior. **No hay una release pública**: el instalador se genera y se prueba en
-local, y la publicación oficial llegará con M5.
+a fichas del mundo y enlaces internos (sección 4.7). Cada mundo puede tener su
+**portada**, que se elige desde su propia página o al editarlo (sección 4.4).
+Todavía no hay ventanas de mapas, manuscritos ni grafo. **No hay una release
+pública**: el instalador se genera y se prueba en local, y la publicación oficial
+llegará con M5.
 
 El **rediseño visual** está terminado: todas las pantallas que ya existen se han
 revisado en los modos **Claro** y **Oscuro** y con ventanas de 1024, 1280 y
@@ -373,9 +374,9 @@ los demás; la actividad y las listas nunca mezclan datos de otro mundo.
 6. Pulsa **Crear mundo**. El mundo se abre en su propia página y aparece un aviso
    de confirmación.
 
-La **portada** todavía no se puede elegir: su selector llegará con la galería de
-imágenes del mundo. El formulario lo indica para no prometer una función que aún
-no existe.
+La **portada** no se elige al crear el mundo: el formulario solo explica que hay
+que guardarlo primero. Después puedes elegirla desde la página del mundo o desde
+el menú `⋯` → **Editar**, en el bloque **Portada** (sección 4.4).
 
 ### 4.2 Inicio como mesa de trabajo
 
@@ -424,9 +425,10 @@ menú `⋯` con las acciones del mundo (sección 4.5): la página no repite ni e
 nombre ni esos botones. Lo primero es **Volver a Inicio** y, después, la
 identidad del mundo y sus módulos.
 
-- **Cabecera de identidad:** la portada o la marca gráfica del mundo, su estado
-  (activo o archivado), el resumen y los géneros. Si todavía no hay resumen, la
-  cabecera lo dice en su lugar.
+- **Cabecera de identidad:** la portada o la marca gráfica del mundo, con la
+  acción **Elegir portada** o **Cambiar portada** debajo, su estado (activo o
+  archivado), el resumen y los géneros. Si todavía no hay resumen, la cabecera lo
+  dice en su lugar.
 - **Módulos del mundo:** una navegación con cinco módulos.
   - **Resumen** es el módulo en el que estás.
   - **Fichas** abre la lista de fichas del mundo. A su lado aparece cuántas hay:
@@ -453,6 +455,39 @@ Mientras el mundo se está leyendo se muestra un aviso de carga. Si la lectura
 falla, la página lo explica y ofrece **Volver a intentar** y **Volver a Inicio**;
 tus datos siguen guardados.
 
+#### La portada del mundo
+
+La **portada** es la imagen que representa el mundo en Inicio, en Mundos y en su
+cabecera. Se elige entre las imágenes ya importadas en ese mundo. No se acepta
+una dirección web, una imagen de otro mundo ni un archivo que no sea una imagen
+válida (PNG, JPEG, WebP, GIF o AVIF).
+
+Puedes cambiarla desde dos sitios:
+
+- **Desde la página del mundo:** pulsa **Elegir portada** (o **Cambiar
+  portada**) bajo la miniatura de la cabecera. Se abre el selector con las
+  imágenes del mundo; al elegir una, el cambio **se guarda al momento** y aparece
+  un aviso. En el pie del selector, **Quitar portada** deja el mundo con su marca
+  gráfica y **no borra la imagen**, que sigue disponible para volver a elegirla.
+  Quitar la portada no pide confirmación.
+- **Desde Editar:** el formulario de edición tiene un bloque **Portada** con una
+  vista previa cuadrada. **Elegir portada** o **Cambiar portada** abre el mismo
+  selector y **Quitar portada** deja la vista previa vacía, pero el cambio **solo
+  se guarda al pulsar Guardar cambios**. **Cancelar** conserva la portada
+  anterior.
+
+El selector muestra miniaturas de las imágenes del mundo y marca la portada
+actual con la insignia **Portada**. Si el mundo todavía no tiene ninguna imagen,
+ofrece **Añadir imagen**, que abre el diálogo de Windows. Para añadir más
+imágenes a un mundo, usa la galería de una ficha (sección 5.6). Las imágenes que
+importes desde el selector quedan guardadas en el mundo aunque después canceles
+la edición del formulario.
+
+El encuadre es **cuadrado y centrado**: la aplicación recorta la imagen para la
+miniatura, sin zoom ni editor de recorte. La portada anterior no se elimina;
+sigue en el mundo y puedes volver a elegirla. Si un mundo no tiene portada, se
+muestra una marca gráfica propia y determinista.
+
 ### 4.5 Editar, duplicar, exportar, archivar y eliminar
 
 Dentro de un mundo, las cinco acciones están en el menú `⋯` de la barra
@@ -462,10 +497,11 @@ tarjetas de Inicio y de Mundos muestran **Abrir** y su propio menú `⋯` con
 **Editar**, **Duplicar**, **Archivar** o **Restaurar** y **Eliminar**.
 
 - **Editar:** cambia el nombre, el identificador, el resumen, la descripción, los
-  géneros o el idioma. La descripción se edita con el editor compartido, con
-  contador de 4.000 caracteres, menciones a fichas del mundo y enlaces internos
-  (sección 4.7). El mundo se actualiza al guardar y queda registrado en la
-  actividad.
+  géneros, el idioma o la portada. La descripción se edita con el editor
+  compartido, con contador de 4.000 caracteres, menciones a fichas del mundo y
+  enlaces internos (sección 4.7). La portada se elige en el bloque **Portada** y
+  se aplica al guardar (sección 4.4). El mundo se actualiza al guardar y queda
+  registrado en la actividad.
 - **Duplicar:** crea un mundo nuevo con el contenido editable del original y un
   nombre propuesto. La descripción se copia con su formato, pero los enlaces a
   fichas se convierten en texto porque las fichas no se copian. La portada no se
@@ -618,7 +654,8 @@ editar mundo. Usa el mismo editor que la descripción de una ficha (sección 5.3
 
 ### 4.8 Lo que llegará después
 
-- **Portada del mundo:** elegir una imagen local y verla en la cabecera del mundo.
+- **Grafo, mapas y manuscrito:** siguen previstos y se explican en las secciones
+  7.4, 8 y 9.
 
 ## 5. Fichas y entidades
 
@@ -770,7 +807,8 @@ lista de tipos del sistema y de los personalizados de ese mundo.
 
 - **Portada:** vive en el panel de propiedades. Muestra la imagen elegida o «Sin
   portada todavía.» y ofrece **Elegir portada** o **Cambiar portada**. El diálogo
-  lista las imágenes del mundo y marca la actual.
+  lista las imágenes del mundo y marca la actual con la insignia **Portada**; es
+  el mismo selector que usa la portada de un mundo.
 - **Sin imágenes en el mundo:** el panel explica que añadas imágenes en
   **Recursos** y ofrece **Ir a Recursos**, que abre la sección y enfoca **Añadir
   imágenes**.
@@ -1231,7 +1269,7 @@ la aplicación:
 | Carpeta | Contenido |
 |---|---|
 | `data` | Base de datos, preferencias y archivos internos. |
-| `assets` | Imágenes y miniaturas de las fichas. |
+| `assets` | Imágenes y miniaturas de las fichas y portadas de los mundos. |
 | `backups` | Copias automáticas y copias previas a operaciones. |
 | `logs` | Registros técnicos de la aplicación. |
 | `imports` | Trabajo temporal de importación (grupo **Temporales**). |
@@ -1289,16 +1327,18 @@ un botón para importar la biblioteca completa.
 
 **Imágenes huérfanas**
 
-Una imagen huérfana es la que ninguna ficha usa. Pulsa **Analizar** para ver el
-resumen: archivos que se pueden purgar, imágenes sin referencia, miniaturas
-huérfanas, temporales, archivos ausentes, enlaces no seguidos, entradas no
-reconocidas y espacio recuperable.
+Una imagen huérfana es un archivo de imagen que la base de datos ya no
+referencia. Pulsa **Analizar** para ver el resumen: archivos que se pueden
+purgar, imágenes sin referencia, miniaturas huérfanas, temporales, archivos
+ausentes, enlaces no seguidos, entradas no reconocidas y espacio recuperable.
 
 Si hay algo que purgar, **Purgar…** abre una confirmación con el número de
 archivos y su tamaño. Marca la casilla de confirmación y pulsa **Purgar
 imágenes**. Antes de borrar se guarda una **copia verificable** en
-`backups/orphans`; si la copia falla, no se borra nada. **Las imágenes que usa
-alguna ficha no se tocan.**
+`backups/orphans`; si la copia falla, no se borra nada. **Las imágenes que tienen
+ficha en la base de datos no se tocan**, incluidas las que son portada de un
+mundo o de una ficha y las que se usaron como portada antes; aunque ya no se
+muestren, siguen disponibles para volver a elegirlas.
 
 **Eliminar todos los datos**
 
@@ -1340,7 +1380,7 @@ densidad y tamaño del texto.
 |---|---|---|---|
 | **Restablecer preferencias** | Devuelve tema, rail, panel, secciones y último destino a sus valores iniciales. | No borra contenido, copias ni registros. | No hace falta: se puede volver a configurar a mano. |
 | **Exportar todos los datos** | Crea una biblioteca con un paquete por mundo, `settings.json` y una copia completa de la base. | No incluye copias automáticas, imágenes huérfanas ni la instalación. | Importa cada mundo con **Importar mundo**; la copia completa de la base se puede abrir con una herramienta SQLite o copiar con la aplicación cerrada, sin restauración guiada. |
-| **Purgar imágenes huérfanas** | Borra imágenes y miniaturas que ninguna ficha usa, tras copiarlas. | No toca imágenes referenciadas ni fichas. | Copia los archivos desde `backups/orphans` con la aplicación cerrada. |
+| **Purgar imágenes huérfanas** | Borra imágenes y miniaturas que la base ya no referencia, tras copiarlas. | No toca imágenes con ficha en la base (incluidas las portadas) ni fichas. | Copia los archivos desde `backups/orphans` con la aplicación cerrada. |
 | **Eliminar todos los datos** | Borra el contenido, las imágenes, los registros y las copias según tu elección, y reinicia. | No desinstala ni toca la carpeta de instalación. | Restaura a mano la copia `backups/pre-delete` (sección 12.7). |
 
 ### 12.7 Recuperar la copia previa al borrado total
@@ -1720,7 +1760,7 @@ las funciones correspondientes.
 | CRUD de mundos: crear, editar, duplicar y archivar/restaurar | Implementado (en desarrollo); con validación y confirmación |
 | Borrado lógico de mundos con confirmación | Implementado (en desarrollo); se recupera desde la Papelera |
 | Página de mundo modular con identidad, navegación, preparación y actividad | Implementada (en desarrollo); Fichas navegable con recuento y Mapas, Manuscrito y Grafo como previstos sin enlace |
-| Elegir la portada del mundo | Prevista (#115); si el mundo ya tiene una portada, Inicio y Mundos la muestran |
+| Elegir, cambiar y quitar la portada del mundo | Implementada (en desarrollo) (#115); selector compartido con la ficha, guardado al elegir en la página y al guardar en el formulario, y encuadre 1:1 centrado |
 | Descripción enriquecida de mundos | Implementada (en desarrollo); editor compartido, contador de 4.000, enlaces a fichas y lectura con recuento de palabras |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
 | Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |
@@ -1731,7 +1771,7 @@ las funciones correspondientes.
 | Exportar todos los datos como biblioteca `world-craft-library` v1 | Implementado (en desarrollo); paquete por mundo, `settings.json` y copia completa de SQLite verificada |
 | Eliminar todos los datos con copia `pre-delete` y reinicio | Implementado (en desarrollo); frase **ELIMINAR TODO**, copia de base y assets, conserva la instalación y la copia |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
-| Mundos | Implementada (en desarrollo); sin selector de portada |
+| Mundos | Implementada (en desarrollo); incluye la portada del mundo y el selector de imágenes compartido |
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y se recupera desde la Papelera |
 | Ficha como documento y panel de propiedades | Implementada (en desarrollo); lectura por defecto, edición en contexto, secciones plegables y panel de 280–360 px |
 | Editor de la descripción con barra mínima y menciones `@` / `[[` | Implementado (en desarrollo); barra de cinco acciones, menú Formato, selector de fichas con teclado y enlaces internos; el manuscrito sigue previsto |

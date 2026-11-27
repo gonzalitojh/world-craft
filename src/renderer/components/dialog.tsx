@@ -181,7 +181,14 @@ export function Dialog({
         event.preventDefault();
         dialog?.close();
       }}
-      onClose={onClose}
+      onClose={(event) => {
+        // React replica `close` (evento no delegado) por el árbol de
+        // componentes. En diálogos anidados, cerrar el hijo no debe cerrar el
+        // padre: solo se atiende el cierre del propio `<dialog>`.
+        if (event.target === dialogRef.current) {
+          onClose();
+        }
+      }}
     >
       <header className="wc-dialog__header">
         <h2 className="wc-dialog__title" id={titleId}>

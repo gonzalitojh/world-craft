@@ -9,6 +9,7 @@
 import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 
 import type { WorldCraftDatabase } from '../db/client';
+import { assets } from '../db/schema/assets';
 import { entities } from '../db/schema/entities';
 import { activityLog, worlds } from '../db/schema/worlds';
 import {
@@ -61,6 +62,14 @@ export interface WorldRepository {
   findLiveEntity(
     worldId: string,
     entityId: string,
+  ): { readonly id: string } | null;
+  /**
+   * Devuelve la imagen del mundo o `null` si no existe, pertenece a otro mundo
+   * o no es una imagen. La comprobación es la autoridad para la portada.
+   */
+  findImageAsset(
+    worldId: string,
+    assetId: string,
   ): { readonly id: string } | null;
   insert(record: WorldRecord): void;
   update(record: WorldRecord): void;
@@ -141,6 +150,22 @@ export function createWorldRepository(
             eq(entities.worldId, worldId),
             eq(entities.id, entityId),
             isNull(entities.deletedAt),
+          ),
+        )
+        .get();
+
+      return row ?? null;
+    },
+
+    findImageAsset(worldId, assetId) {
+      const row = database
+        .select({ id: assets.id })
+        .from(assets)
+        .where(
+          and(
+            eq(assets.worldId, worldId),
+            eq(assets.id, assetId),
+            eq(assets.kind, 'image'),
           ),
         )
         .get();

@@ -23,8 +23,9 @@ catálogo y campos personalizados** (#73), las **fichas con imágenes, etiquetas
 favoritos y editor enriquecido** (#74), las **relaciones tipadas con backlinks**
 (#75), la **búsqueda global con paleta de comandos** (#76), la **papelera con
 versiones de contenido** (#77), la **exportación e importación de mundos**
-(#78), la **pantalla de Ajustes y datos** (#79) y la **descripción enriquecida
-del mundo con el editor compartido** (#114): ventana Electron segura, preload
+(#78), la **pantalla de Ajustes y datos** (#79), la **descripción enriquecida
+del mundo con el editor compartido** (#114) y la **portada del mundo con selector
+de imágenes compartido** (#115): ventana Electron segura, preload
 nominativo, renderer React con tokens,
 componentes base y navegación, base SQLite con migraciones, comprobación de
 integridad y modo seguro, servicio de imágenes con protocolo propio, miniaturas
@@ -115,7 +116,7 @@ Electron separa tres procesos con permisos distintos:
 | `src/main/messages/` | Textos tipados de los diálogos nativos del proceso principal (`es.ts`). | — |
 | `src/preload/` | `contextBridge` congelado que publica solo `window.worldCraft` (`appInfo`, `shell.openExternal`, `updates`, `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`, `search`, `preferences`, `assets`, `trash`, `versions`, `transfer` y `data`); sin lógica de negocio, `ipcRenderer` ni `invoke` genérico. | `src/shared/`, Electron |
 | `src/renderer/` | UI React, mensajes tipados, tema y estilos; el CRUD de mundos (#72), las fichas con imágenes, etiquetas y editor (#74), el editor reutilizable con menciones (#131), la papelera (#77), el historial de versiones (#77), la transferencia de mundos (#78) y Ajustes con apariencia y datos (#79) están implementados. | `src/shared/`, API de `window.worldCraft` |
-| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace), la descripción del mundo de #114 (`worlds/`: campo con editor compartido y vista de lectura), los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`), el diálogo de transferencia de #78 (`transfer/`: `world-transfer-dialog`, `transfer-progress` y `transfer-summary`) y los componentes de Ajustes de #79 (`settings/`: apariencia, idioma, atajos, actualizaciones, resumen, carpetas, uso, exportación, huérfanas, zona de peligro, reinicio y restablecer preferencias); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
+| `src/renderer/components/` | Componentes base implementados en #65 y adaptados en #125 (`button`, `icon-button`, `menu`, `text-field`, `text-area-field`, `select-field`, `checkbox`, `radio`, `badge`, `card`, `panel`, `skeleton`, `empty-state`, `dialog`, `tabs`, `toast`, `tooltip`), control y diálogo de actualizaciones de #68, tarjetas, diálogos de mundo y lista de actividad de #72, componentes de fichas de #74 (tarjeta, creación rápida, editor Tiptap, atributos, etiquetas, galería y gestión de tipos), componentes de relaciones de #75, búsqueda de #76 (resaltado seguro, iconos y paleta de comandos), la tarjeta y marca de mundo v2 de #127, el editor de #131 (`editor/`: `rich-text-editor`, barra mínima y menú Formato, plugin de menciones sobre `@tiptap/pm`, popup combobox/listbox, consulta y contenido de menciones y diálogo de enlace), la descripción del mundo de #114 (`worlds/`: campo con editor compartido y vista de lectura), el selector de portada compartido y el bloque de portada de #115 (`assets/`: `asset-picker-dialog`; `worlds/`: `world-cover-field`), los componentes de papelera y el historial de #77 (`trash/` y `entities/entity-history-section`), el diálogo de transferencia de #78 (`transfer/`: `world-transfer-dialog`, `transfer-progress` y `transfer-summary`) y los componentes de Ajustes de #79 (`settings/`: apariencia, idioma, atajos, actualizaciones, resumen, carpetas, uso, exportación, huérfanas, zona de peligro, reinicio y restablecer preferencias); `editors/`, `maps/` y `graph/` son previstos. | Módulos del renderer, `src/shared/` |
 | `src/renderer/transfer/` | Hook `use-world-transfer.ts` (máquina de estados, filtrado de eventos y cancelación), reducer puro `state.ts` y formateadores `format.ts` (bytes, progreso y plurales). Sin acceso a Node ni a rutas. | `src/shared/`, API tipada |
 | `src/renderer/updates/` | Hook compartido `use-updates.tsx` y textos de estado y acción principal del panel de actualizaciones, probados sin DOM con el idioma activo. La barra superior y Ajustes consumen el mismo estado. | `src/shared/` |
 | `src/renderer/preferences/` | `use-ui-preferences.ts`: snapshot inicial desde el bootstrap de `main.tsx`, actualización optimista con secuencia, adopción de la respuesta canónica y descarte de respuestas tardías; sin `localStorage`. | `src/shared/`, tema, API tipada |
@@ -192,7 +193,7 @@ Reglas de dependencia:
 
 - **Contrato compartido.** `src/shared/contracts/` contiene la allowlist
   `IPC_CHANNELS` (hoy `shell:openExternal`, los cinco canales de actualizaciones,
-  los ocho de mundos, los cinco de tipos de entidad, los seis de fichas, los dos
+  los nueve de mundos, los cinco de tipos de entidad, los seis de fichas, los dos
   de etiquetas, los cuatro de tipos de relación, los cuatro de relaciones, los
   tres de búsqueda, los tres de preferencias, los dos de assets, los siete de
   papelera y versiones, los tres de transferencia y los siete de datos), el
@@ -359,8 +360,9 @@ Reglas de dependencia:
   (sección 2.7).
 - **IPC y UI desde #74.** `assets:list` e `assets:import` exponen solo metadatos
   y usan un diálogo nativo; la galería de la ficha muestra miniaturas
-  `wc-asset://thumb/<id>`. La purga de huérfanos sigue sin canal ni UI. Los
-  residuales de seguridad (TOCTOU, raíces no validadas antes de crear,
+  `wc-asset://thumb/<id>` y el selector de portada de #115 reutiliza la lista.
+  La purga de huérfanos se ofrece desde Ajustes con el plan y la copia de #66
+  (#79). Los residuales de seguridad (TOCTOU, raíces no validadas antes de crear,
   `backups/orphans` sin comprobar y symlinks de archivo omitidos en Windows)
   están en el [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md).
 
@@ -453,9 +455,10 @@ Reglas de dependencia:
   `deleted_at`, la actividad se resuelve con `JOIN` y nunca se mezclan filas de
   dos mundos.
 - **IPC.** Canales `worlds:list`, `get`, `create`, `update`, `duplicate`,
-  `setArchived`, `remove` y `listActivity`, con esquemas Zod estrictos. Un error
-  de dominio se traduce a `INVALID_INPUT`; el resto, a `INTERNAL_ERROR`. En modo
-  seguro se registra un servicio no disponible que falla de forma estable.
+  `setArchived`, `setCover`, `remove` y `listActivity`, con esquemas Zod
+  estrictos. Un error de dominio se traduce a `INVALID_INPUT`; el resto, a
+  `INTERNAL_ERROR`. En modo seguro se registra un servicio no disponible que
+  falla de forma estable. El detalle de la portada está en la sección 2.20.
 - **UI.** El shell navega entre Inicio y Mundos. Desde #127 Inicio es una mesa de
   trabajo en una columna: «Continuar» (último mundo o ficha, persistido desde
   #132), «Mundos recientes» (cinco filas con «Ver todos los mundos» cuando
@@ -465,10 +468,11 @@ Reglas de dependencia:
   progreso de preparación, actividad aislada y secciones previstas. Los diálogos
   de crear/editar, duplicar, archivar/restaurar y eliminar validan antes de enviar
   y piden confirmación.
-- **Decisiones pendientes.** La portada se guarda y se muestra si existe, pero su
-  selector llega con #115. La descripción enriquecida llegó con #114 (sección
-  2.19). La papelera y la purga con copia llegaron con #77 y la FK
-  `assets.world_id` se completará con #116.
+- **Decisiones pendientes.** La portada se integra en el formulario y en la
+  página del mundo desde #115 (sección 2.20); su selector consume las imágenes
+  del propio mundo. La descripción enriquecida llegó con #114 (sección 2.19). La
+  papelera y la purga con copia llegaron con #77 y la FK `assets.world_id` se
+  completará con #116.
 
 ### 2.9 Estado implementado de los tipos de entidad (#73)
 
@@ -990,6 +994,50 @@ Reglas de dependencia:
   y movimiento reducido. El detalle de la decisión está en el
   [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md).
 
+### 2.20 Estado implementado de la portada del mundo (#115)
+
+- **Alcance.** Contratos `WorldUpdateInput.coverAssetId` y `WorldSetCoverInput`;
+  canal `worlds:setCover`; esquema estricto en `src/main/ipc/schemas/worlds.ts`;
+  validación de pertenencia en `repository.findImageAsset` y `service.setCover`;
+  selector compartido `components/assets/asset-picker-dialog.tsx`; bloque
+  `components/worlds/world-cover-field.tsx`; hook `hooks/use-world-assets.ts`;
+  acción en `world-page.tsx`; guardado en `App.tsx`; textos y estilos. **Sin
+  migración ni dependencias nuevas.**
+- **Datos.** La columna `worlds.cover_asset_id` ya existía con FK opcional a
+  `assets(id)` `ON DELETE RESTRICT`. Cambiar o quitar la portada solo actualiza
+  esa columna y `updated_at` dentro de una transacción con `activity_log`
+  (`world.updated`, `fields: ['cover']`). **La portada anterior no se borra**: su
+  fila y sus archivos siguen en el mundo y vuelven a estar disponibles en el
+  selector. Si la portada elegida ya era la actual, no se escribe ni se registra
+  actividad.
+- **Autoridad del proceso principal.** Para la portada, el renderer solo envía
+  IDs. `setCover` exige `worldId` y `assetId` (UUIDv7) o `null`; antes de escribir comprueba que
+  el asset existe, pertenece a ese mundo y es `kind = 'image'`. Un asset ajeno,
+  inexistente o de otro tipo devuelve `INVALID_INPUT` y no toca la portada
+  anterior. `worlds:update` acepta `coverAssetId` opcional: si se omite, conserva
+  la portada, de modo que los formularios que no la editan no la pierden.
+- **Flujo de UI.** La página del mundo abre `AssetPickerDialog`, carga
+  `assets:list` al abrir y guarda al elegir o quitar; la respuesta devuelve el
+  `WorldDetail` y la cabecera, la biblioteca y la actividad se refrescan. Un fallo
+  conserva la portada anterior y muestra un aviso. El formulario de edición
+  mantiene la portada en su estado local y la envía con **Guardar cambios**;
+  **Cancelar** la descarta. En creación solo se muestra la explicación, sin
+  control enfocable. `assets:import` sigue siendo inmediato: las imágenes
+  importadas desde el selector quedan en el mundo aunque se cancele el
+  formulario. Todas las previsualizaciones de la portada del mundo usan
+  `wc-asset://thumb/<id>`.
+- **Diálogos anidados.** `Dialog` atiende `close` solo cuando el evento nace en su
+  propio `<dialog>` (`event.target === dialogRef.current`). Cerrar el selector de
+  portada o el diálogo de enlace del editor ya no cierra el formulario padre por
+  la réplica del evento que hace React. Se mantienen `dismissible`,
+  `defaultPrevented` y el retorno de foco.
+- **Pruebas.** Unitarias de esquemas, handlers y API; integración de asociación,
+  aislamiento entre mundos, rechazo de assets ajenos, retención y actividad;
+  componentes del selector, del bloque de portada y del cierre anidado; E2E de
+  elegir, cambiar, quitar, importar, ventana, temas y axe. El detalle de la
+  decisión está en D-055 y el contrato visual en
+  [`diseno/mundo-portada-issue-115.md`](diseno/mundo-portada-issue-115.md).
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -1152,6 +1200,27 @@ renderer → window.worldCraft.assets.import({ worldId })
   → main: Zod → dialog.showOpenDialog → importAsset (WebP + miniatura)
   → main: fila en assets → IpcResult con id, tamaño y alt (sin rutas)
   → renderer: añade el id a la galería y muestra wc-asset://thumb/<id>
+```
+
+Portada del mundo (implementado, #115):
+
+```text
+renderer → window.worldCraft.worlds.setCover({ worldId, assetId })
+  → preload nominativo → worlds:setCover → allowlist + Zod (UUIDv7 o null)
+  → service: mundo vivo → findImageAsset(worldId, assetId, kind = 'image')
+  → si el asset no pertenece al mundo: INVALID_INPUT, sin cambios
+  → si ya era la portada: WorldDetail sin escribir ni registrar actividad
+  → transacción: worlds.cover_asset_id + updated_at + activity_log
+  → WorldDetail → renderer repinta la cabecera y refresca biblioteca y actividad
+```
+
+Asociación desde el selector (implementado, #115):
+
+```text
+renderer abre AssetPickerDialog → assets:list(worldId) al abrir
+  → elegir una miniatura: worlds:setCover (persiste; thumb con wc-asset://)
+  → Añadir imagen (solo si el mundo no tiene imágenes): assets:import
+  → la nueva fila aparece en la lista y en el selector; no se selecciona sola
 ```
 
 Purga de la papelera (implementado, #77):

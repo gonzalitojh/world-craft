@@ -18,6 +18,7 @@ import {
   type WorldDuplicateInput,
   type WorldRichTextDocument,
   type WorldSetArchivedInput,
+  type WorldSetCoverInput,
   type WorldSummary,
   type WorldUpdateInput,
 } from '../../shared/contracts/worlds';
@@ -55,6 +56,7 @@ export interface WorldsService {
   update(input: WorldUpdateInput): WorldDetail | null;
   duplicate(input: WorldDuplicateInput): WorldDetail | null;
   setArchived(input: WorldSetArchivedInput): WorldDetail | null;
+  setCover(input: WorldSetCoverInput): WorldDetail | null;
   remove(id: string): boolean;
   listActivity(filter?: WorldActivityFilter): readonly WorldActivityEntry[];
 }
@@ -91,6 +93,29 @@ export function createWorldsService(
 
   const slugExists = (slug: string): boolean =>
     repository.findBySlug(slug) !== null;
+
+  /**
+   * Comprueba que la portada es una imagen del propio mundo.
+   *
+   * El renderer no es autoridad: aunque envíe un asset ajeno, inexistente o de
+   * otro tipo, aquí se rechaza. `null` siempre es válido y quita la portada.
+   */
+  const resolveCoverAssetId = (
+    worldId: string,
+    assetId: string | null,
+  ): string | null => {
+    if (assetId === null) {
+      return null;
+    }
+
+    if (repository.findImageAsset(worldId, assetId) === null) {
+      throw new WorldInputError(
+        'La portada debe ser una imagen de este mundo.',
+      );
+    }
+
+    return assetId;
+  };
 
   const logActivity = (
     worldId: string,
@@ -225,6 +250,10 @@ export function createWorldsService(
 
       const genres = normalizeWorldGenres(input.genres);
       const language = normalizeWorldLanguage(input.language);
+      const coverAssetId =
+        input.coverAssetId === undefined
+          ? existing.coverAssetId
+          : resolveCoverAssetId(existing.id, input.coverAssetId);
       const changed = changedFields(existing, {
         name,
         slug,
@@ -233,6 +262,7 @@ export function createWorldsService(
         descriptionText: description.text,
         genres,
         language,
+        coverAssetId,
       });
 
       if (changed.length === 0) {
@@ -248,6 +278,7 @@ export function createWorldsService(
         descriptionText: description.text,
         genres,
         language,
+        coverAssetId,
         updatedAt: at,
       };
 
@@ -332,6 +363,36 @@ export function createWorldsService(
       });
     },
 
+    setCover(input) {
+      const existing = repository.findById(input.worldId);
+
+      if (existing === null || existing.deletedAt !== null) {
+        return null;
+      }
+
+      const coverAssetId = resolveCoverAssetId(existing.id, input.assetId);
+
+      // Elegir la portada actual no escribe ni registra actividad: el usuario
+      // no ha cambiado nada.
+      if (existing.coverAssetId === coverAssetId) {
+        return toDetail(existing);
+      }
+
+      const at = now();
+      const updated: WorldRecord = {
+        ...existing,
+        coverAssetId,
+        updatedAt: at,
+      };
+
+      return write(() => {
+        repository.update(updated);
+        logActivity(updated.id, 'world.updated', { fields: ['cover'] }, at);
+
+        return toDetail(updated);
+      });
+    },
+
     remove(id) {
       const existing = repository.findById(id);
 
@@ -384,6 +445,7 @@ export function createUnavailableWorldsService(): WorldsService {
     update: unavailable,
     duplicate: unavailable,
     setArchived: unavailable,
+    setCover: unavailable,
     remove: unavailable,
     listActivity: unavailable,
   };
@@ -504,14 +566,18 @@ interface EditableFields {
   readonly descriptionText: string | null;
   readonly genres: readonly string[];
   readonly language: WorldRecord['language'];
+  readonly coverAssetId: string | null;
 }
+
+/** Claves del `diff` de actividad; la portada se registra como `cover`. */
+type EditableFieldKey = Exclude<keyof EditableFields, 'coverAssetId'> | 'cover';
 
 /** Lista de campos que realmente cambian, para el `diff` de actividad. */
 function changedFields(
   before: WorldRecord,
   after: EditableFields,
-): readonly (keyof EditableFields)[] {
-  const changed: (keyof EditableFields)[] = [];
+): readonly EditableFieldKey[] {
+  const changed: EditableFieldKey[] = [];
 
   if (before.name !== after.name) changed.push('name');
   if (before.slug !== after.slug) changed.push('slug');
@@ -531,6 +597,8 @@ function changedFields(
   }
 
   if (before.language !== after.language) changed.push('language');
+
+  if (before.coverAssetId !== after.coverAssetId) changed.push('cover');
 
   return changed;
 }

@@ -30,6 +30,7 @@ import {
   WorldDescriptionField,
   isWorldDescriptionTooLong,
 } from './world-description-editor';
+import { WorldCoverField } from './world-cover-field';
 
 export type WorldFormMode = 'create' | 'edit';
 
@@ -59,6 +60,7 @@ interface FormValues {
   readonly description: WorldRichTextDocument | null;
   readonly genres: string;
   readonly language: WorldLanguage;
+  readonly coverAssetId: string | null;
 }
 
 interface FormErrors {
@@ -76,6 +78,7 @@ const EMPTY_VALUES: FormValues = {
   description: null,
   genres: '',
   language: 'es',
+  coverAssetId: null,
 };
 
 /** Convierte un mundo en los valores del formulario. */
@@ -91,6 +94,7 @@ function toFormValues(world: WorldDetail | null | undefined): FormValues {
     description: world.description,
     genres: world.genres.join(', '),
     language: world.language,
+    coverAssetId: world.coverAssetId,
   };
 }
 
@@ -106,8 +110,9 @@ function splitGenres(raw: string): readonly string[] {
  * Diálogo de creación y edición de un mundo.
  *
  * La validación de la interfaz da mensajes por campo; el proceso principal
- * repite las reglas antes de escribir. La portada se anuncia como prevista: su
- * selector llega con la galería de imágenes del mundo.
+ * repite las reglas antes de escribir. La portada forma parte del formulario en
+ * edición y se persiste con el resto; en creación solo se explica cómo elegirla
+ * después.
  */
 export function WorldFormDialog({
   open,
@@ -231,7 +236,11 @@ export function WorldFormDialog({
 
     const saved =
       mode === 'edit' && world !== null && world !== undefined
-        ? await onSubmit({ ...common, id: world.id })
+        ? await onSubmit({
+            ...common,
+            id: world.id,
+            coverAssetId: values.coverAssetId,
+          })
         : await onSubmit(common);
 
     if (!saved) {
@@ -352,7 +361,14 @@ export function WorldFormDialog({
           options={languageOptions}
         />
 
-        <p className="wc-form__note">{messages.worlds.form.coverNote}</p>
+        <WorldCoverField
+          mode={mode}
+          worldId={world?.id ?? null}
+          value={values.coverAssetId}
+          onChange={(coverAssetId) => {
+            setValue('coverAssetId', coverAssetId);
+          }}
+        />
 
         {errors.form !== undefined ? (
           <p

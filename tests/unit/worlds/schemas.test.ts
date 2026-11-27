@@ -4,10 +4,12 @@ import {
   worldCreatePayloadSchema,
   worldGetPayloadSchema,
   worldListActivityPayloadSchema,
+  worldSetCoverPayloadSchema,
   worldUpdatePayloadSchema,
 } from '@/main/ipc/schemas/worlds';
 
 const ID = '01900000-0000-7000-8000-000000000001';
+const ASSET_ID = '01900000-0000-7000-8000-000000000002';
 
 describe('esquemas IPC de mundos', () => {
   it('acepta una entrada válida y rechaza propiedades extra', () => {
@@ -65,5 +67,64 @@ describe('esquemas IPC de mundos', () => {
     expect(
       worldListActivityPayloadSchema.safeParse({ limit: 50 }).success,
     ).toBe(true);
+  });
+
+  it('acepta la portada en la actualización pero no en la creación', () => {
+    expect(
+      worldUpdatePayloadSchema.safeParse({
+        id: ID,
+        name: 'Nombre',
+        coverAssetId: ASSET_ID,
+      }).success,
+    ).toBe(true);
+    expect(
+      worldUpdatePayloadSchema.safeParse({
+        id: ID,
+        name: 'Nombre',
+        coverAssetId: null,
+      }).success,
+    ).toBe(true);
+    expect(
+      worldUpdatePayloadSchema.safeParse({
+        id: ID,
+        name: 'Nombre',
+        coverAssetId: 'no-es-uuid',
+      }).success,
+    ).toBe(false);
+    expect(
+      worldCreatePayloadSchema.safeParse({
+        name: 'Nombre',
+        coverAssetId: ASSET_ID,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('valida el canal de portada con UUID o null y rechaza extras', () => {
+    expect(
+      worldSetCoverPayloadSchema.safeParse({
+        worldId: ID,
+        assetId: ASSET_ID,
+      }).success,
+    ).toBe(true);
+    expect(
+      worldSetCoverPayloadSchema.safeParse({ worldId: ID, assetId: null })
+        .success,
+    ).toBe(true);
+    expect(
+      worldSetCoverPayloadSchema.safeParse({
+        worldId: ID,
+        assetId: 'no-es-uuid',
+      }).success,
+    ).toBe(false);
+    expect(
+      worldSetCoverPayloadSchema.safeParse({
+        worldId: ID,
+        assetId: null,
+        extra: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      worldSetCoverPayloadSchema.safeParse({ assetId: null }).success,
+    ).toBe(false);
   });
 });
