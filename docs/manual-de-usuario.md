@@ -122,12 +122,14 @@ personalizados que has borrado, permite **restaurarlos** a su sitio y
 **eliminarlos definitivamente** con una copia previa de la base. La descripción
 de una ficha guarda un **historial de versiones** que puedes consultar y
 restaurar. También puedes **exportar un mundo completo** a un archivo y
-**volver a importarlo** en esta u otra instalación: el archivo incluye las
-fichas, los tipos personalizados, las etiquetas, las relaciones, las versiones y
-las imágenes (sección 4.6). Todavía no hay ventanas de mapas, manuscritos ni
-grafo, y la portada del mundo y la descripción enriquecida del mundo llegarán en
-actualizaciones posteriores. **No hay una release pública**: el instalador se
-genera y se prueba en local, y la publicación oficial llegará con M5.
+**volver a importarlo** en esta u otra instalación: el archivo incluye la
+descripción del mundo, sus fichas, los tipos personalizados, las etiquetas, las
+relaciones, las versiones y las imágenes (sección 4.6). La **descripción del
+mundo** se escribe con el mismo editor que las fichas: formato básico, menciones
+a fichas del mundo y enlaces internos (sección 4.7). Todavía no hay ventanas de
+mapas, manuscritos ni grafo, y la portada del mundo llegará en una actualización
+posterior. **No hay una release pública**: el instalador se genera y se prueba en
+local, y la publicación oficial llegará con M5.
 
 El **rediseño visual** está terminado: todas las pantallas que ya existen se han
 revisado en los modos **Claro** y **Oscuro** y con ventanas de 1024, 1280 y
@@ -359,7 +361,10 @@ los demás; la actividad y las listas nunca mezclan datos de otro mundo.
    aparece en **Mundos** cuando hay mundos.
 2. Rellena el **nombre** (obligatorio), el **resumen** y la **descripción**. El
    resumen es una o dos frases para reconocer el mundo en la lista; la
-   descripción admite varias líneas.
+   descripción admite formato (párrafos, títulos, listas, citas, negrita y
+   cursiva), tiene un contador y un límite de **4.000 caracteres**. Al crear el
+   mundo todavía no hay fichas, así que no se pueden insertar menciones ni
+   enlaces internos; el formato básico se explica en la sección 4.7.
 3. Añade **géneros** separados por comas (por ejemplo, `Fantasía, Aventura`;
    máximo 8).
 4. Elige el **idioma del contenido** del mundo: español, inglés o italiano.
@@ -431,9 +436,13 @@ identidad del mundo y sus módulos.
   - **Mapas**, **Manuscrito** y **Grafo** llevan la insignia **Previsto** y no
     se pueden pulsar, porque sus pantallas todavía no existen. Una nota recuerda
     que llegarán en próximas versiones.
-- **Resumen:** la descripción del mundo, que indica cómo añadirla si aún no la
-  tiene, y sus datos: identificador, idioma del contenido y fechas de creación y
-  de actualización.
+- **Resumen:** la descripción del mundo con su formato —párrafos, títulos,
+  listas, citas, negrita, cursiva y enlaces internos—, el recuento de palabras a
+  la derecha del título y sus datos: identificador, idioma del contenido y fechas
+  de creación y de actualización. Si aún no tiene descripción, se indica cómo
+  añadirla desde el menú `⋯` → **Editar**. Un clic normal en un enlace interno
+  abre esa ficha; si la ficha ya no está disponible, se avisa y no se navega. La
+  descripción se escribe en el formulario, no en la página (sección 4.7).
 - **Preparación del mundo:** una barra de progreso indica si faltan el resumen,
   la descripción o los géneros. Los campos que ya están completos se marcan como
   **Completado** y los que faltan, como **Pendiente**.
@@ -453,10 +462,14 @@ tarjetas de Inicio y de Mundos muestran **Abrir** y su propio menú `⋯` con
 **Editar**, **Duplicar**, **Archivar** o **Restaurar** y **Eliminar**.
 
 - **Editar:** cambia el nombre, el identificador, el resumen, la descripción, los
-  géneros o el idioma. El mundo se actualiza al guardar y queda registrado en la
+  géneros o el idioma. La descripción se edita con el editor compartido, con
+  contador de 4.000 caracteres, menciones a fichas del mundo y enlaces internos
+  (sección 4.7). El mundo se actualiza al guardar y queda registrado en la
   actividad.
 - **Duplicar:** crea un mundo nuevo con el contenido editable del original y un
-  nombre propuesto. La portada no se copia porque pertenece al mundo original.
+  nombre propuesto. La descripción se copia con su formato, pero los enlaces a
+  fichas se convierten en texto porque las fichas no se copian. La portada no se
+  copia porque pertenece al mundo original.
 - **Exportar mundo…:** guarda el mundo completo en un archivo ZIP que incluye sus
   imágenes. Se explica en la sección 4.6.
 - **Archivar:** oculta el mundo de la lista de activos sin borrar nada. Puedes
@@ -490,11 +503,13 @@ el [ADR 0029](adr/0029-world-export-import.md).
 5. Al terminar, verás el nombre del archivo, su tamaño y un resumen del
    contenido exportado.
 
-**Qué incluye:** el nombre, el resumen, la descripción, los géneros y el idioma
-del mundo; sus fichas con los campos, la descripción, el estado, el favorito y
-las etiquetas; los tipos de ficha y de relación personalizados; las etiquetas;
-las relaciones; el historial de versiones de cada ficha exportada; la portada,
-las imágenes principales y las galerías; y los archivos de esas imágenes.
+**Qué incluye:** el nombre, el resumen, la **descripción del mundo con su
+formato**, los géneros y el idioma del mundo; sus fichas con los campos, la
+descripción, el estado, el favorito y las etiquetas; los tipos de ficha y de
+relación personalizados; las etiquetas; las relaciones; el historial de versiones
+de cada ficha exportada; la portada, las imágenes principales y las galerías; y
+los archivos de esas imágenes. Los enlaces internos de la descripción del mundo
+se conservan y apuntan a las fichas del propio paquete.
 
 **Qué no incluye:** la papelera ni lo eliminado definitivamente, la actividad
 del mundo, el índice de búsqueda, las preferencias de la aplicación, las
@@ -524,7 +539,9 @@ atómica.
 sobrescribe ningún mundo existente: tus mundos, fichas, imágenes, relaciones,
 copias y preferencias se quedan como estaban. El mundo importado queda
 **activo**, con la fecha de importación, y sus fichas conservan sus fechas
-originales.
+originales. Los archivos creados con versiones anteriores de World Craft se
+siguen abriendo: si la descripción del mundo era texto sin formato, se convierte
+en párrafos y se conserva todo el texto.
 
 - **Identificador:** si ya existe un mundo con el mismo identificador, la
   aplicación añade un sufijo: `-2`, `-3` y así sucesivamente. El resumen te dice
@@ -563,11 +580,45 @@ Si el fallo ocurre al exportar, **el archivo de destino anterior queda
 intacto**. Si ocurre al importar, **no se añade ningún mundo** y los existentes
 no cambian.
 
-### 4.7 Lo que llegará después
+### 4.7 La descripción del mundo
+
+La descripción del mundo es un texto con formato que se lee en el módulo
+**Resumen** de la página del mundo y se escribe en el formulario de crear o
+editar mundo. Usa el mismo editor que la descripción de una ficha (sección 5.3).
+
+- **Formato básico:** párrafos, **negrita**, **cursiva**, títulos de nivel 1 a 3,
+  listas con viñetas, listas numeradas y citas. No se pega HTML ni se permiten
+  enlaces externos.
+- **Barra:** en el formulario de **crear** mundo hay tres controles —**Negrita**,
+  **Cursiva** y **Formato**—; en el de **editar** se añaden **Enlace** y
+  **Mención**. El menú **Formato** reúne Párrafo, Título 1–3, las dos listas, Cita
+  y **Quitar enlace**.
+- **Menciones:** cuando el mundo ya existe, escribe `@` o `[[` para elegir una
+  ficha del mundo, igual que en una ficha (sección 5.3). En la creación no hay
+  fichas todavía y la mención no está disponible.
+- **Enlaces internos:** además de las menciones, **Enlace** permite enlazar una
+  ficha del mismo mundo. En la página del mundo, un clic normal abre la ficha; si
+  la ficha ya no está disponible, se avisa y no se navega. Dentro del formulario
+  no se navega: los enlaces se abren desde la página.
+- **Límite:** la descripción admite hasta **4.000 caracteres** de texto. El
+  contador está junto a la etiqueta y, si lo superas, se marca en rojo, el
+  formulario lo explica y no deja guardar hasta que la acortes.
+- **Lectura:** el módulo **Resumen** muestra la descripción con su formato y el
+  recuento de palabras junto al título. Si está vacía, aparece un texto que indica
+  cómo añadirla. El contenido largo no se trunca: la página se desplaza en
+  vertical. No hay un botón de edición en la página; se edita desde el menú `⋯` →
+  **Editar**.
+- **Duplicar:** al duplicar un mundo, la descripción conserva el texto y el
+  formato, pero **los enlaces a fichas se convierten en texto**, porque las fichas
+  no se copian y apuntarían al mundo original.
+- **Búsqueda:** la descripción se busca por su texto visible, no por el formato.
+- **Exportar e importar:** la descripción viaja con el mundo (sección 4.6). Un
+  paquete antiguo con la descripción en texto plano se convierte a párrafos al
+  importarlo.
+
+### 4.8 Lo que llegará después
 
 - **Portada del mundo:** elegir una imagen local y verla en la cabecera del mundo.
-- **Descripción enriquecida del mundo:** formato básico, enlaces internos y texto
-  listo para buscar.
 
 ## 5. Fichas y entidades
 
@@ -1670,7 +1721,7 @@ las funciones correspondientes.
 | Borrado lógico de mundos con confirmación | Implementado (en desarrollo); se recupera desde la Papelera |
 | Página de mundo modular con identidad, navegación, preparación y actividad | Implementada (en desarrollo); Fichas navegable con recuento y Mapas, Manuscrito y Grafo como previstos sin enlace |
 | Elegir la portada del mundo | Prevista (#115); si el mundo ya tiene una portada, Inicio y Mundos la muestran |
-| Descripción enriquecida de mundos | Prevista (#114) |
+| Descripción enriquecida de mundos | Implementada (en desarrollo); editor compartido, contador de 4.000, enlaces a fichas y lectura con recuento de palabras |
 | Base de datos local y comprobación al arrancar | Implementada (en desarrollo) |
 | Aviso de modo seguro con restauración y apertura de la carpeta de copias | Implementada (en desarrollo) |
 | Copia automática antes de cambiar la estructura de datos | Implementada (en desarrollo) |
@@ -1680,7 +1731,7 @@ las funciones correspondientes.
 | Exportar todos los datos como biblioteca `world-craft-library` v1 | Implementado (en desarrollo); paquete por mundo, `settings.json` y copia completa de SQLite verificada |
 | Eliminar todos los datos con copia `pre-delete` y reinicio | Implementado (en desarrollo); frase **ELIMINAR TODO**, copia de base y assets, conserva la instalación y la copia |
 | Instalador y aplicación | Implementados en local (0.1.0); sin release pública hasta M5 |
-| Mundos | Implementada (en desarrollo); sin portada ni descripción enriquecida |
+| Mundos | Implementada (en desarrollo); sin selector de portada |
 | Fichas, tipos, imágenes, etiquetas y favoritos | Implementada (en desarrollo); la ficha se lee como documento (fila siguiente) y se recupera desde la Papelera |
 | Ficha como documento y panel de propiedades | Implementada (en desarrollo); lectura por defecto, edición en contexto, secciones plegables y panel de 280–360 px |
 | Editor de la descripción con barra mínima y menciones `@` / `[[` | Implementado (en desarrollo); barra de cinco acciones, menú Formato, selector de fichas con teclado y enlaces internos; el manuscrito sigue previsto |

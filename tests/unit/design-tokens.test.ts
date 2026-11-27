@@ -517,6 +517,12 @@ const CONTRAST_PAIRS = [
   },
   { fg: '--border-strong', bg: '--bg', min: 3, label: 'componente' },
   { fg: '--border-strong', bg: '--surface', min: 3, label: 'componente' },
+  {
+    fg: '--border-strong',
+    bg: '--surface-raised',
+    min: 3,
+    label: 'componente',
+  },
   { fg: '--focus', bg: '--bg', min: 3, label: 'foco' },
   { fg: '--focus', bg: '--surface', min: 3, label: 'foco' },
   { fg: '--focus', bg: '--surface-raised', min: 3, label: 'foco' },

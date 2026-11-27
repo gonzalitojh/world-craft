@@ -182,7 +182,11 @@ function insertWorld(database: WorldCraftDatabase, plan: ImportPlan): void {
       name: plan.world.name,
       slug: plan.world.slug,
       summary: plan.world.summary,
-      description: plan.world.description,
+      description:
+        plan.world.description === null
+          ? null
+          : JSON.stringify(plan.world.description),
+      descriptionText: plan.world.descriptionText,
       coverAssetId: null,
       genres: JSON.stringify(plan.world.genres),
       status: 'active',

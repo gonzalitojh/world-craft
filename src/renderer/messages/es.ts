@@ -137,6 +137,11 @@ export const es = {
       noSummary: 'Sin resumen todavía.',
       noDescription:
         'Este mundo todavía no tiene descripción. Puedes añadirla desde el menú ⋯ de la barra superior, con Editar.',
+      descriptionWordsLabel: 'Recuento de la descripción:',
+      descriptionMeta: (count: string): string => `${count} palabras`,
+      descriptionMetaOne: (count: string): string => `${count} palabra`,
+      descriptionLinkMissing:
+        'La ficha enlazada ya no está disponible en este mundo.',
       summaryTitle: 'Resumen',
       metadataTitle: 'Datos del mundo',
       meta: {
@@ -193,7 +198,23 @@ export const es = {
       summaryHint:
         'Una o dos frases para reconocer el mundo en la lista. Máximo 280 caracteres.',
       descriptionLabel: 'Descripción',
-      descriptionHint: 'Máximo 4.000 caracteres.',
+      descriptionHint:
+        'Formato básico y enlaces internos. Escribe @ o [[ para mencionar una ficha; Enter inserta y Escape cierra el selector. Los enlaces se abren desde la página del mundo.',
+      descriptionHintCreate:
+        'Formato básico. Podrás mencionar fichas cuando el mundo esté creado.',
+      descriptionCount: (count: string, max: string): string =>
+        `${count} / ${max} caracteres`,
+      descriptionCountOver: (count: string, max: string): string =>
+        `${count} / ${max} caracteres · máximo superado`,
+      descriptionTooLong: (max: string): string =>
+        `La descripción supera el máximo de ${max} caracteres. Acórtala para guardar el mundo.`,
+      descriptionLinkInvalid:
+        'La descripción enlaza a una ficha que ya no está disponible en este mundo. Quita ese enlace desde Formato y vuelve a intentarlo.',
+      mentionsLoading: 'Cargando las fichas del mundo…',
+      mentionsError:
+        'No se pudieron cargar las fichas del mundo. Puedes seguir escribiendo, pero no insertar enlaces.',
+      mentionsRetry: 'Reintentar',
+      saving: 'Guardando el mundo…',
       genresLabel: 'Géneros',
       genresHint:
         'Separa los géneros con comas. Máximo 8, de 40 caracteres cada uno.',
@@ -205,12 +226,15 @@ export const es = {
       submitCreate: 'Crear mundo',
       submitEdit: 'Guardar cambios',
       cancel: 'Cancelar',
-      formError: 'Revisa los datos del formulario. El mundo no se ha guardado.',
+      formError:
+        'No se pudo guardar el mundo. Tus cambios siguen en pantalla; vuelve a intentarlo.',
     },
     duplicate: {
       title: 'Duplicar mundo',
       body: (name: string): string =>
         `Se creará un mundo nuevo a partir de «${name}». La portada no se copia.`,
+      linksNote:
+        'Los enlaces internos de la descripción se conservarán como texto, porque las fichas no se copian.',
       nameLabel: 'Nombre del mundo nuevo',
       defaultName: (name: string): string => `${name} — copia`,
       submit: 'Duplicar',

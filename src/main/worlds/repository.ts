@@ -9,6 +9,7 @@
 import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 
 import type { WorldCraftDatabase } from '../db/client';
+import { entities } from '../db/schema/entities';
 import { activityLog, worlds } from '../db/schema/worlds';
 import {
   isWorldActivityAction,
@@ -24,6 +25,7 @@ export interface WorldRecord {
   readonly slug: string;
   readonly summary: string | null;
   readonly description: string | null;
+  readonly descriptionText: string | null;
   readonly coverAssetId: string | null;
   readonly genres: readonly string[];
   readonly status: WorldStatus;
@@ -55,6 +57,11 @@ export interface WorldRepository {
   list(): readonly WorldRecord[];
   findById(id: string): WorldRecord | null;
   findBySlug(slug: string): WorldRecord | null;
+  /** Devuelve la ficha viva del mundo o `null` si no existe o está en papelera. */
+  findLiveEntity(
+    worldId: string,
+    entityId: string,
+  ): { readonly id: string } | null;
   insert(record: WorldRecord): void;
   update(record: WorldRecord): void;
   softDelete(id: string, deletedAt: number): boolean;
@@ -71,6 +78,7 @@ interface WorldRow {
   readonly slug: string;
   readonly summary: string | null;
   readonly description: string | null;
+  readonly descriptionText: string | null;
   readonly coverAssetId: string | null;
   readonly genres: string;
   readonly status: string;
@@ -124,6 +132,22 @@ export function createWorldRepository(
       return row === undefined ? null : toWorldRecord(row);
     },
 
+    findLiveEntity(worldId, entityId) {
+      const row = database
+        .select({ id: entities.id })
+        .from(entities)
+        .where(
+          and(
+            eq(entities.worldId, worldId),
+            eq(entities.id, entityId),
+            isNull(entities.deletedAt),
+          ),
+        )
+        .get();
+
+      return row ?? null;
+    },
+
     insert(record) {
       database
         .insert(worlds)
@@ -133,6 +157,7 @@ export function createWorldRepository(
           slug: record.slug,
           summary: record.summary,
           description: record.description,
+          descriptionText: record.descriptionText,
           coverAssetId: record.coverAssetId,
           genres: JSON.stringify(record.genres),
           status: record.status,
@@ -154,6 +179,7 @@ export function createWorldRepository(
           slug: record.slug,
           summary: record.summary,
           description: record.description,
+          descriptionText: record.descriptionText,
           coverAssetId: record.coverAssetId,
           genres: JSON.stringify(record.genres),
           status: record.status,
@@ -228,6 +254,7 @@ function toWorldRecord(row: WorldRow): WorldRecord {
     slug: row.slug,
     summary: row.summary,
     description: row.description,
+    descriptionText: row.descriptionText,
     coverAssetId: row.coverAssetId,
     genres: parseGenres(row.genres),
     status: row.status === 'archived' ? 'archived' : 'active',

@@ -36,6 +36,7 @@ import { entityTypes } from '@/main/db/schema/entity-types';
 import { relationTypes, relations } from '@/main/db/schema/relations';
 import { entityVersions } from '@/main/db/schema/versions';
 import { activityLog, worlds } from '@/main/db/schema/worlds';
+import { plainTextToRichTextDocument } from '@/shared/entities/description';
 import { REPOSITORY_MIGRATIONS_DIR, cleanup } from './temp-db';
 
 export const FIXTURE_WORLD_ID = '018f1000-0000-7000-8000-000000000001';
@@ -160,7 +161,10 @@ async function seedFixture(
         name: 'Crónica de las Mareas',
         slug: 'cronica-de-las-mareas',
         summary: 'Un archipiélago que cambia con la marea.',
-        description: 'Mundo de prueba para la exportación.',
+        description: JSON.stringify(
+          plainTextToRichTextDocument('Mundo de prueba para la exportación.'),
+        ),
+        descriptionText: 'Mundo de prueba para la exportación.',
         coverAssetId: null,
         genres: JSON.stringify(['fantasía', 'aventura']),
         status: 'active',

@@ -1,11 +1,12 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import type { Editor } from '@tiptap/react';
 
 import {
   isWorldLanguage,
-  WORLD_DESCRIPTION_MAX_LENGTH,
   WORLD_GENRE_MAX_LENGTH,
   WORLD_GENRES_MAX,
   WORLD_LANGUAGES,
+  WORLD_DESCRIPTION_TEXT_MAX_LENGTH,
   WORLD_NAME_MAX_LENGTH,
   WORLD_SLUG_MAX_LENGTH,
   WORLD_SLUG_PATTERN,
@@ -13,14 +14,22 @@ import {
   type WorldCreateInput,
   type WorldDetail,
   type WorldLanguage,
+  type WorldRichTextDocument,
   type WorldUpdateInput,
 } from '../../../shared/contracts/worlds';
-import { useMessages } from '../../i18n/provider';
+import type { EntitySummary } from '../../../shared/contracts/entities';
+import { collectEntityLinkIds } from '../../../shared/entities/description';
+import { useEntityCandidates } from '../../hooks/use-entity-candidates';
+import { useI18n } from '../../i18n/provider';
 import { Dialog } from '../dialog';
 import { Button } from '../button';
 import { SelectField } from '../select-field';
 import { TextAreaField } from '../text-area-field';
 import { TextField } from '../text-field';
+import {
+  WorldDescriptionField,
+  isWorldDescriptionTooLong,
+} from './world-description-editor';
 
 export type WorldFormMode = 'create' | 'edit';
 
@@ -37,29 +46,34 @@ export interface WorldFormDialogProps {
   readonly onSubmit: (
     input: WorldCreateInput | WorldUpdateInput,
   ) => Promise<boolean>;
+  readonly mentionCandidates?: readonly EntitySummary[] | undefined;
+  readonly mentionCandidatesState?: 'loading' | 'ready' | 'error' | undefined;
+  readonly mentionCandidatesComplete?: boolean | undefined;
+  readonly onRetryMentionCandidates?: (() => void) | undefined;
 }
 
 interface FormValues {
   readonly name: string;
   readonly slug: string;
   readonly summary: string;
-  readonly description: string;
+  readonly description: WorldRichTextDocument | null;
   readonly genres: string;
   readonly language: WorldLanguage;
 }
 
 interface FormErrors {
-  readonly name?: string;
-  readonly slug?: string;
-  readonly genres?: string;
-  readonly form?: string;
+  name?: string;
+  slug?: string;
+  genres?: string;
+  description?: string;
+  form?: string;
 }
 
 const EMPTY_VALUES: FormValues = {
   name: '',
   slug: '',
   summary: '',
-  description: '',
+  description: null,
   genres: '',
   language: 'es',
 };
@@ -74,7 +88,7 @@ function toFormValues(world: WorldDetail | null | undefined): FormValues {
     name: world.name,
     slug: world.slug,
     summary: world.summary ?? '',
-    description: world.description ?? '',
+    description: world.description,
     genres: world.genres.join(', '),
     language: world.language,
   };
@@ -102,11 +116,35 @@ export function WorldFormDialog({
   pending,
   onClose,
   onSubmit,
+  mentionCandidates,
+  mentionCandidatesState,
+  mentionCandidatesComplete,
+  onRetryMentionCandidates,
 }: WorldFormDialogProps) {
-  const messages = useMessages();
+  const { messages, formats } = useI18n();
   const formId = useId();
+  const nameId = useId();
+  const slugId = useId();
+  const genresId = useId();
+  const formErrorRef = useRef<HTMLParagraphElement | null>(null);
+  const editorRef = useRef<Editor | null>(null);
   const [values, setValues] = useState<FormValues>(() => toFormValues(world));
   const [errors, setErrors] = useState<FormErrors>({});
+  const candidatesFallback = useEntityCandidates(
+    mode === 'edit' ? (world?.id ?? null) : null,
+    open,
+  );
+  const candidates = mentionCandidates ?? candidatesFallback.candidates;
+  const candidatesState = mentionCandidatesState ?? candidatesFallback.state;
+  const candidatesComplete =
+    mentionCandidatesComplete ?? candidatesFallback.complete;
+  const retryCandidates = onRetryMentionCandidates ?? candidatesFallback.retry;
+
+  useEffect(() => {
+    if (errors.form !== undefined) {
+      formErrorRef.current?.focus();
+    }
+  }, [errors.form]);
 
   const setValue = <K extends keyof FormValues>(
     field: K,
@@ -122,11 +160,7 @@ export function WorldFormDialog({
     const name = values.name.trim();
     const slug = values.slug.trim();
     const genres = splitGenres(values.genres);
-    const nextErrors: {
-      name?: string;
-      slug?: string;
-      genres?: string;
-    } = {};
+    const nextErrors: FormErrors = {};
 
     if (name.length === 0) {
       nextErrors.name = messages.worlds.form.nameRequired;
@@ -143,8 +177,46 @@ export function WorldFormDialog({
       nextErrors.genres = messages.worlds.form.genresInvalid;
     }
 
+    if (isWorldDescriptionTooLong(values.description)) {
+      nextErrors.description = messages.worlds.form.descriptionTooLong(
+        formats.formatNumber(WORLD_DESCRIPTION_TEXT_MAX_LENGTH, {
+          useGrouping: true,
+        }),
+      );
+    } else if (values.description !== null) {
+      const linkedIds = collectEntityLinkIds(values.description);
+
+      if (linkedIds.length > 0) {
+        // En creación no hay fichas; en edición solo se puede validar antes de
+        // enviar si la lista de candidatas llegó completa. Si está truncada, el
+        // proceso principal sigue siendo la autoridad.
+        const candidateIds = new Set(candidates.map((entity) => entity.id));
+        const canValidate =
+          mode === 'create' ||
+          (candidatesState === 'ready' && candidatesComplete);
+
+        if (
+          mode === 'create' ||
+          (canValidate && linkedIds.some((id) => !candidateIds.has(id)))
+        ) {
+          nextErrors.description = messages.worlds.form.descriptionLinkInvalid;
+        }
+      }
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
+
+      if (nextErrors.name !== undefined) {
+        document.getElementById(nameId)?.focus();
+      } else if (nextErrors.slug !== undefined) {
+        document.getElementById(slugId)?.focus();
+      } else if (nextErrors.description !== undefined) {
+        editorRef.current?.commands.focus();
+      } else if (nextErrors.genres !== undefined) {
+        document.getElementById(genresId)?.focus();
+      }
+
       return;
     }
 
@@ -152,8 +224,7 @@ export function WorldFormDialog({
       name,
       slug: slug.length > 0 ? slug : undefined,
       summary: values.summary.trim().length > 0 ? values.summary : null,
-      description:
-        values.description.trim().length > 0 ? values.description : null,
+      description: values.description,
       genres,
       language: values.language,
     };
@@ -187,6 +258,7 @@ export function WorldFormDialog({
       onClose={onClose}
       title={title}
       className="wc-dialog--wide"
+      dismissible={!pending}
       actions={
         <>
           <Button variant="ghost" onClick={onClose} disabled={pending}>
@@ -198,8 +270,14 @@ export function WorldFormDialog({
         </>
       }
     >
-      <form className="wc-form" id={formId} onSubmit={handleSubmit} noValidate>
+      <form
+        className="wc-form wc-world-form"
+        id={formId}
+        onSubmit={handleSubmit}
+        noValidate
+      >
         <TextField
+          id={nameId}
           label={messages.worlds.form.nameLabel}
           placeholder={messages.worlds.form.namePlaceholder}
           value={values.name}
@@ -213,6 +291,7 @@ export function WorldFormDialog({
         />
 
         <TextField
+          id={slugId}
           label={messages.worlds.form.slugLabel}
           hint={messages.worlds.form.slugHint}
           value={values.slug}
@@ -235,18 +314,22 @@ export function WorldFormDialog({
           maxLength={WORLD_SUMMARY_MAX_LENGTH}
         />
 
-        <TextAreaField
-          label={messages.worlds.form.descriptionLabel}
-          hint={messages.worlds.form.descriptionHint}
-          value={values.description}
-          onChange={(event) => {
-            setValue('description', event.target.value);
+        <WorldDescriptionField
+          mode={mode}
+          document={values.description}
+          candidates={candidates}
+          candidatesState={candidatesState}
+          pending={pending}
+          error={errors.description}
+          onChange={(description) => {
+            setValue('description', description);
           }}
-          rows={6}
-          maxLength={WORLD_DESCRIPTION_MAX_LENGTH}
+          onRetryCandidates={retryCandidates}
+          editorRef={editorRef}
         />
 
         <TextField
+          id={genresId}
           label={messages.worlds.form.genresLabel}
           hint={messages.worlds.form.genresHint}
           value={values.genres}
@@ -272,8 +355,19 @@ export function WorldFormDialog({
         <p className="wc-form__note">{messages.worlds.form.coverNote}</p>
 
         {errors.form !== undefined ? (
-          <p className="wc-form__error" role="alert">
+          <p
+            className="wc-form__error"
+            role="alert"
+            tabIndex={-1}
+            ref={formErrorRef}
+          >
             {errors.form}
+          </p>
+        ) : null}
+
+        {pending ? (
+          <p className="wc-visually-hidden" role="status" aria-live="polite">
+            {messages.worlds.form.saving}
           </p>
         ) : null}
       </form>

@@ -5,6 +5,12 @@ import { initializeDatabase } from '@/main/db/startup';
 import type { WorldCraftDatabase } from '@/main/db/client';
 import { WorldInputError } from '@/main/worlds/errors';
 import { createWorldsService, type WorldsService } from '@/main/worlds/service';
+import {
+  collectEntityLinkIds,
+  extractEntityDescriptionText,
+  plainTextToRichTextDocument,
+} from '@/shared/entities/description';
+import type { EntityRichTextDocument } from '@/shared/contracts/entities';
 
 import { createTestDatabase, type TempDatabase } from '../helpers/temp-db';
 
@@ -60,6 +66,59 @@ async function createWorldsFixture(): Promise<WorldsFixture> {
   };
 }
 
+function seedEntity(
+  fixture: WorldsFixture,
+  worldId: string,
+  id: string,
+  name: string,
+  deletedAt: number | null = null,
+): void {
+  const type = fixture.sqlite
+    .prepare("SELECT id FROM entity_types WHERE key = 'character'")
+    .get() as { id: string };
+
+  fixture.sqlite
+    .prepare(
+      `INSERT INTO entities (id, world_id, type_id, name, slug, aliases, summary, description, description_text, attributes, status, is_favorite, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, ?, '[]', NULL, NULL, NULL, '{}', 'active', 0, ?, ?, ?)`,
+    )
+    .run(
+      id,
+      worldId,
+      type.id,
+      name,
+      name.toLowerCase().replaceAll(' ', '-'),
+      BASE_TIME,
+      BASE_TIME,
+      deletedAt,
+    );
+}
+
+function linkedDescription(entityId: string): EntityRichTextDocument {
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Visita a ' },
+          {
+            type: 'text',
+            text: 'Aria',
+            marks: [
+              {
+                type: 'link',
+                attrs: { href: `wc-entity://${entityId}` },
+              },
+            ],
+          },
+          { type: 'text', text: '.' },
+        ],
+      },
+    ],
+  };
+}
+
 describe('servicio de mundos', () => {
   it('crea un mundo normalizado y registra la actividad', async () => {
     const fixture = await createWorldsFixture();
@@ -68,7 +127,9 @@ describe('servicio de mundos', () => {
       const world = fixture.service.create({
         name: '  Las   Mareas Grises  ',
         summary: '  Una historia   de mareas  ',
-        description: 'Primera línea.\n\nSegunda línea.',
+        description: plainTextToRichTextDocument(
+          'Primera línea.\n\nSegunda línea.',
+        ),
         genres: ['Fantasía', ' fantasía ', 'Aventura'],
       });
 
@@ -76,7 +137,9 @@ describe('servicio de mundos', () => {
         name: 'Las Mareas Grises',
         slug: 'las-mareas-grises',
         summary: 'Una historia de mareas',
-        description: 'Primera línea.\n\nSegunda línea.',
+        description: plainTextToRichTextDocument(
+          'Primera línea.\n\nSegunda línea.',
+        ),
         genres: ['Fantasía', 'Aventura'],
         status: 'active',
         language: 'es',
@@ -189,7 +252,7 @@ describe('servicio de mundos', () => {
       const source = fixture.service.create({
         name: 'Mareas',
         summary: 'Resumen de origen',
-        description: 'Descripción de origen',
+        description: plainTextToRichTextDocument('Descripción de origen'),
         genres: ['Aventura'],
         language: 'en',
       });
@@ -206,7 +269,9 @@ describe('servicio de mundos', () => {
       expect(copy.id).not.toBe(source.id);
       expect(copy.slug).toBe('mareas-copia');
       expect(copy.summary).toBe('Resumen de origen');
-      expect(copy.description).toBe('Descripción de origen');
+      expect(copy.description).toEqual(
+        plainTextToRichTextDocument('Descripción de origen'),
+      );
       expect(copy.genres).toEqual(['Aventura']);
       expect(copy.language).toBe('en');
       expect(copy.status).toBe('active');
@@ -384,7 +449,7 @@ describe('servicio de mundos', () => {
       expect(() =>
         fixture.service.create({
           name: 'Descripción',
-          description: 'a'.repeat(4_001),
+          description: plainTextToRichTextDocument('a'.repeat(4_001)),
         }),
       ).toThrow(WorldInputError);
     } finally {
@@ -482,6 +547,151 @@ describe('servicio de mundos', () => {
       }
 
       await fixture.test.cleanup();
+    }
+  });
+
+  it('valida los enlaces internos contra fichas vivas del mismo mundo', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const entityId = '01900000-0000-7000-8000-000000000901';
+      const world = fixture.service.create({ name: 'Con enlaces' });
+
+      expect(() =>
+        fixture.service.create({
+          name: 'Sin fichas',
+          description: linkedDescription(entityId),
+        }),
+      ).toThrow(WorldInputError);
+
+      seedEntity(fixture, world.id, entityId, 'Aria');
+
+      const updated = fixture.service.update({
+        id: world.id,
+        name: world.name,
+        description: linkedDescription(entityId),
+      });
+
+      expect(updated?.description).toEqual(linkedDescription(entityId));
+      expect(
+        collectEntityLinkIds(updated?.description as EntityRichTextDocument),
+      ).toEqual([entityId]);
+
+      const other = fixture.service.create({ name: 'Otro mundo' });
+      const foreignId = '01900000-0000-7000-8000-000000000902';
+
+      seedEntity(fixture, other.id, foreignId, 'Ajeno');
+
+      expect(() =>
+        fixture.service.update({
+          id: world.id,
+          name: world.name,
+          description: linkedDescription(foreignId),
+        }),
+      ).toThrow(WorldInputError);
+
+      fixture.sqlite
+        .prepare('UPDATE entities SET deleted_at = ? WHERE id = ?')
+        .run(BASE_TIME, entityId);
+
+      expect(() =>
+        fixture.service.update({
+          id: world.id,
+          name: world.name,
+          description: linkedDescription(entityId),
+        }),
+      ).toThrow(WorldInputError);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('degrada los enlaces al duplicar y conserva el texto y description_text', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const entityId = '01900000-0000-7000-8000-000000000903';
+      const source = fixture.service.create({ name: 'Origen enlazado' });
+
+      seedEntity(fixture, source.id, entityId, 'Aria');
+
+      fixture.service.update({
+        id: source.id,
+        name: source.name,
+        description: linkedDescription(entityId),
+      });
+
+      const copy = fixture.service.duplicate({
+        id: source.id,
+        name: 'Copia enlazada',
+      });
+
+      expect(
+        extractEntityDescriptionText(
+          copy?.description as EntityRichTextDocument,
+        ),
+      ).toBe('Visita a Aria.');
+      expect(
+        collectEntityLinkIds(copy?.description as EntityRichTextDocument),
+      ).toEqual([]);
+
+      const row = fixture.sqlite
+        .prepare('SELECT description_text FROM worlds WHERE id = ?')
+        .get(copy?.id) as { description_text: string };
+
+      expect(row.description_text).toBe('Visita a Aria.');
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('conserva el texto al duplicar un documento heredado fuera de límite', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const source = fixture.service.create({ name: 'Heredado largo' });
+      const text = 'a'.repeat(4_001);
+
+      fixture.sqlite
+        .prepare(
+          'UPDATE worlds SET description = NULL, description_text = ? WHERE id = ?',
+        )
+        .run(text, source.id);
+
+      const copy = fixture.service.duplicate({
+        id: source.id,
+        name: 'Copia heredada',
+      });
+
+      expect(copy?.description).not.toBeNull();
+      expect(
+        extractEntityDescriptionText(
+          copy?.description as EntityRichTextDocument,
+        ),
+      ).toBe(text);
+    } finally {
+      await fixture.close();
+    }
+  });
+
+  it('reconstruye el documento desde description_text si el JSON está corrupto', async () => {
+    const fixture = await createWorldsFixture();
+
+    try {
+      const world = fixture.service.create({
+        name: 'Recuperable',
+        description: plainTextToRichTextDocument('Texto visible'),
+      });
+
+      fixture.sqlite
+        .prepare('UPDATE worlds SET description = ? WHERE id = ?')
+        .run('{ esto no es json', world.id);
+
+      expect(fixture.service.get(world.id)?.description).toEqual(
+        plainTextToRichTextDocument('Texto visible'),
+      );
+    } finally {
+      await fixture.close();
     }
   });
 });

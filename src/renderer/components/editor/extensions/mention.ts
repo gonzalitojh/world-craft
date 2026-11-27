@@ -25,6 +25,7 @@ import {
 /** Estado del selector dentro del plugin de ProseMirror. */
 export interface MentionState {
   readonly open: boolean;
+  readonly enabled: boolean;
   readonly trigger: MentionTrigger | null;
   /** Posición del documento donde empieza el disparador. */
   readonly from: number;
@@ -37,6 +38,7 @@ export interface MentionState {
 /** Estado cerrado reutilizable. */
 export const EMPTY_MENTION_STATE: MentionState = {
   open: false,
+  enabled: true,
   trigger: null,
   from: 0,
   to: 0,
@@ -49,6 +51,7 @@ export const mentionPluginKey = new PluginKey<MentionState>('wcMention');
 
 type MentionMeta =
   | { readonly type: 'close' }
+  | { readonly type: 'enabled'; readonly enabled: boolean }
   | { readonly type: 'set-active'; readonly index: number };
 
 /** Opciones de la extensión. */
@@ -78,22 +81,33 @@ function getMentionCandidates(view: EditorView): readonly EntitySummary[] {
 
 const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
 
-function detectState(state: EditorState, previous: MentionState): MentionState {
+function detectState(
+  state: EditorState,
+  previous: MentionState,
+  enabled: boolean,
+): MentionState {
+  const closed: MentionState = enabled
+    ? EMPTY_MENTION_STATE
+    : { ...EMPTY_MENTION_STATE, enabled: false };
   const selection = state.selection;
 
+  if (!enabled) {
+    return closed;
+  }
+
   if (!(selection instanceof TextSelection) || !selection.empty) {
-    return EMPTY_MENTION_STATE;
+    return closed;
   }
 
   const $from = selection.$from;
 
   if (!$from.parent.isTextblock) {
-    return EMPTY_MENTION_STATE;
+    return closed;
   }
 
   // Dentro de un enlace no se abre: la mención heredaría un `href` ajeno.
   if ($from.marks().some((mark) => mark.type.name === 'link')) {
-    return EMPTY_MENTION_STATE;
+    return closed;
   }
 
   const textBefore = $from.parent.textBetween(
@@ -115,6 +129,7 @@ function detectState(state: EditorState, previous: MentionState): MentionState {
 
   return {
     open: true,
+    enabled: true,
     trigger: detected.trigger,
     from: $from.start() + detected.start,
     to: selection.from,
@@ -142,6 +157,21 @@ export function setActiveMention(editor: Editor, index: number): void {
 
   editor.view.dispatch(
     editor.state.tr.setMeta(mentionPluginKey, { type: 'set-active', index }),
+  );
+}
+
+/**
+ * Habilita o apaga los disparadores sin recrear el editor ni perder foco.
+ *
+ * Al apagarlos se cierra el selector; la selección y el contenido se conservan.
+ */
+export function setMentionEnabled(editor: Editor, enabled: boolean): void {
+  if (getMentionState(editor.state).enabled === enabled) {
+    return;
+  }
+
+  editor.view.dispatch(
+    editor.state.tr.setMeta(mentionPluginKey, { type: 'enabled', enabled }),
   );
 }
 
@@ -264,13 +294,20 @@ export const Mention = Extension.create<MentionExtensionOptions>({
       new Plugin<MentionState>({
         key: mentionPluginKey,
         state: {
-          init: () => EMPTY_MENTION_STATE,
+          init: () => ({ ...EMPTY_MENTION_STATE, enabled: true }),
           apply(transaction, previous, _oldState, newState) {
             const meta = transaction.getMeta(mentionPluginKey) as
               MentionMeta | undefined;
 
+            if (meta?.type === 'enabled') {
+              return {
+                ...EMPTY_MENTION_STATE,
+                enabled: meta.enabled,
+              };
+            }
+
             if (meta?.type === 'close') {
-              return EMPTY_MENTION_STATE;
+              return { ...EMPTY_MENTION_STATE, enabled: previous.enabled };
             }
 
             if (meta?.type === 'set-active') {
@@ -287,7 +324,7 @@ export const Mention = Extension.create<MentionExtensionOptions>({
               return previous;
             }
 
-            return detectState(newState, previous);
+            return detectState(newState, previous, previous.enabled);
           },
         },
         props: {
@@ -298,7 +335,7 @@ export const Mention = Extension.create<MentionExtensionOptions>({
 
             const mentionState = getMentionState(view.state);
 
-            if (!mentionState.open) {
+            if (!mentionState.enabled || !mentionState.open) {
               return false;
             }
 

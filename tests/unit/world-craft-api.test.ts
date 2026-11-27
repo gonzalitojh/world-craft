@@ -16,6 +16,7 @@ import type {
   WorldActivityEntry,
   WorldDetail,
 } from '@/shared/contracts/worlds';
+import { plainTextToRichTextDocument } from '@/shared/entities/description';
 
 const snapshot = createIdleUpdateSnapshot(APP_VERSION);
 
@@ -24,7 +25,7 @@ const world: WorldDetail = {
   name: 'Las Mareas Grises',
   slug: 'las-mareas-grises',
   summary: 'Una historia de mareas.',
-  description: 'Descripción.',
+  description: plainTextToRichTextDocument('Descripción.'),
   genres: ['Fantasía'],
   language: 'es',
   status: 'active',

@@ -65,7 +65,7 @@ import {
   type TransferCounts,
 } from '../../../shared/contracts/transfer';
 import {
-  WORLD_DESCRIPTION_MAX_LENGTH,
+  WORLD_DESCRIPTION_TEXT_MAX_LENGTH,
   WORLD_GENRES_MAX,
   WORLD_GENRE_MAX_LENGTH,
   WORLD_LANGUAGES,
@@ -79,6 +79,7 @@ import {
   entityDescriptionDocumentSchema,
   validateEntityDescription,
 } from '../../../shared/entities/description';
+import { validateWorldDescription } from '../../../shared/worlds/description';
 import { entityFieldTemplateSchema } from '../../../shared/entity-types/fields';
 import { SYSTEM_ENTITY_TYPES } from '../../../shared/entity-types/catalog';
 import { isSystemRelationTypeKey } from '../../../shared/relations/catalog';
@@ -275,7 +276,11 @@ export const importPlanSchema = z
           .max(WORLD_SLUG_MAX_LENGTH)
           .regex(WORLD_SLUG_PATTERN),
         summary: z.string().max(WORLD_SUMMARY_MAX_LENGTH).nullable(),
-        description: z.string().max(WORLD_DESCRIPTION_MAX_LENGTH).nullable(),
+        description: describedDocumentSchema,
+        descriptionText: z
+          .string()
+          .max(WORLD_DESCRIPTION_TEXT_MAX_LENGTH)
+          .nullable(),
         genres: z
           .array(z.string().min(1).max(WORLD_GENRE_MAX_LENGTH))
           .max(WORLD_GENRES_MAX),
@@ -835,6 +840,22 @@ export function createImportPlan(options: CreateImportPlanOptions): ImportPlan {
     'missing-world-cover',
   );
 
+  const remappedWorldDescription =
+    staged.world.world.description === null
+      ? null
+      : remapDescriptionLinks(
+          staged.world.world.description,
+          entityIdByWorldId,
+          warnings,
+        ).document;
+  const normalizedWorldDescription = validateWorldDescription(
+    remappedWorldDescription,
+  );
+
+  if (!normalizedWorldDescription.ok) {
+    throw new TransferError('TRANSFER_WORLD_INVALID');
+  }
+
   const counts: TransferCounts = {
     entities: entities.length,
     entityTypes: entityTypes.length,
@@ -854,7 +875,8 @@ export function createImportPlan(options: CreateImportPlanOptions): ImportPlan {
       name: staged.world.world.name,
       slug: worldSlug,
       summary: staged.world.world.summary,
-      description: staged.world.world.description,
+      description: normalizedWorldDescription.document,
+      descriptionText: normalizedWorldDescription.text,
       genres: staged.world.world.genres,
       language: staged.world.world.language,
     },

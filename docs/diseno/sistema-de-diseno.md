@@ -541,7 +541,7 @@ dashboard de contadores.
 ### 10.3 Vista de mundo
 
 Implementado en #128: la página de un mundo es el marco modular del mundo, no un
-documento apilado.
+documento apilado. La descripción rica del módulo «Resumen» llega con #114.
 
 - **Composición y orden:** vuelta a Inicio → cabecera de identidad → navegación
   «Módulos del mundo» → «Resumen» → «Preparación del mundo» → «Actividad de este
@@ -569,6 +569,17 @@ documento apilado.
 - **Resumen:** descripción legible —con texto de reserva e indicación de dónde
   añadirla— y una lista de datos `dl` en dos columnas que colapsa con el ancho:
   identificador, idioma del contenido, creado y actualizado, con `<time>`.
+- **Descripción rica del mundo (#114):** desde #114 el módulo «Resumen» pinta el
+  documento de ProseMirror con el editor compartido en lectura, a 68ch, sin barra,
+  sin popover y sin atributos de formulario. El título es «Resumen»; a su derecha
+  aparece «N palabras» con el cualificador oculto «Recuento de la descripción:»,
+  solo si hay texto. Los enlaces internos se leen en `--accent-strong`, navegan
+  con clic y con `Enter`, y un enlace a una ficha no disponible avisa sin navegar.
+  Si no hay texto, se muestra un párrafo de vacío en `--muted` y no se monta un
+  editor vacío. **No se añaden acciones nuevas:** editar sigue en el menú `⋯` de
+  la barra superior. El contenido largo no se trunca y la página desplaza en
+  vertical. El contrato está en
+  [`mundo-descripcion-issue-114.md`](mundo-descripcion-issue-114.md).
 - **Preparación:** barra de progreso con `role="progressbar"`,
   `aria-valuemin/max/now` y `aria-valuetext` porcentual, recuento «de 3 campos
   completados» y lista de resumen, descripción y géneros con **Completado** o
@@ -695,6 +706,40 @@ extensa de once controles y cualquier segunda fila.
   (`--fg` sobre `--surface-sunken`, `--accent-strong` sobre `--accent-surface`,
   `--accent`, `--muted` y `--disabled-text` sobre `--surface-raised`) viven en
   §4.5 y en el test de tokens.
+
+#### 10.6.1 Variante de la descripción del mundo (#114)
+
+El editor compartido se usa también en la descripción del mundo con el mismo
+contrato de #131 y una variante de composición. El detalle vinculante está en
+[`mundo-descripcion-issue-114.md`](mundo-descripcion-issue-114.md).
+
+- **Barra:** tres controles en **creación** (Negrita, Cursiva, `│`, Formato);
+  cinco en **edición** (los anteriores más Enlace y Mención). Una sola fila,
+  `flex-wrap: nowrap`, ≈170 px con tres y ≈255 px con cinco; nunca desborda a
+  1024 px.
+- **Candidatas:** en creación no hay fichas y no se montan Enlace ni Mención. En
+  edición se cargan las del mundo; mientras cargan o si falla la carga, los dos
+  botones quedan deshabilitados con estado visible, `role="status"` y
+  **Reintentar**, que no bloquea el guardado.
+- **Roles:** `combobox` con listbox cuando las candidatas están listas; `textbox`
+  multilínea mientras cargan, fallan o no hay menciones. En lectura no hay rol ni
+  atributos de formulario; solo los enlaces son enfocables.
+- **Contador y error:** etiqueta y contador en una fila (`0 / 4.000 caracteres`);
+  el exceso se marca en `--danger`, con `aria-invalid`, error asociado por
+  `aria-describedby`, envío bloqueado y foco al editor. El límite se calcula sobre
+  el texto plano extraído, nunca sobre el JSON.
+- **Borde del formulario:** en el diálogo del mundo, la barra y el contenido del
+  editor usan `--border-strong` para cumplir 3:1 como control de formulario; el
+  editor de la ficha conserva `--border` por #131. Con error, el borde pasa a
+  `--danger`; deshabilitado usa `--disabled-*` sin opacidad.
+- **Navegación:** dentro del diálogo modal **no se navega**; `Ctrl/Cmd+clic` y
+  «Abrir enlace» se suprimen y la ayuda lo explica. La navegación a una ficha vive
+  solo en la página del mundo.
+- **Escape por capas:** el popover de menciones y el diálogo de enlace cierran
+  solo su capa; el diálogo del mundo ignora Escape con `defaultPrevented` y no se
+  cierra mientras guarda.
+- **Medidas:** diálogo de 44 rem, cuerpo con scroll y pie fijo; editor de 10 a
+  20 rem con scroll interno. Verificado a 1024, 1280 y 1600 px en Claro y Oscuro.
 
 ### 10.7 Ajustes
 

@@ -9,7 +9,6 @@ import { z } from 'zod';
 
 import {
   WORLD_ACTIVITY_LIMIT_MAX,
-  WORLD_DESCRIPTION_MAX_LENGTH,
   WORLD_GENRES_MAX,
   WORLD_GENRE_MAX_LENGTH,
   WORLD_LANGUAGES,
@@ -17,6 +16,7 @@ import {
   WORLD_SLUG_MAX_LENGTH,
   WORLD_SUMMARY_MAX_LENGTH,
 } from '../../../shared/contracts/worlds';
+import { entityDescriptionDocumentSchema } from '../../../shared/entities/description';
 import { UUID_V7_PATTERN } from '../../db/ids';
 
 const worldIdSchema = z.string().regex(UUID_V7_PATTERN);
@@ -31,9 +31,7 @@ const worldSummarySchema = z
   .nullable()
   .optional();
 
-const worldDescriptionSchema = z
-  .string()
-  .max(WORLD_DESCRIPTION_MAX_LENGTH)
+const worldDescriptionSchema = entityDescriptionDocumentSchema
   .nullable()
   .optional();
 

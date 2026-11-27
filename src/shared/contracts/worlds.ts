@@ -8,6 +8,11 @@
  * Los textos visibles no viven aquí: el renderer los resuelve con su catálogo y
  * el proceso principal solo devuelve datos.
  */
+import type {
+  EntityRichTextDocument,
+  EntityRichTextMark,
+  EntityRichTextNode,
+} from './entities';
 import type { IpcResult } from './result';
 
 /** Estados visibles de un mundo. La papelera se guarda aparte con `deleted_at`. */
@@ -24,7 +29,10 @@ export type WorldLanguage = (typeof WORLD_LANGUAGES)[number];
 export const WORLD_NAME_MAX_LENGTH = 120;
 export const WORLD_SLUG_MAX_LENGTH = 80;
 export const WORLD_SUMMARY_MAX_LENGTH = 280;
-export const WORLD_DESCRIPTION_MAX_LENGTH = 4_000;
+/** Límite del texto plano extraído de la descripción del mundo. */
+export const WORLD_DESCRIPTION_TEXT_MAX_LENGTH = 4_000;
+/** Límite del JSON de ProseMirror que guarda la descripción del mundo. */
+export const WORLD_DESCRIPTION_JSON_MAX_LENGTH = 200_000;
 export const WORLD_GENRES_MAX = 8;
 export const WORLD_GENRE_MAX_LENGTH = 40;
 export const WORLD_ACTIVITY_LIMIT_DEFAULT = 12;
@@ -46,6 +54,9 @@ export const WORLD_ACTIVITY_ACTIONS = [
 
 export type WorldActivityAction = (typeof WORLD_ACTIVITY_ACTIONS)[number];
 
+/** Documento ProseMirror de la descripción enriquecida del mundo. */
+export type WorldRichTextDocument = EntityRichTextDocument;
+
 /** Resumen de un mundo para listas y tarjetas. */
 export interface WorldSummary {
   readonly id: string;
@@ -63,7 +74,7 @@ export interface WorldSummary {
 
 /** Mundo completo para su página de detalle. */
 export interface WorldDetail extends WorldSummary {
-  readonly description: string | null;
+  readonly description: WorldRichTextDocument | null;
 }
 
 /** Entrada del registro de actividad, con el nombre del mundo resuelto. */
@@ -82,7 +93,7 @@ export interface WorldCreateInput {
   readonly name: string;
   readonly slug?: string | undefined;
   readonly summary?: string | null | undefined;
-  readonly description?: string | null | undefined;
+  readonly description?: WorldRichTextDocument | null | undefined;
   readonly genres?: readonly string[] | undefined;
   readonly language?: WorldLanguage | undefined;
 }
@@ -205,7 +216,50 @@ export function isWorldDetail(value: unknown): value is WorldDetail {
 
   const description = (value as unknown as Record<string, unknown>).description;
 
-  return description === null || typeof description === 'string';
+  return description === null || isWorldRichTextDocument(description);
+}
+
+/** Comprueba la forma estructural de un documento de descripción de mundo. */
+export function isWorldRichTextDocument(
+  value: unknown,
+): value is WorldRichTextDocument {
+  if (!isRecord(value) || value.type !== 'doc') {
+    return false;
+  }
+
+  if (value.content === undefined) {
+    return true;
+  }
+
+  return Array.isArray(value.content) && value.content.every(isRichTextNode);
+}
+
+function isRichTextNode(value: unknown): value is EntityRichTextNode {
+  if (!isRecord(value) || typeof value.type !== 'string') {
+    return false;
+  }
+
+  if (value.text !== undefined && typeof value.text !== 'string') {
+    return false;
+  }
+
+  if (value.marks !== undefined) {
+    if (!Array.isArray(value.marks) || !value.marks.every(isRichTextMark)) {
+      return false;
+    }
+  }
+
+  if (value.content !== undefined) {
+    if (!Array.isArray(value.content) || !value.content.every(isRichTextNode)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isRichTextMark(value: unknown): value is EntityRichTextMark {
+  return isRecord(value) && typeof value.type === 'string';
 }
 
 /** Comprueba la forma de una entrada de actividad. */

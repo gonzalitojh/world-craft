@@ -1,5 +1,8 @@
 /**
- * Manifiesto del formato `world-craft-world` versión 1.
+ * Manifiesto del formato `world-craft-world` versión 2.
+ *
+ * La lectura acepta también la versión 1 (paquetes anteriores con la
+ * descripción del mundo en texto plano). La escritura siempre usa la 2.
  *
  * Es la única fuente de verdad del paquete: identifica el formato, la versión
  * de esquema de la base de origen, el mundo, los recuentos y cada archivo con
@@ -44,7 +47,7 @@ const warningSchema = z
 export const transferManifestSchema = z
   .strictObject({
     format: z.literal(TRANSFER_FORMAT),
-    formatVersion: z.literal(TRANSFER_FORMAT_VERSION),
+    formatVersion: z.union([z.literal(1), z.literal(2)]),
     schemaVersion: z.number().int().min(1),
     appVersion: z.string().min(1).max(40),
     exportedAt: z

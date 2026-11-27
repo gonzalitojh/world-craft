@@ -24,6 +24,10 @@ import type {
 } from '../../../shared/contracts/transfer';
 import { entityFieldTemplateSchema } from '../../../shared/entity-types/fields';
 import { validateEntityDescription } from '../../../shared/entities/description';
+import {
+  parseWorldDescription,
+  validateWorldDescription,
+} from '../../../shared/worlds/description';
 import { SYSTEM_ENTITY_TYPES } from '../../../shared/entity-types/catalog';
 import {
   validateEntityFieldValues,
@@ -72,6 +76,30 @@ export function buildWorldDataset(snapshot: WorldSnapshot): WorldDataset {
   const entityIdMap = new Map(
     snapshot.entities.map((entity) => [entity.id, entity.id]),
   );
+
+  const parsedWorldDescription = parseWorldDescription(
+    snapshot.world.description,
+  );
+
+  if (!parsedWorldDescription.ok) {
+    throw new TransferError('TRANSFER_WORLD_INVALID');
+  }
+
+  const remappedWorldDescription =
+    parsedWorldDescription.document === null
+      ? null
+      : remapDescriptionLinks(
+          parsedWorldDescription.document,
+          entityIdMap,
+          warnings,
+        ).document;
+  const validatedWorldDescription = validateWorldDescription(
+    remappedWorldDescription,
+  );
+
+  if (!validatedWorldDescription.ok) {
+    throw new TransferError('TRANSFER_WORLD_INVALID');
+  }
   // Los tipos del sistema no viajan en el bloque de tipos personalizados, pero
   // sus plantillas se necesitan para validar los atributos de las fichas.
   const typeByKey = new Map<string, readonly EntityFieldDefinition[]>(
@@ -238,12 +266,12 @@ export function buildWorldDataset(snapshot: WorldSnapshot): WorldDataset {
 
   const payload = parseWorldTransfer({
     format: 'world-craft-world',
-    formatVersion: 1,
+    formatVersion: 2,
     world: {
       name: snapshot.world.name,
       slug: snapshot.world.slug,
       summary: snapshot.world.summary,
-      description: snapshot.world.description,
+      description: validatedWorldDescription.document,
       genres: snapshot.world.genres,
       language: snapshot.world.language,
       createdAt: snapshot.world.createdAt,

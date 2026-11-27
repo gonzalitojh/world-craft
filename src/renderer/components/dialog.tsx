@@ -156,6 +156,12 @@ export function Dialog({
           return;
         }
 
+        // Una capa interna (tooltip, menú, popover de menciones o diálogo de
+        // enlace) ya consumió este Escape: el diálogo padre no se cierra.
+        if (event.defaultPrevented) {
+          return;
+        }
+
         if (!dismissible) {
           event.preventDefault();
           return;
@@ -164,7 +170,9 @@ export function Dialog({
         const dialog = dialogRef.current;
         const hasOpenPopover =
           dialog !== null &&
-          dialog.querySelector('[role="tooltip"], [role="menu"]') !== null;
+          dialog.querySelector(
+            '[role="tooltip"], [role="menu"], .wc-mention [role="listbox"]:not([hidden])',
+          ) !== null;
 
         if (hasOpenPopover) {
           return;

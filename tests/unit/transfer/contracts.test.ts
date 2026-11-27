@@ -40,7 +40,7 @@ import {
 describe('contrato de transferencia', () => {
   it('fija el formato, las fases y los límites aprobados', () => {
     expect(TRANSFER_FORMAT).toBe('world-craft-world');
-    expect(TRANSFER_FORMAT_VERSION).toBe(1);
+    expect(TRANSFER_FORMAT_VERSION).toBe(2);
     expect(TRANSFER_PHASES).toContain('importing');
     expect(TRANSFER_PHASES).toContain('saving');
     expect(TRANSFER_MAX_ZIP_BYTES).toBe(8 * 1024 ** 3);

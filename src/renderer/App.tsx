@@ -516,6 +516,39 @@ export function App({ initialPreferences }: AppProps) {
     [goToView, updatePreferences],
   );
 
+  /**
+   * Navega desde un enlace de la descripción del mundo.
+   *
+   * Se valida en el proceso principal con `entities.get` porque el enlace pudo
+   * quedar roto por un borrado. Un fallo de transporte no demuestra que la ficha
+   * haya desaparecido y se muestra un error genérico.
+   */
+  const openWorldDescriptionEntity = useCallback(
+    async (entityId: string) => {
+      const worldId = selectedWorldIdRef.current;
+
+      if (worldId === null) {
+        notify('error', messages.worlds.detail.descriptionLinkMissing);
+        return;
+      }
+
+      const result = await entitiesApi.get({ worldId, id: entityId });
+
+      if (!result.ok) {
+        notify('error', messages.entities.notices.failed);
+        return;
+      }
+
+      if (result.data === null) {
+        notify('error', messages.worlds.detail.descriptionLinkMissing);
+        return;
+      }
+
+      openEntity(entityId);
+    },
+    [entitiesApi, messages, notify, openEntity],
+  );
+
   /** Completa el nombre de la ficha recordada cuando su página termina de cargarla. */
   const handleEntityLoaded = useCallback(
     (entity: { readonly id: string; readonly name: string }) => {
@@ -1252,6 +1285,9 @@ export function App({ initialPreferences }: AppProps) {
               void refreshSelectedActivity();
             }}
             onOpenEntities={openEntities}
+            onOpenEntity={(entityId) => {
+              void openWorldDescriptionEntity(entityId);
+            }}
           />
         ) : view === 'entities' && selectedWorld !== null ? (
           <EntitiesPage

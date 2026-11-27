@@ -35,8 +35,10 @@ export const worlds = sqliteTable(
     name: text('name').notNull(),
     slug: text('slug').notNull(),
     summary: text('summary'),
-    /** Texto plano hasta que llegue el editor enriquecido compartido. */
+    /** Documento ProseMirror validado; el texto plano vive en `description_text`. */
     description: text('description'),
+    /** Texto plano derivado de `description` para la búsqueda. */
+    descriptionText: text('description_text'),
     coverAssetId: text('cover_asset_id').references(() => assets.id, {
       onDelete: 'restrict',
     }),
