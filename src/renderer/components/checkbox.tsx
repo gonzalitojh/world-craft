@@ -14,6 +14,8 @@ export interface CheckboxProps {
   readonly value?: string;
   readonly id?: string;
   readonly className?: string;
+  /** Ids externos que describen la casilla, además de la ayuda y el error. */
+  readonly describedBy?: string;
   /** Recibe el foco cuando se abre un diálogo. */
   readonly autoFocusOnOpen?: boolean;
 }
@@ -37,6 +39,7 @@ export function Checkbox({
   value,
   id,
   className,
+  describedBy: describedByProp,
   autoFocusOnOpen = false,
 }: CheckboxProps) {
   const generatedId = useId();
@@ -46,6 +49,11 @@ export function Checkbox({
 
   const describedBy = [hint ? hintId : null, error ? errorId : null]
     .filter((entry): entry is string => entry !== null)
+    .concat(
+      describedByProp === undefined || describedByProp.length === 0
+        ? []
+        : [describedByProp],
+    )
     .join(' ');
 
   const checkedProps =

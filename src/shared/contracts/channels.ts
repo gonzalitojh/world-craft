@@ -72,6 +72,7 @@ export const IPC_CHANNELS = {
   dataDeleteAll: 'data:deleteAll',
   dataPlanOrphans: 'data:planOrphans',
   dataPurgeOrphans: 'data:purgeOrphans',
+  mapsSpikeSaveExport: 'mapsSpike:saveExport',
 } as const;
 
 /** Unión de todos los canales admitidos. */

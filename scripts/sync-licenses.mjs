@@ -39,7 +39,26 @@ function resolvePackageDirectory(specifier) {
   // `require.resolve(specifier)` apunta al entrypoint; se sube hasta la
   // carpeta cuyo package.json declara el mismo nombre. Algunos paquetes no
   // exportan `./package.json`, así que no se puede resolver directamente.
-  let directory = dirname(require.resolve(specifier));
+  let directory;
+
+  try {
+    directory = dirname(require.resolve(specifier));
+  } catch {
+    // `maplibre-gl` no publica un entrypoint resoluble con `require`; en un
+    // proyecto pnpm el paquete sigue enlazado en el node_modules raíz.
+    const direct = join(ROOT, 'node_modules', specifier);
+    const packageFile = join(direct, 'package.json');
+
+    if (existsSync(packageFile)) {
+      const manifest = JSON.parse(readFileSync(packageFile, 'utf8'));
+
+      if (manifest.name === specifier) {
+        return direct;
+      }
+    }
+
+    throw new Error(`No se encontró la carpeta del paquete ${specifier}.`);
+  }
 
   while (true) {
     const packageFile = join(directory, 'package.json');
@@ -116,28 +135,41 @@ function resolveSharpPlatformPackage() {
 }
 
 /**
- * Textos curados a mano desde las fuentes oficiales de GNU.
+ * Textos curados a mano desde fuentes oficiales.
  *
- * No se generan desde `node_modules` porque el paquete de plataforma de sharp
- * solo incluye Apache-2.0; LGPL-3.0 y GPL-3.0 se copian del texto publicado
- * por la Free Software Foundation y se versionan en `resources/licenses/`.
- * Este script comprueba que siguen ahí y que no están vacíos.
+ * LGPL-3.0 y GPL-3.0 se copian del texto publicado por la Free Software
+ * Foundation. Terra Draw y su adaptador no incluyen LICENSE en el paquete npm,
+ * así que se versiona el texto MIT de su repositorio (Copyright 2022 James
+ * Milner) en `resources/licenses/`. Este script comprueba que siguen ahí, que
+ * no están vacíos y que conservan un marcador claro.
  */
 const CURATED_LICENSES = [
   {
     name: 'libvips-LICENSE.txt',
     marker: 'GNU LESSER GENERAL PUBLIC LICENSE',
+    source: 'https://www.gnu.org/licenses/',
   },
   {
     name: 'gpl-3.0.txt',
     marker: 'GNU GENERAL PUBLIC LICENSE',
+    source: 'https://www.gnu.org/licenses/',
+  },
+  {
+    name: 'terra-draw-LICENSE.txt',
+    marker: 'Permission is hereby granted',
+    source: 'https://github.com/JamesLMilner/terra-draw',
+  },
+  {
+    name: 'terra-draw-maplibre-gl-adapter-LICENSE.txt',
+    marker: 'Permission is hereby granted',
+    source: 'https://github.com/JamesLMilner/terra-draw',
   },
 ];
 
 /**
  * Comprueba un texto de licencia curado.
  *
- * @param {{ readonly name: string; readonly marker: string }} license
+ * @param {{ readonly name: string; readonly marker: string; readonly source: string }} license
  * @returns {Promise<string>}
  */
 async function assertCuratedLicense(license) {
@@ -146,7 +178,7 @@ async function assertCuratedLicense(license) {
 
   if (info === null || !info.isFile() || info.size === 0) {
     throw new Error(
-      `Falta el texto de licencia curado ${license.name}. Recupéralo de https://www.gnu.org/licenses/ antes de empaquetar.`,
+      `Falta el texto de licencia curado ${license.name}. Recupéralo de ${license.source} antes de empaquetar.`,
     );
   }
 
@@ -193,6 +225,7 @@ async function main() {
   const sharpPlatformDirectory = resolveSharpPlatformPackage();
   const electronUpdaterDirectory = resolvePackageDirectory('electron-updater');
   const tiptapDirectory = resolvePackageDirectory('@tiptap/react');
+  const maplibreDirectory = resolvePackageDirectory('maplibre-gl');
   const yauzlDirectory = resolvePackageDirectory('yauzl');
   const yazlDirectory = resolvePackageDirectory('yazl');
   const pendDirectory = resolveNestedPackageDirectory(yauzlDirectory, 'pend');
@@ -214,6 +247,10 @@ async function main() {
     await copyLicense(
       join(tiptapDirectory, 'LICENSE.md'),
       'tiptap-LICENSE.txt',
+    ),
+    await copyLicense(
+      join(maplibreDirectory, 'LICENSE.txt'),
+      'maplibre-gl-LICENSE.txt',
     ),
     await copyLicense(SOURCE_SERIF_OFL, 'source-serif-4-OFL.txt'),
     await copyLicense(join(yauzlDirectory, 'LICENSE'), 'yauzl-LICENSE.txt'),

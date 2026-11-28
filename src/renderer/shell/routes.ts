@@ -1,3 +1,7 @@
+import {
+  PERSISTED_APP_VIEWS,
+  type PersistedAppView,
+} from '../../shared/contracts/preferences';
 import { resolveInternalView } from './internal-views';
 import type { AppView } from './views';
 
@@ -24,4 +28,15 @@ export function resolveAppView(hash: string): AppView | null {
   }
 
   return hash.trim().toLowerCase() === SETTINGS_HASH ? 'settings' : null;
+}
+
+/**
+ * Indica si una vista se puede recordar en `lastView`.
+ *
+ * Las vistas internas (Muestras y el laboratorio de mapas) nunca se persisten:
+ * son herramientas de desarrollo y no deben restaurarse como última pantalla
+ * de producto. También actúa de guarda de tipo para el parche de preferencias.
+ */
+export function isPersistedView(view: AppView): view is PersistedAppView {
+  return (PERSISTED_APP_VIEWS as readonly AppView[]).includes(view);
 }

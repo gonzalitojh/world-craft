@@ -70,6 +70,11 @@ import {
   type WorldCraftEntityTypesApi,
 } from './entity-types';
 import {
+  isSpikeExportResult,
+  type SpikeExportInput,
+  type SpikeExportResult,
+} from './maps-spike';
+import {
   isUiPreferences,
   type UiPreferences,
   type UiPreferencesPatch,
@@ -236,6 +241,18 @@ export interface WorldCraftDataApi {
   >;
 }
 
+/**
+ * Puente de exportación del laboratorio de mapas (#80).
+ *
+ * El renderer aporta el tipo y los bytes; el proceso principal decide carpeta,
+ * nombre y extensión. No existe un canal para elegir rutas.
+ */
+export interface WorldCraftMapsSpikeApi {
+  readonly saveExport: (
+    input: SpikeExportInput,
+  ) => Promise<IpcResult<SpikeExportResult>>;
+}
+
 /** API mínima disponible en `window.worldCraft`. */
 export interface WorldCraftApi {
   readonly appInfo: AppInfo;
@@ -254,6 +271,7 @@ export interface WorldCraftApi {
   readonly versions: WorldCraftVersionsApi;
   readonly transfer: WorldCraftTransferApi;
   readonly data: WorldCraftDataApi;
+  readonly mapsSpike: WorldCraftMapsSpikeApi;
 }
 
 export interface WorldCraftApiOptions {
@@ -367,8 +385,8 @@ function isNullableRelationEdge(value: unknown): value is RelationEdge | null {
  *
  * Se congelan el objeto raíz, `appInfo`, `shell`, `updates`, `preferences`,
  * `worlds`, `entityTypes`, `entities`, `tags`, `relationTypes`, `relations`,
- * `search`, `assets`, `trash`, `versions`, `transfer` y `data` para que el
- * renderer no pueda sustituirlos en tiempo de ejecución.
+ * `search`, `assets`, `trash`, `versions`, `transfer`, `data` y `mapsSpike`
+ * para que el renderer no pueda sustituirlos en tiempo de ejecución.
  */
 export function createWorldCraftApi(
   options: WorldCraftApiOptions,
@@ -765,6 +783,15 @@ export function createWorldCraftApi(
       ),
   });
 
+  const mapsSpike: WorldCraftMapsSpikeApi = Object.freeze({
+    saveExport: (input: SpikeExportInput) =>
+      invokeWorldCommand(
+        IPC_CHANNELS.mapsSpikeSaveExport,
+        input,
+        isSpikeExportResult,
+      ),
+  });
+
   return Object.freeze({
     appInfo,
     shell,
@@ -782,5 +809,6 @@ export function createWorldCraftApi(
     versions,
     transfer,
     data,
+    mapsSpike,
   });
 }

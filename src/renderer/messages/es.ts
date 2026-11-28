@@ -31,6 +31,7 @@ export const es = {
       trash: 'Papelera',
       settings: 'Ajustes',
       samples: 'Muestras',
+      'maps-spike': 'Laboratorio de mapas',
     },
     collapse: 'Plegar menú lateral',
     expand: 'Expandir menú lateral',
@@ -1161,6 +1162,240 @@ export const es = {
           prussian: 'Pizarra',
         },
       },
+    },
+  },
+  mapsSpike: {
+    banner: {
+      title: 'Laboratorio interno',
+      body: 'Prototipo técnico de mapas para el spike M2-01. Datos en memoria, sin red y sin teselas. No es una función del producto y no se guarda en el manual.',
+      badge: 'Solo pruebas',
+    },
+    webgl: {
+      unsupportedTitle: 'WebGL2 no disponible',
+      unsupportedDescription:
+        'Esta máquina o esta sesión no ofrece WebGL2, así que MapLibre no se puede iniciar. No se ha cargado ningún recurso remoto.',
+      environment: (environment: string): string => `Entorno: ${environment}`,
+      environmentUnavailable: 'WebGL2 no disponible',
+      recheck: 'Volver a comprobar',
+      goHome: 'Volver a Inicio',
+    },
+    mapLabel: 'Mapa del laboratorio de mapas',
+    map: {
+      canvasTitle: 'Lienzo de prueba',
+      canvasLabel: 'Lienzo del laboratorio de mapas',
+      chip: 'Sin teselas · norte arriba',
+      fit: 'Ajustar la vista a los datos',
+      loading: 'Preparando el lienzo…',
+      empty: 'Lienzo vacío. Elige una herramienta o carga datos de prueba.',
+      allHidden: 'Todas las capas están ocultas. Actívalas en Capas.',
+      helpMouse:
+        'Ratón: dibuja y selecciona. Rueda: zoom. Arrastrar: mover. Esc: cancelar o quitar selección.',
+      helpKeyboard:
+        'Teclado: flechas y +/− para la vista; dibujar y seleccionar requieren ratón.',
+      retry: 'Reintentar',
+      engineErrorTitle: 'No se ha podido iniciar el laboratorio',
+      engineErrorDetail: 'Detalle técnico',
+    },
+    toolbar: {
+      modeGroup: 'Modo de dibujo',
+      actionGroup: 'Acciones del laboratorio',
+      delete: 'Eliminar selección',
+      clear: 'Vaciar laboratorio',
+    },
+    modes: {
+      label: 'Modo de dibujo',
+      point: 'Punto',
+      linestring: 'Línea',
+      polygon: 'Polígono',
+      rectangle: 'Rectángulo',
+      circle: 'Círculo',
+      select: 'Seleccionar',
+    },
+    panel: {
+      title: 'Panel de pruebas',
+      summary: (items: string, visible: string, total: string): string =>
+        `${items} · ${visible} de ${total} capas visibles`,
+      tabsLabel: 'Capas, medidas y exportación',
+      tabs: {
+        layers: 'Capas',
+        selection: 'Medidas',
+        export: 'Exportar',
+      },
+    },
+    layers: {
+      regions: 'Regiones',
+      paths: 'Caminos',
+      places: 'Lugares',
+      count: {
+        one: '{count} elemento',
+        other: '{count} elementos',
+      },
+      visible: 'Visibles',
+      hidden: 'Oculta',
+      show: (name: string): string => `Mostrar ${name}`,
+      dataTitle: 'Datos de prueba',
+      load500: 'Cargar 500 de prueba',
+      import: 'Importar GeoJSON…',
+      importHelp:
+        'Hasta 5 MiB y 2.000 elementos por archivo. Se aceptan puntos, líneas y polígonos con capas Regiones, Caminos y Lugares; las geometrías Multi* no están admitidas.',
+      emptyTitle: 'Todavía no hay elementos',
+      emptyDescription:
+        'Dibuja con una herramienta, carga 500 elementos de prueba o importa un GeoJSON. Las capas se pueden ocultar sin borrar sus datos.',
+      emptyAction: 'Cargar 500 de prueba',
+      busy: 'Preparando los datos…',
+    },
+    selection: {
+      emptyTitle: 'Nada seleccionado',
+      emptyDescription:
+        'Usa Seleccionar y haz clic en un elemento del lienzo. El dibujo y la selección sobre el mapa requieren ratón; el teclado solo desplaza y amplía la vista.',
+      emptyAction: 'Usar Seleccionar',
+      count: {
+        one: '{count} elemento seleccionado',
+        other: '{count} elementos seleccionados',
+      },
+      deselect: 'Quitar selección',
+      layer: 'Capa',
+      mode: 'Tipo',
+      id: 'ID',
+      vertices: 'Vértices',
+      length: 'Longitud',
+      perimeter: 'Perímetro',
+      area: 'Área',
+      coordinates: 'Coordenadas',
+      latitude: 'Latitud',
+      longitude: 'Longitud',
+      geojsonSummary: 'Datos completos (GeoJSON)',
+      byLayer: 'Recuento por capa',
+      layerCount: (label: string, count: string): string =>
+        `${label}: ${count}`,
+      totalLength: 'Longitud total',
+      totalArea: 'Área total',
+      noValue: '—',
+    },
+    metrics: {
+      title: 'Rendimiento',
+      load: 'Carga de 500',
+      pan: 'Paneo p95',
+      edit: 'Edición',
+      longTasks: 'Long tasks',
+      svg: 'SVG',
+      png: 'PNG',
+      unmeasured: 'Sin medir',
+      environment: 'Entorno',
+      note: 'No se envía a ningún sitio. Solo se mide cuando lo pides.',
+      measure: 'Medir rendimiento',
+      measuring: 'Midiendo rendimiento…',
+      needDemo: 'Carga 500 de prueba para medir.',
+      reportJson: 'Exportar informe JSON',
+      reportMarkdown: 'Exportar informe Markdown',
+      partial:
+        'La carga de 500 aún no se ha medido. Carga los datos de prueba para completar el informe.',
+    },
+    export: {
+      title: 'Exportar',
+      intro:
+        'Exporta las capas visibles. SVG y PNG usan el encuadre actual y los colores del tema activo; el SVG no incluye etiquetas.',
+      folder: 'Carpeta de laboratorio: datos/spike-maps',
+      labels: {
+        svg: 'SVG',
+        png: 'PNG',
+        geojson: 'GeoJSON',
+        json: 'JSON',
+        markdown: 'Markdown',
+      },
+      descriptions: {
+        svg: 'Vector del encuadre actual, sin etiquetas.',
+        png: 'Imagen del lienzo actual.',
+        geojson:
+          'Un FeatureCollection con las capas visibles; cada elemento conserva su capa.',
+        json: 'Informe JSON del laboratorio.',
+        markdown: 'Informe Markdown del laboratorio.',
+      },
+      actions: {
+        svg: 'Exportar SVG',
+        png: 'Exportar PNG',
+        geojson: 'Exportar GeoJSON',
+        json: 'Exportar JSON',
+        markdown: 'Exportar Markdown',
+      },
+      saved: (label: string, fileName: string, size: string): string =>
+        `${label} guardado: ${fileName} (${size})`,
+      emptyHint: 'El laboratorio está vacío.',
+      hiddenHint: 'No hay capas visibles. Actívalas en Capas.',
+      error:
+        'No se pudo guardar el archivo. Los datos del laboratorio siguen intactos.',
+    },
+    dialog: {
+      clearTitle: '¿Vaciar el laboratorio?',
+      clearBody: (count: string): string =>
+        `Se eliminarán ${count} de las tres capas. Los archivos ya exportados no se borran. Esta acción no se puede deshacer.`,
+      replaceTitle: '¿Sustituir los datos del laboratorio?',
+      replaceBody: (count: string): string =>
+        `Se sustituirán ${count} actuales por 500 de prueba. Los archivos exportados no se borran.`,
+      cancel: 'Cancelar',
+      clearConfirm: 'Vaciar laboratorio',
+      replaceConfirm: 'Cargar 500 de prueba',
+      busy: 'Trabajando…',
+    },
+    errors: {
+      chunkTitle: 'No se ha podido cargar el laboratorio',
+      chunkDescription:
+        'El código del prototipo no se pudo descargar del paquete local. Reintenta o vuelve a Inicio.',
+      retry: 'Reintentar',
+      engineFallback:
+        'MapLibre ha notificado un error sin detalle. Revisa la consola del renderer.',
+      modeFailed: 'No se pudo cambiar el modo de dibujo.',
+      deleteFailed: 'No se pudo eliminar la selección.',
+      clearFailed: 'No se pudo vaciar el laboratorio.',
+      generateFailed: 'No se pudieron generar los 500 elementos.',
+      measureFailed: 'No se pudo medir el rendimiento.',
+      exportFailed:
+        'No se pudo guardar el archivo. Los datos del laboratorio siguen intactos.',
+      importCode: {
+        SPIKE_GEOJSON_INVALID_INPUT: 'El archivo no es un GeoJSON válido.',
+        SPIKE_GEOJSON_TOO_LARGE:
+          'El archivo supera el límite de 5 MiB. No se ha importado nada.',
+        SPIKE_GEOJSON_INVALID_JSON:
+          'El archivo no contiene JSON válido. No se ha importado nada.',
+        SPIKE_GEOJSON_TOO_MANY_FEATURES:
+          'El archivo supera los 2.000 elementos. No se ha importado nada.',
+        SPIKE_GEOJSON_INVALID_COLLECTION:
+          'El archivo no es una FeatureCollection válida. No se ha importado nada.',
+        SPIKE_GEOJSON_UNSUPPORTED_GEOMETRY:
+          'Incluye geometrías Multi* o no admitidas. No se ha importado nada.',
+        SPIKE_GEOJSON_INVALID_GEOMETRY:
+          'Incluye coordenadas o geometrías inválidas. No se ha importado nada.',
+        SPIKE_GEOJSON_POLYGON_HOLES:
+          'Los polígonos con agujeros no están admitidos en este spike. No se ha importado nada.',
+        SPIKE_GEOJSON_INVALID_LAYER:
+          'Incluye una capa desconocida. No se ha importado nada.',
+        SPIKE_GEOJSON_LAYER_MISMATCH:
+          'Una geometría no encaja con su capa. No se ha importado nada.',
+        limit: 'La suma supera los 2.000 elementos. No se ha importado nada.',
+        empty: 'El archivo no contiene elementos. No se ha importado nada.',
+        partial:
+          'No se pudieron añadir todos los elementos. No se ha importado nada.',
+        failed: 'No se pudo leer el archivo. No se ha importado nada.',
+      },
+    },
+    announcements: {
+      featureDrawn: (layer: string): string => `Elemento añadido en ${layer}.`,
+      deleted: (count: number): string =>
+        `${count === 1 ? 'Elemento eliminado' : 'Elementos eliminados'}.`,
+      deselected: 'Selección quitada.',
+      cleared: 'Laboratorio vaciado.',
+      generated: (count: number): string =>
+        `${count} elementos de prueba cargados.`,
+      imported: (count: number, layers: string): string =>
+        `${count === 1 ? '1 elemento importado' : `${count} elementos importados`} en ${layers}.`,
+      hiddenSelection:
+        'La capa seleccionada se ha ocultado y la selección se ha limpiado.',
+      hiddenSelect: 'Esa capa está oculta y no se puede seleccionar.',
+      measured: 'Medición de rendimiento completada.',
+    },
+    status: {
+      loading: 'Preparando el laboratorio…',
+      ready: 'Laboratorio listo.',
     },
   },
   samples: {

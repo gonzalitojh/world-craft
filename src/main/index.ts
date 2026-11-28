@@ -55,6 +55,10 @@ import {
   createUnavailableSearchService,
 } from './search/service';
 import {
+  createSpikeExportStore,
+  createUnavailableSpikeExportStore,
+} from './spike-maps/export-store';
+import {
   createTrashService,
   createUnavailableTrashService,
 } from './trash/service';
@@ -213,6 +217,22 @@ if (!hasSingleInstanceLock) {
               logger: createTransferLogger(dataPaths.transferLogFile),
             });
 
+      // El laboratorio de mapas no toca la base: el store solo necesita una
+      // ruta userData válida y no se compone en modo seguro.
+      const mapsSpikeExports = (() => {
+        if (database === null || dataPaths === null) {
+          return createUnavailableSpikeExportStore();
+        }
+
+        try {
+          return createSpikeExportStore({
+            userDataDir: dataPaths.userDataDir,
+          });
+        } catch {
+          return createUnavailableSpikeExportStore();
+        }
+      })();
+
       transfer = transferCoordinator;
       transferCoordinator.subscribe((event) => {
         const window = getMainWindow();
@@ -351,6 +371,7 @@ if (!hasSingleInstanceLock) {
           trash,
           versions,
           transfer: transferCoordinator,
+          mapsSpikeExports,
           data,
           pickImages: pickImageFiles,
         }),

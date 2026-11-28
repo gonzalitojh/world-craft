@@ -23,9 +23,12 @@ describe('licencias empaquetadas', () => {
       'gpl-3.0.txt',
       'img-sharp-win32-LICENSE.txt',
       'libvips-LICENSE.txt',
+      'maplibre-gl-LICENSE.txt',
       'pend-LICENSE.txt',
       'sharp-LICENSE.txt',
       'source-serif-4-OFL.txt',
+      'terra-draw-LICENSE.txt',
+      'terra-draw-maplibre-gl-adapter-LICENSE.txt',
       'tiptap-LICENSE.txt',
       'yauzl-LICENSE.txt',
       'yazl-LICENSE.txt',
@@ -59,6 +62,22 @@ describe('licencias empaquetadas', () => {
     expect(
       await readFile(join(LICENSES_DIR, 'tiptap-LICENSE.txt'), 'utf8'),
     ).toContain('MIT License');
+    expect(
+      await readFile(join(LICENSES_DIR, 'maplibre-gl-LICENSE.txt'), 'utf8'),
+    ).toContain('BSD');
+    expect(
+      await readFile(join(LICENSES_DIR, 'maplibre-gl-LICENSE.txt'), 'utf8'),
+    ).toContain('Redistribution and use');
+
+    for (const file of [
+      'terra-draw-LICENSE.txt',
+      'terra-draw-maplibre-gl-adapter-LICENSE.txt',
+    ]) {
+      const contents = await readFile(join(LICENSES_DIR, file), 'utf8');
+
+      expect(contents).toContain('Permission is hereby granted');
+      expect(contents).toContain('James Milner');
+    }
 
     for (const file of [
       'yauzl-LICENSE.txt',

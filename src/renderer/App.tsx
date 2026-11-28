@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Component,
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 
 import type {
@@ -42,8 +52,35 @@ import {
   type ShellPrimaryAction,
 } from './shell/app-shell';
 import { useUiPreferences } from './preferences/use-ui-preferences';
-import { SETTINGS_HASH, resolveAppView } from './shell/routes';
+import { SETTINGS_HASH, isPersistedView, resolveAppView } from './shell/routes';
 import { useWorldTransfer } from './transfer/use-world-transfer';
+
+/**
+ * Laboratorio interno de mapas (#80).
+ *
+ * Se carga en un chunk aparte para que MapLibre y Terra Draw no entren en el
+ * arranque de la aplicación. El spike solo se abre por el hash interno.
+ */
+const MapsSpikePage = lazy(async () => {
+  const module = await import('./pages/maps-spike-page');
+
+  return { default: module.MapsSpikePage };
+});
+
+class MapsSpikeBoundary extends Component<
+  { readonly fallback: ReactNode; readonly children: ReactNode },
+  { readonly failed: boolean }
+> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { readonly failed: boolean } {
+    return { failed: true };
+  }
+
+  override render(): ReactNode {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
 
 type DialogState =
   | { readonly kind: 'create' }
@@ -162,7 +199,9 @@ export function App({ initialPreferences }: AppProps) {
     (next: AppView) => {
       setView(next);
 
-      if (next !== 'samples') {
+      // `lastView` solo recuerda vistas de producto: Muestras y el
+      // laboratorio de mapas son internos y no se restauran al arrancar.
+      if (isPersistedView(next)) {
         updatePreferences({ lastView: next });
       }
 
@@ -177,7 +216,7 @@ export function App({ initialPreferences }: AppProps) {
         return;
       }
 
-      if (next !== 'samples' && window.location.hash.length > 0) {
+      if (isPersistedView(next) && window.location.hash.length > 0) {
         window.history.replaceState(window.history.state, '', base);
       }
     },
@@ -191,8 +230,9 @@ export function App({ initialPreferences }: AppProps) {
       if (routed !== null) {
         setView(routed);
 
-        // Ajustes es una vista persistible; Muestras sigue siendo interno.
-        if (routed !== 'samples') {
+        // Ajustes es una vista persistible; Muestras y el laboratorio de
+        // mapas siguen siendo internos y no tocan `lastView`.
+        if (isPersistedView(routed)) {
           updatePreferences({ lastView: routed });
         }
         return;
@@ -1378,6 +1418,49 @@ export function App({ initialPreferences }: AppProps) {
           />
         ) : view === 'samples' ? (
           <SamplesPage onNotify={notify} />
+        ) : view === 'maps-spike' ? (
+          <MapsSpikeBoundary
+            fallback={
+              <div className="wc-page__status" role="alert">
+                <h2 className="wc-page__section-title">
+                  {messages.mapsSpike.errors.chunkTitle}
+                </h2>
+                <p className="wc-page__note">
+                  {messages.mapsSpike.errors.chunkDescription}
+                </p>
+                <div className="wc-row">
+                  <button
+                    type="button"
+                    className="wc-button wc-button--secondary wc-button--sm"
+                    onClick={() => {
+                      window.location.reload();
+                    }}
+                  >
+                    {messages.mapsSpike.errors.retry}
+                  </button>
+                  <button
+                    type="button"
+                    className="wc-button wc-button--secondary wc-button--sm"
+                    onClick={() => {
+                      window.location.hash = '';
+                    }}
+                  >
+                    {messages.mapsSpike.webgl.goHome}
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            <Suspense
+              fallback={
+                <p className="wc-page__status" role="status">
+                  {messages.mapsSpike.status.loading}
+                </p>
+              }
+            >
+              <MapsSpikePage />
+            </Suspense>
+          </MapsSpikeBoundary>
         ) : (
           // Vista incoherente (por ejemplo, una ficha sin mundo): Inicio.
           homePage

@@ -12,7 +12,7 @@
 > ADR 0027 (preferencias de interfaz persistentes) y ADR 0028 (papelera,
 > versiones y copia previa a la purga), y ADR 0029 (exportación e importación
 > de mundos), ADR 0030 (Ajustes y datos), ADR 0031 (formato v2) y ADR 0032
-> (integridad de assets, cuarentena y purga).
+> (integridad de assets, cuarentena y purga), y ADR 0033 (spike de mapas M2-01).
 
 ## 1. Principios
 
@@ -206,7 +206,8 @@ lo cubre cuando aplica.
 - Búsqueda con 10.000 documentos en menos de 150 ms (implementado en #76 con
   dataset sintético; la revisión de equipo y la optimización fina son M5-02,
   #94).
-- Mapa con 2.000 features y grafo con 500 nodos con respuesta fluida.
+- Mapa con 2.000 features y grafo con 500 nodos con respuesta fluida. El spike
+  M2-01 (#80) midió 500 features; las 2.000 siguen pendientes de medir en M2-02.
 - Copia y exportación sin bloquear la ventana: las copias automáticas se crean
   antes de abrir la ventana y la restauración ocurre en el diálogo de modo
   seguro; las copias manuales y la exportación de M1 no deben bloquear la UI.
@@ -913,6 +914,72 @@ igual que la aplicación. El recuento vigente tras #132 está en §3.18.
   `preservation.test.ts` y las expectativas de versión actual); los fixtures
   históricos que se detienen antes de `0009` conservan `user_version` 9.
 
+### 3.22 Laboratorio de mapas M2-01 (implementado, #80)
+
+**Naturaleza interna.** El prototipo se abre solo con
+`#/internal/maps-spike`; no está en el rail, la paleta, `lastView` ni el manual y
+no se presenta como funcionalidad de producto. Su objetivo es medir MapLibre,
+Terra Draw y la exportación SVG/PNG antes de abrir el editor de mapas (M2-02).
+El veredicto y los límites están en
+[`docs/mapas/spike-m2-01.md`](../mapas/spike-m2-01.md) y en el
+[ADR 0033](../adr/0033-spike-mapas-m2-01.md).
+
+**Pruebas de dominio, componentes e integración.**
+
+- `tests/unit/maps-spike/` cubre capas, validación GeoJSON con 5 MiB y 2.000
+  features, rechazo de `Multi*`/`GeometryCollection`/agujeros, coordenadas
+  finitas y en rango, generación determinista de 500 (250/170/80), proyección,
+  serializador SVG, métricas y umbrales, informe JSON/Markdown con
+  `limitations`, paleta, estado, contratos, esquema Zod y handler de
+  `mapsSpike:saveExport`.
+- `tests/integration/spike-maps/` cubre el almacén de exportaciones: contención
+  en `userData/data/spike-maps`, nombre generado, `wx`, rechazo de rutas,
+  junctions, modo seguro y errores sin rutas.
+- `tests/components/maps-spike-*.test.tsx` cubre la vista, la paleta y el
+  estado sin WebGL, con ambos temas y foco.
+
+**E2E del laboratorio (6/6).**
+
+- [`maps-spike.spec.ts`](../../tests/e2e/maps-spike.spec.ts): arranque, worker
+  local, sin peticiones HTTP, sin errores de CSP y `lastView` intacto.
+- [`maps-spike-lab.spec.ts`](../../tests/e2e/maps-spike-lab.spec.ts): flujo
+  completo con 500, dibujo de polígono, métricas, informe JSON/Markdown y
+  exportaciones SVG/PNG/GeoJSON en `userData/data/spike-maps`.
+- [`maps-spike-geometry.spec.ts`](../../tests/e2e/maps-spike-geometry.spec.ts):
+  línea, rectángulo, círculo y arrastre de vértice.
+- [`maps-spike-layers.spec.ts`](../../tests/e2e/maps-spike-layers.spec.ts):
+  importación atómica, error inline, capas ocultas y vaciado confirmado.
+- [`maps-spike-export.spec.ts`](../../tests/e2e/maps-spike-export.spec.ts):
+  guardado sin exponer rutas y validación del contenido.
+- [`maps-spike-layout.spec.ts`](../../tests/e2e/maps-spike-layout.spec.ts):
+  layout, temas, axe y movimiento reducido.
+
+**Matriz de ventana y temas.** `maps-spike-layout.spec.ts` recorre 1024, 1280 y
+1600 px × Claro/Oscuro × rail expandido/plegado, comprueba `scrollWidth <=
+clientWidth` en `html` y `body`, el canvas con `aria-describedby`, el foco y axe
+sin violaciones. El lienzo mide 719×335, 648×399 y 931×449 px según el ancho y el
+rail, y el movimiento reducido desactiva las animaciones.
+
+**Umbrales.** Los fija el plan de la issue y los evalúa el panel de métricas:
+
+| Métrica | Umbral | Medición registrada |
+|---|---:|---:|
+| Carga de 500 | ≤ 1.500 ms | 46–63 ms |
+| Paneo p95 | ≤ 33 ms | 16,8–16,9 ms |
+| SVG, tiempo | ≤ 2.000 ms | 13,7–23,6 ms |
+| SVG, tamaño | ≤ 5 MiB | 141–144 kB |
+| PNG, tiempo | ≤ 1.000 ms | 60–84 ms |
+| Chunk diferido | ≤ 600 KiB gzip | 335–337 KiB gzip |
+| Long tasks | 0 | 0 |
+
+La edición (4,1–15,6 ms) se mide sobre una feature temporal y no es un arrastre
+real; la carga excluye la generación y las tres pasadas comparten SVG/PNG/edición.
+El E2E comprueba que el informe existe y que las exportaciones son válidas, pero
+no aserta los umbrales: dependen del equipo y se revisan en la evidencia del task
+file. La suite de #80 deja 852 unitarias (5 omitidas), 308 de componentes, 265 de
+integración (1 omitida) y 6/6 E2E del laboratorio; typecheck, lint, build y
+`verify:build` en verde.
+
 ## 4. Cobertura
 
 No se persigue un porcentaje global como meta. Se exige cobertura alta en:
@@ -940,7 +1007,7 @@ descenso injustificado bloquea la puerta de QA.
 |---|---|---|
 | `lint` | Sí | ESLint + `format:check`. |
 | `typecheck` | Sí | `tsc --noEmit` por proyecto (`tsconfig.node`, `tsconfig.web` y `tsconfig.tests`). |
-| `test` | Sí | `pnpm test`: 779 unitarias (5 omitidas), 295 de componentes y 261 de integración (1 omitida). |
+| `test` | Sí | `pnpm test`: 852 unitarias (5 omitidas), 308 de componentes y 265 de integración (1 omitida). |
 | `build` | Sí desde #69 | `pnpm db:check`, `pnpm build` y `pnpm verify:build`: journal, artefactos, CSP, URLs remotas y externalización. |
 | `package` | No, hasta M5 | `windows-latest`: `verify:native`, `dist`, `verify:build`, `package:checksums` y `verify:package --installer`; sin publicar ni subir artefactos. |
 | `e2e` | No en CI | Sin job de PR: `pnpm test:e2e` se ejecuta en local antes de `review` y en el workflow de release de M5, en Windows. |

@@ -12,10 +12,11 @@ export const REQUIRED_PRODUCTION_DIRECTIVES = [
   "default-src 'none'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: wc-asset:",
+  "img-src 'self' data: blob: wc-asset:",
   "font-src 'self'",
   "connect-src 'self'",
   "media-src 'self'",
+  "worker-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
@@ -24,7 +25,10 @@ export const REQUIRED_PRODUCTION_DIRECTIVES = [
 /**
  * Política de producción: sin `unsafe-eval` ni `unsafe-inline` y sin orígenes
  * remotos. Los únicos recursos externos son los assets locales servidos por el
- * protocolo propio `wc-asset:`.
+ * protocolo propio `wc-asset:`. `worker-src 'self'` permite el worker de
+ * MapLibre emitido por Vite y `img-src ... blob:` queda reservado a las
+ * previsualizaciones locales que se generen en memoria (nunca a contenido
+ * remoto).
  */
 export const PRODUCTION_CONTENT_SECURITY_POLICY =
   REQUIRED_PRODUCTION_DIRECTIVES.join('; ');
@@ -38,10 +42,11 @@ export const DEVELOPMENT_CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
   "script-src 'self' 'unsafe-inline' http://localhost:* http://127.0.0.1:*",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: wc-asset:",
+  "img-src 'self' data: blob: wc-asset:",
   "font-src 'self'",
   "connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*",
   "media-src 'self'",
+  "worker-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",

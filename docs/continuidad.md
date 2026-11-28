@@ -16,7 +16,9 @@
 > v2 llegó con M1.5-01 a M1.5-09 (#124–#132) y M1.5-10 (#133) cerró la etapa con
 > la auditoría visual de todas las pantallas en ambos temas y tres anchos, sin
 > cambios de datos ni de copias. #116 añadió la FK de assets, la cuarentena y la
-> purga sin huérfanos. Quedan previstos los mapas y el grafo (M2, #83), la
+> purga sin huérfanos. El spike interno de mapas M2-01 (#80) validó MapLibre y
+> Terra Draw con límites y sin tocar datos de producto; el editor de mapas sigue
+> previsto (M2-02) y el grafo, también (M2, #83). Quedan previstas la
 > escritura (M3), las copias manuales y la restauración guiada desde Ajustes, los
 > avisos en la top layer de los diálogos modales (#144), el módulo actual no
 > interactivo de la página de mundo (#93) y la release pública con actualización
@@ -24,7 +26,7 @@
 > **Ámbito:** copias, restauración, modo seguro, recuperación ante corrupción,
 > preservación en actualizaciones y desinstalación.
 > **Decisiones:** ADR 0012, ADR 0016, ADR 0018, ADR 0019, ADR 0020, ADR 0021,
-> ADR 0028, ADR 0029, ADR 0030 y ADR 0032.
+> ADR 0028, ADR 0029, ADR 0030, ADR 0032 y ADR 0033.
 > La
 > estructura de datos está en [`persistencia.md`](persistencia.md).
 
@@ -96,7 +98,10 @@ reverifica antes de borrarla.
 Las **copias automáticas** contienen **solo la base SQLite y su manifiesto**: los
 assets no se incluyen ni se sustituyen al restaurar. La copia `pre-delete` es la
 excepción: incluye la base y una copia verificada de los assets porque el borrado
-total los elimina.
+total los elimina. Las exportaciones del laboratorio de mapas
+(`userData/data/spike-maps`) **no son datos de producto ni copias**: no entran en
+ningún manifiesto, se pueden borrar a mano y el borrado total las elimina junto
+con `data/`.
 
 ### 3.2 Manuales
 

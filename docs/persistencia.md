@@ -53,7 +53,8 @@ binarios y recursos. El instalador y el desinstalador no tocan `userData`.
   │   ├─ world-craft.sqlite-wal
   │   ├─ world-craft.sqlite-shm
   │   ├─ .restore.lock              (durante una restauración; obsoleto tras un cierre)
-  │   └─ .restore.pending           (marcador durable de restauración)
+  │   ├─ .restore.pending           (marcador durable de restauración)
+  │   └─ spike-maps\                (spike interno M2-01; exportaciones del laboratorio)
   ├─ assets\
   │   ├─ worlds\
   │   │   └─ <worldId>\
@@ -125,6 +126,7 @@ arranque los detecta y **no crea una base vacía** (sección 7).
 | `data/*-wal`, `data/*-shm` | Ficheros auxiliares de SQLite | Se consolidan al cerrar; no borrar sueltos |
 | `data/.restore.lock`, `data/.restore.pending` | Restauración en curso o interrumpida | Solo si la app está cerrada y no hay restauración activa (sección 7.4) |
 | `data/*.rollback*`, `data/*.restore.tmp*` | Restos de una restauración interrumpida | No: se preservan y la app entra en modo seguro |
+| `data/spike-maps/` | Exportaciones del laboratorio interno de mapas (SVG, PNG, GeoJSON, JSON y Markdown). No son datos de producto ni copias | Sí, con la app cerrada; el borrado total elimina `data/` |
 | `assets/worlds/<worldId>/` | WebP de cada mundo y su miniatura `.thumb.webp` (implementado) | Solo desde la app o con exportación previa |
 | `assets/.tmp/` | Assets procesados de una importación en curso, en `<operationId>/<worldId>/`; se limpian al arrancar | Sí, con la app cerrada; nunca contiene assets publicados |
 | `backups/orphans/<timestamp>/` | Copia verificable de huérfanos purgados | Solo tras comprobar que no hace falta recuperar |

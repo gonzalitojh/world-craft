@@ -13,6 +13,8 @@ import type { EntityTypesService } from '../../entity-types/service';
 import type { PreferencesService } from '../../preferences/service';
 import type { RelationsService } from '../../relations/service';
 import type { SearchService } from '../../search/service';
+import type { SpikeExportStore } from '../../spike-maps/export-store';
+import { createUnavailableSpikeExportStore } from '../../spike-maps/export-store';
 import type { TransferCoordinator } from '../../transfer/coordinator';
 import type { TrashService } from '../../trash/service';
 import type { UpdatesService } from '../../updates/service';
@@ -23,6 +25,7 @@ import { createAssetIpcHandlers } from './assets';
 import { createDataIpcHandlers } from './data';
 import { createEntityIpcHandlers } from './entities';
 import { createEntityTypeIpcHandlers } from './entity-types';
+import { createMapsSpikeIpcHandlers } from './maps-spike';
 import { createPreferencesIpcHandlers } from './preferences';
 import { createRelationIpcHandlers } from './relations';
 import { createSearchIpcHandlers } from './search';
@@ -47,6 +50,8 @@ export interface IpcDependencies {
   readonly trash: TrashService;
   readonly versions: VersionsService;
   readonly transfer: TransferCoordinator;
+  /** Si falta, se usa el almacén inerte de modo seguro. */
+  readonly mapsSpikeExports?: SpikeExportStore;
   /** Si falta, se usa el servicio inerte de modo seguro. */
   readonly data?: DataService;
   readonly pickImages: () => Promise<readonly string[]>;
@@ -71,6 +76,9 @@ export function createIpcHandlers(dependencies: IpcDependencies): IpcHandlers {
       pickImages: dependencies.pickImages,
     }),
     ...createTransferIpcHandlers(dependencies.transfer),
+    ...createMapsSpikeIpcHandlers(
+      dependencies.mapsSpikeExports ?? createUnavailableSpikeExportStore(),
+    ),
     ...createDataIpcHandlers(
       dependencies.data ?? createUnavailableDataService(),
     ),

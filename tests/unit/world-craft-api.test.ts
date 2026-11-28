@@ -109,6 +109,7 @@ describe('world-craft-api', () => {
       'versions',
       'transfer',
       'data',
+      'mapsSpike',
     ]);
     expect(Object.keys(api.shell)).toEqual(['openExternal']);
     expect(Object.keys(api.updates)).toEqual([
@@ -167,6 +168,7 @@ describe('world-craft-api', () => {
     expect(Object.isFrozen(api.assets)).toBe(true);
     expect(Object.isFrozen(api.transfer)).toBe(true);
     expect(Object.isFrozen(api.data)).toBe(true);
+    expect(Object.isFrozen(api.mapsSpike)).toBe(true);
 
     expect(() => {
       (api.appInfo as { version: string }).version = '9.9.9';

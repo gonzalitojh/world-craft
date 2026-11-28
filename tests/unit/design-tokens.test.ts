@@ -1536,7 +1536,7 @@ describe('licencia de Source Serif 4', () => {
 
     expect(notices).toContain('Source Serif 4');
     expect(notices).toContain('SIL Open Font License');
-    expect(notices).toMatch(/11 textos completos/);
+    expect(notices).toMatch(/14 textos completos/);
   });
 
   it('no añade la fuente como dependencia npm', () => {

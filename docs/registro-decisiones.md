@@ -9,7 +9,7 @@ histórico de la conversación y del plan.
 > **Nota de alcance.** Las entradas anteriores al 18/11/2026 correspondían a la
 > etapa web (Next.js, Supabase, Vercel y Cloudflare R2) y se conservan en el
 > historial de git. Este registro se reinicia con el pivote a escritorio: las
-> decisiones vigentes son las de esta página y las de los ADRs 0001–0031.
+> decisiones vigentes son las de esta página y las de los ADRs 0001–0033.
 
 ## 2026-11-18 — Pivote a aplicación de escritorio Windows
 
@@ -437,3 +437,32 @@ aviso condicional en Ajustes y cuarentena al purgar un mundo.
   `docs/persistencia.md`, `docs/continuidad.md`, `docs/arquitectura.md`,
   `docs/formato-de-exportacion.md`, `docs/calidad/plan-de-pruebas.md` y
   `docs/manual-de-usuario.md`.
+
+## 2026-11-28 — Spike de mapas M2-01: GO con límites (#80, M2-01)
+
+**Contexto.** El ADR 0008 eligió MapLibre GL JS y Terra Draw, pero dejó la
+validación en un spike temprano antes de comprometer el editor. M2-01 construyó
+un prototipo interno en `#/internal/maps-spike`, fuera del rail, la paleta,
+`lastView` y el manual, para comprobar el motor en el build real de Electron con
+`file://`, CSP estricta, worker local y sin red; las cinco geometrías; la
+exportación SVG/PNG; y el rendimiento con 500 elementos. El plan fijó umbrales
+go/no-go y un plan B con editor SVG propio.
+
+| ID | Tema | Decisión | Consecuencias principales |
+|---|---|---|---|
+| D-057 | Spike de mapas M2-01 | **GO con límites.** Se validan `maplibre-gl@6.20.0`, `terra-draw@1.40.0` y `terra-draw-maplibre-gl-adapter@1.5.0` con worker local (`?worker&url` + `setWorkerUrl`), CSP `worker-src 'self'` e `img-src ... blob:` local, sin tiles ni contenido remoto. Terra Draw cubre punto, línea, polígono, rectángulo, círculo, selección y edición de vértices sobre tres capas 1:1 (`regions`, `paths`, `places`). Importación/exportación GeoJSON atómica con 5 MiB, 2.000 features y rechazo de `Multi*`, `GeometryCollection` y agujeros; SVG propio (Web Mercator, viewport actual, `bearing`/`pitch` 0, `evenodd`, sin etiquetas) y PNG del canvas con `preserveDrawingBuffer`. El guardado del laboratorio usa solo `mapsSpike:saveExport`, acotado a `userData/data/spike-maps`, nombre generado, Zod, `wx`, sin rutas al renderer y modo seguro inerte. Medición: carga 500 46–63 ms, paneo p95 16,8–16,9 ms, SVG 13,7–23,6 ms y 141–144 kB, PNG 60–84 ms y 319–327 kB, long tasks 0; todos los umbrales se cumplen. Se mantiene la exclusión de antigüedad de `maplibre-gl@6.20.0` (MEDIUM aceptado) y se retira cuando la política la considere madura o, como muy tarde, en M2-02, donde se evalúa bajar a `6.19.0` si no aporta un arreglo imprescindible. El prototipo no se presenta como función de producto y el plan B (editor SVG propio) no se activa. | El editor de mapas puede abrirse en M2-02 con una base validada y límites explícitos: SVG v1 sin etiquetas, `Multi*`/agujeros no editables, dibujo y selección solo con ratón, 2.000 pendiente de medir, `preserveDrawingBuffer`, exportaciones sin retención, aviso de chunk >500 kB, redacción de rutas incompleta (LOW), allowlist estática de hosts (LOW) y TOCTOU local (LOW). Sin cambios en SQLite, assets, copias, preferencias ni manual. |
+
+- **Relación con D-028 y ADR 0008:** D-057 **valida** la elección de MapLibre y
+  Terra Draw; **no la supersede**. La exportación SVG propia y el PNG siguen el
+  camino previsto en 0008, y las limitaciones se trasladan a M2-02.
+- **Relación con D-024 y ADR 0004:** el canal `mapsSpike:saveExport` respeta la
+  allowlist, Zod, el remitente confiable y la ausencia de rutas en el renderer.
+  Es un canal de laboratorio, no de producto.
+- **Relación con D-030 y ADR 0010:** el spike añade seis E2E del laboratorio,
+  pruebas unitarias, de componentes y de integración; la suite queda en 852
+  unitarias (5 omitidas), 308 de componentes y 265 de integración (1 omitida).
+- Referencias: ADR 0033, ADR 0008, ADR 0004, ADR 0010, #80,
+  `docs/mapas/spike-m2-01.md`, `tasks/task-issue-80.json`,
+  `docs/arquitectura.md`, `docs/calidad/plan-de-pruebas.md`,
+  `docs/continuidad.md`, `docs/plan-desarrollo.md`, `CHANGELOG.md`,
+  `THIRD-PARTY-NOTICES.md`, `resources/licenses/` y `pnpm-workspace.yaml`.

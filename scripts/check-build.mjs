@@ -25,10 +25,11 @@ const REQUIRED_CSP_DIRECTIVES = [
   "default-src 'none'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: wc-asset:",
+  "img-src 'self' data: blob: wc-asset:",
   "font-src 'self'",
   "connect-src 'self'",
   "media-src 'self'",
+  "worker-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
@@ -41,12 +42,25 @@ const REQUIRED_CSP_DIRECTIVES = [
  * `json-schema.org` son los identificadores de los dialectos de JSON Schema que
  * usa el validador de ProseMirror; y `prosemirror.net` es un enlace de
  * documentación dentro de un mensaje de error. Ninguno se solicita por red.
+ *
+ * MapLibre GL y Terra Draw añaden literales inertes al bundle del spike:
+ * enlaces de licencia y de incidencias de GitHub, mensajes de ayuda de
+ * OpenStreetMap y MapLibre, un host `.invalid` reservado para errores de
+ * estilo, y la URL por defecto del marcador de Terra Draw (este spike no usa
+ * el modo marcador). La CSP y los guards de sesión siguen bloqueando cualquier
+ * petición real; esta lista solo evita que el escaneo estático los confunda
+ * con destinos de red.
  */
 const ALLOWED_REMOTE_HOSTS = new Set([
   'www.w3.org',
   'react.dev',
   'json-schema.org',
   'prosemirror.net',
+  'github.com',
+  'raw.githubusercontent.com',
+  'wiki.openstreetmap.org',
+  'maplibre.org',
+  'maplibre.invalid',
 ]);
 
 /** El HTML generado escapa las comillas simples de la CSP como `&#39;`. */
@@ -423,6 +437,31 @@ async function checkFontAssets() {
   }
 }
 
+/**
+ * Comprueba que el worker de MapLibre se emite junto al renderer.
+ *
+ * La página del laboratorio de mapas importa el worker con `?worker&url` y lo
+ * registra con `setWorkerUrl`; si Vite dejara de emitirlo, el mapa fallaría en
+ * el build real aunque el typecheck siguiera en verde.
+ */
+async function checkMapsWorker() {
+  const files = await collectFiles(RENDERER_DIR).catch(() => []);
+  const worker = files.find((file) =>
+    /maplibre-gl-worker-[\w-]+\.js$/.test(file),
+  );
+
+  if (worker === undefined) {
+    fail('Falta el worker de MapLibre en out/renderer/assets.');
+    return;
+  }
+
+  const info = await stat(worker);
+
+  if (!info.isFile() || info.size === 0) {
+    fail(`El worker de MapLibre ${worker} está vacío.`);
+  }
+}
+
 const html = await checkArtifact('out/renderer/index.html');
 await checkArtifact('out/main/index.cjs');
 const workerBundle = await checkArtifact('out/main/transfer-worker.cjs');
@@ -448,6 +487,7 @@ await checkSharpNotBundled(mainBundles);
 await checkTransferWorker(workerBundle, mainBundles);
 await checkUpdaterNotBundled(mainBundles);
 await checkFontAssets();
+await checkMapsWorker();
 
 if (html !== null) {
   checkContentSecurityPolicy(html);

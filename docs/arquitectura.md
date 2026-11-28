@@ -41,7 +41,9 @@ el **shell v2 con navegación de producto y barra superior contextual** (#126) e
 **Inicio como mesa de trabajo con tarjetas de mundo** (#127). La galería visible
 está implementada desde #74 y la pantalla de Ajustes con la gestión de datos desde
 #79; las copias manuales y la restauración guiada desde Ajustes siguen previstas;
-la release pública y la actualización real contra GitHub Releases, en M5.
+el spike interno de mapas (#80) validó MapLibre y Terra Draw en M2-01 y el editor
+de mapas sigue previsto para M2-02; la release pública y la actualización real
+contra GitHub Releases, en M5.
 Las secciones distinguen lo implementado de lo previsto.
 
 ## 1. Vista general
@@ -71,7 +73,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | Assets locales y protocolo propio | Implementado (M0-06, #66): importación a WebP, miniatura, `wc-asset://` y purga recuperable; lista e importación con UI desde #74; FK a mundos, cuarentena y purga sin huérfanos desde #116 | [ADR 0005](adr/0005-local-assets-custom-protocol.md), [ADR 0017](adr/0017-assets-service-sharp-orphan-purge.md), [ADR 0032](adr/0032-assets-world-fk-quarantine.md) |
 | Dos temas y sistema de diseño | Implementado: tokens, temas, componentes base (#65) adaptados a la dirección v2 (#125), shell v2 con navegación Inicio/Mundos/Papelera y barra superior contextual (#126, #77) y preferencias de interfaz persistidas desde #132 | [ADR 0006](adr/0006-two-themes-desktop-design-system.md), [ADR 0025](adr/0025-visual-direction-v2.md), [ADR 0027](adr/0027-ui-preferences-persistence.md) |
 | Tiptap y exportadores | Tiptap 3 implementado en la descripción de fichas (#74) y convertido en editor reutilizable con barra mínima y menciones `@` / `[[ ]]` (#131); desde #114 también edita la descripción del mundo | [ADR 0007](adr/0007-tiptap-editor-exporters.md), [ADR 0026](adr/0026-minimal-editor-mentions.md), [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) |
-| MapLibre/Terra Draw y React Flow/ELK | Previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md) |
+| MapLibre/Terra Draw y React Flow/ELK | Spike de mapas validado con límites (M2-01, #80): MapLibre 6.20.0 + Terra Draw 1.40.0 en un prototipo interno; el editor de mapas sigue previsto (M2-02). React Flow/ELK, previsto (M2) | [ADR 0008](adr/0008-maplibre-terra-draw-react-flow-elk.md), [ADR 0033](adr/0033-spike-mapas-m2-01.md) |
 | i18n centralizada | Implementado (M0-11, #71): catálogo tipado, proveedor y formatos `Intl`; faltan persistir el locale y las traducciones en/it | [ADR 0009](adr/0009-centralized-i18n.md) |
 | Tipos de entidad y campos personalizados | Implementado (M1-02, #73): catálogo de 18 tipos, CRUD por API, validación Zod y transferencia `entity-types.v1` en dominio; gestión visual con #74 | [ADR 0020](adr/0020-entity-types-custom-fields.md) |
 | Fichas, galería, etiquetas y favoritos | Implementado (M1-03, #74): CRUD, autoguardado, descripción Tiptap, imágenes y galería, etiquetas, filtros y tipos personalizados | [ADR 0021](adr/0021-entities-crud-gallery-tags-editor.md) |
@@ -80,7 +82,7 @@ Las secciones distinguen lo implementado de lo previsto.
 | Papelera y versiones de contenido | Implementado (M1-06, #77): vista global de papelera, restauración, purga con copia `pre-purge`, vaciado y historial de la descripción de las fichas | [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md) |
 | Exportación e importación de mundos | Implementado (M1-07, #78) y formato v2 desde #114: ZIP abierto `world-craft-world` con `manifest.json`, `world.json` y assets; worker `utilityProcess`; importación transaccional siempre como mundo nuevo y lectura de paquetes v1 | [ADR 0029](adr/0029-world-export-import.md), [ADR 0031](adr/0031-descripcion-enriquecida-del-mundo-y-formato-v2.md) |
 | Ajustes y gestión de datos | Implementado (M1-08, #79): apariencia con densidad y tamaño, navegación `#/settings`, apertura de carpetas, uso de disco, biblioteca total `world-craft-library` v1 y borrado con copia `pre-delete` | [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
-| Pruebas y calidad | Implementado: 779 unitarias (5 omitidas), 295 de componentes y 261 de integración (1 omitida), más 76 E2E (#62-#79, #114-#116, #125-#133); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera, transferencia, ajustes y cuarentena (#70, #72, #74, #75, #76, #77, #78, #79, #114, #125, #126, #127, #131, #132, #133, #116) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
+| Pruebas y calidad | Implementado: 852 unitarias (5 omitidas), 308 de componentes y 265 de integración (1 omitida), más 76 E2E de producto y 6 del laboratorio de mapas (#62-#79, #114-#116, #125-#133 y #80); E2E de shell, ventana, temas, axe, mundos, fichas, relaciones, búsqueda, sistema v2, Inicio, editor, preferencias, papelera, transferencia, ajustes, cuarentena y laboratorio de mapas (#70, #72, #74, #75, #76, #77, #78, #79, #80, #114, #125, #126, #127, #131, #132, #133, #116) | [ADR 0010](adr/0010-testing-strategy.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
 | Modelo local de un solo usuario | Vigente | [ADR 0011](adr/0011-single-user-local-model.md) |
 | Copias, restauración y recuperación | Implementado (M0-07, #67): copias automáticas 7/4/12, pre-migración 5, pre-purga 10 (#77), pre-delete sin poda (#79), verificación y restauración desde modo seguro; Ajustes abre copias y muestra su uso desde #79, pero las copias manuales y la restauración guiada siguen previstas | [ADR 0012](adr/0012-backup-restore-recovery.md), [ADR 0016](adr/0016-sqlite-migrations-safe-mode.md), [ADR 0028](adr/0028-trash-versions-and-pre-purge-backup.md), [ADR 0030](adr/0030-settings-data-and-full-deletion.md) |
 | CI y releases | Parcial: lint, typecheck, test, build y package en Windows (#62–#68); releases previstos | [ADR 0013](adr/0013-ci-releases.md), [ADR 0018](adr/0018-nsis-packaging-and-update-service.md) |
@@ -198,7 +200,8 @@ Reglas de dependencia:
   los nueve de mundos, los cinco de tipos de entidad, los seis de fichas, los dos
   de etiquetas, los cuatro de tipos de relación, los cuatro de relaciones, los
   tres de búsqueda, los tres de preferencias, los dos de assets, los siete de
-  papelera y versiones, los tres de transferencia y los siete de datos), el
+  papelera y versiones, los tres de transferencia, los siete de datos y el
+  canal `mapsSpike:saveExport` del laboratorio), el
   resultado discriminado `IpcResult` con los códigos `INVALID_INPUT`,
   `UNKNOWN_CHANNEL`, `INTERNAL_ERROR` y `UNTRUSTED_SENDER`, y
   `createWorldCraftApi({ invoke })`, que construye la API congelada del preload.
@@ -208,7 +211,8 @@ Reglas de dependencia:
   (desde #73), las APIs `entities`, `tags` y `assets` (desde #74), las APIs
   `relationTypes` y `relations` (desde #75), la API `search` (desde #76), la API
   `preferences` (desde #132), las APIs `trash` y `versions` (desde #77), la API
-  `transfer` (desde #78) y la API `data` (desde #79). No expone `ipcRenderer`,
+  `transfer` (desde #78), la API `data` (desde #79) y la API `mapsSpike`
+  (desde #80). No expone `ipcRenderer`,
   `require` ni un `invoke` genérico; el renderer solo puede llamar a las
   funciones declaradas en el contrato.
 - **Router único.** `src/main/ipc/` registra un handler de `ipcMain` por cada
@@ -1092,6 +1096,52 @@ Reglas de dependencia:
   contrato visual en
   [`diseno/assets-cuarentena-issue-116.md`](diseno/assets-cuarentena-issue-116.md).
 
+### 2.22 Estado del spike de mapas (M2-01, #80)
+
+- **Naturaleza.** El prototipo es **interno**: se abre solo con
+  `#/internal/maps-spike`, no aparece en el rail, la paleta, `lastView` ni el
+  manual y no se presenta como editor terminado. Vive en
+  `src/renderer/maps-spike/` (dominio puro, hook y vista), `src/renderer/pages/`
+  (página y vista presentacional), `src/renderer/styles/maps-spike.css`,
+  `src/main/spike-maps/` y los contratos `maps-spike.ts`. El editor de producto
+  sigue previsto para M2-02.
+- **Dependencias.** `maplibre-gl@6.20.0` (BSD-3-Clause), `terra-draw@1.40.0` y
+  `terra-draw-maplibre-gl-adapter@1.5.0` (MIT), exactas y en `devDependencies`
+  porque Vite las empaqueta en el renderer. Los textos completos están en
+  `resources/licenses/` y en [`THIRD-PARTY-NOTICES.md`](../THIRD-PARTY-NOTICES.md).
+- **Worker y CSP.** El worker se importa con `?worker&url` y se registra con
+  `setWorkerUrl`, se emite junto al renderer y se carga por `file://`. La CSP
+  añade `worker-src 'self'` e `img-src ... blob:` para previsualizaciones
+  locales; no hay estilos, tiles, glifos ni sprites remotos. `verify:build`
+  comprueba el worker y mantiene una allowlist estática de hosts inertes de
+  MapLibre (LOW aceptado).
+- **Mapa y capas.** Mapa inline sin red, con tres capas 1:1 con la geometría:
+  `regions` (polígonos, rectángulos y círculos), `paths` (líneas) y `places`
+  (puntos). Terra Draw aporta `point`, `linestring`, `polygon`, `rectangle`,
+  `circle` y `select`, edición de vértices y coordenadas, borrado y vaciado. El
+  tema cambia estilos sin recrear el mapa.
+- **Importación y exportación.** GeoJSON agrupado por capa, atómico y acotado a
+  5 MiB y 2.000 features; se rechazan `Multi*`, `GeometryCollection` y polígonos
+  con agujeros, las coordenadas deben ser finitas y estar en rango y no se
+  inyecta HTML. La exportación produce GeoJSON, un SVG propio (Web Mercator,
+  viewport actual, `bearing`/`pitch` 0, orden de capas, agujeros con `evenodd`,
+  sin etiquetas) y un PNG del canvas con `preserveDrawingBuffer`.
+- **Guardado.** `mapsSpike:saveExport` acepta solo el tipo y los bytes; el
+  proceso principal decide `userData/data/spike-maps`, genera el nombre
+  `wc-m2-01-<kind>-<token>.<ext>`, valida con Zod, escribe con `wx` y no expone
+  rutas. En modo seguro queda inerte. **No es un canal de producto.**
+- **Métricas.** El panel mide carga de 500, paneo p95, edición, long tasks,
+  SVG/PNG en tiempo y bytes, y genera un informe JSON/Markdown con semilla,
+  entorno, tres pasadas, umbrales y decisión. El informe declara en
+  `limitations` que la edición usa una feature temporal, que la carga excluye la
+  generación y que las pasadas comparten SVG/PNG/edición.
+- **Resultado.** GO con límites ([ADR 0033](adr/0033-spike-mapas-m2-01.md)):
+  los cinco umbrales se cumplen. Se mantienen como límites el SVG v1 sin
+  etiquetas, `Multi*` y agujeros no editables, dibujo/selección con ratón, 2.000
+  features pendiente de medir, `preserveDrawingBuffer`, exportaciones sin
+  retención y la excepción de antigüedad de `maplibre-gl@6.20.0`. El detalle
+  está en [`mapas/spike-m2-01.md`](mapas/spike-m2-01.md).
+
 ## 3. Flujo de una operación
 
 ### 3.1 Arranque (implementado, #64, #67 y #68)
@@ -1660,7 +1710,7 @@ El detalle está en el [ADR 0003](adr/0003-nsis-installer-electron-updater-data-
 |---|---|
 | **M0** | Baseline, ventana segura, SQLite/Drizzle, IPC, diseño, assets, backups, CI, instalador y actualizador manual. |
 | **M1** | Mundos, fichas, tipos, etiquetas, relaciones, búsqueda, Ajustes con apariencia y datos, papelera, exportación e importación de mundos y biblioteca total. El interruptor de actualizaciones queda para M5-05. |
-| **M2** | Mapas vectoriales y grafo. |
+| **M2** | Mapas vectoriales y grafo. El spike de mapas M2-01 (#80) está validado con límites; el editor de mapas (M2-02) y el grafo siguen pendientes. |
 | **M3** | Editor de manuscritos, herramientas de escritura y exportadores. |
 | **M4** | Dados, tablas de inspiración y packs de contenido. |
 | **M5** | Auditoría de a11y/temas/rendimiento, release, auto-update, manual y beta 1.0. |
